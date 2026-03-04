@@ -1,26 +1,133 @@
 @import "tailwindcss";
 
+/* ─── Design tokens: Tierra y cuerpo (docs/DESIGN_GUIDELINES.md) ─────────── */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Paleta */
+  --color-primary:          #2D3B2A;
+  --color-primary-hover:    #232F21;
+  --color-primary-light:    rgba(45, 59, 42, 0.08);
+  --color-secondary:        #B85C38;
+  --color-secondary-hover:  #9E4F2F;
+  --color-secondary-light:  rgba(184, 92, 56, 0.10);
+  --color-tertiary:         #F5F0E9;
+  --color-text:             #1C1C1A;
+  --color-text-muted:       #5C5A56;
+  --color-border:           #E5E2DC;
+  --color-surface:          #FFFFFF;
+  --color-text-inverse:     #FFFFFF;
+
+  /* Espaciado base-8 */
+  --space-1:  0.25rem;
+  --space-2:  0.5rem;
+  --space-3:  0.75rem;
+  --space-4:  1rem;
+  --space-5:  1.25rem;
+  --space-6:  1.5rem;
+  --space-8:  2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+  --space-24: 6rem;
+  --space-32: 8rem;
+
+  /* Radios */
+  --radius-sm:  0.25rem;
+  --radius-md:  0.5rem;
+  --radius-lg:  0.75rem;
+  --radius-xl:  1rem;
+  --radius-2xl: 1.5rem;
+
+  /* Sombras con tinte de marca */
+  --shadow-sm: 0 1px 3px rgba(45, 59, 42, 0.08);
+  --shadow-md: 0 4px 12px rgba(45, 59, 42, 0.12);
+  --shadow-lg: 0 8px 24px rgba(45, 59, 42, 0.16);
+
+  /* Duraciones */
+  --duration-fast:   150ms;
+  --duration-normal: 250ms;
+  --duration-slow:   400ms;
+  --ease-default:    cubic-bezier(0.25, 0.1, 0.25, 1);
+
+  /* Gradiente de overlay de hero */
+  --hero-overlay-bottom: rgba(29, 47, 25, 0.96);
+  --hero-overlay-mid:    rgba(29, 47, 25, 0.55);
+  --hero-overlay-top:    rgba(29, 47, 25, 0.15);
+
+  /* Altura del header fijo */
+  --header-height: 4.5rem;
 }
 
+/* ─── Tailwind theme mapping ─────────────────────────────────────────────── */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-display);
+  --font-sans:    var(--font-sans);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* ─── Reducción de movimiento ────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration:       0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration:      0.01ms !important;
   }
 }
 
+/* ─── Base ───────────────────────────────────────────────────────────────── */
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background:  var(--color-tertiary);
+  color:       var(--color-text);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  line-height: 1.6;
+  -webkit-font-smoothing:  antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─── Utilidades tipográficas (fluid, sin magic numbers en componentes) ───── */
+.font-display {
+  font-family: var(--font-display), 'Georgia', serif;
+}
+
+/* Tipografía fluida para hero */
+.text-hero {
+  font-size:      clamp(2.75rem, 7.5vw, 7rem);
+  line-height:    1.04;
+  letter-spacing: -0.025em;
+}
+
+/* Títulos de sección */
+.text-section {
+  font-size:      clamp(1.875rem, 4vw, 3.25rem);
+  line-height:    1.15;
+  letter-spacing: -0.015em;
+}
+
+/* Cita / quote grande */
+.text-quote {
+  font-size:   clamp(1.4rem, 2.8vw, 2.25rem);
+  line-height: 1.45;
+}
+
+/* Número grande decorativo */
+.text-numeral {
+  font-size:      clamp(4rem, 10vw, 7rem);
+  line-height:    1;
+  letter-spacing: -0.04em;
+}
+
+/* ─── Overlay del hero ───────────────────────────────────────────────────── */
+.hero-overlay {
+  background: linear-gradient(
+    to top,
+    var(--hero-overlay-bottom) 0%,
+    var(--hero-overlay-mid)    45%,
+    var(--hero-overlay-top)    100%
+  );
+}
+
+/* ─── Focus global (accesibilidad) ──────────────────────────────────────── */
+:focus-visible {
+  outline:        2px solid var(--color-secondary);
+  outline-offset: 3px;
+  border-radius:  var(--radius-sm);
 }
