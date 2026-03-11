@@ -74,6 +74,50 @@ async function main() {
   }
 
   console.log("Seed OK: center", center.slug, "user", user.email, "role ADMINISTRADORA");
+
+  const existingConfig = await prisma.centerMercadoPagoConfig.findUnique({
+    where: { centerId: center.id },
+  });
+  if (!existingConfig) {
+    const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN ?? "TEST-xxx";
+    const webhookSecret = process.env.MERCADOPAGO_WEBHOOK_SECRET ?? "whsec-xxx";
+    await prisma.centerMercadoPagoConfig.create({
+      data: {
+        centerId: center.id,
+        accessToken,
+        webhookSecret,
+        enabled: true,
+      },
+    });
+    console.log("MercadoPago config creada (usa MERCADOPAGO_ACCESS_TOKEN y MERCADOPAGO_WEBHOOK_SECRET en .env para producción)");
+  }
+
+  const existingPlan = await prisma.plan.findFirst({ where: { centerId: center.id } });
+  if (!existingPlan) {
+    await prisma.plan.createMany({
+      data: [
+        {
+          centerId: center.id,
+          name: "Pack 6 clases",
+          slug: "pack-6",
+          description: "6 clases presenciales, 31 días de vigencia",
+          amountCents: 48000,
+          currency: "CLP",
+          type: "PACK",
+        },
+        {
+          centerId: center.id,
+          name: "Membresía mensual",
+          slug: "membresia-mensual",
+          description: "Acceso a contenido online y clases",
+          amountCents: 15000,
+          currency: "CLP",
+          type: "MEMBERSHIP",
+        },
+      ],
+    });
+    console.log("Planes de ejemplo creados (Pack 6, Membresía mensual)");
+  }
 }
 
 main()
