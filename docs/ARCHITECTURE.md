@@ -63,6 +63,15 @@ flowchart LR
   - Descripción de la oferta (packs, membresía, sesiones)
   - No almacena estado de pago, reservas ni permisos; el backend consulta Sanity para mostrar la oferta y luego persiste todo lo transaccional en su propia capa (DB o servicios).
 
+### Dónde se guarda cada cosa
+
+| Dónde | Qué |
+|-------|-----|
+| **Postgres (Supabase)** | Usuarios, centros, roles (RBAC), sesiones y todo lo transaccional: reservas, pagos, suscripciones, permisos de acceso. Es la base de datos de la aplicación. |
+| **Sanity (CMS)** | Contenido editorial y catálogo: textos, programas, tipos de clase, descripciones de oferta. Solo lectura desde el backend; no guarda estado de usuario ni transacciones. |
+
+Conectar Postgres: `DATABASE_URL` en `.env` (ver `.env.example`). Migraciones: `prisma migrate dev` / `prisma migrate deploy`.
+
 ---
 
 ## DTOs
