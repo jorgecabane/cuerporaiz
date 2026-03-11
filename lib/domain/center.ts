@@ -8,6 +8,8 @@ export interface Center {
   id: CenterId;
   name: string;
   slug: string;
+  cancelBeforeHours: number;
+  maxNoShowsPerMonth: number;
   createdAt: Date;
   updatedAt: Date;
 }

@@ -41,7 +41,19 @@ export default async function PanelPage() {
             <dd className="font-medium">{user.centerId}</dd>
           </div>
         </dl>
-        <div className="mt-6 flex gap-4">
+        <div className="mt-6 flex gap-4 flex-wrap">
+          <Link
+            href="/panel/reservas"
+            className="rounded-[var(--radius-md)] bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-primary-hover)]"
+          >
+            Clases y reservas
+          </Link>
+          <Link
+            href="/planes"
+            className="rounded-[var(--radius-md)] bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-primary-hover)]"
+          >
+            Planes y comprar
+          </Link>
           <form
             action={async () => {
               "use server";
