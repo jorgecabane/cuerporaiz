@@ -23,6 +23,10 @@ model Center {
 
   memberships     UserCenterRole[]
   liveClasses     LiveClass[]
+  mercadopagoConfig CenterMercadoPagoConfig?
+  plans           Plan[]
+  orders          Order[]
+  webhookEvents   MercadoPagoWebhookEvent[]
 }
 
 // ─── Usuarios (sin datos de infra; dominio puro en lib/domain) ──────────────
@@ -36,6 +40,7 @@ model User {
 
   memberships UserCenterRole[]
   reservations Reservation[]
+  orders     Order[]
 }
 
 // ─── Clases en vivo (por centro) ───────────────────────────────────────────
@@ -99,5 +104,86 @@ model UserCenterRole {
 
   @@unique([userId, centerId])
   @@index([userId])
+  @@index([centerId])
+}
+
+// ─── MercadoPago por centro (plugin activo + credenciales) ──────────────────
+model CenterMercadoPagoConfig {
+  id            String   @id @default(cuid())
+  centerId      String   @unique
+  accessToken   String
+  webhookSecret String
+  enabled       Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  center Center @relation(fields: [centerId], references: [id], onDelete: Cascade)
+}
+
+enum PlanType {
+  PACK
+  MEMBERSHIP
+}
+
+model Plan {
+  id          String   @id @default(cuid())
+  centerId    String
+  name        String
+  slug        String
+  description String?
+  amountCents Int
+  currency    String   @default("CLP")
+  type        PlanType
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  center Center @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  orders Order[]
+
+  @@unique([centerId, slug])
+  @@index([centerId])
+}
+
+enum OrderStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  REFUNDED
+  CANCELLED
+}
+
+model Order {
+  id                 String      @id @default(cuid())
+  centerId           String
+  userId             String
+  planId             String
+  amountCents        Int
+  currency           String      @default("CLP")
+  status             OrderStatus @default(PENDING)
+  externalReference  String      @unique
+  mpPreferenceId     String?
+  mpPaymentId        String?
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  center Center @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan   Plan   @relation(fields: [planId], references: [id], onDelete: Restrict)
+
+  @@index([centerId])
+  @@index([userId])
+  @@index([externalReference])
+  @@index([mpPaymentId])
+}
+
+model MercadoPagoWebhookEvent {
+  id          String   @id @default(cuid())
+  centerId    String
+  requestId   String
+  processedAt DateTime @default(now())
+
+  center Center @relation(fields: [centerId], references: [id], onDelete: Cascade)
+
+  @@unique([centerId, requestId])
   @@index([centerId])
 }

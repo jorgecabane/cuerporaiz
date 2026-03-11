@@ -3,3 +3,7 @@ export { userRepository } from "./user-repository";
 export { centerRepository } from "./center-repository";
 export { liveClassRepository } from "./live-class-repository";
 export { reservationRepository } from "./reservation-repository";
+export { mercadopagoConfigRepository } from "./mercadopago-config-repository";
+export { planRepository } from "./plan-repository";
+export { orderRepository } from "./order-repository";
+export { webhookEventRepository } from "./webhook-event-repository";

@@ -89,6 +89,30 @@ Solo hace falta si vas a ejecutar el seed; no son obligatorios para arrancar la 
 
 ---
 
+## 4. MercadoPago (checkout por centro)
+
+Cada **centro (tenant)** que tenga el plugin MercadoPago activo tiene sus propias credenciales, guardadas en la tabla `CenterMercadoPagoConfig`. No hay una sola config global.
+
+### Para desarrollo / seed
+
+Si ejecutás `npm run db:seed` y querés que el centro de ejemplo tenga MercadoPago configurado:
+
+- **`MERCADOPAGO_ACCESS_TOKEN`**: Access Token de la aplicación de MercadoPago (modo prueba o producción). Lo creás en [Tus integraciones](https://www.mercadopago.com.ar/developers/panel/app).
+- **`MERCADOPAGO_WEBHOOK_SECRET`**: Secret para validar la firma de los webhooks. Se genera al configurar la URL de notificaciones en el panel de MP.
+
+El seed crea un registro de config con estos valores si existen en `.env`. Si no, usa placeholders y podés editar la fila en la BD o volver a ejecutar el seed después de configurar las variables.
+
+### Webhook por centro
+
+La URL de webhook es por centro: `https://tu-dominio.com/api/webhooks/mercadopago/[centerId]`. En el panel de MercadoPago, configurá esta URL y el evento "Pagos" para recibir notificaciones. El `centerId` es el ID (cuid) del centro en la BD.
+
+### Seguridad
+
+- Nunca se almacenan ni manejan datos de tarjeta; el pago se realiza en la página de MercadoPago (Checkout Pro).
+- Los webhooks validan la firma `x-signature` con el secret del centro y usan idempotencia por `x-request-id`.
+
+---
+
 ## Regla para agentes y tareas
 
 Cuando una tarea o subagente **necesite algo que solo el usuario puede proporcionar** (credenciales, crear proyecto en un dashboard, aprobar acceso, etc.):
