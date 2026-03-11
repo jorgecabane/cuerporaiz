@@ -72,4 +72,12 @@ export const orderRepository: IOrderRepository = {
     });
     return toDomain(o);
   },
+
+  async findManyByUserIdAndCenterId(userId: string, centerId: string) {
+    const list = await prisma.order.findMany({
+      where: { userId, centerId },
+      orderBy: { createdAt: "desc" },
+    });
+    return list.map(toDomain);
+  },
 };

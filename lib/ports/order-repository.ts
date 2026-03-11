@@ -38,4 +38,5 @@ export interface IOrderRepository {
   findByExternalReference(externalReference: string): Promise<Order | null>;
   findByMpPaymentId(mpPaymentId: string): Promise<Order | null>;
   updateStatus(id: string, status: OrderStatus, mpPaymentId?: string | null): Promise<Order>;
+  findManyByUserIdAndCenterId(userId: string, centerId: string): Promise<Order[]>;
 }
