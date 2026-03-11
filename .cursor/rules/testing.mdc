@@ -1,0 +1,42 @@
+---
+description: Reglas y convenciones de testing (unitarios, E2E, cobertura)
+globs: 
+alwaysApply: false
+---
+
+# Testing en CuerpoRaíz
+
+## Pre-commit (Husky)
+
+El hook **pre-commit** ejecuta, en este orden:
+
+1. **lint-staged** – lint sobre archivos staged
+2. **typecheck** – `npm run typecheck` (TypeScript)
+3. **test** – tests unitarios (Vitest)
+4. **e2e** – tests E2E con **Playwright** (`npm run e2e`)
+
+Los E2E forman parte del pre-commit para garantizar que los cambios no rompan flujos críticos antes de hacer commit. Si los E2E fallan, el commit se rechaza.
+
+## Cómo probar el pre-commit
+
+Ejecutar manualmente:
+
+```bash
+.husky/pre-commit
+```
+
+O simular un commit (el hook se ejecuta automáticamente):
+
+```bash
+git add . && git commit -m "test: pre-commit"
+```
+
+## Tests unitarios (Vitest)
+
+- Comando: `npm run test` / `npm run test:watch`
+- Cobertura: `npm run test:coverage`
+
+## Tests E2E (Playwright)
+
+- Comando: `npm run e2e`
+- UI: `npm run e2e:ui`
