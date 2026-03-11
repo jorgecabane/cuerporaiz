@@ -1,4 +1,4 @@
-// CuerpoRaíz — DB: SQLite para dev. Para producción usar Postgres (mismo esquema, cambiar provider y DATABASE_URL).
+// CuerpoRaíz — DB: Postgres (Supabase). Conexión vía DATABASE_URL.
 // https://pris.ly/d/prisma-schema
 
 generator client {
@@ -7,7 +7,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
 }
 
 // ─── Tenants (centros) ─────────────────────────────────────────────────────

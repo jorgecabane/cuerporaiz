@@ -1,16 +1,14 @@
 import "dotenv/config";
 import { PrismaClient } from "../lib/generated/prisma";
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
-import path from "node:path";
+import { PrismaPg } from "@prisma/adapter-pg";
 import bcrypt from "bcryptjs";
 
-const databaseUrl = process.env.DATABASE_URL ?? "file:./dev.db";
-const dbPath =
-  databaseUrl.startsWith("file:") && databaseUrl !== "file::memory:"
-    ? path.resolve(process.cwd(), databaseUrl.slice("file:".length))
-    : databaseUrl;
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) {
+  throw new Error("DATABASE_URL is required to run the seed.");
+}
 
-const adapter = new PrismaBetterSqlite3({ url: dbPath });
+const adapter = new PrismaPg({ connectionString });
 const prisma = new PrismaClient({ adapter });
 
 async function main() {

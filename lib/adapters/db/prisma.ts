@@ -1,17 +1,14 @@
 /**
- * Cliente Prisma con adaptador SQLite (Prisma 7).
+ * Cliente Prisma con adaptador Postgres (Prisma 7). Conexión vía DATABASE_URL (Supabase u otro Postgres).
  * Solo se usa desde adaptadores; el dominio no importa este archivo.
  */
 import { PrismaClient } from "@/lib/generated/prisma";
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
-import path from "node:path";
+import { PrismaPg } from "@prisma/adapter-pg";
 
-const databaseUrl = process.env.DATABASE_URL ?? "file:./dev.db";
-// El adaptador better-sqlite3 espera path absoluto para file:
-const dbPath =
-  databaseUrl.startsWith("file:") && databaseUrl !== "file::memory:"
-    ? path.resolve(process.cwd(), databaseUrl.slice("file:".length))
-    : databaseUrl;
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) {
+  throw new Error("DATABASE_URL is required for Postgres.");
+}
 
-const adapter = new PrismaBetterSqlite3({ url: dbPath });
+const adapter = new PrismaPg({ connectionString });
 export const prisma = new PrismaClient({ adapter });
