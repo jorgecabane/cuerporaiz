@@ -85,11 +85,11 @@ model Reservation {
   @@index([liveClassId])
 }
 
-// Rol por centro (multi-tenant RBAC)
+// Per-center role (multi-tenant RBAC). Values in English for code consistency.
 enum Role {
-  ADMINISTRADORA
-  PROFESORA
-  ALUMNA
+  ADMINISTRATOR
+  INSTRUCTOR
+  STUDENT
 }
 
 model UserCenterRole {

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { authService } from "@/lib/adapters/auth";
 import { userRepository, centerRepository } from "@/lib/adapters/db";
 import { signupBodySchema } from "@/lib/dto/auth-dto";
-import { isRole } from "@/lib/domain/role";
+import { isRole, DEFAULT_SIGNUP_ROLE } from "@/lib/domain/role";
 
 export async function POST(request: Request) {
   try {
@@ -34,7 +34,7 @@ export async function POST(request: Request) {
 
     const passwordHash = await authService.hashPassword(password);
     const user = await userRepository.create({ email, passwordHash, name });
-    const assignRole = (role && isRole(role)) ? role : "ALUMNA";
+    const assignRole = (role && isRole(role)) ? role : DEFAULT_SIGNUP_ROLE;
     await userRepository.addRole(user.id, center.id, assignRole);
 
     return NextResponse.json(

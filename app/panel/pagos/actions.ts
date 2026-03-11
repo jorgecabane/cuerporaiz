@@ -3,10 +3,11 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { orderRepository } from "@/lib/adapters/db";
+import { isAdminRole } from "@/lib/domain";
 
 async function requireAdminCenterId(): Promise<string> {
   const session = await auth();
-  if (!session?.user?.centerId || session.user.role !== "ADMINISTRADORA") {
+  if (!session?.user?.centerId || !isAdminRole(session.user.role)) {
     redirect("/panel");
   }
   return session.user.centerId;

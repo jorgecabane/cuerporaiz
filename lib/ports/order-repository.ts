@@ -8,6 +8,15 @@ export type OrderStatus =
   | "REFUNDED"
   | "CANCELLED";
 
+/** Etiquetas para mostrar en UI. Tipado para que no falte ningún estado. */
+export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
+  PENDING: "Pendiente",
+  APPROVED: "Aprobado",
+  REJECTED: "Rechazado",
+  REFUNDED: "Reembolsado",
+  CANCELLED: "Cancelado",
+};
+
 export interface Order {
   id: string;
   centerId: string;

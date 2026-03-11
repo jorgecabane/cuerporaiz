@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 
 /**
- * Panel admin - Pagos y conciliación. Solo rol ADMINISTRADORA.
+ * Admin panel - Payments and reconciliation. ADMINISTRATOR role only.
  */
 test.describe("Panel admin - Pagos", () => {
   const email = process.env.E2E_USER_EMAIL ?? "admin@cuerporaiz.cl";

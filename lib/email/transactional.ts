@@ -196,7 +196,7 @@ export function buildTrialClassNoticeToTeacherEmail(
     start: data.startAt,
     end: data.endAt,
     location: data.location,
-    details: `Alumna: ${data.studentName} (${data.studentEmail})`,
+    details: `Student: ${data.studentName} (${data.studentEmail})`,
     timeZone: DEFAULT_TIMEZONE,
   });
   const greeting = data.teacherName ? `Hola ${data.teacherName}` : "Hola";
@@ -207,7 +207,7 @@ export function buildTrialClassNoticeToTeacherEmail(
 <body style="font-family: sans-serif; line-height: 1.5; color: #333;">
   <p>${greeting},</p>
   <p>Se agendó una <strong>clase de prueba</strong>:</p>
-  <p><strong>Alumna:</strong> ${data.studentName} (${data.studentEmail})<br>
+  <p><strong>Student:</strong> ${data.studentName} (${data.studentEmail})<br>
   <strong>Clase:</strong> ${data.className}<br>
   <strong>Horario:</strong> ${new Date(data.startAt).toLocaleString("es-CL", { timeZone: DEFAULT_TIMEZONE })}<br>
   <strong>Lugar:</strong> ${data.location}</p>
@@ -218,7 +218,7 @@ export function buildTrialClassNoticeToTeacherEmail(
   const text = [
     `${greeting},`,
     "Se agendó una clase de prueba:",
-    `Alumna: ${data.studentName} (${data.studentEmail})`,
+    `Student: ${data.studentName} (${data.studentEmail})`,
     `Clase: ${data.className} | ${new Date(data.startAt).toLocaleString("es-CL", { timeZone: DEFAULT_TIMEZONE })} | ${data.location}`,
     getAddToCalendarInstruction(calendarUrl),
     `— ${SITE_NAME}`,

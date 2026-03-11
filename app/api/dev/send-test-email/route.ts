@@ -1,7 +1,7 @@
 /**
- * Ruta de desarrollo para probar envío de emails con Resend.
- * Solo disponible cuando NODE_ENV=development.
- * POST body: { to: string } — envía un email de confirmación de reserva de ejemplo.
+ * Dev route to test email sending with Resend.
+ * Only available when NODE_ENV=development.
+ * POST body: { to: string } — sends a sample reservation confirmation email.
  */
 import { NextResponse } from "next/server";
 import { resendEmailAdapter } from "@/lib/adapters/email";
@@ -9,22 +9,22 @@ import { buildReservationConfirmationEmail } from "@/lib/email";
 
 export async function POST(request: Request) {
   if (process.env.NODE_ENV !== "development") {
-    return NextResponse.json({ error: "No disponible" }, { status: 404 });
+    return NextResponse.json({ error: "Not available" }, { status: 404 });
   }
   try {
     const body = await request.json();
     const to = typeof body?.to === "string" ? body.to.trim() : "";
     if (!to) {
       return NextResponse.json(
-        { error: "Body debe incluir 'to' (email del destinatario)" },
+        { error: "Body must include 'to' (recipient email)" },
         { status: 400 }
       );
     }
-    const startAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(); // mañana
+    const startAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(); // tomorrow
     const endAt = new Date(new Date(startAt).getTime() + 60 * 60 * 1000).toISOString();
     const dto = buildReservationConfirmationEmail({
       toEmail: to,
-      userName: "Alumna de prueba",
+      userName: "Test student",
       className: "Vinyasa Flow",
       startAt,
       endAt,
@@ -34,7 +34,7 @@ export async function POST(request: Request) {
     const result = await resendEmailAdapter.send(dto);
     if (!result.success) {
       return NextResponse.json(
-        { error: "Error al enviar", detail: result.error },
+        { error: "Send failed", detail: result.error },
         { status: 502 }
       );
     }
@@ -42,7 +42,7 @@ export async function POST(request: Request) {
   } catch (err) {
     console.error("[send-test-email]", err);
     return NextResponse.json(
-      { error: "Error interno", detail: err instanceof Error ? err.message : String(err) },
+      { error: "Internal error", detail: err instanceof Error ? err.message : String(err) },
       { status: 500 }
     );
   }

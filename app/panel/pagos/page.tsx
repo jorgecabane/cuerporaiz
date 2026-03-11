@@ -7,14 +7,8 @@ import { planRepository } from "@/lib/adapters/db";
 import { Button } from "@/components/ui/Button";
 import { ApproveOrderForm } from "./ApproveOrderForm";
 import type { OrderStatus } from "@/lib/ports";
-
-const STATUS_LABELS: Record<string, string> = {
-  PENDING: "Pendiente",
-  APPROVED: "Aprobado",
-  REJECTED: "Rechazado",
-  REFUNDED: "Reembolsado",
-  CANCELLED: "Cancelado",
-};
+import { ORDER_STATUS_LABELS } from "@/lib/ports";
+import { isAdminRole } from "@/lib/domain";
 
 function formatPrice(cents: number, currency: string): string {
   if (currency === "CLP") return `$${cents.toLocaleString("es-CL")}`;
@@ -28,7 +22,7 @@ export default async function PanelPagosPage({
 }) {
   const session = await auth();
   if (!session?.user) redirect("/auth/login?callbackUrl=/panel/pagos");
-  if (session.user.role !== "ADMINISTRADORA") redirect("/panel");
+  if (!isAdminRole(session.user.role)) redirect("/panel");
   const centerId = session.user.centerId as string;
   const { status } = await searchParams;
   const statusFilter = status as OrderStatus | undefined;
@@ -63,13 +57,13 @@ export default async function PanelPagosPage({
         >
           Todos
         </Button>
-        {(Object.keys(STATUS_LABELS) as OrderStatus[]).map((s) => (
+        {(Object.keys(ORDER_STATUS_LABELS) as OrderStatus[]).map((s) => (
           <Button
             key={s}
             href={`/panel/pagos?status=${s}`}
             variant={statusFilter === s ? "primary" : "secondary"}
           >
-            {STATUS_LABELS[s]}
+            {ORDER_STATUS_LABELS[s]}
           </Button>
         ))}
       </div>
@@ -115,7 +109,7 @@ export default async function PanelPagosPage({
                     {formatPrice(order.amountCents, order.currency)}
                   </td>
                   <td className="p-3">
-                    {STATUS_LABELS[order.status] ?? order.status}
+                    {ORDER_STATUS_LABELS[order.status]}
                   </td>
                   <td className="p-3 font-mono text-xs">
                     {order.externalReference}

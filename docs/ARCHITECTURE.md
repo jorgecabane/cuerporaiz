@@ -132,9 +132,13 @@ Cada adapter en su propio módulo (ej. `infrastructure/email/resend.adapter.ts`,
 
 ## Convenciones
 
-- Naming: PascalCase componentes, camelCase funciones, SCREAMING_SNAKE constantes.
-- Server Components por defecto; Client Components solo cuando haga falta interactividad.
-- Imports: React/Next → externals → internos → relativos → types.
+- **Code in English:** Variables, function names, comments, and identifiers (including enum values and constants) must be in English. User-facing copy (landing, emails to end users) may stay in Spanish until i18n is in place.
+- **Role identifiers in English:** The `Role` enum and all role values are in English: `ADMINISTRATOR`, `INSTRUCTOR`, `STUDENT`. Use constants from `lib/domain/role` (e.g. `ADMIN_ROLE`, `isAdminRole()`, `ROLE_LABELS`); no magic strings.
+- Naming: PascalCase for components, camelCase for functions, SCREAMING_SNAKE for constants.
+- Server Components by default; Client Components only when interactivity is needed.
+- Imports: React/Next → externals → internal → relative → types.
+
+See **[CODE_STYLE.md](./CODE_STYLE.md)** for code language, role naming, and no magic strings.
 
 ---
 
