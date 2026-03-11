@@ -3,7 +3,7 @@ import type { User } from "@/lib/domain";
 import type { Role } from "@/lib/domain/role";
 import type { CenterId } from "@/lib/domain/user";
 import { prisma } from "./prisma";
-import { Role as PrismaRole } from "@/lib/generated/prisma";
+import { Role as PrismaRole, type UserCenterRole } from "@/lib/generated/prisma";
 
 function toDomainRole(r: PrismaRole): Role {
   return r as unknown as Role;
@@ -49,7 +49,7 @@ export const userRepository: IUserRepository = {
     if (!u) return null;
     return {
       ...toDomainUser(u),
-      memberships: u.memberships.map((m) => ({ centerId: m.centerId as CenterId, role: toDomainRole(m.role) })),
+      memberships: u.memberships.map((m: UserCenterRole) => ({ centerId: m.centerId as CenterId, role: toDomainRole(m.role) })),
     };
   },
 
