@@ -113,6 +113,36 @@ La URL de webhook es por centro: `https://tu-dominio.com/api/webhooks/mercadopag
 
 ---
 
+## 5. Email (Resend)
+
+### Qué necesitas
+
+- **`RESEND_API_KEY`**: API key de Resend para envío de emails transaccionales.
+- **`EMAIL_FROM`** (opcional): remitente en formato `"Nombre <email@dominio.com>"`. Por defecto se usa `Cuerpo Raíz <onboarding@resend.dev>` si no está definido (Resend permite enviar desde ese dominio en modo prueba).
+
+### Dónde obtenerlo
+
+1. Creá una cuenta en [Resend](https://resend.com) y entrá al [Dashboard](https://resend.com/api-keys).
+2. Creá una **API Key** y copiala en `.env`:
+   ```bash
+   RESEND_API_KEY="re_..."
+   ```
+3. Para producción, verificá tu dominio en [Resend → Domains](https://resend.com/domains) y usá ese email en `EMAIL_FROM`. En desarrollo podés usar `onboarding@resend.dev` sin verificar dominio.
+
+### Probar envío en dev
+
+Con el servidor en marcha (`npm run dev`), en otra terminal:
+
+```bash
+curl -X POST http://localhost:3000/api/dev/send-test-email \
+  -H "Content-Type: application/json" \
+  -d '{"to":"tu-email@ejemplo.com"}'
+```
+
+Esa ruta solo existe cuando `NODE_ENV=development` y envía un email de ejemplo de confirmación de reserva (con link a Google Calendar).
+
+---
+
 ## Regla para agentes y tareas
 
 Cuando una tarea o subagente **necesite algo que solo el usuario puede proporcionar** (credenciales, crear proyecto en un dashboard, aprobar acceso, etc.):
