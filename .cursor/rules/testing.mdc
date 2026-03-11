@@ -17,6 +17,8 @@ El hook **pre-commit** ejecuta, en este orden:
 
 Los E2E forman parte del pre-commit para garantizar que los cambios no rompan flujos críticos antes de hacer commit. Si los E2E fallan, el commit se rechaza.
 
+**Nunca usar `--no-verify`.** Si el pre-commit falla por un E2E (o por lint/typecheck/test), es responsabilidad del agente **arreglar el código o el test**: o bien se corrige la implementación para que cumpla lo que el test espera, o bien se ajusta el test si la expectativa era incorrecta o el test es frágil (p. ej. condiciones de carrera). No se hace commit saltando el hook.
+
 **Si tenés `npm run dev` corriendo:** detenelo antes de hacer commit. Next usa un único lock (`.next/dev/lock`), así que no puede haber dos instancias de `next dev` a la vez; el pre-commit necesita levantar el servidor de E2E.
 
 ## Cómo probar el pre-commit

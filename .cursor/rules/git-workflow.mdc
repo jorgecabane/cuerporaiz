@@ -1,0 +1,29 @@
+---
+description: Flujo de Git, ramas y commits para tareas y subagentes
+alwaysApply: true
+---
+
+# Git y ramas
+
+## Ramas
+
+- Una rama por tarea/área: `feature/nombre-descriptivo`, `fix/nombre`, `docs/nombre`.
+- Base: `main` (o `develop` si se usa). Trabajar siempre en rama de feature/fix.
+
+## Commits
+
+- Mensajes claros y en presente: "Add reservation cancel flow", "Fix payment webhook idempotency".
+- Opcional: conventional commits (`feat:`, `fix:`, `docs:`) si el equipo lo adopta.
+- No commitear: `.env`, secrets, `node_modules`, builds generados.
+- **No usar `git commit --no-verify`.** Si el pre-commit falla (lint, typecheck, test, e2e), hay que corregir el código o el test hasta que pase; no saltar el hook.
+
+## Subagentes
+
+- Al asignar una tarea, se indica la rama. El subagente hace `git checkout -b feature/xxx` (desde main actualizada), trabaja y commitea en esa rama.
+- Al terminar: **push** de la rama y **abrir el PR** hacia main (o develop). La tarea no se considera "Hecho" hasta que el PR esté **revisado y mergeado** por un humano.
+
+### Abrir el PR (autonomía del subagente)
+
+- Si en el entorno está disponible **GitHub CLI** (`gh`) y autenticado (`gh auth status` OK): tras hacer `git push -u origin <rama>`, ejecutar `gh pr create --base main --title "..." --body "..."` con título y descripción del cambio. Incluir en el body qué se hizo y cómo se probó (enlace al ticket/Notion si aplica).
+- Si `gh` no está instalado o no hay sesión: hacer push y en el reporte indicar la rama pusheada y el enlace para abrir el PR manualmente (ej. `https://github.com/jorgecabane/cuerporaiz/compare/main...<rama>?expand=1`).
+- **Requisito para que los subagentes abran PRs solos**: que en la máquina se haya ejecutado al menos una vez `gh auth login` (para GitHub.com, con SSH o HTTPS según el remoto del repo).
