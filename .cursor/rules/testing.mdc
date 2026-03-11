@@ -17,6 +17,8 @@ El hook **pre-commit** ejecuta, en este orden:
 
 Los E2E forman parte del pre-commit para garantizar que los cambios no rompan flujos críticos antes de hacer commit. Si los E2E fallan, el commit se rechaza.
 
+**Si tenés `npm run dev` corriendo:** detenelo antes de hacer commit. Next usa un único lock (`.next/dev/lock`), así que no puede haber dos instancias de `next dev` a la vez; el pre-commit necesita levantar el servidor de E2E.
+
 ## Cómo probar el pre-commit
 
 Ejecutar manualmente:
