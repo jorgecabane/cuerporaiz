@@ -37,7 +37,7 @@ test.describe("Planes y checkout", () => {
     await page.getByLabel(/contraseña/i).fill(password);
     await page.getByRole("button", { name: /entrar/i }).click();
 
-    await page.goto("/panel");
+    await expect(page).toHaveURL(/\/panel/);
     await expect(page.getByRole("link", { name: /Planes y comprar/i })).toBeVisible();
     await page.getByRole("link", { name: /Planes y comprar/i }).click();
     await expect(page).toHaveURL(/\/planes/);
