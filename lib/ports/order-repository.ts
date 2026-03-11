@@ -33,9 +33,15 @@ export interface CreateOrderInput {
   mpPreferenceId?: string | null;
 }
 
+export interface OrderListFilters {
+  status?: OrderStatus;
+}
+
 export interface IOrderRepository {
   create(data: CreateOrderInput): Promise<Order>;
+  findById(id: string): Promise<Order | null>;
   findByExternalReference(externalReference: string): Promise<Order | null>;
   findByMpPaymentId(mpPaymentId: string): Promise<Order | null>;
   updateStatus(id: string, status: OrderStatus, mpPaymentId?: string | null): Promise<Order>;
+  findManyByCenterId(centerId: string, filters?: OrderListFilters): Promise<Order[]>;
 }

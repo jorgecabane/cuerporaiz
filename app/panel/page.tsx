@@ -54,6 +54,14 @@ export default async function PanelPage() {
           >
             Planes y comprar
           </Link>
+          {user.role === "ADMINISTRADORA" && (
+            <Link
+              href="/panel/pagos"
+              className="rounded-[var(--radius-md)] bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-primary-hover)]"
+            >
+              Pagos (admin)
+            </Link>
+          )}
           <form
             action={async () => {
               "use server";

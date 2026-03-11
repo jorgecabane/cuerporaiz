@@ -1,4 +1,5 @@
 import type { IOrderRepository, Order, CreateOrderInput, OrderStatus } from "@/lib/ports";
+import type { OrderListFilters } from "@/lib/ports/order-repository";
 import { prisma } from "./prisma";
 import { OrderStatus as PrismaOrderStatus } from "@/lib/generated/prisma";
 
@@ -48,6 +49,11 @@ export const orderRepository: IOrderRepository = {
     return toDomain(o);
   },
 
+  async findById(id: string) {
+    const o = await prisma.order.findUnique({ where: { id } });
+    return o ? toDomain(o) : null;
+  },
+
   async findByExternalReference(externalReference: string) {
     const o = await prisma.order.findUnique({
       where: { externalReference },
@@ -71,5 +77,16 @@ export const orderRepository: IOrderRepository = {
       },
     });
     return toDomain(o);
+  },
+
+  async findManyByCenterId(centerId: string, filters?: OrderListFilters) {
+    const list = await prisma.order.findMany({
+      where: {
+        centerId,
+        ...(filters?.status != null && { status: filters.status as unknown as PrismaOrderStatus }),
+      },
+      orderBy: { createdAt: "desc" },
+    });
+    return list.map(toDomain);
   },
 };
