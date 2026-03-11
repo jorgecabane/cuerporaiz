@@ -1,0 +1,61 @@
+import type { IUserRepository, CreateUserInput } from "@/lib/ports";
+import type { User } from "@/lib/domain";
+import type { Role } from "@/lib/domain/role";
+import type { CenterId } from "@/lib/domain/user";
+import { prisma } from "./prisma";
+import { Role as PrismaRole } from "@/lib/generated/prisma";
+
+function toDomainRole(r: PrismaRole): Role {
+  return r as unknown as Role;
+}
+
+function toDomainUser(u: { id: string; email: string; name: string | null; createdAt: Date; updatedAt: Date }): User {
+  return {
+    id: u.id,
+    email: u.email,
+    name: u.name,
+    createdAt: u.createdAt,
+    updatedAt: u.updatedAt,
+  };
+}
+
+export const userRepository: IUserRepository = {
+  async create(data: CreateUserInput) {
+    const u = await prisma.user.create({
+      data: {
+        email: data.email,
+        passwordHash: data.passwordHash,
+        name: data.name ?? null,
+      },
+    });
+    return toDomainUser(u);
+  },
+
+  async findByEmail(email: string) {
+    const u = await prisma.user.findUnique({ where: { email } });
+    return u ? toDomainUser(u) : null;
+  },
+
+  async findById(id: string) {
+    const u = await prisma.user.findUnique({ where: { id } });
+    return u ? toDomainUser(u) : null;
+  },
+
+  async findByIdWithMemberships(id: string) {
+    const u = await prisma.user.findUnique({
+      where: { id },
+      include: { memberships: true },
+    });
+    if (!u) return null;
+    return {
+      ...toDomainUser(u),
+      memberships: u.memberships.map((m) => ({ centerId: m.centerId as CenterId, role: toDomainRole(m.role) })),
+    };
+  },
+
+  async addRole(userId: string, centerId: CenterId, role: Role) {
+    await prisma.userCenterRole.create({
+      data: { userId, centerId, role: role as unknown as PrismaRole },
+    });
+  },
+};

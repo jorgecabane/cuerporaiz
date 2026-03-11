@@ -1,0 +1,56 @@
+// CuerpoRaíz — DB: SQLite para dev. Para producción usar Postgres (mismo esquema, cambiar provider y DATABASE_URL).
+// https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// ─── Tenants (centros) ─────────────────────────────────────────────────────
+model Center {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  memberships UserCenterRole[]
+}
+
+// ─── Usuarios (sin datos de infra; dominio puro en lib/domain) ──────────────
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  passwordHash String
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  memberships UserCenterRole[]
+}
+
+// Rol por centro (multi-tenant RBAC)
+enum Role {
+  ADMINISTRADORA
+  PROFESORA
+  ALUMNA
+}
+
+model UserCenterRole {
+  id        String   @id @default(cuid())
+  userId    String
+  centerId  String
+  role      Role
+  createdAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  center Center @relation(fields: [centerId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, centerId])
+  @@index([userId])
+  @@index([centerId])
+}

@@ -23,4 +23,6 @@ export const CTAS = {
   accederContenido: "Acceder al contenido",
   hablemos: "Hablemos",
   clasePrueba: "Agenda una clase de prueba",
+  entrar: "Entrar",
+  miCuenta: "Mi cuenta",
 } as const;
