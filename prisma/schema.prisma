@@ -15,10 +15,14 @@ model Center {
   id        String   @id @default(cuid())
   name      String
   slug      String   @unique
+  // Políticas del centro (tenant)
+  cancelBeforeHours   Int      @default(12)  // horas antes para cancelar sin consumir clase
+  maxNoShowsPerMonth  Int      @default(2)  // no-shows máximos antes de advertencia/bloqueo
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  memberships UserCenterRole[]
+  memberships     UserCenterRole[]
+  liveClasses     LiveClass[]
 }
 
 // ─── Usuarios (sin datos de infra; dominio puro en lib/domain) ──────────────
@@ -31,6 +35,49 @@ model User {
   updatedAt DateTime @updatedAt
 
   memberships UserCenterRole[]
+  reservations Reservation[]
+}
+
+// ─── Clases en vivo (por centro) ───────────────────────────────────────────
+model LiveClass {
+  id              String   @id @default(cuid())
+  centerId        String
+  title           String
+  startsAt        DateTime
+  durationMinutes Int      @default(60)
+  maxCapacity     Int      @default(20)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  center       Center        @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  reservations Reservation[]
+
+  @@index([centerId])
+  @@index([startsAt])
+}
+
+// Estados de reserva
+enum ReservationStatus {
+  CONFIRMED   // Confirmada
+  CANCELLED   // Cancelada
+  ATTENDED    // Asistió
+  NO_SHOW     // No asistió
+}
+
+model Reservation {
+  id         String           @id @default(cuid())
+  userId     String
+  liveClassId String
+  status     ReservationStatus @default(CONFIRMED)
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  liveClass LiveClass @relation(fields: [liveClassId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, liveClassId])
+  @@index([userId])
+  @@index([liveClassId])
 }
 
 // Rol por centro (multi-tenant RBAC)

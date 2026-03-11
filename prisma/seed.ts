@@ -44,6 +44,35 @@ async function main() {
     update: {},
   });
 
+  // Clases live de ejemplo para reservas (solo si no hay ninguna)
+  const existingClass = await prisma.liveClass.findFirst({ where: { centerId: center.id } });
+  if (!existingClass) {
+    const inTwoDays = new Date();
+    inTwoDays.setDate(inTwoDays.getDate() + 2);
+    inTwoDays.setHours(10, 0, 0, 0);
+    const inThreeDays = new Date();
+    inThreeDays.setDate(inThreeDays.getDate() + 3);
+    inThreeDays.setHours(18, 0, 0, 0);
+    await prisma.liveClass.createMany({
+      data: [
+        {
+          centerId: center.id,
+          title: "Vinyasa Flow",
+          startsAt: inTwoDays,
+          durationMinutes: 60,
+          maxCapacity: 10,
+        },
+        {
+          centerId: center.id,
+          title: "Yin Yoga",
+          startsAt: inThreeDays,
+          durationMinutes: 75,
+          maxCapacity: 8,
+        },
+      ],
+    });
+  }
+
   console.log("Seed OK: center", center.slug, "user", user.email, "role ADMINISTRADORA");
 }
 

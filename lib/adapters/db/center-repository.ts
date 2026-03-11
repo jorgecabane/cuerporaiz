@@ -2,11 +2,21 @@ import type { ICenterRepository } from "@/lib/ports";
 import type { Center } from "@/lib/domain";
 import { prisma } from "./prisma";
 
-function toDomainCenter(c: { id: string; name: string; slug: string; createdAt: Date; updatedAt: Date }): Center {
+function toDomainCenter(c: {
+  id: string;
+  name: string;
+  slug: string;
+  cancelBeforeHours: number;
+  maxNoShowsPerMonth: number;
+  createdAt: Date;
+  updatedAt: Date;
+}): Center {
   return {
     id: c.id,
     name: c.name,
     slug: c.slug,
+    cancelBeforeHours: c.cancelBeforeHours,
+    maxNoShowsPerMonth: c.maxNoShowsPerMonth,
     createdAt: c.createdAt,
     updatedAt: c.updatedAt,
   };
