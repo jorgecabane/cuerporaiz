@@ -10,4 +10,7 @@ export interface MercadoPagoConfig {
 
 export interface IMercadoPagoConfigRepository {
   findByCenterId(centerId: string): Promise<MercadoPagoConfig | null>;
+  /** Para panel admin: estado del plugin sin requerir enabled. No expone secretos. */
+  findStatusByCenterId(centerId: string): Promise<{ enabled: boolean; hasCredentials: boolean } | null>;
+  updateEnabled(centerId: string, enabled: boolean): Promise<void>;
 }
