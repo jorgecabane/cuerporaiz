@@ -86,6 +86,14 @@ export function Header() {
             >
               {CTAS.comenzarPractica}
             </Link>
+            <Link
+              href="/auth/login"
+              className={`text-sm font-medium transition-colors duration-[var(--duration-normal)] hover:text-[var(--color-secondary)] ${
+                solid ? "text-[var(--color-text-muted)]" : "text-white/80"
+              }`}
+            >
+              {CTAS.entrar}
+            </Link>
           </nav>
 
           {/* Hamburger */}
@@ -146,6 +154,13 @@ export function Header() {
                   className="rounded-[var(--radius-md)] border-2 border-[var(--color-secondary)] px-[var(--space-8)] py-[var(--space-4)] text-base font-medium text-[var(--color-secondary)] transition-all hover:bg-[var(--color-secondary)] hover:text-white"
                 >
                   {CTAS.comenzarPractica}
+                </Link>
+                <Link
+                  href="/auth/login"
+                  onClick={() => setIsOpen(false)}
+                  className="font-display text-2xl font-semibold text-white/70 transition-colors hover:text-white"
+                >
+                  {CTAS.entrar}
                 </Link>
               </motion.div>
             </nav>

@@ -4,10 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
+    "db:seed": "tsx prisma/seed.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
@@ -19,8 +20,10 @@
     "*.{ts,tsx}": "eslint"
   },
   "dependencies": {
+    "@prisma/adapter-better-sqlite3": "^7.4.2",
     "@prisma/client": "^7.4.2",
     "bcryptjs": "^3.0.3",
+    "better-sqlite3": "^12.6.2",
     "framer-motion": "^12.34.5",
     "lucide-react": "^0.576.0",
     "next": "16.1.6",
@@ -33,6 +36,7 @@
   "devDependencies": {
     "@playwright/test": "^1.58.2",
     "@tailwindcss/postcss": "^4",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
@@ -44,6 +48,7 @@
     "jsdom": "^28.1.0",
     "lint-staged": "^16.3.3",
     "tailwindcss": "^4",
+    "tsx": "^4.21.0",
     "typescript": "^5",
     "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^4.0.18"

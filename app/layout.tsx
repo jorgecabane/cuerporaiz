@@ -3,6 +3,7 @@ import { Cormorant_Garamond, DM_Sans } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/shared/Header";
 import { Footer } from "@/components/shared/Footer";
+import { AuthProvider } from "@/components/providers/AuthProvider";
 
 const fontDisplay = Cormorant_Garamond({
   variable: "--font-display",
@@ -32,6 +33,7 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className={`${fontDisplay.variable} ${fontSans.variable}`}>
+        <AuthProvider>
         <a
           href="#main"
           className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[200] focus:rounded-md focus:bg-[var(--color-primary)] focus:px-4 focus:py-2 focus:text-white"
@@ -41,6 +43,7 @@ export default function RootLayout({
         <Header />
         <main id="main">{children}</main>
         <Footer />
+        </AuthProvider>
       </body>
     </html>
   );
