@@ -40,3 +40,4 @@ git add . && git commit -m "test: pre-commit"
 
 - Comando: `npm run e2e`
 - UI: `npm run e2e:ui`
+- **Puerto:** por defecto 3000. En pre-commit se usa `E2E_PORT=3001` para no chocar con un `npm run dev` en 3000. Si necesitas otro puerto: `E2E_PORT=3002 npm run e2e`.

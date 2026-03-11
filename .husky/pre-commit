@@ -2,4 +2,4 @@ npx lint-staged
 npx prisma generate
 npm run typecheck
 npm run test
-npm run e2e
+E2E_PORT=3001 npm run e2e
