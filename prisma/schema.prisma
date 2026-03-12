@@ -85,7 +85,7 @@ model Reservation {
   @@index([liveClassId])
 }
 
-// Per-center role (multi-tenant RBAC). Values in English for code consistency.
+// Rol por centro (multi-tenant RBAC). Valores en inglés para consistencia con BD.
 enum Role {
   ADMINISTRATOR
   INSTRUCTOR

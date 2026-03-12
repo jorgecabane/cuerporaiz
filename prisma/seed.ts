@@ -2,7 +2,6 @@ import "dotenv/config";
 import { PrismaClient } from "../lib/generated/prisma";
 import { PrismaPg } from "@prisma/adapter-pg";
 import bcrypt from "bcryptjs";
-import { ADMIN_ROLE } from "../lib/domain";
 
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) {
@@ -40,7 +39,7 @@ async function main() {
     create: {
       userId: user.id,
       centerId: center.id,
-      role: ADMIN_ROLE,
+      role: "ADMINISTRATOR",
     },
     update: {},
   });
@@ -74,7 +73,7 @@ async function main() {
     });
   }
 
-  console.log("Seed OK: center", center.slug, "user", user.email, "role", ADMIN_ROLE);
+  console.log("Seed OK: center", center.slug, "user", user.email, "role ADMINISTRATOR");
 
   const existingConfig = await prisma.centerMercadoPagoConfig.findUnique({
     where: { centerId: center.id },

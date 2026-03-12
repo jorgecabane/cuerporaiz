@@ -53,4 +53,5 @@ export interface IOrderRepository {
   findByMpPaymentId(mpPaymentId: string): Promise<Order | null>;
   updateStatus(id: string, status: OrderStatus, mpPaymentId?: string | null): Promise<Order>;
   findManyByCenterId(centerId: string, filters?: OrderListFilters): Promise<Order[]>;
+  findManyByUserIdAndCenterId(userId: string, centerId: string): Promise<Order[]>;
 }

@@ -50,12 +50,32 @@ export default async function PanelPage() {
             Planes y comprar
           </Link>
           {isAdminRole(user.role) && (
-            <Link
-              href="/panel/pagos"
-              className="rounded-[var(--radius-md)] bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-primary-hover)]"
-            >
-              Pagos (admin)
-            </Link>
+            <>
+              <Link
+                href="/panel/clientes"
+                className="rounded-[var(--radius-md)] bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-primary-hover)]"
+              >
+                Clientes (admin)
+              </Link>
+              <Link
+                href="/panel/plugins"
+                className="rounded-[var(--radius-md)] bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-primary-hover)]"
+              >
+                Plugins
+              </Link>
+              <Link
+                href="/panel/planes"
+                className="rounded-[var(--radius-md)] bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-primary-hover)]"
+              >
+                Planes (admin)
+              </Link>
+              <Link
+                href="/panel/pagos"
+                className="rounded-[var(--radius-md)] bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-primary-hover)]"
+              >
+                Pagos (admin)
+              </Link>
+            </>
           )}
           <form
             action={async () => {

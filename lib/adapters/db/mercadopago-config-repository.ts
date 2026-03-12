@@ -22,4 +22,22 @@ export const mercadopagoConfigRepository: IMercadoPagoConfigRepository = {
     });
     return config && config.enabled ? toDomain(config) : null;
   },
+
+  async findStatusByCenterId(centerId: string) {
+    const config = await prisma.centerMercadoPagoConfig.findUnique({
+      where: { centerId },
+    });
+    if (!config) return null;
+    return {
+      enabled: config.enabled,
+      hasCredentials: Boolean(config.accessToken?.trim()),
+    };
+  },
+
+  async updateEnabled(centerId: string, enabled: boolean) {
+    await prisma.centerMercadoPagoConfig.update({
+      where: { centerId },
+      data: { enabled },
+    });
+  },
 };

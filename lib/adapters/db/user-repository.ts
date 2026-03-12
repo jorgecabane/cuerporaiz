@@ -53,6 +53,18 @@ export const userRepository: IUserRepository = {
     };
   },
 
+  async findManyByCenterId(centerId: CenterId) {
+    const memberships = await prisma.userCenterRole.findMany({
+      where: { centerId },
+      include: { user: true },
+      orderBy: { user: { email: "asc" } },
+    });
+    return memberships.map((m) => ({
+      ...toDomainUser(m.user),
+      role: toDomainRole(m.role),
+    }));
+  },
+
   async addRole(userId: string, centerId: CenterId, role: Role) {
     await prisma.userCenterRole.create({
       data: { userId, centerId, role: role as unknown as PrismaRole },

@@ -1,19 +1,19 @@
 /**
- * User role within a center (tenant).
- * Values must match Prisma Role enum. All identifiers in English.
+ * Rol de usuario en un centro (tenant).
+ * Valores alineados con el enum de Prisma (inglés). Usar constantes/funciones; no literales.
  */
-export const ROLES = ["ADMINISTRATOR", "INSTRUCTOR", "STUDENT"] as const;
+export type Role = "ADMINISTRATOR" | "INSTRUCTOR" | "STUDENT";
 
-export type Role = (typeof ROLES)[number];
+export const ROLES: Role[] = ["ADMINISTRATOR", "INSTRUCTOR", "STUDENT"];
 
-/** Role that can access admin panel (plugins, plans, clients, payments). */
+/** Rol que puede acceder al panel de administración. */
 export const ADMIN_ROLE: Role = "ADMINISTRATOR";
 
-/** Labels for UI. Use i18n in the future if needed. */
+/** Etiquetas para UI. Tipado para no olvidar ningún rol. */
 export const ROLE_LABELS: Record<Role, string> = {
-  ADMINISTRATOR: "Administrator",
-  INSTRUCTOR: "Instructor",
-  STUDENT: "Student",
+  ADMINISTRATOR: "Administradora",
+  INSTRUCTOR: "Profesora",
+  STUDENT: "Alumna",
 };
 
 export function isRole(value: string): value is Role {
@@ -24,5 +24,5 @@ export function isAdminRole(role: Role): boolean {
   return role === ADMIN_ROLE;
 }
 
-/** Role assigned by default on signup. */
+/** Rol por defecto en signup. */
 export const DEFAULT_SIGNUP_ROLE: Role = "STUDENT";
