@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { isAdminRole } from "@/lib/domain/role";
 import { mercadopagoConfigRepository } from "@/lib/adapters/db";
 import { ToggleMercadoPagoForm } from "./toggle-mercadopago-form";
 
@@ -9,7 +10,7 @@ export default async function PanelPluginsPage() {
   if (!session?.user) {
     redirect("/auth/login?callbackUrl=/panel/plugins");
   }
-  if (session.user.role !== "ADMINISTRADORA") {
+  if (!isAdminRole(session.user.role)) {
     redirect("/panel");
   }
 

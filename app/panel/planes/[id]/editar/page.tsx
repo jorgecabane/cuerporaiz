@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { redirect, notFound } from "next/navigation";
 import { planRepository } from "@/lib/adapters/db";
+import { isAdminRole } from "@/lib/domain/role";
 import { Button } from "@/components/ui/Button";
 import { PlanFormEdit } from "./PlanFormEdit";
 
@@ -13,7 +14,7 @@ export default async function PanelPlanesEditarPage({
 }) {
   const session = await auth();
   if (!session?.user) redirect("/auth/login?callbackUrl=/panel/planes");
-  if (session.user.role !== "ADMINISTRADORA") redirect("/panel");
+  if (!isAdminRole(session.user.role)) redirect("/panel");
   const centerId = session.user.centerId as string;
   const { id } = await params;
   const { error } = await searchParams;

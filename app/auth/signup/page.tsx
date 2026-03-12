@@ -27,7 +27,7 @@ export default function SignupPage() {
           password,
           name: name || undefined,
           centerId,
-          role: "ALUMNA",
+          role: "STUDENT",
         }),
       });
       const data = await res.json().catch(() => ({}));

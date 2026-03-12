@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { planRepository } from "@/lib/adapters/db";
+import { isAdminRole } from "@/lib/domain/role";
 import { Button } from "@/components/ui/Button";
 import { DeletePlanForm } from "./DeletePlanForm";
 
@@ -18,7 +19,7 @@ const TYPE_LABELS: Record<string, string> = {
 export default async function PanelPlanesPage() {
   const session = await auth();
   if (!session?.user) redirect("/auth/login?callbackUrl=/panel/planes");
-  if (session.user.role !== "ADMINISTRADORA") redirect("/panel");
+  if (!isAdminRole(session.user.role)) redirect("/panel");
   const centerId = session.user.centerId as string;
   const plans = await planRepository.findManyByCenterId(centerId);
 
