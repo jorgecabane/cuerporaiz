@@ -10,6 +10,10 @@ export interface Center {
   slug: string;
   cancelBeforeHours: number;
   maxNoShowsPerMonth: number;
+  bookBeforeHours: number;
+  notifyWhenSlotFreed: boolean;
+  instructorCanReserveForStudent: boolean;
+  allowTrialClassPerPerson: boolean;
   createdAt: Date;
   updatedAt: Date;
 }

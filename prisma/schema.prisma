@@ -17,7 +17,11 @@ model Center {
   slug      String   @unique
   // Políticas del centro (tenant)
   cancelBeforeHours   Int      @default(12)  // horas antes para cancelar sin consumir clase
-  maxNoShowsPerMonth  Int      @default(2)  // no-shows máximos antes de advertencia/bloqueo
+  maxNoShowsPerMonth   Int      @default(2)   // no-shows máximos antes de advertencia/bloqueo
+  bookBeforeHours      Int      @default(24)  // ventana para reservar: hasta X horas antes del inicio
+  notifyWhenSlotFreed  Boolean  @default(true)  // avisar cuando se libera un cupo
+  instructorCanReserveForStudent Boolean @default(true)  // profesora puede reservar en nombre de alumna
+  allowTrialClassPerPerson Boolean @default(true)  // una clase de prueba por persona
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

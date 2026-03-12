@@ -1,5 +1,5 @@
 export type { IUserRepository, CreateUserInput, UserWithCenterRole } from "./user-repository";
-export type { ICenterRepository } from "./center-repository";
+export type { ICenterRepository, CenterPoliciesUpdate } from "./center-repository";
 export type { IAuthService, AuthResult } from "./auth-service";
 export type { IEmailProvider } from "./email-provider";
 export type { ILiveClassRepository } from "./live-class-repository";

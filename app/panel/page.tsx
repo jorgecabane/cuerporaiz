@@ -58,6 +58,12 @@ export default async function PanelPage() {
                 Clientes (admin)
               </Link>
               <Link
+                href="/panel/politicas"
+                className="rounded-[var(--radius-md)] bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-primary-hover)]"
+              >
+                Políticas del centro
+              </Link>
+              <Link
                 href="/panel/plugins"
                 className="rounded-[var(--radius-md)] bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-primary-hover)]"
               >
