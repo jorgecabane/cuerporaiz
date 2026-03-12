@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { isAdminRole } from "@/lib/domain/role";
 import { Button } from "@/components/ui/Button";
 import { PlanFormCreate } from "./PlanFormCreate";
 
@@ -11,7 +12,7 @@ export default async function PanelPlanesNuevoPage({
 }) {
   const session = await auth();
   if (!session?.user) redirect("/auth/login?callbackUrl=/panel/planes/nuevo");
-  if (session.user.role !== "ADMINISTRADORA") redirect("/panel");
+  if (!isAdminRole(session.user.role)) redirect("/panel");
   const { error } = await searchParams;
 
   return (

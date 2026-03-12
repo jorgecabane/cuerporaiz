@@ -39,7 +39,7 @@ async function main() {
     create: {
       userId: user.id,
       centerId: center.id,
-      role: "ADMINISTRADORA",
+      role: "ADMINISTRATOR",
     },
     update: {},
   });
@@ -73,7 +73,7 @@ async function main() {
     });
   }
 
-  console.log("Seed OK: center", center.slug, "user", user.email, "role ADMINISTRADORA");
+  console.log("Seed OK: center", center.slug, "user", user.email, "role ADMINISTRATOR");
 
   const existingConfig = await prisma.centerMercadoPagoConfig.findUnique({
     where: { centerId: center.id },

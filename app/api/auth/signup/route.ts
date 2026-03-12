@@ -34,7 +34,7 @@ export async function POST(request: Request) {
 
     const passwordHash = await authService.hashPassword(password);
     const user = await userRepository.create({ email, passwordHash, name });
-    const assignRole = (role && isRole(role)) ? role : "ALUMNA";
+    const assignRole = (role && isRole(role)) ? role : "STUDENT";
     await userRepository.addRole(user.id, center.id, assignRole);
 
     return NextResponse.json(

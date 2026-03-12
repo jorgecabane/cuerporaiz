@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 
 /**
- * Panel admin - Planes (CRUD). Solo rol ADMINISTRADORA.
+ * Panel admin - Planes (CRUD). Solo rol ADMINISTRATOR (admin).
  * Verifica: redirect si no admin, admin llega a /panel/planes y ve el listado o vacío.
  */
 test.describe("Panel admin - Planes", () => {
