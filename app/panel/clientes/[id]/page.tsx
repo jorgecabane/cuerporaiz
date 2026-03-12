@@ -4,13 +4,8 @@ import Link from "next/link";
 import { userRepository } from "@/lib/adapters/db";
 import { orderRepository } from "@/lib/adapters/db";
 import { planRepository } from "@/lib/adapters/db";
+import { ROLE_LABELS, isAdminRole } from "@/lib/domain";
 import { Button } from "@/components/ui/Button";
-
-const ROLE_LABELS: Record<string, string> = {
-  ADMINISTRADORA: "Administradora",
-  PROFESORA: "Profesora",
-  ALUMNA: "Alumna",
-};
 
 const ORDER_STATUS_LABELS: Record<string, string> = {
   PENDING: "Pendiente",
@@ -32,7 +27,7 @@ export default async function PanelClientesDetallePage({
 }) {
   const session = await auth();
   if (!session?.user) redirect("/auth/login?callbackUrl=/panel/clientes");
-  if (session.user.role !== "ADMINISTRADORA") redirect("/panel");
+  if (!isAdminRole(session.user.role)) redirect("/panel");
   const centerId = session.user.centerId as string;
   const { id: userId } = await params;
 

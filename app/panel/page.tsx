@@ -2,12 +2,7 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { signOut } from "@/auth";
-
-const ROLE_LABELS: Record<string, string> = {
-  ADMINISTRADORA: "Administradora",
-  PROFESORA: "Profesora",
-  ALUMNA: "Alumna",
-};
+import { ROLE_LABELS, isAdminRole } from "@/lib/domain";
 
 export default async function PanelPage() {
   const session = await auth();
@@ -15,7 +10,7 @@ export default async function PanelPage() {
     redirect("/auth/login?callbackUrl=/panel");
   }
   const { user } = session;
-  const roleLabel = ROLE_LABELS[user.role] ?? user.role;
+  const roleLabel = ROLE_LABELS[user.role];
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-12">
@@ -54,13 +49,27 @@ export default async function PanelPage() {
           >
             Planes y comprar
           </Link>
-          {user.role === "ADMINISTRADORA" && (
-            <Link
-              href="/panel/clientes"
-              className="rounded-[var(--radius-md)] bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-primary-hover)]"
-            >
-              Clientes (admin)
-            </Link>
+          {isAdminRole(user.role) && (
+            <>
+              <Link
+                href="/panel/clientes"
+                className="rounded-[var(--radius-md)] bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-primary-hover)]"
+              >
+                Clientes (admin)
+              </Link>
+              <Link
+                href="/panel/plugins"
+                className="rounded-[var(--radius-md)] bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-primary-hover)]"
+              >
+                Plugins
+              </Link>
+              <Link
+                href="/panel/planes"
+                className="rounded-[var(--radius-md)] bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-primary-hover)]"
+              >
+                Planes (admin)
+              </Link>
+            </>
           )}
           <form
             action={async () => {

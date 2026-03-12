@@ -2,18 +2,13 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { userRepository } from "@/lib/adapters/db";
+import { ROLE_LABELS, isAdminRole } from "@/lib/domain";
 import { Button } from "@/components/ui/Button";
-
-const ROLE_LABELS: Record<string, string> = {
-  ADMINISTRADORA: "Administradora",
-  PROFESORA: "Profesora",
-  ALUMNA: "Alumna",
-};
 
 export default async function PanelClientesPage() {
   const session = await auth();
   if (!session?.user) redirect("/auth/login?callbackUrl=/panel/clientes");
-  if (session.user.role !== "ADMINISTRADORA") redirect("/panel");
+  if (!isAdminRole(session.user.role)) redirect("/panel");
   const centerId = session.user.centerId as string;
   const clients = await userRepository.findManyByCenterId(centerId);
 

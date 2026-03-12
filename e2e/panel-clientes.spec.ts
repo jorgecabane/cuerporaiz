@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 
 /**
- * Panel admin - Clientes (listado/detalle). Solo rol ADMINISTRADORA.
+ * Panel admin - Clientes (listado/detalle). Solo rol ADMINISTRATOR (admin).
  */
 test.describe("Panel admin - Clientes", () => {
   const email = process.env.E2E_USER_EMAIL ?? "admin@cuerporaiz.cl";

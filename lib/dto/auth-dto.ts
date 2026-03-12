@@ -17,7 +17,7 @@ export const signupBodySchema = z.object({
   password: z.string().min(8, "Mínimo 8 caracteres"),
   name: z.string().max(200).optional(),
   centerId: z.string().min(1, "Centro requerido"),
-  role: z.enum(["ALUMNA", "PROFESORA", "ADMINISTRADORA"]).optional(),
+  role: z.enum(["STUDENT", "INSTRUCTOR", "ADMINISTRATOR"]).optional(),
 });
 
 export type SignupBody = z.infer<typeof signupBodySchema>;

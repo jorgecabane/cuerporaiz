@@ -6,6 +6,6 @@ export type { ILiveClassRepository } from "./live-class-repository";
 export type { IReservationRepository } from "./reservation-repository";
 export type { IPaymentProvider } from "./payment-provider";
 export type { IMercadoPagoConfigRepository, MercadoPagoConfig } from "./mercadopago-config-repository";
-export type { IPlanRepository, Plan, PlanType } from "./plan-repository";
+export type { IPlanRepository, Plan, PlanType, PlanCreateInput, PlanUpdateInput } from "./plan-repository";
 export type { IOrderRepository, Order, OrderStatus, CreateOrderInput } from "./order-repository";
 export type { IWebhookEventRepository } from "./webhook-event-repository";
