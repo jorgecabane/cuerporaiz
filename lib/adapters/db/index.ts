@@ -7,3 +7,4 @@ export { mercadopagoConfigRepository } from "./mercadopago-config-repository";
 export { planRepository } from "./plan-repository";
 export { orderRepository } from "./order-repository";
 export { webhookEventRepository } from "./webhook-event-repository";
+export { subscriptionRepository } from "./subscription-repository";

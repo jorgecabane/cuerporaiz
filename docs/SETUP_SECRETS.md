@@ -111,6 +111,11 @@ La URL de webhook es por centro: `https://tu-dominio.com/api/webhooks/mercadopag
 - Nunca se almacenan ni manejan datos de tarjeta; el pago se realiza en la página de MercadoPago (Checkout Pro).
 - Los webhooks validan la firma `x-signature` con el secret del centro y usan idempotencia por `x-request-id`.
 
+### Suscripciones (membresía recurrente)
+
+- Misma configuración por centro (`CenterMercadoPagoConfig`). La suscripción se crea con la API de Preapproval de MP; el usuario autoriza en la URL que devuelve MP (init_point).
+- La URL de retorno tras autorizar va a `/api/subscribe/success`, `/api/subscribe/failure` o `/api/subscribe/pending`. Los eventos de cobro recurrente pueden llegar por el mismo webhook del centro; en una próxima iteración se puede extender el handler para actualizar estado de suscripción (ACTIVE, PAST_DUE, etc.).
+
 ---
 
 ## 5. Email (Resend)

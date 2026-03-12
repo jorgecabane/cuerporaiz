@@ -53,10 +53,13 @@ export default async function PlanesPage() {
                 )}
                 <p className="mt-2 font-medium text-[var(--color-primary)]">
                   {formatPrice(plan.amountCents, plan.currency)}
+                  {plan.type === "MEMBERSHIP" && (
+                    <span className="text-sm font-normal text-[var(--color-text-muted)]"> / mes</span>
+                  )}
                 </p>
               </div>
               <Suspense fallback={<Button disabled>...</Button>}>
-                <ComprarPlanButton planId={plan.id} planName={plan.name} />
+                <ComprarPlanButton planId={plan.id} planName={plan.name} planType={plan.type} />
               </Suspense>
             </li>
           ))}

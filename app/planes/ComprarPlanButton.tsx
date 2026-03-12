@@ -2,36 +2,43 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
+import type { PlanType } from "@/lib/ports";
 
 export function ComprarPlanButton({
   planId,
   planName,
+  planType,
 }: {
   planId: string;
   planName: string;
+  planType?: PlanType;
 }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const isMembership = planType === "MEMBERSHIP";
 
   async function handleClick() {
     setLoading(true);
     setError(null);
+    const endpoint = isMembership ? "/api/subscribe" : "/api/checkout";
+    const payload = { planId };
     try {
-      const res = await fetch("/api/checkout", {
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ planId }),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.message ?? "Error al crear el checkout");
+        setError(data.message ?? (isMembership ? "Error al suscribirte" : "Error al crear el checkout"));
         return;
       }
-      if (data.checkoutUrl) {
-        window.location.href = data.checkoutUrl;
+      const url = isMembership ? data.redirectUrl : data.checkoutUrl;
+      if (url) {
+        window.location.href = url;
         return;
       }
-      setError("No se recibió URL de pago");
+      setError(isMembership ? "No se recibió URL de suscripción" : "No se recibió URL de pago");
     } catch {
       setError("Error de conexión");
     } finally {
@@ -47,7 +54,11 @@ export function ComprarPlanButton({
         disabled={loading}
         onClick={handleClick}
       >
-        {loading ? "Redirigiendo a MercadoPago…" : "Comprar"}
+        {loading
+          ? "Redirigiendo a MercadoPago…"
+          : isMembership
+            ? "Suscribirse"
+            : "Comprar"}
       </Button>
       {error && (
         <p className="text-sm text-red-600" role="alert">

@@ -10,3 +10,10 @@ export type { IPlanRepository, Plan, PlanType, PlanCreateInput, PlanUpdateInput 
 export type { IOrderRepository, Order, OrderStatus, CreateOrderInput, OrderListFilters } from "./order-repository";
 export { ORDER_STATUS_LABELS } from "./order-repository";
 export type { IWebhookEventRepository } from "./webhook-event-repository";
+export type { ISubscriptionProvider } from "./subscription-provider";
+export type {
+  ISubscriptionRepository,
+  Subscription,
+  SubscriptionStatus,
+  CreateSubscriptionInput,
+} from "./subscription-repository";

@@ -26,6 +26,7 @@ model Center {
   mercadopagoConfig CenterMercadoPagoConfig?
   plans           Plan[]
   orders          Order[]
+  subscriptions   Subscription[]
   webhookEvents   MercadoPagoWebhookEvent[]
 }
 
@@ -38,9 +39,10 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  memberships UserCenterRole[]
-  reservations Reservation[]
-  orders     Order[]
+  memberships    UserCenterRole[]
+  reservations  Reservation[]
+  orders        Order[]
+  subscriptions Subscription[]
 }
 
 // ─── Clases en vivo (por centro) ───────────────────────────────────────────
@@ -137,8 +139,9 @@ model Plan {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  center Center @relation(fields: [centerId], references: [id], onDelete: Cascade)
-  orders Order[]
+  center        Center         @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  orders        Order[]
+  subscriptions Subscription[]
 
   @@unique([centerId, slug])
   @@index([centerId])
@@ -174,6 +177,37 @@ model Order {
   @@index([userId])
   @@index([externalReference])
   @@index([mpPaymentId])
+}
+
+// ─── Membresía recurrente (suscripción MP por centro) ───────────────────────
+enum SubscriptionStatus {
+  PENDING   // Creada, usuario aún no autorizó pago en MP
+  ACTIVE    // Autorizada, período vigente
+  PAUSED    // Congelada hasta pausedUntil
+  CANCELLED // Baja solicitada o cancelada en MP
+  PAST_DUE  // Pago fallido, MP reintentando
+}
+
+model Subscription {
+  id                 String             @id @default(cuid())
+  centerId           String
+  userId             String
+  planId             String
+  status             SubscriptionStatus @default(PENDING)
+  mpPreapprovalId    String?            // ID de la preapproval en MercadoPago
+  currentPeriodStart DateTime?          // Inicio del período actual
+  currentPeriodEnd   DateTime?          // Fin del período actual (acceso hasta esta fecha)
+  pausedUntil        DateTime?          // Si PAUSED, acceso hasta esta fecha; después se reanuda o cancela
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  center Center @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan   Plan   @relation(fields: [planId], references: [id], onDelete: Restrict)
+
+  @@index([centerId])
+  @@index([userId])
+  @@index([mpPreapprovalId])
 }
 
 model MercadoPagoWebhookEvent {

@@ -49,6 +49,12 @@ export default async function PanelPage() {
           >
             Planes y comprar
           </Link>
+          <Link
+            href="/panel/membresia"
+            className="rounded-[var(--radius-md)] bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-primary-hover)]"
+          >
+            Mi membresía
+          </Link>
           {isAdminRole(user.role) && (
             <>
               <Link
