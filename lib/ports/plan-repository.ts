@@ -1,7 +1,10 @@
 /**
- * Plan de pago (pack o membresía) por centro.
+ * Plan de pago por centro.
+ * LIVE = con profe en vivo (físico o online). ON_DEMAND = grabado. MEMBERSHIP_ON_DEMAND = acceso videoteca.
  */
-export type PlanType = "PACK" | "MEMBERSHIP";
+export type PlanType = "LIVE" | "ON_DEMAND" | "MEMBERSHIP_ON_DEMAND";
+export type BillingMode = "ONE_TIME" | "RECURRING" | "BOTH";
+export type ValidityPeriod = "MONTHLY" | "QUARTERLY" | "QUADRIMESTRAL" | "SEMESTER" | "ANNUAL";
 
 export interface Plan {
   id: string;
@@ -12,6 +15,12 @@ export interface Plan {
   amountCents: number;
   currency: string;
   type: PlanType;
+  validityDays: number | null;
+  validityPeriod: ValidityPeriod | null;
+  billingMode: BillingMode | null;
+  maxReservations: number | null;       // null = ilimitado en el período
+  maxReservationsPerDay: number | null;
+  maxReservationsPerWeek: number | null;
 }
 
 export interface PlanCreateInput {
@@ -21,6 +30,12 @@ export interface PlanCreateInput {
   amountCents: number;
   currency?: string;
   type: PlanType;
+  validityDays?: number | null;
+  validityPeriod?: ValidityPeriod | null;
+  billingMode?: BillingMode | null;
+  maxReservations?: number | null;
+  maxReservationsPerDay?: number | null;
+  maxReservationsPerWeek?: number | null;
 }
 
 export interface PlanUpdateInput {
@@ -30,6 +45,12 @@ export interface PlanUpdateInput {
   amountCents?: number;
   currency?: string;
   type?: PlanType;
+  validityDays?: number | null;
+  validityPeriod?: ValidityPeriod | null;
+  billingMode?: BillingMode | null;
+  maxReservations?: number | null;
+  maxReservationsPerDay?: number | null;
+  maxReservationsPerWeek?: number | null;
 }
 
 export interface IPlanRepository {

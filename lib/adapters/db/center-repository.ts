@@ -5,6 +5,7 @@ function toDomainCenter(c: {
   id: string;
   name: string;
   slug: string;
+  currency: string;
   cancelBeforeHours: number;
   maxNoShowsPerMonth: number;
   bookBeforeHours: number;
@@ -18,6 +19,7 @@ function toDomainCenter(c: {
     id: c.id,
     name: c.name,
     slug: c.slug,
+    currency: c.currency ?? "CLP",
     cancelBeforeHours: c.cancelBeforeHours,
     maxNoShowsPerMonth: c.maxNoShowsPerMonth,
     bookBeforeHours: c.bookBeforeHours,

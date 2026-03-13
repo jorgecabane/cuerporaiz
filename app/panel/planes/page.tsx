@@ -1,6 +1,5 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { planRepository } from "@/lib/adapters/db";
 import { isAdminRole } from "@/lib/domain/role";
 import { Button } from "@/components/ui/Button";
@@ -12,8 +11,9 @@ function formatPrice(cents: number, currency: string): string {
 }
 
 const TYPE_LABELS: Record<string, string> = {
-  PACK: "Pack",
-  MEMBERSHIP: "Membresía",
+  LIVE: "Live",
+  ON_DEMAND: "On-demand",
+  MEMBERSHIP_ON_DEMAND: "Membresía on-demand",
 };
 
 export default async function PanelPlanesPage() {
@@ -34,13 +34,13 @@ export default async function PanelPlanesPage() {
         </Button>
       </div>
       <p className="text-[var(--color-text-muted)] mb-6">
-        Gestioná los planes de pago de este centro (packs y membresías).
+        Gestiona los planes de pago de este centro (packs y membresías).
       </p>
 
       {plans.length === 0 ? (
         <div className="rounded-[var(--radius-lg)] bg-[var(--color-surface)] p-6">
           <p className="text-[var(--color-text-muted)]">
-            No hay planes. Creá uno desde &quot;Nuevo plan&quot;.
+            No hay planes. Crea uno desde &quot;Nuevo plan&quot;.
           </p>
         </div>
       ) : (

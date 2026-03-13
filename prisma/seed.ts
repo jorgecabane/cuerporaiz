@@ -100,23 +100,28 @@ async function main() {
           centerId: center.id,
           name: "Pack 6 clases",
           slug: "pack-6",
-          description: "6 clases presenciales, 31 días de vigencia",
+          description: "6 clases presenciales u online, 31 días de vigencia",
           amountCents: 48000,
           currency: "CLP",
-          type: "PACK",
+          type: "LIVE",
+          validityDays: 31,
+          maxReservations: 6,
+          billingMode: "ONE_TIME",
         },
         {
           centerId: center.id,
           name: "Membresía mensual",
           slug: "membresia-mensual",
-          description: "Acceso a contenido online y clases",
+          description: "Acceso ilimitado a videoteca on-demand",
           amountCents: 15000,
           currency: "CLP",
-          type: "MEMBERSHIP",
+          type: "MEMBERSHIP_ON_DEMAND",
+          validityPeriod: "MONTHLY",
+          billingMode: "RECURRING",
         },
       ],
     });
-    console.log("Planes de ejemplo creados (Pack 6, Membresía mensual)");
+    console.log("Planes de ejemplo creados (Live 6 clases, Membresía mensual)");
   }
 }
 

@@ -1,7 +1,7 @@
 import type { IPlanRepository, Plan, PlanCreateInput, PlanUpdateInput } from "@/lib/ports";
-import type { PlanType } from "@/lib/ports/plan-repository";
+import type { PlanType, BillingMode, ValidityPeriod } from "@/lib/ports/plan-repository";
 import { prisma } from "./prisma";
-import { PlanType as PrismaPlanType } from "@/lib/generated/prisma";
+import { PlanType as PrismaPlanType, BillingMode as PrismaBillingMode, ValidityPeriod as PrismaValidityPeriod } from "@/lib/generated/prisma";
 
 function toDomain(p: {
   id: string;
@@ -12,6 +12,12 @@ function toDomain(p: {
   amountCents: number;
   currency: string;
   type: PrismaPlanType;
+  validityDays: number | null;
+  validityPeriod: PrismaValidityPeriod | null;
+  billingMode: PrismaBillingMode | null;
+  maxReservations: number | null;
+  maxReservationsPerDay: number | null;
+  maxReservationsPerWeek: number | null;
 }): Plan {
   return {
     id: p.id,
@@ -21,7 +27,13 @@ function toDomain(p: {
     description: p.description,
     amountCents: p.amountCents,
     currency: p.currency,
-    type: p.type as unknown as PlanType,
+    type: (p.type === "PACK" ? "LIVE" : p.type === "MEMBERSHIP" ? "MEMBERSHIP_ON_DEMAND" : p.type) as PlanType,
+    validityDays: p.validityDays,
+    validityPeriod: p.validityPeriod as unknown as ValidityPeriod | null,
+    billingMode: p.billingMode as unknown as BillingMode | null,
+    maxReservations: p.maxReservations,
+    maxReservationsPerDay: p.maxReservationsPerDay,
+    maxReservationsPerWeek: p.maxReservationsPerWeek,
   };
 }
 
@@ -56,6 +68,12 @@ export const planRepository: IPlanRepository = {
         amountCents: data.amountCents,
         currency: data.currency ?? "CLP",
         type: data.type as PrismaPlanType,
+        validityDays: data.validityDays ?? null,
+        validityPeriod: (data.validityPeriod ?? null) as PrismaValidityPeriod | null,
+        billingMode: (data.billingMode ?? null) as PrismaBillingMode | null,
+        maxReservations: data.maxReservations ?? null,
+        maxReservationsPerDay: data.maxReservationsPerDay ?? null,
+        maxReservationsPerWeek: data.maxReservationsPerWeek ?? null,
       },
     });
     return toDomain(p);
@@ -73,6 +91,12 @@ export const planRepository: IPlanRepository = {
         ...(data.amountCents != null && { amountCents: data.amountCents }),
         ...(data.currency != null && { currency: data.currency }),
         ...(data.type != null && { type: data.type as PrismaPlanType }),
+        ...(data.validityDays !== undefined && { validityDays: data.validityDays }),
+        ...(data.validityPeriod !== undefined && { validityPeriod: data.validityPeriod as PrismaValidityPeriod | null }),
+        ...(data.billingMode !== undefined && { billingMode: data.billingMode as PrismaBillingMode | null }),
+        ...(data.maxReservations !== undefined && { maxReservations: data.maxReservations }),
+        ...(data.maxReservationsPerDay !== undefined && { maxReservationsPerDay: data.maxReservationsPerDay }),
+        ...(data.maxReservationsPerWeek !== undefined && { maxReservationsPerWeek: data.maxReservationsPerWeek }),
       },
     });
     return toDomain(updated);

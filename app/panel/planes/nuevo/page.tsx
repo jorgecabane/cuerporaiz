@@ -1,6 +1,5 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { isAdminRole } from "@/lib/domain/role";
 import { Button } from "@/components/ui/Button";
 import { PlanFormCreate } from "./PlanFormCreate";
@@ -21,7 +20,7 @@ export default async function PanelPlanesNuevoPage({
         Nuevo plan
       </h1>
       <p className="text-[var(--color-text-muted)] mb-6">
-        Creá un plan de pago (pack o membresía) para este centro.
+        Crea un plan de pago (pack o membresía) para este centro.
       </p>
       <div className="rounded-[var(--radius-lg)] bg-[var(--color-surface)] p-6 shadow-[var(--shadow-md)]">
         <PlanFormCreate slugError={error === "slug"} />

@@ -2,7 +2,7 @@
 
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import { planRepository } from "@/lib/adapters/db";
+import { centerRepository, planRepository } from "@/lib/adapters/db";
 import { isAdminRole } from "@/lib/domain/role";
 import type { PlanCreateInput, PlanUpdateInput } from "@/lib/ports";
 
@@ -16,13 +16,14 @@ async function requireAdminCenterId(): Promise<string> {
 
 export async function createPlan(data: PlanCreateInput): Promise<void> {
   const centerId = await requireAdminCenterId();
+  const center = await centerRepository.findById(centerId);
   const existing = await planRepository.findByCenterAndSlug(centerId, data.slug);
   if (existing) {
     redirect(`/panel/planes/nuevo?error=slug`);
   }
   await planRepository.create(centerId, {
     ...data,
-    currency: data.currency ?? "CLP",
+    currency: data.currency ?? center?.currency ?? "CLP",
   });
   redirect("/panel/planes");
 }

@@ -15,6 +15,7 @@ model Center {
   id        String   @id @default(cuid())
   name      String
   slug      String   @unique
+  currency  String   @default("CLP")  // moneda del centro (localidad); usada en planes
   // Políticas del centro (tenant)
   cancelBeforeHours   Int      @default(12)  // horas antes para cancelar sin consumir clase
   maxNoShowsPerMonth   Int      @default(2)   // no-shows máximos antes de advertencia/bloqueo
@@ -124,9 +125,30 @@ model CenterMercadoPagoConfig {
   center Center @relation(fields: [centerId], references: [id], onDelete: Cascade)
 }
 
+// Live = con profe en vivo (físico o online). On-demand = grabado. Membresía = acceso videoteca.
+// PACK y MEMBERSHIP se mantienen por compatibilidad con datos existentes (mapear a LIVE y MEMBERSHIP_ON_DEMAND en app).
 enum PlanType {
   PACK
   MEMBERSHIP
+  LIVE
+  ON_DEMAND
+  MEMBERSHIP_ON_DEMAND
+}
+
+// Modalidad de cobro
+enum BillingMode {
+  ONE_TIME
+  RECURRING
+  BOTH
+}
+
+// Vigencia por período (1 período = mensual, trimestral, etc.)
+enum ValidityPeriod {
+  MONTHLY      // mensual
+  QUARTERLY    // trimestral
+  QUADRIMESTRAL // cuatrimestral
+  SEMESTER     // semestral
+  ANNUAL       // anual
 }
 
 model Plan {
@@ -138,6 +160,14 @@ model Plan {
   amountCents Int
   currency    String   @default("CLP")
   type        PlanType
+  // Vigencia: solo uno de los dos (por días O por período)
+  validityDays   Int?             // vigencia por días (ej. 15 días)
+  validityPeriod ValidityPeriod?  // vigencia por período (1 mensual, 1 trimestral, etc.)
+  billingMode    BillingMode?
+  // Cuántas veces puede asistir en el período: null = ilimitado
+  maxReservations       Int?
+  maxReservationsPerDay Int?  // distribución: máx por día
+  maxReservationsPerWeek Int? // distribución: máx por semana (ej. 8/mes, máx 4/semana)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
