@@ -10,6 +10,11 @@
   --color-secondary-hover:  #9E4F2F;
   --color-secondary-light:  rgba(184, 92, 56, 0.10);
   --color-tertiary:         #F5F0E9;
+  --color-success:          #16a34a;
+  --color-success-hover:    #15803d;
+  --color-error:            #dc2626;
+  --color-error-bg:        #fef2f2;
+  --color-error-text:       #991b1b;
   --color-text:             #1C1C1A;
   --color-text-muted:       #5C5A56;
   --color-border:           #E5E2DC;

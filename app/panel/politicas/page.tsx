@@ -18,11 +18,10 @@ export default async function PanelPoliticasPage() {
   return (
     <div className="mx-auto max-w-2xl px-4 py-12">
       <h1 className="font-display text-section text-[var(--color-primary)] mb-6">
-        Políticas del centro
+        Configuración del centro
       </h1>
       <p className="text-[var(--color-text-muted)] mb-6">
-        Configurá las ventanas para reservar y cancelar, no-show, aviso de cupo liberado, acciones de
-        profesora y clase de prueba.
+        Configurá las políticas de reserva, no-show, y las preferencias del calendario.
       </p>
       <div className="rounded-[var(--radius-lg)] bg-[var(--color-surface)] p-6 shadow-[var(--shadow-md)]">
         <PoliticasForm center={center} />

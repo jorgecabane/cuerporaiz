@@ -2,7 +2,9 @@ export type { IUserRepository, CreateUserInput, UserWithCenterRole } from "./use
 export type { ICenterRepository, CenterPoliciesUpdate } from "./center-repository";
 export type { IAuthService, AuthResult } from "./auth-service";
 export type { IEmailProvider } from "./email-provider";
-export type { ILiveClassRepository } from "./live-class-repository";
+export type { ILiveClassRepository, CreateLiveClassInput, UpdateLiveClassInput } from "./live-class-repository";
+export type { IDisciplineRepository, CreateDisciplineInput, UpdateDisciplineInput } from "./discipline-repository";
+export type { ILiveClassSeriesRepository, CreateSeriesInput, UpdateSeriesInput } from "./live-class-series-repository";
 export type { IReservationRepository } from "./reservation-repository";
 export type { IPaymentProvider } from "./payment-provider";
 export type { IMercadoPagoConfigRepository, MercadoPagoConfig } from "./mercadopago-config-repository";
@@ -10,3 +12,5 @@ export type { IPlanRepository, Plan, PlanType, BillingMode, ValidityPeriod, Plan
 export type { IOrderRepository, Order, OrderStatus, CreateOrderInput, OrderListFilters } from "./order-repository";
 export { ORDER_STATUS_LABELS } from "./order-repository";
 export type { IWebhookEventRepository } from "./webhook-event-repository";
+export type { IInstructorRepository, Instructor, CreateInstructorInput, UpdateInstructorInput } from "./instructor-repository";
+export type { ICenterHolidayRepository, CreateHolidayInput } from "./center-holiday-repository";

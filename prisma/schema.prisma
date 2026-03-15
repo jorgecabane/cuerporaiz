@@ -23,11 +23,18 @@ model Center {
   notifyWhenSlotFreed  Boolean  @default(true)  // avisar cuando se libera un cupo
   instructorCanReserveForStudent Boolean @default(true)  // profesora puede reservar en nombre de alumna
   allowTrialClassPerPerson Boolean @default(true)  // una clase de prueba por persona
+  calendarStartHour  Int      @default(7)   // hora de inicio del calendario semanal
+  calendarEndHour    Int      @default(22)  // hora de fin del calendario semanal
+  calendarWeekStartDay Int    @default(1)   // 0=domingo, 1=lunes (ISO)
+  defaultClassDurationMinutes Int @default(60)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   memberships     UserCenterRole[]
   liveClasses     LiveClass[]
+  disciplines     Discipline[]
+  liveClassSeries LiveClassSeries[]
+  holidays        CenterHoliday[]
   mercadopagoConfig CenterMercadoPagoConfig?
   plans           Plan[]
   orders          Order[]
@@ -48,6 +55,62 @@ model User {
   orders     Order[]
 }
 
+// ─── Disciplinas (prácticas: Yoga, Pilates, TRX…) ─────────────────────────
+model Discipline {
+  id        String   @id @default(cuid())
+  centerId  String
+  name      String
+  color     String?
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  center      Center            @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  liveClasses LiveClass[]
+  series      LiveClassSeries[]
+
+  @@unique([centerId, name])
+  @@index([centerId])
+}
+
+// ─── Regla de recurrencia para series de clases ────────────────────────────
+enum RepeatFrequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
+model LiveClassSeries {
+  id                  String          @id @default(cuid())
+  centerId            String
+  title               String
+  disciplineId        String?
+  instructorId        String?
+  maxCapacity         Int             @default(20)
+  durationMinutes     Int             @default(60)
+  isOnline            Boolean         @default(false)
+  isTrialClass        Boolean         @default(false)
+  trialCapacity       Int?
+  color               String?
+  classPassEnabled    Boolean         @default(false)
+  classPassCapacity   Int?
+  repeatFrequency     RepeatFrequency @default(WEEKLY)
+  repeatOnDaysOfWeek  Int[]           @default([])   // 0=Dom, 1=Lun..6=Sáb
+  repeatEveryN        Int             @default(1)    // cada N semanas/días/meses
+  startsAt            DateTime                       // fecha/hora de la primera clase
+  endsAt              DateTime?                      // fecha fin de la serie (nullable = nunca)
+  repeatCount         Int?                           // o N repeticiones (nullable = infinito/hasta endsAt)
+  monthlyMode         String?                        // "dayOfMonth" | "weekdayOrdinal" (solo para MONTHLY)
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  center     Center      @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  discipline Discipline? @relation(fields: [disciplineId], references: [id], onDelete: SetNull)
+  instances  LiveClass[]
+
+  @@index([centerId])
+}
+
 // ─── Clases en vivo (por centro) ───────────────────────────────────────────
 model LiveClass {
   id              String   @id @default(cuid())
@@ -56,14 +119,42 @@ model LiveClass {
   startsAt        DateTime
   durationMinutes Int      @default(60)
   maxCapacity     Int      @default(20)
+  disciplineId    String?
+  instructorId    String?
+  isOnline        Boolean  @default(false)
+  isTrialClass    Boolean  @default(false)
+  trialCapacity   Int?
+  color           String?
+  classPassEnabled Boolean @default(false)
+  classPassCapacity Int?
+  seriesId        String?
+  status          String   @default("ACTIVE")  // ACTIVE | CANCELLED | ARCHIVED
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  center       Center        @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  center       Center           @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  discipline   Discipline?      @relation(fields: [disciplineId], references: [id], onDelete: SetNull)
+  series       LiveClassSeries? @relation(fields: [seriesId], references: [id], onDelete: SetNull)
   reservations Reservation[]
 
   @@index([centerId])
   @@index([startsAt])
+  @@index([disciplineId])
+  @@index([seriesId])
+}
+
+// ─── Feriados / días sin actividad por centro ──────────────────────────────
+model CenterHoliday {
+  id        String   @id @default(cuid())
+  centerId  String
+  date      DateTime @db.Date
+  label     String?
+  createdAt DateTime @default(now())
+
+  center Center @relation(fields: [centerId], references: [id], onDelete: Cascade)
+
+  @@unique([centerId, date])
+  @@index([centerId])
 }
 
 // Estados de reserva

@@ -22,7 +22,7 @@ export function DeletePlanForm({
       <button
         type="submit"
         disabled={isPending}
-        className="inline-flex items-center justify-center gap-2 rounded-[var(--radius-md)] border-2 border-red-600 bg-transparent px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+        className="inline-flex items-center justify-center gap-2 rounded-[var(--radius-md)] border-2 border-[var(--color-error)] bg-transparent px-4 py-2 text-sm font-medium text-[var(--color-error)] hover:bg-[var(--color-error-bg)] disabled:opacity-50"
       >
         {isPending ? "..." : "Eliminar"}
       </button>

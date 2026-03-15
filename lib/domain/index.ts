@@ -2,7 +2,10 @@ export type { Role } from "./role";
 export { ROLES, isRole, ROLE_LABELS, ADMIN_ROLE, isAdminRole, DEFAULT_SIGNUP_ROLE } from "./role";
 export type { User, UserId, CenterId, UserWithMemberships } from "./user";
 export type { Center } from "./center";
-export type { LiveClass, LiveClassId } from "./live-class";
+export type { LiveClass, LiveClassId, LiveClassStatus } from "./live-class";
+export type { Discipline, DisciplineId } from "./discipline";
+export type { LiveClassSeries, LiveClassSeriesId, RepeatFrequency } from "./live-class-series";
+export type { CenterHoliday } from "./center-holiday";
 export type {
   Reservation,
   ReservationId,

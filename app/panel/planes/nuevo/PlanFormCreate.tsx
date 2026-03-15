@@ -371,7 +371,7 @@ export function PlanFormCreate({ slugError }: { slugError?: boolean }) {
       </div>
 
       {slugError && (
-        <p className="text-sm text-red-600">Ese slug ya existe en este centro.</p>
+        <p className="text-sm text-[var(--color-error)]">Ese slug ya existe en este centro.</p>
       )}
       <div className="flex gap-3 pt-2">
         <button

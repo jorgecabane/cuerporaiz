@@ -20,6 +20,9 @@ export function PoliticasForm({ center }: Props) {
         const notifyWhenSlotFreed = formData.get("notifyWhenSlotFreed") === "on";
         const instructorCanReserveForStudent = formData.get("instructorCanReserveForStudent") === "on";
         const allowTrialClassPerPerson = formData.get("allowTrialClassPerPerson") === "on";
+        const calendarStartHour = formData.get("calendarStartHour");
+        const calendarEndHour = formData.get("calendarEndHour");
+        const defaultClassDurationMinutes = formData.get("defaultClassDurationMinutes");
 
         startTransition(async () => {
           const result = await updateCenterPolicies(center.id, {
@@ -29,6 +32,9 @@ export function PoliticasForm({ center }: Props) {
             notifyWhenSlotFreed,
             instructorCanReserveForStudent,
             allowTrialClassPerPerson,
+            calendarStartHour: calendarStartHour != null ? Number(calendarStartHour) : undefined,
+            calendarEndHour: calendarEndHour != null ? Number(calendarEndHour) : undefined,
+            defaultClassDurationMinutes: defaultClassDurationMinutes != null ? Number(defaultClassDurationMinutes) : undefined,
           });
           if (result.error) setError(result.error);
         });
@@ -115,13 +121,64 @@ export function PoliticasForm({ center }: Props) {
           </label>
         </div>
       </div>
-      {error && <p className="text-sm text-red-600">{error}</p>}
+
+      {/* Preferencias del calendario */}
+      <div className="border-t border-[var(--color-border)] pt-6 mt-6">
+        <h2 className="text-base font-semibold text-[var(--color-text)] mb-4">Preferencias del calendario</h2>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="sm:col-span-2">
+            <label htmlFor="defaultClassDurationMinutes" className="block text-sm font-medium text-[var(--color-text)] mb-1">
+              Duración por defecto de clases (minutos)
+            </label>
+            <input
+              id="defaultClassDurationMinutes"
+              name="defaultClassDurationMinutes"
+              type="number"
+              min={15}
+              max={240}
+              step={5}
+              defaultValue={center.defaultClassDurationMinutes}
+              className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 text-[var(--color-text)]"
+            />
+          </div>
+          <div>
+            <label htmlFor="calendarStartHour" className="block text-sm font-medium text-[var(--color-text)] mb-1">
+              Hora de inicio del calendario
+            </label>
+            <input
+              id="calendarStartHour"
+              name="calendarStartHour"
+              type="number"
+              min={0}
+              max={12}
+              defaultValue={center.calendarStartHour}
+              className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 text-[var(--color-text)]"
+            />
+          </div>
+          <div>
+            <label htmlFor="calendarEndHour" className="block text-sm font-medium text-[var(--color-text)] mb-1">
+              Hora de fin del calendario
+            </label>
+            <input
+              id="calendarEndHour"
+              name="calendarEndHour"
+              type="number"
+              min={12}
+              max={24}
+              defaultValue={center.calendarEndHour}
+              className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 text-[var(--color-text)]"
+            />
+          </div>
+        </div>
+      </div>
+
+      {error && <p className="text-sm text-[var(--color-error)]">{error}</p>}
       <button
         type="submit"
         disabled={isPending}
         className="rounded-[var(--radius-md)] bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-primary-hover)] disabled:opacity-50"
       >
-        {isPending ? "Guardando…" : "Guardar políticas"}
+        {isPending ? "Guardando…" : "Guardar configuración"}
       </button>
     </form>
   );

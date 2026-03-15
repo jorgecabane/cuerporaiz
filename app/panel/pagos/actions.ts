@@ -13,11 +13,13 @@ async function requireAdminCenterId(): Promise<string> {
   return session.user.centerId;
 }
 
-export async function approveOrderManually(orderId: string): Promise<void> {
+export async function approveOrderManually(formData: FormData): Promise<void> {
+  const orderId = formData.get("orderId");
+  if (typeof orderId !== "string" || !orderId.trim()) redirect("/panel/pagos");
   const centerId = await requireAdminCenterId();
-  const order = await orderRepository.findById(orderId);
+  const order = await orderRepository.findById(orderId.trim());
   if (!order || order.centerId !== centerId || order.status !== "PENDING")
     redirect("/panel/pagos");
-  await orderRepository.updateStatus(orderId, "APPROVED");
+  await orderRepository.updateStatus(orderId.trim(), "APPROVED");
   redirect("/panel/pagos");
 }

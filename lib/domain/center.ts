@@ -15,6 +15,10 @@ export interface Center {
   notifyWhenSlotFreed: boolean;
   instructorCanReserveForStudent: boolean;
   allowTrialClassPerPerson: boolean;
+  calendarStartHour: number;
+  calendarEndHour: number;
+  calendarWeekStartDay: number;
+  defaultClassDurationMinutes: number;
   createdAt: Date;
   updatedAt: Date;
 }

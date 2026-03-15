@@ -108,7 +108,48 @@ export default function PanelReservasPage() {
   if (loading) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-12">
-        <p className="text-[var(--color-text-muted)]">Cargando clases y reservas…</p>
+        <div className="mb-6 flex items-center gap-4">
+          <div className="h-4 w-24 rounded bg-[var(--color-border)]/60 animate-pulse" />
+        </div>
+        <div className="h-8 w-64 rounded bg-[var(--color-border)]/60 animate-pulse mb-6" />
+        <section className="mb-10">
+          <div className="h-6 w-40 rounded bg-[var(--color-border)]/60 animate-pulse mb-3" />
+          <ul className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <li
+                key={i}
+                className="rounded-[var(--radius-lg)] bg-[var(--color-surface)] p-4 shadow-[var(--shadow-sm)] border border-[var(--color-border)]"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div className="space-y-2 flex-1">
+                    <div className="h-4 w-48 max-w-full rounded bg-[var(--color-border)]/60 animate-pulse" />
+                    <div className="h-3 w-32 rounded bg-[var(--color-border)]/40 animate-pulse" />
+                  </div>
+                  <div className="h-9 w-20 rounded-[var(--radius-md)] bg-[var(--color-border)]/60 animate-pulse" />
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+        <section>
+          <div className="h-6 w-32 rounded bg-[var(--color-border)]/60 animate-pulse mb-3" />
+          <ul className="space-y-3">
+            {[1, 2].map((i) => (
+              <li
+                key={i}
+                className="rounded-[var(--radius-lg)] bg-[var(--color-surface)] p-4 shadow-[var(--shadow-sm)] border border-[var(--color-border)]"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div className="space-y-2 flex-1">
+                    <div className="h-4 w-40 max-w-full rounded bg-[var(--color-border)]/60 animate-pulse" />
+                    <div className="h-3 w-28 rounded bg-[var(--color-border)]/40 animate-pulse" />
+                  </div>
+                  <div className="h-9 w-24 rounded-[var(--radius-md)] bg-[var(--color-border)]/60 animate-pulse" />
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
       </div>
     );
   }
@@ -133,7 +174,7 @@ export default function PanelReservasPage() {
           className={`mb-4 rounded-[var(--radius-md)] px-4 py-2 text-sm ${
             message.type === "ok"
               ? "bg-[var(--color-primary-light)] text-[var(--color-primary)]"
-              : "bg-red-100 text-red-800"
+              : "bg-[var(--color-error-bg)] text-[var(--color-error-text)]"
           }`}
         >
           {message.text}
@@ -219,7 +260,7 @@ export default function PanelReservasPage() {
                       type="button"
                       onClick={() => handleCancel(r.id)}
                       disabled={actionLoading !== null}
-                      className="rounded-[var(--radius-md)] border border-[var(--color-secondary)] px-3 py-2 text-sm font-medium text-[var(--color-secondary)] hover:bg-red-50 disabled:opacity-60"
+                      className="rounded-[var(--radius-md)] border border-[var(--color-secondary)] px-3 py-2 text-sm font-medium text-[var(--color-secondary)] hover:bg-[var(--color-error-bg)] disabled:opacity-60"
                     >
                       {actionLoading === r.id ? "Cancelando…" : "Cancelar reserva"}
                     </button>

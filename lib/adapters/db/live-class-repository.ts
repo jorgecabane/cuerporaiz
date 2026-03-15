@@ -1,17 +1,29 @@
-import type { ILiveClassRepository } from "@/lib/ports";
-import type { LiveClass } from "@/lib/domain";
+import type { ILiveClassRepository, CreateLiveClassInput, UpdateLiveClassInput } from "@/lib/ports";
+import type { LiveClass, LiveClassStatus } from "@/lib/domain";
 import { prisma } from "./prisma";
 
-function toDomainLiveClass(c: {
+type PrismaLiveClass = {
   id: string;
   centerId: string;
   title: string;
   startsAt: Date;
   durationMinutes: number;
   maxCapacity: number;
+  disciplineId: string | null;
+  instructorId: string | null;
+  isOnline: boolean;
+  isTrialClass: boolean;
+  trialCapacity: number | null;
+  color: string | null;
+  classPassEnabled: boolean;
+  classPassCapacity: number | null;
+  seriesId: string | null;
+  status: string;
   createdAt: Date;
   updatedAt: Date;
-}): LiveClass {
+};
+
+function toDomain(c: PrismaLiveClass): LiveClass {
   return {
     id: c.id,
     centerId: c.centerId,
@@ -19,31 +31,173 @@ function toDomainLiveClass(c: {
     startsAt: c.startsAt,
     durationMinutes: c.durationMinutes,
     maxCapacity: c.maxCapacity,
+    disciplineId: c.disciplineId,
+    instructorId: c.instructorId,
+    isOnline: c.isOnline,
+    isTrialClass: c.isTrialClass,
+    trialCapacity: c.trialCapacity,
+    color: c.color,
+    classPassEnabled: c.classPassEnabled,
+    classPassCapacity: c.classPassCapacity,
+    seriesId: c.seriesId,
+    status: c.status as LiveClassStatus,
     createdAt: c.createdAt,
     updatedAt: c.updatedAt,
   };
 }
 
 export const liveClassRepository: ILiveClassRepository = {
-  async findById(id: string) {
+  async findById(id) {
     const c = await prisma.liveClass.findUnique({ where: { id } });
-    return c ? toDomainLiveClass(c) : null;
+    return c ? toDomain(c) : null;
   },
 
-  async findByCenterId(centerId: string, from?: Date) {
+  async findByCenterId(centerId, from?) {
     const list = await prisma.liveClass.findMany({
       where: {
         centerId,
+        status: "ACTIVE",
         ...(from ? { startsAt: { gte: from } } : {}),
       },
       orderBy: { startsAt: "asc" },
     });
-    return list.map(toDomainLiveClass);
+    return list.map(toDomain);
   },
 
-  async countConfirmedReservations(liveClassId: string) {
+  async findByCenterIdAndRange(centerId, from, to) {
+    const list = await prisma.liveClass.findMany({
+      where: {
+        centerId,
+        status: "ACTIVE",
+        startsAt: { gte: from, lt: to },
+      },
+      orderBy: { startsAt: "asc" },
+    });
+    return list.map(toDomain);
+  },
+
+  async findBySeriesId(seriesId) {
+    const list = await prisma.liveClass.findMany({
+      where: { seriesId, status: "ACTIVE" },
+      orderBy: { startsAt: "asc" },
+    });
+    return list.map(toDomain);
+  },
+
+  async countConfirmedReservations(liveClassId) {
     return prisma.reservation.count({
       where: { liveClassId, status: "CONFIRMED" },
     });
+  },
+
+  async create(centerId, data) {
+    const c = await prisma.liveClass.create({
+      data: {
+        centerId,
+        title: data.title,
+        startsAt: data.startsAt,
+        durationMinutes: data.durationMinutes,
+        maxCapacity: data.maxCapacity,
+        disciplineId: data.disciplineId ?? null,
+        instructorId: data.instructorId ?? null,
+        isOnline: data.isOnline ?? false,
+        isTrialClass: data.isTrialClass ?? false,
+        trialCapacity: data.trialCapacity ?? null,
+        color: data.color ?? null,
+        classPassEnabled: data.classPassEnabled ?? false,
+        classPassCapacity: data.classPassCapacity ?? null,
+        seriesId: data.seriesId ?? null,
+      },
+    });
+    return toDomain(c);
+  },
+
+  async createMany(centerId, dataArr) {
+    const result = await prisma.liveClass.createMany({
+      data: dataArr.map((d) => ({
+        centerId,
+        title: d.title,
+        startsAt: d.startsAt,
+        durationMinutes: d.durationMinutes,
+        maxCapacity: d.maxCapacity,
+        disciplineId: d.disciplineId ?? null,
+        instructorId: d.instructorId ?? null,
+        isOnline: d.isOnline ?? false,
+        isTrialClass: d.isTrialClass ?? false,
+        trialCapacity: d.trialCapacity ?? null,
+        color: d.color ?? null,
+        classPassEnabled: d.classPassEnabled ?? false,
+        classPassCapacity: d.classPassCapacity ?? null,
+        seriesId: d.seriesId ?? null,
+      })),
+    });
+    return result.count;
+  },
+
+  async update(id, centerId, data) {
+    try {
+      const c = await prisma.liveClass.update({
+        where: { id, centerId },
+        data: {
+          ...(data.title !== undefined && { title: data.title }),
+          ...(data.startsAt !== undefined && { startsAt: data.startsAt }),
+          ...(data.durationMinutes !== undefined && { durationMinutes: data.durationMinutes }),
+          ...(data.maxCapacity !== undefined && { maxCapacity: data.maxCapacity }),
+          ...(data.disciplineId !== undefined && { disciplineId: data.disciplineId }),
+          ...(data.instructorId !== undefined && { instructorId: data.instructorId }),
+          ...(data.isOnline !== undefined && { isOnline: data.isOnline }),
+          ...(data.isTrialClass !== undefined && { isTrialClass: data.isTrialClass }),
+          ...(data.trialCapacity !== undefined && { trialCapacity: data.trialCapacity }),
+          ...(data.color !== undefined && { color: data.color }),
+          ...(data.classPassEnabled !== undefined && { classPassEnabled: data.classPassEnabled }),
+          ...(data.classPassCapacity !== undefined && { classPassCapacity: data.classPassCapacity }),
+          ...(data.seriesId !== undefined && { seriesId: data.seriesId }),
+          ...(data.status !== undefined && { status: data.status }),
+        },
+      });
+      return toDomain(c);
+    } catch {
+      return null;
+    }
+  },
+
+  async updateManyBySeriesId(seriesId, centerId, data) {
+    const result = await prisma.liveClass.updateMany({
+      where: { seriesId, centerId, status: "ACTIVE" },
+      data: {
+        ...(data.title !== undefined && { title: data.title }),
+        ...(data.durationMinutes !== undefined && { durationMinutes: data.durationMinutes }),
+        ...(data.maxCapacity !== undefined && { maxCapacity: data.maxCapacity }),
+        ...(data.disciplineId !== undefined && { disciplineId: data.disciplineId }),
+        ...(data.instructorId !== undefined && { instructorId: data.instructorId }),
+        ...(data.isOnline !== undefined && { isOnline: data.isOnline }),
+        ...(data.isTrialClass !== undefined && { isTrialClass: data.isTrialClass }),
+        ...(data.trialCapacity !== undefined && { trialCapacity: data.trialCapacity }),
+        ...(data.color !== undefined && { color: data.color }),
+        ...(data.status !== undefined && { status: data.status }),
+      },
+    });
+    return result.count;
+  },
+
+  async deleteBySeriesIdFromDate(seriesId, centerId, fromDate) {
+    const result = await prisma.liveClass.deleteMany({
+      where: {
+        seriesId,
+        centerId,
+        startsAt: { gte: fromDate },
+        status: "ACTIVE",
+      },
+    });
+    return result.count;
+  },
+
+  async delete(id, centerId) {
+    try {
+      await prisma.liveClass.delete({ where: { id, centerId } });
+      return true;
+    } catch {
+      return false;
+    }
   },
 };

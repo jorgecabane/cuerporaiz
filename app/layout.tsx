@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import { Cormorant_Garamond, DM_Sans } from "next/font/google";
 import "./globals.css";
-import { Header } from "@/components/shared/Header";
-import { Footer } from "@/components/shared/Footer";
 import { AuthProvider } from "@/components/providers/AuthProvider";
+import { LayoutWithPanel } from "@/components/shared/LayoutWithPanel";
 
 const fontDisplay = Cormorant_Garamond({
   variable: "--font-display",
@@ -40,9 +39,7 @@ export default function RootLayout({
         >
           Saltar al contenido principal
         </a>
-        <Header />
-        <main id="main">{children}</main>
-        <Footer />
+        <LayoutWithPanel>{children}</LayoutWithPanel>
         </AuthProvider>
       </body>
     </html>

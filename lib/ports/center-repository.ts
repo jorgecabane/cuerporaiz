@@ -7,6 +7,10 @@ export interface CenterPoliciesUpdate {
   notifyWhenSlotFreed?: boolean;
   instructorCanReserveForStudent?: boolean;
   allowTrialClassPerPerson?: boolean;
+  calendarStartHour?: number;
+  calendarEndHour?: number;
+  calendarWeekStartDay?: number;
+  defaultClassDurationMinutes?: number;
 }
 
 export interface ICenterRepository {

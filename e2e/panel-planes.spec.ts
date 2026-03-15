@@ -1,30 +1,75 @@
 import { test, expect } from "@playwright/test";
 
-/**
- * Panel admin - Planes (CRUD). Solo rol ADMINISTRATOR (admin).
- * Verifica: redirect si no admin, admin llega a /panel/planes y ve el listado o vacío.
- */
 test.describe("Panel admin - Planes", () => {
-  const email = process.env.E2E_USER_EMAIL ?? "admin@cuerporaiz.cl";
-  const password = process.env.E2E_USER_PASSWORD ?? "admin123";
-  const centerSlug = process.env.E2E_CENTER_SLUG ?? "cuerporaiz";
+  test.describe.configure({ mode: "serial" });
 
-  test("panel/planes requiere login", async ({ page }) => {
-    await page.goto("/panel/planes");
-    await expect(page).toHaveURL(/\/auth\/login/);
+  test.describe("sin sesión", () => {
+    test.use({ storageState: { cookies: [], origins: [] } });
+
+    test("panel/planes requiere login", async ({ page }) => {
+      await page.goto("/panel/planes");
+      await expect(page).toHaveURL(/\/auth\/login/);
+    });
   });
 
   test("admin llega a planes y ve heading", async ({ page }) => {
-    await page.goto("/auth/login");
-    await page.getByLabel(/centro/i).fill(centerSlug);
-    await page.getByLabel(/email/i).fill(email);
-    await page.getByLabel(/contraseña/i).fill(password);
-    await page.getByRole("button", { name: /entrar/i }).click();
-
-    await expect(page).toHaveURL(/\/panel/);
-    await expect(page.getByRole("link", { name: /Planes \(admin\)/i })).toBeVisible();
-    await page.getByRole("link", { name: /Planes \(admin\)/i }).click();
+    await page.goto("/panel");
+    await expect(page).toHaveURL(/\/panel/, { timeout: 15000 });
+    await expect(page.getByRole("link", { name: /^Planes$/i }).first()).toBeVisible();
+    await page.getByRole("link", { name: /^Planes$/i }).first().click();
     await expect(page).toHaveURL(/\/panel\/planes/);
     await expect(page.getByRole("heading", { name: /Planes \(admin\)/i })).toBeVisible();
+  });
+
+  test("admin puede crear un plan", async ({ page }) => {
+    const planName = `Plan E2E ${Date.now()}`;
+
+    await page.goto("/panel/planes");
+    await expect(page).toHaveURL(/\/panel\/planes/);
+    await page.getByRole("link", { name: /nuevo plan/i }).click();
+    await expect(page).toHaveURL(/\/panel\/planes\/nuevo/);
+
+    await page.getByLabel(/nombre/i).fill(planName);
+    await page.getByLabel(/valor del plan/i).fill("15000");
+    await page.getByRole("button", { name: /crear plan/i }).click();
+
+    await expect(page).toHaveURL(/\/panel\/planes/, { timeout: 15000 });
+    await expect(page.getByRole("heading", { name: planName })).toBeVisible({ timeout: 10000 });
+  });
+
+  test("admin puede editar un plan", async ({ page }) => {
+    await page.goto("/panel/planes");
+    await expect(page.getByRole("heading", { name: /Planes/i })).toBeVisible({ timeout: 10000 });
+
+    const editLink = page.getByRole("link", { name: /editar/i }).first();
+    if (!(await editLink.isVisible())) {
+      test.skip();
+      return;
+    }
+    await editLink.click();
+    await expect(page).toHaveURL(/\/panel\/planes\/.+\/editar/, { timeout: 15000 });
+
+    const nameInput = page.getByLabel(/nombre/i);
+    await nameInput.fill("");
+    await nameInput.fill("Plan E2E editado");
+    await page.getByRole("button", { name: /guardar cambios/i }).click();
+
+    await expect(page).toHaveURL(/\/panel\/planes/);
+    await expect(page.getByRole("heading", { name: "Plan E2E editado" }).first()).toBeVisible();
+  });
+
+  test("admin puede eliminar un plan", async ({ page }) => {
+    await page.goto("/panel/planes");
+    await expect(page).toHaveURL(/\/panel\/planes/);
+
+    const deleteBtn = page.getByRole("button", { name: /eliminar|borrar/i }).first();
+    if (!(await deleteBtn.isVisible())) {
+      test.skip();
+      return;
+    }
+    page.once("dialog", (dialog) => dialog.accept());
+    await deleteBtn.click();
+
+    await expect(page).toHaveURL(/\/panel\/planes/);
   });
 });

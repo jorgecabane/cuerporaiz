@@ -12,6 +12,10 @@ function toDomainCenter(c: {
   notifyWhenSlotFreed: boolean;
   instructorCanReserveForStudent: boolean;
   allowTrialClassPerPerson: boolean;
+  calendarStartHour: number;
+  calendarEndHour: number;
+  calendarWeekStartDay: number;
+  defaultClassDurationMinutes: number;
   createdAt: Date;
   updatedAt: Date;
 }): Center {
@@ -26,6 +30,10 @@ function toDomainCenter(c: {
     notifyWhenSlotFreed: c.notifyWhenSlotFreed,
     instructorCanReserveForStudent: c.instructorCanReserveForStudent,
     allowTrialClassPerPerson: c.allowTrialClassPerPerson,
+    calendarStartHour: c.calendarStartHour,
+    calendarEndHour: c.calendarEndHour,
+    calendarWeekStartDay: c.calendarWeekStartDay,
+    defaultClassDurationMinutes: c.defaultClassDurationMinutes,
     createdAt: c.createdAt,
     updatedAt: c.updatedAt,
   };
@@ -60,6 +68,10 @@ export const centerRepository: ICenterRepository = {
     if (data.notifyWhenSlotFreed !== undefined) payload.notifyWhenSlotFreed = data.notifyWhenSlotFreed;
     if (data.instructorCanReserveForStudent !== undefined) payload.instructorCanReserveForStudent = data.instructorCanReserveForStudent;
     if (data.allowTrialClassPerPerson !== undefined) payload.allowTrialClassPerPerson = data.allowTrialClassPerPerson;
+    if (data.calendarStartHour !== undefined) payload.calendarStartHour = data.calendarStartHour;
+    if (data.calendarEndHour !== undefined) payload.calendarEndHour = data.calendarEndHour;
+    if (data.calendarWeekStartDay !== undefined) payload.calendarWeekStartDay = data.calendarWeekStartDay;
+    if (data.defaultClassDurationMinutes !== undefined) payload.defaultClassDurationMinutes = data.defaultClassDurationMinutes;
     const c = await prisma.center.update({
       where: { id: centerId },
       data: payload as Parameters<typeof prisma.center.update>[0]["data"],

@@ -5,6 +5,7 @@
 import type { CenterId } from "./user";
 
 export type LiveClassId = string;
+export type LiveClassStatus = "ACTIVE" | "CANCELLED" | "ARCHIVED";
 
 export interface LiveClass {
   id: LiveClassId;
@@ -13,6 +14,16 @@ export interface LiveClass {
   startsAt: Date;
   durationMinutes: number;
   maxCapacity: number;
+  disciplineId: string | null;
+  instructorId: string | null;
+  isOnline: boolean;
+  isTrialClass: boolean;
+  trialCapacity: number | null;
+  color: string | null;
+  classPassEnabled: boolean;
+  classPassCapacity: number | null;
+  seriesId: string | null;
+  status: LiveClassStatus;
   createdAt: Date;
   updatedAt: Date;
 }
