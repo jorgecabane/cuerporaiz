@@ -1,9 +1,11 @@
 // CuerpoRaíz — DB: Postgres (Supabase). Conexión vía DATABASE_URL.
 // https://pris.ly/d/prisma-schema
 
+// Generamos en la salida por defecto (node_modules). No usar output custom:
+// cuando el cliente se generaba en lib/generated/prisma, la IDE/OS creaban copias
+// "archivo 2.ts" al regenerar, y TypeScript las incluía → build colgado y cientos de errores.
 generator client {
   provider = "prisma-client-js"
-  output   = "../lib/generated/prisma"
 }
 
 datasource db {
@@ -27,6 +29,14 @@ model Center {
   calendarEndHour    Int      @default(22)  // hora de fin del calendario semanal
   calendarWeekStartDay Int    @default(1)   // 0=domingo, 1=lunes (ISO)
   defaultClassDurationMinutes Int @default(60)
+  // Transferencia bancaria (plugin de pago)
+  bankTransferEnabled Boolean @default(false)
+  bankName        String?
+  bankAccountType String?
+  bankAccountNumber String?
+  bankAccountHolder String?
+  bankAccountRut    String?
+  bankAccountEmail  String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -36,25 +46,35 @@ model Center {
   liveClassSeries LiveClassSeries[]
   holidays        CenterHoliday[]
   mercadopagoConfig CenterMercadoPagoConfig?
+  zoomConfig       CenterZoomConfig?
+  googleMeetConfig CenterGoogleMeetConfig?
   plans           Plan[]
   orders          Order[]
   webhookEvents   MercadoPagoWebhookEvent[]
   userPlans       UserPlan[]
+  manualPayments  ManualPayment[]
 }
 
 // ─── Usuarios (sin datos de infra; dominio puro en lib/domain) ──────────────
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
+  id           String    @id @default(cuid())
+  email        String    @unique
   passwordHash String
-  name      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  name         String?
+  lastName     String?
+  phone        String?
+  rut          String?
+  birthday     DateTime?
+  sex          String?   // M, F, X, null
+  notes        String?   // observaciones internas del centro
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
-  memberships UserCenterRole[]
-  reservations Reservation[]
-  orders     Order[]
-  userPlans  UserPlan[]
+  memberships    UserCenterRole[]
+  reservations   Reservation[]
+  orders         Order[]
+  userPlans      UserPlan[]
+  manualPayments ManualPayment[]
 }
 
 // ─── Disciplinas (prácticas: Yoga, Pilates, TRX…) ─────────────────────────
@@ -91,6 +111,7 @@ model LiveClassSeries {
   maxCapacity         Int             @default(20)
   durationMinutes     Int             @default(60)
   isOnline            Boolean         @default(false)
+  meetingUrl          String?
   isTrialClass        Boolean         @default(false)
   trialCapacity       Int?
   color               String?
@@ -124,6 +145,7 @@ model LiveClass {
   disciplineId    String?
   instructorId    String?
   isOnline        Boolean  @default(false)
+  meetingUrl      String?
   isTrialClass    Boolean  @default(false)
   trialCapacity   Int?
   color           String?
@@ -167,30 +189,62 @@ enum UserPlanStatus {
   CANCELLED
 }
 
+enum PlanPaymentStatus {
+  PENDING
+  PARTIAL
+  PAID
+}
+
 model UserPlan {
-  id              String         @id @default(cuid())
+  id              String            @id @default(cuid())
   userId          String
   planId          String
   centerId        String
-  orderId         String?        // null si fue asignado manualmente por admin
-  status          UserPlanStatus @default(ACTIVE)
-  classesTotal    Int?           // null = ilimitado
-  classesUsed     Int            @default(0)
-  validFrom       DateTime       @default(now())
-  validUntil      DateTime?      // null = sin vencimiento explícito
+  orderId         String?           // null si fue asignado manualmente por admin
+  status          UserPlanStatus    @default(ACTIVE)
+  paymentStatus   PlanPaymentStatus @default(PENDING)
+  classesTotal    Int?              // null = ilimitado
+  classesUsed     Int               @default(0)
+  validFrom       DateTime          @default(now())
+  validUntil      DateTime?         // null = sin vencimiento explícito
   frozenAt        DateTime?
+  frozenUntil     DateTime?
+  freezeReason    String?
   unfrozenAt      DateTime?
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
 
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  plan         Plan          @relation(fields: [planId], references: [id], onDelete: Restrict)
-  center       Center        @relation(fields: [centerId], references: [id], onDelete: Cascade)
-  reservations Reservation[]
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan            Plan              @relation(fields: [planId], references: [id], onDelete: Restrict)
+  center          Center            @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  reservations    Reservation[]
+  manualPayments  ManualPayment[]
 
   @@index([userId, centerId])
   @@index([centerId])
   @@index([status])
+}
+
+// Pagos manuales: pueden ser de un UserPlan (cuota, transferencia) o sueltos (registro contable)
+model ManualPayment {
+  id          String   @id @default(cuid())
+  centerId    String
+  userId      String
+  userPlanId  String?  // null = pago suelto no vinculado a plan
+  amountCents Int
+  currency    String   @default("CLP")
+  method      String   @default("transfer") // transfer, cash, other
+  note        String?  // ej: "Cuota 1/3 Plan A", "Pago extra mat"
+  paidAt      DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  center   Center    @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userPlan UserPlan? @relation(fields: [userPlanId], references: [id], onDelete: SetNull)
+
+  @@index([centerId])
+  @@index([userId])
+  @@index([userPlanId])
 }
 
 // Estados de reserva
@@ -244,13 +298,45 @@ model UserCenterRole {
 
 // ─── MercadoPago por centro (plugin activo + credenciales) ──────────────────
 model CenterMercadoPagoConfig {
-  id            String   @id @default(cuid())
-  centerId      String   @unique
-  accessToken   String
-  webhookSecret String
-  enabled       Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id              String    @id @default(cuid())
+  centerId        String    @unique
+  accessToken     String
+  refreshToken    String?
+  mpUserId        String?
+  publicKey       String?
+  webhookSecret   String
+  tokenExpiresAt  DateTime?
+  enabled         Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  center Center @relation(fields: [centerId], references: [id], onDelete: Cascade)
+}
+
+// ─── Zoom por centro (plugin videollamadas) ──────────────────────────────────
+model CenterZoomConfig {
+  id              String    @id @default(cuid())
+  centerId        String    @unique
+  accessToken     String
+  refreshToken    String?
+  tokenExpiresAt  DateTime?
+  enabled        Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  center Center @relation(fields: [centerId], references: [id], onDelete: Cascade)
+}
+
+// ─── Google Meet por centro (plugin videollamadas) ──────────────────────────
+model CenterGoogleMeetConfig {
+  id              String    @id @default(cuid())
+  centerId        String    @unique
+  accessToken     String
+  refreshToken    String?
+  tokenExpiresAt  DateTime?
+  enabled        Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   center Center @relation(fields: [centerId], references: [id], onDelete: Cascade)
 }
