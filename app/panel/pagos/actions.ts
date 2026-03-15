@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { orderRepository } from "@/lib/adapters/db";
 import { isAdminRole } from "@/lib/domain";
+import { activatePlanForOrder } from "@/lib/application/activate-plan";
 
 async function requireAdminCenterId(): Promise<string> {
   const session = await auth();
@@ -21,5 +22,6 @@ export async function approveOrderManually(formData: FormData): Promise<void> {
   if (!order || order.centerId !== centerId || order.status !== "PENDING")
     redirect("/panel/pagos");
   await orderRepository.updateStatus(orderId.trim(), "APPROVED");
+  await activatePlanForOrder(order.id, order.userId, order.planId, order.centerId);
   redirect("/panel/pagos");
 }

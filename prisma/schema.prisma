@@ -39,6 +39,7 @@ model Center {
   plans           Plan[]
   orders          Order[]
   webhookEvents   MercadoPagoWebhookEvent[]
+  userPlans       UserPlan[]
 }
 
 // ─── Usuarios (sin datos de infra; dominio puro en lib/domain) ──────────────
@@ -53,6 +54,7 @@ model User {
   memberships UserCenterRole[]
   reservations Reservation[]
   orders     Order[]
+  userPlans  UserPlan[]
 }
 
 // ─── Disciplinas (prácticas: Yoga, Pilates, TRX…) ─────────────────────────
@@ -157,6 +159,40 @@ model CenterHoliday {
   @@index([centerId])
 }
 
+// ─── Plan activo de un usuario (vincula User + Plan + Order) ────────────────
+enum UserPlanStatus {
+  ACTIVE
+  EXPIRED
+  FROZEN
+  CANCELLED
+}
+
+model UserPlan {
+  id              String         @id @default(cuid())
+  userId          String
+  planId          String
+  centerId        String
+  orderId         String?        // null si fue asignado manualmente por admin
+  status          UserPlanStatus @default(ACTIVE)
+  classesTotal    Int?           // null = ilimitado
+  classesUsed     Int            @default(0)
+  validFrom       DateTime       @default(now())
+  validUntil      DateTime?      // null = sin vencimiento explícito
+  frozenAt        DateTime?
+  unfrozenAt      DateTime?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan         Plan          @relation(fields: [planId], references: [id], onDelete: Restrict)
+  center       Center        @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  reservations Reservation[]
+
+  @@index([userId, centerId])
+  @@index([centerId])
+  @@index([status])
+}
+
 // Estados de reserva
 enum ReservationStatus {
   CONFIRMED   // Confirmada
@@ -169,16 +205,19 @@ model Reservation {
   id         String           @id @default(cuid())
   userId     String
   liveClassId String
+  userPlanId  String?          // plan con el que se hizo la reserva (null = reservas legacy)
   status     ReservationStatus @default(CONFIRMED)
   createdAt  DateTime         @default(now())
   updatedAt  DateTime         @updatedAt
 
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   liveClass LiveClass @relation(fields: [liveClassId], references: [id], onDelete: Cascade)
+  userPlan  UserPlan? @relation(fields: [userPlanId], references: [id], onDelete: SetNull)
 
   @@unique([userId, liveClassId])
   @@index([userId])
   @@index([liveClassId])
+  @@index([userPlanId])
 }
 
 // Rol por centro (multi-tenant RBAC). Valores en inglés para consistencia con BD.
@@ -264,6 +303,7 @@ model Plan {
 
   center Center @relation(fields: [centerId], references: [id], onDelete: Cascade)
   orders Order[]
+  userPlans UserPlan[]
 
   @@unique([centerId, slug])
   @@index([centerId])

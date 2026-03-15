@@ -11,3 +11,4 @@ export { orderRepository } from "./order-repository";
 export { webhookEventRepository } from "./webhook-event-repository";
 export { instructorRepository } from "./instructor-repository";
 export { centerHolidayRepository } from "./center-holiday-repository";
+export { userPlanRepository } from "./user-plan-repository";

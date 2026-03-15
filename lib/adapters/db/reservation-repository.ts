@@ -6,6 +6,7 @@ function toDomainReservation(r: {
   id: string;
   userId: string;
   liveClassId: string;
+  userPlanId: string | null;
   status: string;
   createdAt: Date;
   updatedAt: Date;
@@ -14,6 +15,7 @@ function toDomainReservation(r: {
     id: r.id,
     userId: r.userId,
     liveClassId: r.liveClassId,
+    userPlanId: r.userPlanId,
     status: r.status as ReservationStatus,
     createdAt: r.createdAt,
     updatedAt: r.updatedAt,
@@ -41,9 +43,13 @@ export const reservationRepository: IReservationRepository = {
     return list.map(toDomainReservation);
   },
 
-  async create(data: { userId: string; liveClassId: string }) {
+  async create(data: { userId: string; liveClassId: string; userPlanId?: string | null }) {
     const r = await prisma.reservation.create({
-      data: { userId: data.userId, liveClassId: data.liveClassId },
+      data: {
+        userId: data.userId,
+        liveClassId: data.liveClassId,
+        userPlanId: data.userPlanId ?? null,
+      },
     });
     return toDomainReservation(r);
   },

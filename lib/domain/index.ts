@@ -12,3 +12,5 @@ export type {
   ReservationStatus,
   RESERVATION_STATUS_LABELS,
 } from "./reservation";
+export type { UserPlan, UserPlanStatus } from "./user-plan";
+export { USER_PLAN_STATUS_LABELS, isUserPlanUsable, classesRemaining } from "./user-plan";

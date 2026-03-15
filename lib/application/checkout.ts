@@ -180,6 +180,12 @@ export async function processWebhookUseCase(
 
   const status = ORDER_STATUS_BY_MP[payment.status] ?? "PENDING";
   await orderRepository.updateStatus(order.id, status, payment.id);
+
+  if (status === "APPROVED") {
+    const { activatePlanForOrder } = await import("./activate-plan");
+    await activatePlanForOrder(order.id, order.userId, order.planId, order.centerId);
+  }
+
   await webhookEventRepository.markProcessed(input.centerId, requestId);
 
   return { success: true, alreadyProcessed: false };

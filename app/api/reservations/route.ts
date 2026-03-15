@@ -44,7 +44,8 @@ export async function POST(request: Request) {
     const result = await reserveClassUseCase(
       session.user.id,
       session.user.centerId,
-      parsed.data.liveClassId
+      parsed.data.liveClassId,
+      parsed.data.userPlanId
     );
     if (!result.success) {
       const status =
@@ -54,9 +55,11 @@ export async function POST(request: Request) {
             ? 404
             : result.code === "NO_SPOTS" || result.code === "ALREADY_RESERVED"
               ? 409
-              : 400;
+              : result.code === "PLAN_SELECTION_REQUIRED"
+                ? 422
+                : 400;
       return NextResponse.json(
-        { code: result.code, message: result.message },
+        { code: result.code, message: result.message, ...(result.plans ? { plans: result.plans } : {}) },
         { status }
       );
     }
