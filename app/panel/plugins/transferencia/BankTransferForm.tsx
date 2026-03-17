@@ -3,35 +3,7 @@
 import { useTransition, useState } from "react";
 import { toggleBankTransfer, saveBankData } from "../actions";
 import type { Center } from "@/lib/domain";
-
-const BANKS = [
-  "Banco de Chile",
-  "Banco Estado",
-  "Banco Santander",
-  "BCI",
-  "Banco Itaú",
-  "Scotiabank",
-  "Banco Falabella",
-  "Banco Ripley",
-  "Banco Security",
-  "Banco BICE",
-  "Banco Consorcio",
-  "Banco Internacional",
-  "HSBC",
-  "Banco BTG Pactual",
-  "Coopeuch",
-  "MACH (BCI)",
-  "Tenpo (Prepago)",
-  "Mercado Pago",
-];
-
-const ACCOUNT_TYPES = [
-  "Cuenta Corriente",
-  "Cuenta Vista",
-  "Cuenta de Ahorro",
-  "Cuenta RUT",
-  "Chequera Electrónica",
-];
+import { BankAccountFields } from "./BankAccountFields";
 
 interface Props {
   center: Center;
@@ -95,93 +67,17 @@ export function BankTransferForm({ center }: Props) {
             Estos datos se muestran a las alumnas que elijan pagar por transferencia.
           </p>
 
-          <div>
-            <label htmlFor="bankName" className="block text-sm font-medium text-[var(--color-text)] mb-1">
-              Banco
-            </label>
-            <select
-              id="bankName"
-              name="bankName"
-              defaultValue={center.bankName ?? ""}
-              className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)]"
-            >
-              <option value="">Seleccionar...</option>
-              {BANKS.map((b) => (
-                <option key={b} value={b}>{b}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label htmlFor="bankAccountType" className="block text-sm font-medium text-[var(--color-text)] mb-1">
-              Tipo de cuenta
-            </label>
-            <select
-              id="bankAccountType"
-              name="bankAccountType"
-              defaultValue={center.bankAccountType ?? ""}
-              className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)]"
-            >
-              <option value="">Seleccionar...</option>
-              {ACCOUNT_TYPES.map((t) => (
-                <option key={t} value={t}>{t}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label htmlFor="bankAccountNumber" className="block text-sm font-medium text-[var(--color-text)] mb-1">
-              Nro. de cuenta
-            </label>
-            <input
-              id="bankAccountNumber"
-              name="bankAccountNumber"
-              type="text"
-              defaultValue={center.bankAccountNumber ?? ""}
-              className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)]"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="bankAccountHolder" className="block text-sm font-medium text-[var(--color-text)] mb-1">
-              Titular
-            </label>
-            <input
-              id="bankAccountHolder"
-              name="bankAccountHolder"
-              type="text"
-              defaultValue={center.bankAccountHolder ?? ""}
-              className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)]"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="bankAccountRut" className="block text-sm font-medium text-[var(--color-text)] mb-1">
-              RUT del titular
-            </label>
-            <input
-              id="bankAccountRut"
-              name="bankAccountRut"
-              type="text"
-              defaultValue={center.bankAccountRut ?? ""}
-              placeholder="Ej: 12.345.678-9"
-              className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)]"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="bankAccountEmail" className="block text-sm font-medium text-[var(--color-text)] mb-1">
-              Email de notificación
-            </label>
-            <input
-              id="bankAccountEmail"
-              name="bankAccountEmail"
-              type="email"
-              defaultValue={center.bankAccountEmail ?? ""}
-              placeholder="pagos@micentro.cl"
-              className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)]"
-            />
-          </div>
+          <BankAccountFields
+            defaultValues={{
+              bankName: center.bankName,
+              bankAccountType: center.bankAccountType,
+              bankAccountNumber: center.bankAccountNumber,
+              bankAccountHolder: center.bankAccountHolder,
+              bankAccountRut: center.bankAccountRut,
+              bankAccountEmail: center.bankAccountEmail,
+            }}
+            disabled={isPending}
+          />
 
           <div className="flex items-center gap-3 pt-2">
             <button

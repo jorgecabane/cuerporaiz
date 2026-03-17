@@ -46,6 +46,20 @@ export interface OrderListFilters {
   status?: OrderStatus;
 }
 
+export interface OrderPageFilters {
+  status?: OrderStatus;
+  email?: string;
+  from?: Date;
+  to?: Date;
+  page: number;
+  take: number;
+}
+
+export interface OrderPageResult {
+  items: Order[];
+  hasMore: boolean;
+}
+
 export interface IOrderRepository {
   create(data: CreateOrderInput): Promise<Order>;
   findById(id: string): Promise<Order | null>;
@@ -53,5 +67,6 @@ export interface IOrderRepository {
   findByMpPaymentId(mpPaymentId: string): Promise<Order | null>;
   updateStatus(id: string, status: OrderStatus, mpPaymentId?: string | null): Promise<Order>;
   findManyByCenterId(centerId: string, filters?: OrderListFilters): Promise<Order[]>;
+  findPageByCenterId(centerId: string, filters: OrderPageFilters): Promise<OrderPageResult>;
   findManyByUserIdAndCenterId(userId: string, centerId: string): Promise<Order[]>;
 }
