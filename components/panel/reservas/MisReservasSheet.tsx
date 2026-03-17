@@ -6,60 +6,14 @@ import { AdaptiveSheet } from "@/components/ui/AdaptiveSheet";
 import { Button } from "@/components/ui/Button";
 import { TabsRoot, TabsList, TabsTrigger, TabsContent } from "./Tabs";
 import { ReservationsList } from "./ReservationsList";
-
-const TAB_HOY = "hoy";
-const TAB_PROXIMAS = "proximas";
-const TAB_CANCELADAS = "canceladas";
-const TAB_HISTORICAS = "historicas";
-
-type TabId = typeof TAB_HOY | typeof TAB_PROXIMAS | typeof TAB_CANCELADAS | typeof TAB_HISTORICAS;
-
-function isToday(iso: string): boolean {
-  const d = new Date(iso);
-  const now = new Date();
-  return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
-}
-
-function segmentReservations(items: ReservationDto[]): Record<TabId, ReservationDto[]> {
-  const now = new Date();
-  const hoy: ReservationDto[] = [];
-  const proximas: ReservationDto[] = [];
-  const canceladas: ReservationDto[] = [];
-  const historicas: ReservationDto[] = [];
-
-  for (const r of items) {
-    const startsAt = r.liveClass?.startsAt ? new Date(r.liveClass.startsAt) : null;
-
-    if (r.status === "CANCELLED" || r.status === "LATE_CANCELLED") {
-      canceladas.push(r);
-      continue;
-    }
-    if (r.status === "ATTENDED" || r.status === "NO_SHOW") {
-      historicas.push(r);
-      continue;
-    }
-    if (r.status === "CONFIRMED" && startsAt) {
-      if (startsAt <= now) {
-        historicas.push(r);
-      } else if (isToday(r.liveClass!.startsAt)) {
-        hoy.push(r);
-      } else {
-        proximas.push(r);
-      }
-      continue;
-    }
-    historicas.push(r);
-  }
-
-  return { hoy, proximas, canceladas, historicas };
-}
-
-function canCancelReservation(r: ReservationDto): boolean {
-  if (r.status !== "CONFIRMED") return false;
-  const startsAt = r.liveClass?.startsAt;
-  if (!startsAt) return false;
-  return new Date(startsAt) > new Date();
-}
+import {
+  TAB_HOY,
+  TAB_PROXIMAS,
+  TAB_CANCELADAS,
+  TAB_HISTORICAS,
+  segmentReservations,
+  canCancelReservation,
+} from "./segment-reservations";
 
 function willConsumeClassIfCancelNow(r: ReservationDto, cancelBeforeHours: number): boolean {
   const startsAt = r.liveClass?.startsAt;
