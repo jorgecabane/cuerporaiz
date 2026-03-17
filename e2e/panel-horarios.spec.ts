@@ -14,7 +14,9 @@ test.describe("Panel admin - Horarios flow", () => {
 
   test("admin sees weekly calendar with navigation", async ({ page }) => {
     await page.goto("/panel/horarios");
-    await expect(page.getByRole("heading", { name: /Horarios/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Horarios/i })).toBeVisible({
+      timeout: 15000,
+    });
     await expect(page.getByRole("link", { name: /Nueva clase/i })).toBeVisible();
     await expect(page.getByRole("button", { name: /Anterior/i })).toBeVisible();
     await expect(page.getByRole("button", { name: /Hoy/i })).toBeVisible();
@@ -24,11 +26,12 @@ test.describe("Panel admin - Horarios flow", () => {
   test("admin can navigate weeks", async ({ page }) => {
     await page.goto("/panel/horarios");
     const weekLabel = page.locator("text=/\\d+ .+ — \\d+ .+/");
-    const initialText = await weekLabel.textContent();
+    await expect(weekLabel).toBeVisible({ timeout: 15000 });
+    const initialText = (await weekLabel.textContent()) ?? "";
     await page.getByRole("button", { name: /Siguiente/i }).click();
-    await expect(weekLabel).not.toHaveText(initialText!);
+    await expect(weekLabel).not.toHaveText(initialText);
     await page.getByRole("button", { name: /Hoy/i }).click();
-    await expect(weekLabel).toHaveText(initialText!);
+    await expect(weekLabel).toHaveText(initialText);
   });
 
   test("admin opens nueva clase form and sees all fields", async ({ page }) => {
@@ -158,7 +161,9 @@ test.describe("Panel admin - Calendar views and filters", () => {
 
   test("can switch to day view", async ({ page }) => {
     await page.goto("/panel/horarios");
-    await expect(page.getByRole("heading", { name: /Horarios/i })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole("heading", { name: /Horarios/i })).toBeVisible({
+      timeout: 15000,
+    });
     await page.getByRole("button", { name: /Día/i }).click();
     await expect(page.getByRole("button", { name: /Anterior/i })).toBeVisible();
     await expect(page.getByRole("button", { name: /Siguiente/i })).toBeVisible();
