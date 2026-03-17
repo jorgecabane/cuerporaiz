@@ -53,6 +53,7 @@ model Center {
   webhookEvents   MercadoPagoWebhookEvent[]
   userPlans       UserPlan[]
   manualPayments  ManualPayment[]
+  instructorBankAccounts InstructorBankAccount[]
 }
 
 // ─── Usuarios (sin datos de infra; dominio puro en lib/domain) ──────────────
@@ -77,6 +78,7 @@ model User {
   orders         Order[]
   userPlans      UserPlan[]
   manualPayments ManualPayment[]
+  instructorBankAccounts InstructorBankAccount[]
 }
 
 // ─── Disciplinas (prácticas: Yoga, Pilates, TRX…) ─────────────────────────
@@ -248,6 +250,31 @@ model ManualPayment {
   @@index([centerId])
   @@index([userId])
   @@index([userPlanId])
+}
+
+// Datos bancarios por instructora (depósitos), por centro.
+model InstructorBankAccount {
+  id String @id @default(cuid())
+
+  centerId String
+  userId   String
+
+  bankName          String?
+  bankAccountType   String?
+  bankAccountNumber String?
+  bankAccountHolder String?
+  bankAccountRut    String?
+  bankAccountEmail  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  center Center @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([centerId, userId])
+  @@index([centerId])
+  @@index([userId])
 }
 
 // Estados de reserva

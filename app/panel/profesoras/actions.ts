@@ -2,7 +2,7 @@
 
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import { instructorRepository, centerRepository } from "@/lib/adapters/db";
+import { instructorBankAccountRepository, instructorRepository, centerRepository } from "@/lib/adapters/db";
 import { isAdminRole } from "@/lib/domain/role";
 import { sendEmailSafe } from "@/lib/application/send-email";
 import { buildWelcomeStaffEmail } from "@/lib/email/transactional";
@@ -54,4 +54,26 @@ export async function deactivateInstructor(formData: FormData): Promise<void> {
   if (!id) return;
   await instructorRepository.deactivate(id, centerId);
   redirect("/panel/profesoras");
+}
+
+export async function saveInstructorBankData(input: {
+  instructorUserId: string;
+  bankName: string | null;
+  bankAccountType: string | null;
+  bankAccountNumber: string | null;
+  bankAccountHolder: string | null;
+  bankAccountRut: string | null;
+  bankAccountEmail: string | null;
+}): Promise<void> {
+  const centerId = await requireAdminCenterId();
+  await instructorBankAccountRepository.upsert({
+    centerId,
+    userId: input.instructorUserId,
+    bankName: input.bankName,
+    bankAccountType: input.bankAccountType,
+    bankAccountNumber: input.bankAccountNumber,
+    bankAccountHolder: input.bankAccountHolder,
+    bankAccountRut: input.bankAccountRut,
+    bankAccountEmail: input.bankAccountEmail,
+  });
 }
