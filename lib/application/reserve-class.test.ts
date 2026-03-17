@@ -2,11 +2,16 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
   cancelReservationUseCase,
   cancelReservationByStaffUseCase,
+  listMyReservationsPaginated,
 } from "./reserve-class";
 import type { Reservation, LiveClass } from "@/lib/domain";
 
 const mocks = vi.hoisted(() => ({
-  reservationRepository: { findById: vi.fn(), updateStatus: vi.fn() },
+  reservationRepository: {
+    findById: vi.fn(),
+    updateStatus: vi.fn(),
+    findByUserIdAndCenterPaginated: vi.fn(),
+  },
   liveClassRepository: { findById: vi.fn() },
   centerRepository: { findById: vi.fn() },
   userPlanRepository: { decrementClassesUsed: vi.fn() },
@@ -190,5 +195,48 @@ describe("cancelReservationByStaffUseCase", () => {
     expect(result.success).toBe(false);
     if (!result.success) expect(result.code).toBe("CLASS_STARTED");
     expect(mocks.reservationRepository.updateStatus).not.toHaveBeenCalled();
+  });
+});
+
+describe("listMyReservationsPaginated", () => {
+  const userId = "user-1";
+  const centerId = "center-1";
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.reservationRepository.findByUserIdAndCenterPaginated.mockResolvedValue({
+      items: [],
+      total: 0,
+    });
+  });
+
+  it("sin statuses no pasa statuses al repo (todas las reservas)", async () => {
+    await listMyReservationsPaginated(userId, centerId, { page: 1, pageSize: 10 });
+
+    expect(mocks.reservationRepository.findByUserIdAndCenterPaginated).toHaveBeenCalledWith(
+      userId,
+      expect.objectContaining({
+        centerId,
+        limit: 10,
+        offset: 0,
+      })
+    );
+    const call = mocks.reservationRepository.findByUserIdAndCenterPaginated.mock.calls[0][1];
+    expect(call.statuses).toBeUndefined();
+  });
+
+  it("con statuses pasa array al repo (incluye CANCELLED y LATE_CANCELLED)", async () => {
+    const statuses = ["CONFIRMED", "CANCELLED", "LATE_CANCELLED", "ATTENDED", "NO_SHOW"] as const;
+    await listMyReservationsPaginated(userId, centerId, { page: 1, pageSize: 10, statuses: [...statuses] });
+
+    expect(mocks.reservationRepository.findByUserIdAndCenterPaginated).toHaveBeenCalledWith(
+      userId,
+      expect.objectContaining({
+        centerId,
+        limit: 10,
+        offset: 0,
+        statuses: ["CONFIRMED", "CANCELLED", "LATE_CANCELLED", "ATTENDED", "NO_SHOW"],
+      })
+    );
   });
 });

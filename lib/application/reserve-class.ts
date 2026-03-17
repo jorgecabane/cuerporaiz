@@ -8,7 +8,7 @@ import type {
   ReservationDto,
   LiveClassDto,
 } from "@/lib/dto/reservation-dto";
-import type { Reservation } from "@/lib/domain";
+import type { Reservation, ReservationStatus } from "@/lib/domain";
 import { isUserPlanUsable } from "@/lib/domain/user-plan";
 import {
   centerRepository,
@@ -531,18 +531,19 @@ export interface ListReservationsPaginatedResult {
 
 /**
  * Listar reservas del usuario en el centro con paginación.
+ * Sin statuses = todas (CONFIRMED, CANCELLED, LATE_CANCELLED, ATTENDED, NO_SHOW).
  */
 export async function listMyReservationsPaginated(
   userId: string,
   centerId: string,
-  opts: { page?: number; pageSize?: number }
+  opts: { page?: number; pageSize?: number; statuses?: ReservationStatus[] }
 ): Promise<ListReservationsPaginatedResult> {
   const page = Math.max(1, opts.page ?? 1);
   const pageSize = Math.min(50, Math.max(1, opts.pageSize ?? DEFAULT_PAGE_SIZE));
   const offset = (page - 1) * pageSize;
   const { items: reservations, total } = await reservationRepository.findByUserIdAndCenterPaginated(
     userId,
-    { centerId, limit: pageSize, offset }
+    { centerId, limit: pageSize, offset, ...(opts.statuses?.length ? { statuses: opts.statuses } : {}) }
   );
   const dtos: ReservationDto[] = [];
   for (const r of reservations) {

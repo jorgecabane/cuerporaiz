@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   reserveClassBodySchema,
   cancelReservationBodySchema,
+  listReservationsQuerySchema,
 } from "@/lib/dto/reservation-dto";
 import { RESERVATION_STATUS_LABELS } from "@/lib/domain/reservation";
 
@@ -34,6 +35,48 @@ describe("reservation-dto", () => {
     it("rechaza reservationId vacío", () => {
       const result = cancelReservationBodySchema.safeParse({ reservationId: "" });
       expect(result.success).toBe(false);
+    });
+  });
+
+  describe("listReservationsQuerySchema", () => {
+    it("sin statuses devuelve statuses undefined (todas)", () => {
+      const result = listReservationsQuerySchema.safeParse({});
+      expect(result.success).toBe(true);
+      if (result.success) expect(result.data.statuses).toBeUndefined();
+    });
+
+    it("statuses válidos parsea a array (CONFIRMED,CANCELLED,LATE_CANCELLED,ATTENDED,NO_SHOW)", () => {
+      const result = listReservationsQuerySchema.safeParse({
+        statuses: "CONFIRMED,CANCELLED,LATE_CANCELLED,ATTENDED,NO_SHOW",
+      });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.statuses).toEqual([
+          "CONFIRMED",
+          "CANCELLED",
+          "LATE_CANCELLED",
+          "ATTENDED",
+          "NO_SHOW",
+        ]);
+      }
+    });
+
+    it("statuses con espacios se trimean", () => {
+      const result = listReservationsQuerySchema.safeParse({
+        statuses: " CONFIRMED , LATE_CANCELLED ",
+      });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.statuses).toEqual(["CONFIRMED", "LATE_CANCELLED"]);
+      }
+    });
+
+    it("status inválido devuelve statuses undefined (parseo permisivo)", () => {
+      const result = listReservationsQuerySchema.safeParse({
+        statuses: "CONFIRMED,INVALID_STATUS",
+      });
+      expect(result.success).toBe(true);
+      if (result.success) expect(result.data.statuses).toBeUndefined();
     });
   });
 });
