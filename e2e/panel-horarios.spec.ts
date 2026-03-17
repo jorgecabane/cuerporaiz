@@ -83,7 +83,14 @@ test.describe("Panel admin - Horarios flow", () => {
   test("clase online is disabled", async ({ page }) => {
     await page.goto("/panel/horarios/nueva");
     const onlineCheckbox = page.getByLabel(/Clase online/i);
-    await expect(onlineCheckbox).toBeDisabled();
+    // Si no hay plugins (Zoom/Meet) configurados, queda deshabilitado.
+    // Si hay plugins, debe estar habilitado.
+    const requiresPluginHint = page.getByText(/\(requiere plugin\)/i);
+    if (await requiresPluginHint.count()) {
+      await expect(onlineCheckbox).toBeDisabled();
+    } else {
+      await expect(onlineCheckbox).toBeEnabled();
+    }
   });
 
   test("trial capacity shows when acepta prueba checked", async ({ page }) => {
