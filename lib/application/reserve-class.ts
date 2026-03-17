@@ -256,14 +256,28 @@ export async function cancelReservationUseCase(
     return { success: false, code: "CENTER_NOT_FOUND", message: "Centro no encontrado" };
   }
 
-  // Devolver clase al plan si la cancelación es dentro del plazo
+  const cancelBeforeHours = center.cancelBeforeHours ?? 0;
   const hoursBeforeClass =
     (liveClass.startsAt.getTime() - Date.now()) / (1000 * 60 * 60);
-  const withinCancelWindow = hoursBeforeClass >= (center.cancelBeforeHours ?? 0);
 
-  const updated = await reservationRepository.updateStatus(reservationId, "CANCELLED");
+  if (hoursBeforeClass < 0) {
+    return {
+      success: false,
+      code: "CLASS_STARTED",
+      message: "No se puede cancelar: la clase ya inició",
+    };
+  }
 
-  if (withinCancelWindow && reservation.userPlanId) {
+  let newStatus: "CANCELLED" | "LATE_CANCELLED";
+  if (hoursBeforeClass >= cancelBeforeHours) {
+    newStatus = "CANCELLED";
+  } else {
+    newStatus = "LATE_CANCELLED";
+  }
+
+  const updated = await reservationRepository.updateStatus(reservationId, newStatus);
+
+  if (newStatus === "CANCELLED" && reservation.userPlanId) {
     await userPlanRepository.decrementClassesUsed(reservation.userPlanId);
   }
   const liveClassDto = toLiveClassDto(
@@ -308,13 +322,28 @@ export async function cancelReservationByStaffUseCase(
     return { success: false, code: "CENTER_NOT_FOUND", message: "Centro no encontrado" };
   }
 
+  const cancelBeforeHours = center.cancelBeforeHours ?? 0;
   const hoursBeforeClass =
     (liveClass.startsAt.getTime() - Date.now()) / (1000 * 60 * 60);
-  const withinCancelWindow = hoursBeforeClass >= (center.cancelBeforeHours ?? 0);
 
-  const updated = await reservationRepository.updateStatus(reservationId, "CANCELLED");
+  if (hoursBeforeClass < 0) {
+    return {
+      success: false,
+      code: "CLASS_STARTED",
+      message: "No se puede cancelar: la clase ya inició",
+    };
+  }
 
-  if (withinCancelWindow && reservation.userPlanId) {
+  let newStatus: "CANCELLED" | "LATE_CANCELLED";
+  if (hoursBeforeClass >= cancelBeforeHours) {
+    newStatus = "CANCELLED";
+  } else {
+    newStatus = "LATE_CANCELLED";
+  }
+
+  const updated = await reservationRepository.updateStatus(reservationId, newStatus);
+
+  if (newStatus === "CANCELLED" && reservation.userPlanId) {
     await userPlanRepository.decrementClassesUsed(reservation.userPlanId);
   }
   const liveClassDto = toLiveClassDto(
@@ -339,7 +368,7 @@ export async function cancelReservationByStaffUseCase(
 export async function listMyReservationsUseCase(
   userId: string,
   centerId: string,
-  options?: { status?: "CONFIRMED" | "CANCELLED" | "ATTENDED" | "NO_SHOW" }
+  options?: { status?: "CONFIRMED" | "CANCELLED" | "LATE_CANCELLED" | "ATTENDED" | "NO_SHOW" }
 ): Promise<ReservationDto[]> {
   const reservations = await reservationRepository.findByUserId(userId, options);
   const dtos: ReservationDto[] = [];

@@ -42,6 +42,7 @@ describe("RESERVATION_STATUS_LABELS", () => {
   it("tiene etiquetas para todos los estados", () => {
     expect(RESERVATION_STATUS_LABELS.CONFIRMED).toBe("Confirmada");
     expect(RESERVATION_STATUS_LABELS.CANCELLED).toBe("Cancelada");
+    expect(RESERVATION_STATUS_LABELS.LATE_CANCELLED).toBe("Cancelada tarde");
     expect(RESERVATION_STATUS_LABELS.ATTENDED).toBe("Asistió");
     expect(RESERVATION_STATUS_LABELS.NO_SHOW).toBe("No-show");
   });

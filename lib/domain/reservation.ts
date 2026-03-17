@@ -5,7 +5,7 @@
 import type { UserId } from "./user";
 import type { LiveClassId } from "./live-class";
 
-export type ReservationStatus = "CONFIRMED" | "CANCELLED" | "ATTENDED" | "NO_SHOW";
+export type ReservationStatus = "CONFIRMED" | "CANCELLED" | "LATE_CANCELLED" | "ATTENDED" | "NO_SHOW";
 
 export type ReservationId = string;
 
@@ -22,6 +22,7 @@ export interface Reservation {
 export const RESERVATION_STATUS_LABELS: Record<ReservationStatus, string> = {
   CONFIRMED: "Confirmada",
   CANCELLED: "Cancelada",
+  LATE_CANCELLED: "Cancelada tarde",
   ATTENDED: "Asistió",
   NO_SHOW: "No-show",
 };
