@@ -16,6 +16,7 @@ export interface IUserRepository {
   create(data: CreateUserInput): Promise<User>;
   findByEmail(email: string): Promise<User | null>;
   findById(id: string): Promise<User | null>;
+  findManyByIds(ids: string[]): Promise<User[]>;
   findByIdWithMemberships(id: string): Promise<UserWithMemberships | null>;
   findManyByCenterId(centerId: CenterId): Promise<UserWithCenterRole[]>;
   addRole(userId: string, centerId: CenterId, role: Role): Promise<void>;

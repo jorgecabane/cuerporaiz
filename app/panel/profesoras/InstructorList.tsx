@@ -1,6 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
+import Image from "next/image";
 import { deactivateInstructor } from "./actions";
 import { Button } from "@/components/ui/Button";
 import type { Instructor } from "@/lib/ports";
@@ -24,12 +25,13 @@ export function InstructorList({ instructors }: { instructors: Instructor[] }) {
         >
           <div className="flex items-center gap-3">
             {i.imageUrl ? (
-              <img
+              <Image
                 src={i.imageUrl}
                 alt=""
                 className="h-10 w-10 rounded-full object-cover border border-[var(--color-border)]"
                 width={40}
                 height={40}
+                unoptimized
               />
             ) : (
               <span

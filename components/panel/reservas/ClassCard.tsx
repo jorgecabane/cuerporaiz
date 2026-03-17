@@ -1,15 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { ChevronDown, ChevronUp, Clock, Users } from "lucide-react";
 import type { LiveClassDto } from "@/lib/dto/reservation-dto";
 import { Button } from "@/components/ui/Button";
-
-function formatTimeRange(startsAtIso: string, durationMinutes: number): string {
-  const start = new Date(startsAtIso);
-  const end = new Date(start.getTime() + durationMinutes * 60 * 1000);
-  return `${start.toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" })} – ${end.toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" })}`;
-}
 
 function formatDateAndTime(startsAtIso: string, durationMinutes: number): string {
   const start = new Date(startsAtIso);
@@ -83,7 +78,7 @@ export function ClassCard({
   onCloseReserveForStudent,
 }: ClassCardProps) {
   const noSpots = c.spotsLeft <= 0;
-  const canReserve = !alreadyReserved && !noSpots && onReserve;
+  const canReserve = !isPast && !alreadyReserved && !noSpots && onReserve;
   const isStaff = Array.isArray(attendees);
   const tagLabel = c.isOnline ? "Online" : "Presencial";
   const [expanded, setExpanded] = useState(false);
@@ -117,12 +112,13 @@ export function ClassCard({
           {/* Fila 3: avatar (solo si hay nombre o imagen) + con [nombre profesor] o "Sin profesor asignado" */}
           <div className="mt-1 flex items-center gap-2">
             {c.instructorImageUrl ? (
-              <img
+              <Image
                 src={c.instructorImageUrl}
                 alt=""
                 className="h-8 w-8 shrink-0 rounded-full object-cover"
                 width={32}
                 height={32}
+                unoptimized
               />
             ) : c.instructorName?.trim() ? (
               <span

@@ -13,7 +13,6 @@ interface Plan {
 
 interface Props {
   userId: string;
-  centerId: string;
   plans: Plan[];
 }
 
@@ -21,7 +20,7 @@ function todayStr() {
   return new Date().toISOString().split("T")[0];
 }
 
-export function AssignPlanForm({ userId, centerId, plans }: Props) {
+export function AssignPlanForm({ userId, plans }: Props) {
   const [open, setOpen] = useState(false);
   const [planId, setPlanId] = useState(plans[0]?.id ?? "");
   const [validFrom, setValidFrom] = useState(todayStr());

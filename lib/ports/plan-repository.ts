@@ -55,6 +55,7 @@ export interface PlanUpdateInput {
 
 export interface IPlanRepository {
   findById(id: string): Promise<Plan | null>;
+  findManyByIds(ids: string[]): Promise<Plan[]>;
   findByCenterAndSlug(centerId: string, slug: string): Promise<Plan | null>;
   findManyByCenterId(centerId: string): Promise<Plan[]>;
   create(centerId: string, data: PlanCreateInput): Promise<Plan>;

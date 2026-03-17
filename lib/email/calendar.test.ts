@@ -36,6 +36,15 @@ describe("calendar", () => {
       });
       expect(url).toContain("ctz=America%2FSantiago");
     });
+
+    it("usa formato UTC cuando ISO viene con Z", () => {
+      const url = buildGoogleCalendarUrl({
+        title: "Clase",
+        start: "2026-03-15T10:00:00Z",
+        end: "2026-03-15T11:00:00Z",
+      });
+      expect(url).toMatch(/dates=\d{8}T\d{6}Z%2F\d{8}T\d{6}Z/);
+    });
   });
 
   describe("getAddToCalendarInstruction", () => {

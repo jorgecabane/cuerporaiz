@@ -164,6 +164,7 @@ model LiveClass {
   reservations Reservation[]
 
   @@index([centerId])
+  @@index([centerId, startsAt])
   @@index([startsAt])
   @@index([disciplineId])
   @@index([seriesId])
@@ -274,6 +275,7 @@ model Reservation {
   @@index([userId])
   @@index([liveClassId])
   @@index([userPlanId])
+  @@index([userId, updatedAt])
 }
 
 // Rol por centro (multi-tenant RBAC). Valores en inglés para consistencia con BD.
@@ -296,6 +298,7 @@ model UserCenterRole {
   @@unique([userId, centerId])
   @@index([userId])
   @@index([centerId])
+  @@index([centerId, role])
 }
 
 // ─── MercadoPago por centro (plugin activo + credenciales) ──────────────────
@@ -424,6 +427,7 @@ model Order {
   plan   Plan   @relation(fields: [planId], references: [id], onDelete: Restrict)
 
   @@index([centerId])
+  @@index([centerId, createdAt])
   @@index([userId])
   @@index([externalReference])
   @@index([mpPaymentId])

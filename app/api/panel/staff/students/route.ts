@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { isAdminRole } from "@/lib/domain/role";
-import { userRepository } from "@/lib/adapters/db";
+import { prisma } from "@/lib/adapters/db";
 
 /**
  * Lista alumnas del centro para selector "Reservar por alumno".
@@ -24,10 +23,16 @@ export async function GET() {
       );
     }
     const centerId = session.user.centerId;
-    const all = await userRepository.findManyByCenterId(centerId);
-    const students = all
-      .filter((u) => u.role === "STUDENT")
-      .map((u) => ({ id: u.id, name: u.name ?? null, email: u.email }));
+    const memberships = await prisma.userCenterRole.findMany({
+      where: { centerId, role: "STUDENT" },
+      select: { userId: true, user: { select: { name: true, email: true } } },
+      orderBy: { user: { email: "asc" } },
+    });
+    const students = memberships.map((m) => ({
+      id: m.userId,
+      name: m.user.name ?? null,
+      email: m.user.email,
+    }));
     return NextResponse.json(students);
   } catch (err) {
     console.error("[panel staff students]", err);
