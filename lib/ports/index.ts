@@ -11,8 +11,10 @@ export type { IMercadoPagoConfigRepository, MercadoPagoConfig } from "./mercadop
 export type { IZoomConfigRepository, ZoomConfig } from "./zoom-config-repository";
 export type { IGoogleMeetConfigRepository, GoogleMeetConfig } from "./google-meet-config-repository";
 export type { IPlanRepository, Plan, PlanType, BillingMode, ValidityPeriod, PlanCreateInput, PlanUpdateInput } from "./plan-repository";
-export type { IOrderRepository, Order, OrderStatus, CreateOrderInput, OrderListFilters } from "./order-repository";
+export type { IOrderRepository, Order, OrderStatus, CreateOrderInput, OrderListFilters, OrderPageFilters, OrderPageResult } from "./order-repository";
 export { ORDER_STATUS_LABELS } from "./order-repository";
+export type { IManualPaymentRepository, ManualPaymentListItem, ManualPaymentPageFilters, ManualPaymentPageResult } from "./manual-payment-repository";
+export type { IInstructorBankAccountRepository, InstructorBankAccount, SaveInstructorBankAccountInput } from "./instructor-bank-account-repository";
 export type { IWebhookEventRepository } from "./webhook-event-repository";
 export type { IInstructorRepository, Instructor, CreateInstructorInput, UpdateInstructorInput } from "./instructor-repository";
 export type { ICenterHolidayRepository, CreateHolidayInput } from "./center-holiday-repository";

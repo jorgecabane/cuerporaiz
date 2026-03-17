@@ -17,7 +17,7 @@ test.describe("Panel admin - Pagos", () => {
     await page.getByRole("link", { name: /^Pagos$/i }).click();
     await expect(page).toHaveURL(/\/panel\/pagos/);
     await expect(
-      page.getByRole("heading", { name: /Pagos y conciliación/i })
+      page.getByRole("heading", { name: /^Pagos$/i })
     ).toBeVisible();
   });
 });

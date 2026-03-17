@@ -1,5 +1,11 @@
-import type { IOrderRepository, Order, CreateOrderInput, OrderStatus } from "@/lib/ports";
+import type {
+  IOrderRepository,
+  Order,
+  CreateOrderInput,
+  OrderStatus,
+} from "@/lib/ports";
 import type { OrderListFilters } from "@/lib/ports/order-repository";
+import type { OrderPageResult } from "@/lib/ports/order-repository";
 import { prisma } from "./prisma";
 import type { OrderStatus as PrismaOrderStatus } from "@prisma/client";
 
@@ -88,6 +94,44 @@ export const orderRepository: IOrderRepository = {
       orderBy: { createdAt: "desc" },
     });
     return list.map(toDomain);
+  },
+
+  async findPageByCenterId(centerId, filters) {
+    const take = Math.max(1, Math.min(100, filters.take));
+    const page = Math.max(1, Math.floor(filters.page));
+    const skip = (page - 1) * take;
+
+    const list = await prisma.order.findMany({
+      where: {
+        centerId,
+        ...(filters.status != null && {
+          status: filters.status as unknown as PrismaOrderStatus,
+        }),
+        ...(filters.from || filters.to
+          ? {
+              createdAt: {
+                ...(filters.from && { gte: filters.from }),
+                ...(filters.to && { lte: filters.to }),
+              },
+            }
+          : {}),
+        ...(filters.email
+          ? {
+              user: {
+                email: { contains: filters.email, mode: "insensitive" },
+              },
+            }
+          : {}),
+      },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      skip,
+      take: take + 1,
+    });
+
+    const hasMore = list.length > take;
+    const items = list.slice(0, take).map(toDomain);
+    const result: OrderPageResult = { items, hasMore };
+    return result;
   },
 
   async findManyByUserIdAndCenterId(userId: string, centerId: string) {
