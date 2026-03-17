@@ -8,6 +8,7 @@ export interface CreateLiveClassInput {
   disciplineId?: string | null;
   instructorId?: string | null;
   isOnline?: boolean;
+  meetingUrl?: string | null;
   isTrialClass?: boolean;
   trialCapacity?: number | null;
   color?: string | null;
@@ -24,6 +25,7 @@ export interface UpdateLiveClassInput {
   disciplineId?: string | null;
   instructorId?: string | null;
   isOnline?: boolean;
+  meetingUrl?: string | null;
   isTrialClass?: boolean;
   trialCapacity?: number | null;
   color?: string | null;
@@ -33,10 +35,25 @@ export interface UpdateLiveClassInput {
   status?: string;
 }
 
+export interface ListByCenterOptions {
+  limit?: number;
+  offset?: number;
+}
+
 export interface ILiveClassRepository {
   findById(id: string): Promise<LiveClass | null>;
   findByCenterId(centerId: string, from?: Date): Promise<LiveClass[]>;
-  findByCenterIdAndRange(centerId: string, from: Date, to: Date): Promise<LiveClass[]>;
+  findByCenterIdPaginated(
+    centerId: string,
+    from: Date | undefined,
+    options: { limit: number; offset: number }
+  ): Promise<{ items: LiveClass[]; total: number }>;
+  findByCenterIdAndRange(
+    centerId: string,
+    from: Date,
+    to: Date,
+    instructorId?: string
+  ): Promise<LiveClass[]>;
   findBySeriesId(seriesId: string): Promise<LiveClass[]>;
   countConfirmedReservations(liveClassId: string): Promise<number>;
   create(centerId: string, data: CreateLiveClassInput): Promise<LiveClass>;

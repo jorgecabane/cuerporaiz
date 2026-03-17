@@ -21,19 +21,9 @@ export async function updateCenterPolicies(
   if (
     (data.cancelBeforeHours !== undefined && (data.cancelBeforeHours < 0 || data.cancelBeforeHours > 168)) ||
     (data.maxNoShowsPerMonth !== undefined && (data.maxNoShowsPerMonth < 0 || data.maxNoShowsPerMonth > 31)) ||
-    (data.bookBeforeHours !== undefined && (data.bookBeforeHours < 0 || data.bookBeforeHours > 720)) ||
-    (data.calendarStartHour !== undefined && (data.calendarStartHour < 0 || data.calendarStartHour > 12)) ||
-    (data.calendarEndHour !== undefined && (data.calendarEndHour < 12 || data.calendarEndHour > 24)) ||
-    (data.defaultClassDurationMinutes !== undefined && (data.defaultClassDurationMinutes < 15 || data.defaultClassDurationMinutes > 240))
+    (data.bookBeforeHours !== undefined && (data.bookBeforeHours < 0 || data.bookBeforeHours > 720))
   ) {
     return { error: "Valores fuera de rango" };
-  }
-  if (
-    data.calendarStartHour !== undefined &&
-    data.calendarEndHour !== undefined &&
-    data.calendarStartHour >= data.calendarEndHour
-  ) {
-    return { error: "La hora de inicio debe ser menor que la hora de fin" };
   }
   await centerRepository.updatePolicies(centerId, data);
   revalidatePath("/panel/politicas");

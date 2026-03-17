@@ -16,6 +16,13 @@ function toDomainCenter(c: {
   calendarEndHour: number;
   calendarWeekStartDay: number;
   defaultClassDurationMinutes: number;
+  bankTransferEnabled: boolean;
+  bankName: string | null;
+  bankAccountType: string | null;
+  bankAccountNumber: string | null;
+  bankAccountHolder: string | null;
+  bankAccountRut: string | null;
+  bankAccountEmail: string | null;
   createdAt: Date;
   updatedAt: Date;
 }): Center {
@@ -34,6 +41,13 @@ function toDomainCenter(c: {
     calendarEndHour: c.calendarEndHour,
     calendarWeekStartDay: c.calendarWeekStartDay,
     defaultClassDurationMinutes: c.defaultClassDurationMinutes,
+    bankTransferEnabled: c.bankTransferEnabled,
+    bankName: c.bankName,
+    bankAccountType: c.bankAccountType,
+    bankAccountNumber: c.bankAccountNumber,
+    bankAccountHolder: c.bankAccountHolder,
+    bankAccountRut: c.bankAccountRut,
+    bankAccountEmail: c.bankAccountEmail,
     createdAt: c.createdAt,
     updatedAt: c.updatedAt,
   };

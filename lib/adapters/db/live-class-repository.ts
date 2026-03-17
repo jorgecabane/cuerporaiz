@@ -12,6 +12,7 @@ type PrismaLiveClass = {
   disciplineId: string | null;
   instructorId: string | null;
   isOnline: boolean;
+  meetingUrl: string | null;
   isTrialClass: boolean;
   trialCapacity: number | null;
   color: string | null;
@@ -34,6 +35,7 @@ function toDomain(c: PrismaLiveClass): LiveClass {
     disciplineId: c.disciplineId,
     instructorId: c.instructorId,
     isOnline: c.isOnline,
+    meetingUrl: c.meetingUrl,
     isTrialClass: c.isTrialClass,
     trialCapacity: c.trialCapacity,
     color: c.color,
@@ -64,12 +66,31 @@ export const liveClassRepository: ILiveClassRepository = {
     return list.map(toDomain);
   },
 
-  async findByCenterIdAndRange(centerId, from, to) {
+  async findByCenterIdPaginated(centerId, from, { limit, offset }) {
+    const where = {
+      centerId,
+      status: "ACTIVE" as const,
+      ...(from ? { startsAt: { gte: from } } : {}),
+    };
+    const [items, total] = await Promise.all([
+      prisma.liveClass.findMany({
+        where,
+        orderBy: { startsAt: "asc" },
+        take: limit,
+        skip: offset,
+      }),
+      prisma.liveClass.count({ where }),
+    ]);
+    return { items: items.map(toDomain), total };
+  },
+
+  async findByCenterIdAndRange(centerId, from, to, instructorId?) {
     const list = await prisma.liveClass.findMany({
       where: {
         centerId,
         status: "ACTIVE",
         startsAt: { gte: from, lt: to },
+        ...(instructorId != null ? { instructorId } : {}),
       },
       orderBy: { startsAt: "asc" },
     });
@@ -101,6 +122,7 @@ export const liveClassRepository: ILiveClassRepository = {
         disciplineId: data.disciplineId ?? null,
         instructorId: data.instructorId ?? null,
         isOnline: data.isOnline ?? false,
+        meetingUrl: data.meetingUrl ?? null,
         isTrialClass: data.isTrialClass ?? false,
         trialCapacity: data.trialCapacity ?? null,
         color: data.color ?? null,
@@ -123,6 +145,7 @@ export const liveClassRepository: ILiveClassRepository = {
         disciplineId: d.disciplineId ?? null,
         instructorId: d.instructorId ?? null,
         isOnline: d.isOnline ?? false,
+        meetingUrl: d.meetingUrl ?? null,
         isTrialClass: d.isTrialClass ?? false,
         trialCapacity: d.trialCapacity ?? null,
         color: d.color ?? null,
@@ -146,6 +169,7 @@ export const liveClassRepository: ILiveClassRepository = {
           ...(data.disciplineId !== undefined && { disciplineId: data.disciplineId }),
           ...(data.instructorId !== undefined && { instructorId: data.instructorId }),
           ...(data.isOnline !== undefined && { isOnline: data.isOnline }),
+          ...(data.meetingUrl !== undefined && { meetingUrl: data.meetingUrl }),
           ...(data.isTrialClass !== undefined && { isTrialClass: data.isTrialClass }),
           ...(data.trialCapacity !== undefined && { trialCapacity: data.trialCapacity }),
           ...(data.color !== undefined && { color: data.color }),
@@ -171,6 +195,7 @@ export const liveClassRepository: ILiveClassRepository = {
         ...(data.disciplineId !== undefined && { disciplineId: data.disciplineId }),
         ...(data.instructorId !== undefined && { instructorId: data.instructorId }),
         ...(data.isOnline !== undefined && { isOnline: data.isOnline }),
+        ...(data.meetingUrl !== undefined && { meetingUrl: data.meetingUrl }),
         ...(data.isTrialClass !== undefined && { isTrialClass: data.isTrialClass }),
         ...(data.trialCapacity !== undefined && { trialCapacity: data.trialCapacity }),
         ...(data.color !== undefined && { color: data.color }),

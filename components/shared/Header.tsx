@@ -2,13 +2,20 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import { SITE_NAME, NAV_LINKS, CTAS } from "@/lib/constants/copy";
 
+/** Rutas que usan cascarón público: header siempre sólido (buen contraste en fondo claro). */
+const PUBLIC_SHELL_PATHS = ["/checkout", "/auth"];
+
 export function Header() {
+  const pathname = usePathname();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+
+  const isPublicShellRoute = PUBLIC_SHELL_PATHS.some((p) => pathname?.startsWith(p));
 
   useEffect(() => {
     const onScroll = () => setIsScrolled(window.scrollY > 40);
@@ -40,7 +47,7 @@ export function Header() {
     };
   }, [isOpen]);
 
-  const solid = isScrolled || isOpen;
+  const solid = isPublicShellRoute || isScrolled || isOpen;
 
   return (
     <>

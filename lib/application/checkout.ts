@@ -36,6 +36,9 @@ export interface CreateCheckoutInput {
   baseUrl: string;
   /** Email del usuario (opcional, para pre-llenar en MP) */
   payerEmail?: string;
+  /** Nombre y apellido del usuario (recomendación MP para aprobación) */
+  payerFirstName?: string;
+  payerLastName?: string;
 }
 
 export interface CreateCheckoutResult {
@@ -78,6 +81,10 @@ export async function createCheckoutUseCase(
   });
 
   const base = input.baseUrl.replace(/\/$/, "");
+  const statementDescriptor = (center.name ?? "CUERPORAIZ")
+    .replace(/[^a-zA-Z0-9]/g, "")
+    .toUpperCase()
+    .slice(0, 22) || "CUERPORAIZ";
   const result = await paymentProvider.createPreference({
     accessToken: config.accessToken,
     title: plan.name,
@@ -92,6 +99,12 @@ export async function createCheckoutUseCase(
     notificationUrl: `${base}/api/webhooks/mercadopago/${center.id}`,
     autoReturn: "approved",
     payerEmail: input.payerEmail,
+    payerFirstName: input.payerFirstName,
+    payerLastName: input.payerLastName,
+    statementDescriptor,
+    itemId: plan.id,
+    itemDescription: plan.description ?? undefined,
+    itemCategoryId: "services",
   });
 
   if (!result.success) {

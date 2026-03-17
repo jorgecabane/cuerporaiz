@@ -3,17 +3,35 @@ import type { User } from "@/lib/domain";
 import type { Role } from "@/lib/domain/role";
 import type { CenterId } from "@/lib/domain/user";
 import { prisma } from "./prisma";
-import { Role as PrismaRole, type UserCenterRole } from "@/lib/generated/prisma";
+import type { Role as PrismaRole, UserCenterRole } from "@prisma/client";
 
 function toDomainRole(r: PrismaRole): Role {
   return r as unknown as Role;
 }
 
-function toDomainUser(u: { id: string; email: string; name: string | null; createdAt: Date; updatedAt: Date }): User {
+function toDomainUser(u: {
+  id: string;
+  email: string;
+  name: string | null;
+  lastName: string | null;
+  phone: string | null;
+  rut: string | null;
+  birthday: Date | null;
+  sex: string | null;
+  notes: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}): User {
   return {
     id: u.id,
     email: u.email,
     name: u.name,
+    lastName: u.lastName,
+    phone: u.phone,
+    rut: u.rut,
+    birthday: u.birthday,
+    sex: u.sex,
+    notes: u.notes,
     createdAt: u.createdAt,
     updatedAt: u.updatedAt,
   };

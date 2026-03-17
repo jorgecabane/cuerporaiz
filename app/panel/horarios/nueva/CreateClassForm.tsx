@@ -1,8 +1,9 @@
 "use client";
 
-import { useTransition, useState, useMemo } from "react";
-import { createLiveClass } from "../actions";
+import { useTransition, useState, useMemo, useRef } from "react";
+import { createLiveClass, createMeetingForClass } from "../actions";
 import { Button } from "@/components/ui/Button";
+import { Skeleton } from "@/components/ui/Skeleton";
 import type { Discipline } from "@/lib/domain";
 import type { Instructor } from "@/lib/ports/instructor-repository";
 
@@ -51,11 +52,22 @@ interface Props {
   defaultDate?: string;
   defaultHour?: string;
   defaultDuration?: number;
+  videoProviders?: { zoom: boolean; meet: boolean };
 }
 
-export function CreateClassForm({ disciplines, instructors, defaultDate, defaultHour, defaultDuration = 60 }: Props) {
+export function CreateClassForm({ disciplines, instructors, defaultDate, defaultHour, defaultDuration = 60, videoProviders = { zoom: false, meet: false } }: Props) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+
+  const hasVideoProvider = videoProviders.zoom || videoProviders.meet;
+  const [isOnline, setIsOnline] = useState(false);
+  const [meetingUrl, setMeetingUrl] = useState<string | null>(null);
+  const [meetingError, setMeetingError] = useState<string | null>(null);
+  const [meetingLoading, setMeetingLoading] = useState(false);
+  const [lastUsedProvider, setLastUsedProvider] = useState<"zoom" | "meet" | null>(null);
+  const [meetingFailCount, setMeetingFailCount] = useState(0);
+  const [manualMeetingUrl, setManualMeetingUrl] = useState("");
+  const formRef = useRef<HTMLFormElement>(null);
 
   // Recurrence state
   const [recurrencePreset, setRecurrencePreset] = useState<RecurrencePreset>("none");
@@ -179,9 +191,10 @@ export function CreateClassForm({ disciplines, instructors, defaultDate, default
     return monthlyMode;
   }
 
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
+    setMeetingError(null);
     const fd = new FormData(e.currentTarget);
     const title = (fd.get("title") as string)?.trim();
     const startsAt = fd.get("startsAt") as string;
@@ -198,6 +211,12 @@ export function CreateClassForm({ disciplines, instructors, defaultDate, default
       return;
     }
 
+    const meetingUrlToUse: string | null = manualMeetingUrl?.trim() || meetingUrl || null;
+    if (isOnline && hasVideoProvider && !meetingUrlToUse) {
+      setMeetingError("Generá el link con el botón de abajo o pegá uno manualmente.");
+      return;
+    }
+
     const repeat = getRepeatValue();
     const startsAtDate = new Date(startsAt);
     const repeatOnDays = getRepeatOnDays(startsAtDate);
@@ -211,7 +230,8 @@ export function CreateClassForm({ disciplines, instructors, defaultDate, default
         startsAt,
         durationMinutes,
         maxCapacity,
-        isOnline: false,
+        isOnline: !!meetingUrlToUse,
+        meetingUrl: meetingUrlToUse,
         isTrialClass,
         trialCapacity,
         color: effectiveColor,
@@ -226,8 +246,39 @@ export function CreateClassForm({ disciplines, instructors, defaultDate, default
     );
   }
 
+  async function handleGenerateMeeting(provider: "zoom" | "meet") {
+    if (!formRef.current) return;
+    const fd = new FormData(formRef.current);
+    const title = (fd.get("title") as string)?.trim();
+    const startsAt = fd.get("startsAt") as string;
+    const durationMinutes = Number(fd.get("durationMinutes")) || defaultDuration;
+    if (!title || !startsAt) {
+      setMeetingError("Completá nombre y fecha/hora para generar el link.");
+      return;
+    }
+    setMeetingError(null);
+    setMeetingLoading(true);
+    try {
+      const res = await createMeetingForClass(provider, { title, startTime: startsAt, durationMinutes });
+      setMeetingUrl(res.joinUrl);
+      setManualMeetingUrl("");
+      setLastUsedProvider(provider);
+      setMeetingFailCount(0);
+    } catch (err) {
+      setMeetingError(err instanceof Error ? err.message : "No se pudo crear la reunión.");
+      setMeetingFailCount((c) => c + 1);
+    } finally {
+      setMeetingLoading(false);
+    }
+  }
+
+  async function handleRetryMeeting() {
+    const provider = lastUsedProvider ?? (videoProviders.zoom ? "zoom" : "meet");
+    await handleGenerateMeeting(provider);
+  }
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
       {/* Nombre */}
       <div>
         <label htmlFor="title" className="block text-sm font-medium text-[var(--color-text)] mb-1">
@@ -348,11 +399,31 @@ export function CreateClassForm({ disciplines, instructors, defaultDate, default
 
       {/* Toggles: online + prueba */}
       <div className="flex flex-wrap gap-4">
-        <label className="inline-flex items-center gap-2 cursor-not-allowed opacity-50" title="Requiere configurar Zoom o Meet en Plugins">
-          <input type="checkbox" disabled className="rounded border-[var(--color-border)]" />
-          <span className="text-sm text-[var(--color-text)]">Clase online</span>
-          <span className="text-xs text-[var(--color-text-muted)]">(requiere plugin)</span>
-        </label>
+        {hasVideoProvider ? (
+          <label className="inline-flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={isOnline}
+              onChange={(e) => {
+                setIsOnline(e.target.checked);
+                if (!e.target.checked) {
+                  setMeetingUrl(null);
+                  setMeetingError(null);
+                  setLastUsedProvider(null);
+                  setMeetingFailCount(0);
+                }
+              }}
+              className="rounded border-[var(--color-border)]"
+            />
+            <span className="text-sm text-[var(--color-text)]">Clase online</span>
+          </label>
+        ) : (
+          <label className="inline-flex items-center gap-2 cursor-not-allowed opacity-50" title="Requiere configurar Zoom o Meet en Plugins">
+            <input type="checkbox" disabled className="rounded border-[var(--color-border)]" />
+            <span className="text-sm text-[var(--color-text)]">Clase online</span>
+            <span className="text-xs text-[var(--color-text-muted)]">(requiere plugin)</span>
+          </label>
+        )}
         <label className="inline-flex items-center gap-2 cursor-pointer">
           <input
             type="checkbox"
@@ -363,6 +434,85 @@ export function CreateClassForm({ disciplines, instructors, defaultDate, default
           <span className="text-sm text-[var(--color-text)]">Acepta clase de prueba</span>
         </label>
       </div>
+
+      {/* Generar link Zoom/Meet */}
+      {isOnline && hasVideoProvider && (
+        <div className="space-y-3">
+          <div className="flex flex-wrap gap-2">
+            {videoProviders.zoom && (
+              <button
+                type="button"
+                disabled={meetingLoading}
+                onClick={() => handleGenerateMeeting("zoom")}
+                className="rounded-[var(--radius-md)] border border-[var(--color-border)] px-3 py-2 text-sm font-medium text-[var(--color-text)] hover:bg-[var(--color-surface)] disabled:opacity-50"
+              >
+                {meetingLoading ? "Creando…" : "Generar link con Zoom"}
+              </button>
+            )}
+            {videoProviders.meet && (
+              <button
+                type="button"
+                disabled={meetingLoading}
+                onClick={() => handleGenerateMeeting("meet")}
+                className="rounded-[var(--radius-md)] border border-[var(--color-border)] px-3 py-2 text-sm font-medium text-[var(--color-text)] hover:bg-[var(--color-surface)] disabled:opacity-50"
+              >
+                {meetingLoading ? "Creando…" : "Generar link con Meet"}
+              </button>
+            )}
+          </div>
+
+          {meetingLoading && (
+            <div className="space-y-2">
+              <div className="h-4 w-24 rounded-[var(--radius-md)] bg-[var(--color-border)]/40 animate-pulse" aria-hidden />
+              <Skeleton className="h-10 w-full" />
+            </div>
+          )}
+
+          {!meetingLoading && meetingUrl && (
+            <div>
+              <label className="block text-sm font-medium text-[var(--color-text)] mb-1">Link de la reunión</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  readOnly
+                  value={meetingUrl}
+                  className="flex-1 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)]"
+                />
+                <button
+                  type="button"
+                  onClick={() => navigator.clipboard.writeText(meetingUrl)}
+                  className="rounded-[var(--radius-md)] border border-[var(--color-border)] px-3 py-2 text-sm font-medium text-[var(--color-text)] hover:bg-[var(--color-surface)]"
+                >
+                  Copiar
+                </button>
+              </div>
+            </div>
+          )}
+
+          {meetingError && (
+            <div className="rounded-[var(--radius-md)] bg-[var(--color-error-bg,#fef2f2)] p-3 text-sm text-[var(--color-error,#dc2626)]">
+              {meetingError}
+              <button type="button" onClick={handleRetryMeeting} className="ml-2 underline font-medium">Reintentar</button>
+            </div>
+          )}
+
+          {meetingError && meetingFailCount >= 3 && (
+            <div>
+              <label htmlFor="manualMeetingUrl" className="block text-sm font-medium text-[var(--color-text)] mb-1">
+                Pegá el link de la reunión manualmente
+              </label>
+              <input
+                id="manualMeetingUrl"
+                type="url"
+                value={manualMeetingUrl}
+                onChange={(e) => setManualMeetingUrl(e.target.value)}
+                placeholder="https://..."
+                className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)]"
+              />
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Trial capacity */}
       {isTrialClass && (

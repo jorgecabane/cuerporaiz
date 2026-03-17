@@ -40,6 +40,7 @@ export function generateSeriesInstances(
       disciplineId: series.disciplineId,
       instructorId: series.instructorId,
       isOnline: series.isOnline,
+      meetingUrl: series.meetingUrl,
       isTrialClass: series.isTrialClass,
       trialCapacity: series.trialCapacity,
       color: series.color,

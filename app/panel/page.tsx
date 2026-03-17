@@ -2,6 +2,7 @@ import Link from "next/link";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { centerRepository } from "@/lib/adapters/db";
+import { canShowTrialCta } from "@/lib/application/reserve-class";
 import { ROLE_LABELS, isAdminRole } from "@/lib/domain";
 import { PANEL_NAV_ITEMS, PANEL_ADMIN_ITEMS } from "@/lib/panel-nav";
 import {
@@ -46,6 +47,9 @@ export default async function PanelPage() {
   const centerName = center?.name ?? centerId;
   const roleLabel = ROLE_LABELS[user.role];
   const admin = isAdminRole(user.role);
+  const showTrialCta =
+    user.role === "STUDENT" &&
+    (await canShowTrialCta(user.id, centerId));
 
   return (
     <div className="mx-auto max-w-3xl px-1 sm:px-0">
@@ -77,6 +81,16 @@ export default async function PanelPage() {
         <p className="text-[var(--color-text-muted)] text-sm md:text-base leading-relaxed">
           Cuando tengas clases reservadas o un plan activo, aquí verás tu próxima clase y tus cupos restantes.
         </p>
+        {showTrialCta && (
+          <p className="mt-3 text-sm">
+            <Link
+              href="/panel/reservas"
+              className="font-medium text-[var(--color-primary)] hover:underline"
+            >
+              Podés reservar una clase de prueba gratis
+            </Link>
+          </p>
+        )}
       </section>
 
       {/* Tu perfil — card con jerarquía clara */}

@@ -6,9 +6,11 @@ import { Button } from "@/components/ui/Button";
 export function ComprarPlanButton({
   planId,
   planName,
+  className = "",
 }: {
   planId: string;
   planName: string;
+  className?: string;
 }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -40,12 +42,13 @@ export function ComprarPlanButton({
   }
 
   return (
-    <div className="flex flex-col items-end gap-1">
+    <div className={`flex flex-col items-stretch gap-1 ${className}`}>
       <Button
         type="button"
         variant="primary"
         disabled={loading}
         onClick={handleClick}
+        className="min-h-[44px] w-full sm:w-auto cursor-pointer"
       >
         {loading ? "Redirigiendo a MercadoPago…" : "Comprar"}
       </Button>

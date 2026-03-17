@@ -22,11 +22,29 @@ export function InstructorList({ instructors }: { instructors: Instructor[] }) {
           key={i.id}
           className="rounded-[var(--radius-lg)] bg-[var(--color-surface)] p-4 shadow-[var(--shadow-md)] flex flex-wrap items-center justify-between gap-3"
         >
-          <div>
-            <h2 className="font-semibold text-[var(--color-text)]">
-              {i.name ?? "Sin nombre"}
-            </h2>
-            <p className="text-xs text-[var(--color-text-muted)]">{i.email}</p>
+          <div className="flex items-center gap-3">
+            {i.imageUrl ? (
+              <img
+                src={i.imageUrl}
+                alt=""
+                className="h-10 w-10 rounded-full object-cover border border-[var(--color-border)]"
+                width={40}
+                height={40}
+              />
+            ) : (
+              <span
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--color-border)] text-sm font-medium text-[var(--color-text-muted)]"
+                aria-hidden
+              >
+                {(i.name ?? i.email).slice(0, 2).toUpperCase()}
+              </span>
+            )}
+            <div>
+              <h2 className="font-semibold text-[var(--color-text)]">
+                {i.name ?? "Sin nombre"}
+              </h2>
+              <p className="text-xs text-[var(--color-text-muted)]">{i.email}</p>
+            </div>
           </div>
           <div className="flex gap-2">
             <Button

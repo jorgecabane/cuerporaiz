@@ -62,6 +62,8 @@ model User {
   passwordHash String
   name         String?
   lastName     String?
+  /** URL de imagen de perfil (avatar) */
+  imageUrl     String?
   phone        String?
   rut          String?
   birthday     DateTime?

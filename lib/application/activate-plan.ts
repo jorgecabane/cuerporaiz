@@ -6,7 +6,7 @@ import { planRepository, userPlanRepository } from "@/lib/adapters/db";
 import type { Plan, ValidityPeriod } from "@/lib/ports/plan-repository";
 import type { UserPlan } from "@/lib/domain/user-plan";
 
-function computeValidUntil(
+export function computeValidUntil(
   plan: Plan,
   from: Date
 ): Date | null {
@@ -77,6 +77,7 @@ export async function activatePlanForOrder(
     planId: plan.id,
     centerId,
     orderId,
+    paymentStatus: "PAID",
     classesTotal: plan.maxReservations,
     validFrom: now,
     validUntil,

@@ -39,9 +39,11 @@ git add . && git commit -m "test: pre-commit"
 
 - Comando: `npm run test` / `npm run test:watch`
 - Cobertura: `npm run test:coverage`
+- Umbrales: 90% en lines, functions, branches y statements (según plan de ejecución). Si el build falla por cobertura, añadir tests en `lib/` o `components/` o ajustar temporalmente en `vitest.config.ts`.
 
 ## Tests E2E (Playwright)
 
 - Comando: `npm run e2e`
 - UI: `npm run e2e:ui`
 - **Puerto:** por defecto 3000. En pre-commit se usa `E2E_PORT=3001` para no chocar con un `npm run dev` en 3000. Si necesitas otro puerto: `E2E_PORT=3002 npm run e2e`.
+- **Limpieza:** los flujos que crean datos incluyen un paso final de cleanup cuando es posible: Planes (crear → editar → eliminar el plan creado), Horarios (crear clase → eliminar esa clase en test de cleanup). Así no queda basura en BD tras cada ejecución.

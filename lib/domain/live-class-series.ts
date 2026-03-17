@@ -13,6 +13,7 @@ export interface LiveClassSeries {
   maxCapacity: number;
   durationMinutes: number;
   isOnline: boolean;
+  meetingUrl: string | null;
   isTrialClass: boolean;
   trialCapacity: number | null;
   color: string | null;

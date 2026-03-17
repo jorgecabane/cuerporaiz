@@ -6,6 +6,8 @@ export { disciplineRepository } from "./discipline-repository";
 export { liveClassSeriesRepository } from "./live-class-series-repository";
 export { reservationRepository } from "./reservation-repository";
 export { mercadopagoConfigRepository } from "./mercadopago-config-repository";
+export { zoomConfigRepository } from "./zoom-config-repository";
+export { googleMeetConfigRepository } from "./google-meet-config-repository";
 export { planRepository } from "./plan-repository";
 export { orderRepository } from "./order-repository";
 export { webhookEventRepository } from "./webhook-event-repository";

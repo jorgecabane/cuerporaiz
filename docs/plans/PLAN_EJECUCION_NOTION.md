@@ -12,21 +12,21 @@
 | Sitio / landing | Hecho | Identidad, mobile-first, secciones |
 | Auth (login, signup) | Hecho | Credentials, centro, sesión |
 | Panel shell + Mi cuenta | Hecho | Header, sidebar, drawer, UX mejorada |
-| Planes (admin) | Hecho | CRUD, tipos, vigencia; **testeado y aprobado** |
-| Clientes (admin) | Parcial | Listado + detalle; falta alta masiva/gestión planes |
-| Políticas del centro | Parcial | Página y form; falta validación completa y uso en reservas |
-| Plugins | Parcial | Página; MercadoPago toggle; faltan Zoom, Meet, Vimeo, etc. |
-| Pagos | Parcial | Listado, filtro estado, conciliación manual (aprobar orden) |
-| Reservas (alumna) | Parcial | Página con clases y reservas; flujo reservar/cancelar por validar |
-| Horarios (admin) | No | Calendario tipo Google, series, edición recurrencia |
-| Profesores | No | ABM profesoras del centro |
-| Clases On-demand | No | Prácticas, sesiones, Vimeo, desbloqueo por plan |
-| Comunicaciones | No | Emails: confirmación reserva, recordatorio, cupo liberado |
+| Planes (admin) | Hecho | CRUD, tipos, vigencia; testeado y aprobado |
+| Clientes (admin) | Hecho | Ficha única, crear/editar, planes, pagos, clases históricas/futuras |
+| Políticas del centro | Hecho | UI + enforcement en reservas (book, cancel, trial, no-show) |
+| Plugins | Parcial | MercadoPago OAuth Connect, transferencia bancaria; faltan Zoom, Meet, Vimeo API |
+| Pagos | Hecho | MP webhook, checkout, conciliación manual, transferencia bancaria, pago manual, UserPlan activación |
+| Reservas (alumna) | Hecho | Flujo completo con validación de políticas y selección de plan |
+| Horarios (admin) | Hecho | Calendario semana, series, edición recurrencia, disciplinas, feriados, asistencia |
+| Profesores | Hecho | CRUD + email bienvenida |
+| Clases On-demand | No | Videoteca futura |
+| Comunicaciones | Parcial | Email confirmación reserva y bienvenida profesora activos; recordatorio y cupo liberado con template listos |
 | Reportes | No | Ingresos, ocupación, etc. |
 | Blog | No | Editor y publicación |
-| Checkout / tienda pública | Parcial | Packs, membresía, gracias; flujo MP por validar |
+| Checkout / tienda pública | Parcial | Packs, membresía, gracias; flujo MP validado con OAuth Connect |
 | Videoteca (acceso alumna) | No | Contenido por compra/membresía |
-| Infra / emails | Parcial | Resend configurado; falta integrar en flujos |
+| Infra / emails | Hecho | Resend configurado e integrado en reservas y onboarding staff |
 
 ---
 
@@ -54,45 +54,59 @@
 
 *Orden sugerido según dependencias y valor.*
 
-- [ ] **2.1 Horarios (calendario)**  
-  - **Design:** [2026-03-14-horarios-disciplinas-design.md](./2026-03-14-horarios-disciplinas-design.md)  
-  - **Plan de ejecución (tareas):** [2026-03-14-horarios-plan-ejecucion.md](./2026-03-14-horarios-plan-ejecucion.md)  
-  - Flujo mínimo (C): Disciplinas, calendario semana, clase suelta, recurrencia básica.  
-  - Flujo total: edición serie (solo esta / desde aquí / toda), feriados, vistas día/mes/lista, filtros.  
-  - Calendario vista semana/mes para clases Live.  
-  - Alta de clase (fecha, hora, cupos, profesora, recurrencia opcional).  
-  - Edición recurrencia: “solo este” / “desde aquí en adelante”.  
-  - *Depende:* modelo Serie/Clase Live en DB si no existe.
+- [x] **2.1 Horarios (calendario)**  
+  - Calendario vista semana con clases Live.  
+  - Alta de clase (fecha, hora, cupos, profesora, disciplina, recurrencia opcional).  
+  - Series con edición recurrencia: "solo este" / "desde aquí" / "toda la serie".  
+  - Feriados: CRUD, omitir generación de instancias en feriados.  
+  - Vistas día/semana/mes/lista, filtros por disciplina y profesora.  
+  - Asistencia: UI profesora con lista de alumnas, botones ATTENDED/NO_SHOW.  
+  - Campo meetingUrl para clases online (Zoom/Meet manual).  
+  - *Pendientes menores:* ClassPass, mover clase a otra fecha, vista por profesora.
 
-- [ ] **2.2 Políticas del centro (completar)**  
-  - Ventana reservar / cancelar (horas), no-show, clase de prueba, etc.  
-  - Que las políticas se usen en el flujo de reserva (validación al reservar/cancelar).
+- [x] **2.2 Políticas del centro (completar)**  
+  - UI y formulario completos (ruta `/panel/configuracion`).  
+  - `bookBeforeHours` validado al reservar.  
+  - `cancelBeforeHours` validado al cancelar (tardía = consume clase).  
+  - `maxNoShowsPerMonth` contado y validado.  
+  - `allowTrialClassPerPerson` chequeado en reserva.  
+  - Preferencias calendario (hora inicio/fin, duración por defecto).  
+  - *Pendiente:* `instructorCanReserveForStudent` (UI profesora), trigger `notifyWhenSlotFreed`.
 
-- [ ] **2.3 Profesores**  
-  - Listado, alta, edición, baja de profesoras del centro.  
-  - Usar en Horarios (asignar profesora a clase) y en reservas si aplica.
+- [x] **2.3 Profesores**  
+  - Listado, alta, edición, desactivación.  
+  - Usado en Horarios (asignar profesora a clase).  
+  - Email de bienvenida al crear profesora (con link para crear cuenta).
 
-- [ ] **2.4 Clientes (completar)**  
-  - Alta de cliente (nombre, email, teléfono, RUT, etc.).  
-  - Gestión manual de planes: asignar plan a persona, activar/desactivar.
+- [x] **2.4 Clientes (completar)**  
+  - Listado filtrado solo alumnas (excluye admin e instructor).  
+  - Crear alumna desde panel (`/panel/clientes/nueva`).  
+  - Ficha única del cliente con: editar datos, planes activos (asignar manual), pagos (registrar pago manual), clases futuras e historial.  
+  - *Pendiente:* búsqueda/filtros en listado, campos teléfono/RUT/observación.
 
-- [ ] **2.5 Pagos (completar)**  
-  - Flujo MercadoPago ya existe; validar webhook y estados.  
-  - Transferencias: datos bancarios del centro en UI, conciliación manual (ya hay “Aprobar”).  
-  - Reembolsos/anulaciones: solo meses futuros en recurrentes (v1).
+- [x] **2.5 Pagos (completar)**  
+  - Webhook MercadoPago validado e idempotente.  
+  - Conciliación manual (aprobar orden → activa UserPlan).  
+  - Transferencia bancaria: toggle on/off como plugin, datos bancarios con selector de bancos y tipos de cuenta chilenos.  
+  - Pago manual desde ficha cliente (crea Order APPROVED + UserPlan).  
+  - Order APPROVED activa UserPlan automáticamente.  
+  - *Pendiente:* reembolsos/anulaciones, congelamiento de plan.
 
 ---
 
 ## Fase 3 — Experiencia alumna y contenido
 
-- [ ] **3.1 Reservas (estable)**  
-  - Flujo completo: ver clases → reservar (con políticas) → confirmación.  
-  - Cancelación dentro de ventana.  
-  - Email confirmación reserva (Fase 4 Comunicaciones).
+- [x] **3.1 Reservas (estable)**  
+  - Flujo completo: ver clases → reservar (con validación de políticas y plan) → confirmación.  
+  - Selección de plan cuando hay múltiples activos.  
+  - Cancelación dentro de ventana (tardía consume clase).  
+  - Email confirmación reserva con link Google Calendar.  
+  - Modelo UserPlan: múltiples planes activos, classesUsed/classesTotal, validFrom/validUntil.
 
 - [ ] **3.2 Checkout y planes públicos**  
   - Flujo compra plan (one-time y/o recurrente) con MercadoPago.  
-  - Página /planes (o /packs) clara; redirección a gracias y actualización de estado.
+  - Página /planes (o /packs) clara; redirección a gracias y actualización de estado.  
+  - MercadoPago OAuth Connect implementado (centros se autoconfiguran).
 
 - [ ] **3.3 Clases On-demand (videoteca)**  
   - Modelo: Prácticas (categorías) → Sesiones (vídeo Vimeo).  
@@ -109,11 +123,13 @@
 ## Fase 4 — Comunicaciones y reportes
 
 - [ ] **4.1 Emails transaccionales**  
-  - Confirmación de reserva (+ link añadir a calendario).  
-  - Recordatorio antes de la clase.  
-  - Aviso “cupo liberado”.  
-  - Aviso pago fallido (centro y alumno).  
-  - *Base:* Resend ya en proyecto; integrar en acciones de reserva/pago.
+  - [x] Confirmación de reserva (+ link añadir a Google Calendar) — **conectado en flujo de reserva**.  
+  - [x] Email bienvenida profesora/admin — **conectado al crear profesora**. 
+  - [ ] Email bienvenida cliente — se debe enviar al agregar un cliente a mano.
+  - [ ] Recordatorio antes de la clase — template listo, falta cron/trigger.  
+  - [ ] Aviso "cupo liberado" — template listo, falta trigger al cancelar.  
+  - [ ] Aviso pago fallido (centro y alumno) — template listo, falta trigger.  
+  - *Base:* Resend configurado; `sendEmailSafe` wrapper fire-and-forget.
 
 - [ ] **4.2 Reportes (v1)**  
   - Ingresos por período (por método, por tipo plan).  
@@ -125,17 +141,22 @@
 ## Fase 5 — Plugins, blog y super admin
 
 - [ ] **5.1 Plugins restantes**  
-  - Zoom / Meet: generar link de clase Live (videollamada).  
-  - ClassPass: recibir reservas (si aplica).  
-  - Google Auth: login con Google (opcional).
+  - [x] MercadoPago OAuth Connect — centros se autoconfiguran, refresh automático de tokens.  
+  - [x] Transferencia bancaria — toggle, datos bancarios con selector de bancos/tipo cuenta chilenos.  
+  - [x] Zoom / Meet — campo meetingUrl en clases (link manual). Falta integración API automática.  
+  - [ ] ClassPass: recibir reservas (schema listo, UI oculta).  
+  - [ ] Google Auth: login con Google (opcional).  
+  - [ ] Vimeo: links privados para videoteca (futuro).  
+  - Página plugins rediseñada como marketplace con cards.
 
 - [ ] **5.2 Blog editorial**  
   - Editor en panel (rich text o markdown).  
   - Publicación y listado público; diseño coherente con la marca.
 
 - [ ] **5.3 Super admin (plataforma)**  
-  - Rol super admin: crear centros, asignar admins, “entrar como” centro.  
-  - Onboarding centro: estados Pendiente / Activo / En gracia / Suspendido (v2 cobro interno o manual).
+  - Rol super admin: crear centros, asignar admins, "entrar como" centro.  
+  - Onboarding centro: estados Pendiente / Activo / En gracia / Suspendido.  
+  - Cobro de plataforma a centros (B2B con MercadoPago, por ahora manual).
 
 ---
 
@@ -149,9 +170,28 @@
 
 ---
 
+## Mejoras Planes (pendientes)
+
+- **Orden de planes** — Campo de orden para mostrar los planes al cliente en el orden que defina el admin (p. ej. `sortOrder` o `displayOrder`).
+- **Borrar vs desactivar** — Si un plan tiene usuarios asignados, no permitir borrarlo y mostrar un mensaje claro. Ofrecer **desactivar** plan (nadie más puede comprarlo; quienes ya lo tienen siguen usándolo). Poder desactivar/activar planes siempre.
+
+---
+
+## Qué se viene (próximas prioridades)
+
+1. **Emails restantes** — Conectar triggers de recordatorio (cron), cupo liberado (al cancelar), y pago fallido (webhook).
+2. **UX mobile horarios** — Brainstorming + implementación vista mobile del calendario admin.
+3. **Búsqueda de clientes** — Filtro por nombre/email en listado de alumnas.
+4. **Checkout público validado** — Verificar flujo end-to-end compra → MP → webhook → UserPlan.
+5. **Reportes v1** — Dashboard básico de ingresos y ocupación.
+6. **Videoteca / On-demand** — Modelo, plugin Vimeo, desbloqueo por plan.
+7. **Blog** — Editor y publicación.
+8. **Super admin** — Multi-centro, onboarding, cobro B2B.
+
+---
+
 ## Cómo usar este plan
 
-1. **Siguiente paso sugerido:** Fase 1 (estabilizar y validar).  
-2. Marcar con `[x]` cada ítem al completarlo.  
-3. Añadir notas bajo cada ítem si hay bloqueos o decisiones (ej. “pendiente definición API Vimeo”).  
-4. Cruzar con **PLAN_MAESTRO.md** para no duplicar ítems de code review/UX ya cerrados.
+1. Marcar con `[x]` cada ítem al completarlo.  
+2. Añadir notas bajo cada ítem si hay bloqueos o decisiones.  
+3. Cruzar con **cruce_plan_notion.plan.md** para detalles de implementación.

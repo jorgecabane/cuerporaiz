@@ -4,6 +4,22 @@ import { createCheckoutUseCase } from "@/lib/application/checkout";
 import { createCheckoutBodySchema } from "@/lib/dto/checkout-dto";
 import { centerRepository } from "@/lib/adapters/db";
 
+function getBaseUrl(request: Request): string {
+  const u = new URL(request.url);
+  const xfProto = request.headers.get("x-forwarded-proto");
+  const xfHost = request.headers.get("x-forwarded-host");
+  const host = request.headers.get("host");
+  const proto = (xfProto ?? u.protocol.replace(":", "") ?? "http").split(",")[0].trim();
+  const resolvedHost = (xfHost ?? host ?? u.host).split(",")[0].trim();
+  return (
+    `${proto}://${resolvedHost}` ||
+    request.headers.get("origin") ||
+    process.env.NEXTAUTH_URL ||
+    process.env.AUTH_URL ||
+    "http://localhost:3000"
+  );
+}
+
 export async function POST(request: Request) {
   try {
     const session = await auth();
@@ -34,11 +50,11 @@ export async function POST(request: Request) {
       );
     }
 
-    const baseUrl =
-      request.headers.get("origin")
-      ?? process.env.NEXTAUTH_URL
-      ?? process.env.AUTH_URL
-      ?? "http://localhost:3000";
+    const baseUrl = getBaseUrl(request);
+
+    const nameParts = (session.user.name ?? "").trim().split(/\s+/);
+    const payerFirstName = nameParts[0] ?? undefined;
+    const payerLastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : undefined;
 
     const result = await createCheckoutUseCase({
       centerId: center.id,
@@ -46,6 +62,8 @@ export async function POST(request: Request) {
       planId,
       baseUrl,
       payerEmail: session.user.email ?? undefined,
+      payerFirstName: payerFirstName || undefined,
+      payerLastName: payerLastName || undefined,
     });
 
     if (!result.success) {

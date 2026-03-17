@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { listMyReservationsUseCase } from "@/lib/application/reserve-class";
+import { listMyReservationsPaginated } from "@/lib/application/reserve-class";
 import { reserveClassBodySchema } from "@/lib/dto/reservation-dto";
 import { reserveClassUseCase } from "@/lib/application/reserve-class";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const session = await auth();
     if (!session?.user?.id || !session.user.centerId) {
@@ -13,8 +13,14 @@ export async function GET() {
         { status: 401 }
       );
     }
-    const reservations = await listMyReservationsUseCase(session.user.id, session.user.centerId);
-    return NextResponse.json(reservations);
+    const { searchParams } = new URL(request.url);
+    const page = searchParams.get("page") ? Number(searchParams.get("page")) : undefined;
+    const pageSize = searchParams.get("pageSize") ? Number(searchParams.get("pageSize")) : undefined;
+    const result = await listMyReservationsPaginated(session.user.id, session.user.centerId, {
+      page,
+      pageSize,
+    });
+    return NextResponse.json(result);
   } catch (err) {
     console.error("[reservations GET]", err);
     return NextResponse.json(

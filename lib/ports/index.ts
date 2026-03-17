@@ -8,6 +8,8 @@ export type { ILiveClassSeriesRepository, CreateSeriesInput, UpdateSeriesInput }
 export type { IReservationRepository } from "./reservation-repository";
 export type { IPaymentProvider } from "./payment-provider";
 export type { IMercadoPagoConfigRepository, MercadoPagoConfig } from "./mercadopago-config-repository";
+export type { IZoomConfigRepository, ZoomConfig } from "./zoom-config-repository";
+export type { IGoogleMeetConfigRepository, GoogleMeetConfig } from "./google-meet-config-repository";
 export type { IPlanRepository, Plan, PlanType, BillingMode, ValidityPeriod, PlanCreateInput, PlanUpdateInput } from "./plan-repository";
 export type { IOrderRepository, Order, OrderStatus, CreateOrderInput, OrderListFilters } from "./order-repository";
 export { ORDER_STATUS_LABELS } from "./order-repository";

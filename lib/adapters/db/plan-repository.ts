@@ -1,7 +1,7 @@
 import type { IPlanRepository, Plan, PlanCreateInput, PlanUpdateInput } from "@/lib/ports";
 import type { PlanType, BillingMode, ValidityPeriod } from "@/lib/ports/plan-repository";
 import { prisma } from "./prisma";
-import { PlanType as PrismaPlanType, BillingMode as PrismaBillingMode, ValidityPeriod as PrismaValidityPeriod } from "@/lib/generated/prisma";
+import type { PlanType as PrismaPlanType, BillingMode as PrismaBillingMode, ValidityPeriod as PrismaValidityPeriod } from "@prisma/client";
 
 function toDomain(p: {
   id: string;

@@ -27,10 +27,13 @@ function mapStatus(status: string): PaymentStatusDto["status"] {
 export const mercadoPagoPaymentAdapter: IPaymentProvider = {
   async createPreference(dto: CreatePreferenceDto): Promise<CreatePreferenceResultDto> {
     try {
-      const body = {
+      const body: Record<string, unknown> = {
         items: [
           {
+            id: dto.itemId ?? undefined,
             title: dto.title,
+            description: dto.itemDescription ?? undefined,
+            category_id: dto.itemCategoryId ?? undefined,
             quantity: dto.quantity,
             unit_price: dto.unitPrice,
           },
@@ -43,8 +46,20 @@ export const mercadoPagoPaymentAdapter: IPaymentProvider = {
         auto_return: dto.autoReturn ?? "approved",
         external_reference: dto.externalReference,
         notification_url: dto.notificationUrl,
-        payer: dto.payerEmail ? { email: dto.payerEmail } : undefined,
+        statement_descriptor: dto.statementDescriptor ?? undefined,
+        payer: (() => {
+          const p: { email?: string; first_name?: string; last_name?: string } = {};
+          if (dto.payerEmail) p.email = dto.payerEmail;
+          if (dto.payerFirstName) p.first_name = dto.payerFirstName;
+          if (dto.payerLastName) p.last_name = dto.payerLastName;
+          return Object.keys(p).length > 0 ? p : undefined;
+        })(),
       };
+      // Quitar keys undefined para no enviar campos vacíos
+      if (body.items && Array.isArray(body.items) && body.items[0]) {
+        const item = body.items[0] as Record<string, unknown>;
+        Object.keys(item).forEach((k) => item[k] === undefined && delete item[k]);
+      }
 
       const res = await fetch(`${MP_API_BASE}/checkout/preferences`, {
         method: "POST",

@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { liveClassRepository, liveClassSeriesRepository } from "@/lib/adapters/db";
 import { isAdminRole } from "@/lib/domain/role";
 import { generateSeriesInstances } from "@/lib/application/generate-series-instances";
+import { createZoomMeeting } from "@/lib/application/create-zoom-meeting";
+import { createGoogleMeetMeeting } from "@/lib/application/create-google-meet-meeting";
 import type { RepeatFrequency } from "@/lib/domain";
 import type { UpdateSeriesInput } from "@/lib/ports";
 
@@ -16,6 +18,31 @@ async function requireAdminCenterId(): Promise<string> {
   return session.user.centerId;
 }
 
+/** Crea una reunión en Zoom o Google Meet y devuelve la URL. Usado al marcar "Clase online". */
+export async function createMeetingForClass(
+  provider: "zoom" | "meet",
+  params: { title: string; startTime: string; durationMinutes: number }
+): Promise<{ joinUrl: string }> {
+  const centerId = await requireAdminCenterId();
+  const startTime = new Date(params.startTime);
+
+  if (provider === "zoom") {
+    const result = await createZoomMeeting(centerId, {
+      title: params.title,
+      startTime,
+      durationMinutes: params.durationMinutes,
+    });
+    return { joinUrl: result.joinUrl };
+  }
+
+  const result = await createGoogleMeetMeeting(centerId, {
+    title: params.title,
+    startTime,
+    durationMinutes: params.durationMinutes,
+  });
+  return { joinUrl: result.joinUrl };
+}
+
 export interface CreateClassFormData {
   title: string;
   disciplineId: string | null;
@@ -24,6 +51,7 @@ export interface CreateClassFormData {
   durationMinutes: number;
   maxCapacity: number;
   isOnline: boolean;
+  meetingUrl: string | null;
   isTrialClass: boolean;
   trialCapacity: number | null;
   color: string | null;
@@ -53,6 +81,7 @@ export async function createLiveClass(data: CreateClassFormData): Promise<void> 
       disciplineId: data.disciplineId || null,
       instructorId: data.instructorId || null,
       isOnline: data.isOnline,
+      meetingUrl: data.meetingUrl || null,
       isTrialClass: data.isTrialClass,
       trialCapacity: data.trialCapacity,
       color: data.color || null,
@@ -74,6 +103,7 @@ export async function createLiveClass(data: CreateClassFormData): Promise<void> 
       maxCapacity: data.maxCapacity,
       durationMinutes: data.durationMinutes,
       isOnline: data.isOnline,
+      meetingUrl: data.meetingUrl || null,
       isTrialClass: data.isTrialClass,
       trialCapacity: data.trialCapacity,
       color: data.color || null,
@@ -104,6 +134,7 @@ export interface UpdateClassFormData {
   durationMinutes: number;
   maxCapacity: number;
   isOnline: boolean;
+  meetingUrl: string | null;
   isTrialClass: boolean;
   trialCapacity: number | null;
   color: string | null;
@@ -127,6 +158,7 @@ export async function updateLiveClass(data: UpdateClassFormData): Promise<void> 
     disciplineId: data.disciplineId || null,
     instructorId: data.instructorId || null,
     isOnline: data.isOnline,
+    meetingUrl: data.meetingUrl || null,
     isTrialClass: data.isTrialClass,
     trialCapacity: data.trialCapacity,
     color: data.color || null,
@@ -174,6 +206,7 @@ export async function updateSeriesClasses(data: EditSeriesFormData): Promise<voi
     disciplineId: data.disciplineId || null,
     instructorId: data.instructorId || null,
     isOnline: data.isOnline,
+    meetingUrl: data.meetingUrl || null,
     isTrialClass: data.isTrialClass,
     trialCapacity: data.trialCapacity,
     color: data.color || null,
@@ -186,6 +219,7 @@ export async function updateSeriesClasses(data: EditSeriesFormData): Promise<voi
     disciplineId: data.disciplineId || null,
     instructorId: data.instructorId || null,
     isOnline: data.isOnline,
+    meetingUrl: data.meetingUrl || null,
     isTrialClass: data.isTrialClass,
     trialCapacity: data.trialCapacity,
     color: data.color || null,

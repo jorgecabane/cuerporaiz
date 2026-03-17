@@ -28,6 +28,13 @@ export interface LiveClassDto {
   durationMinutes: number;
   maxCapacity: number;
   spotsLeft: number; // derivado: maxCapacity - reservas CONFIRMED
+  isTrialClass?: boolean;
+  /** Si la clase es online (meetingUrl) o presencial */
+  isOnline?: boolean;
+  /** Nombre del profesor que imparte la clase */
+  instructorName?: string | null;
+  /** URL de la imagen del profesor (avatar) */
+  instructorImageUrl?: string | null;
 }
 
 export interface ReservationDto {

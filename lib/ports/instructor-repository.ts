@@ -6,6 +6,8 @@ export interface Instructor {
   centerId: CenterId;
   name: string | null;
   email: string;
+  /** URL de la imagen de perfil (avatar) */
+  imageUrl?: string | null;
   active: boolean;
   createdAt: Date;
 }
@@ -13,10 +15,12 @@ export interface Instructor {
 export interface CreateInstructorInput {
   name: string;
   email: string;
+  imageUrl?: string | null;
 }
 
 export interface UpdateInstructorInput {
   name?: string;
+  imageUrl?: string | null;
 }
 
 export interface IInstructorRepository {

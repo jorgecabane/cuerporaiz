@@ -4,6 +4,7 @@
  */
 
 export type UserPlanStatus = "ACTIVE" | "EXPIRED" | "FROZEN" | "CANCELLED";
+export type PlanPaymentStatus = "PENDING" | "PARTIAL" | "PAID";
 
 export interface UserPlan {
   id: string;
@@ -12,11 +13,14 @@ export interface UserPlan {
   centerId: string;
   orderId: string | null;
   status: UserPlanStatus;
+  paymentStatus: PlanPaymentStatus;
   classesTotal: number | null;
   classesUsed: number;
   validFrom: Date;
   validUntil: Date | null;
   frozenAt: Date | null;
+  frozenUntil: Date | null;
+  freezeReason: string | null;
   unfrozenAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
@@ -29,8 +33,15 @@ export const USER_PLAN_STATUS_LABELS: Record<UserPlanStatus, string> = {
   CANCELLED: "Cancelado",
 };
 
+export const PAYMENT_STATUS_LABELS: Record<PlanPaymentStatus, string> = {
+  PENDING: "Por pagar",
+  PARTIAL: "Pago parcial",
+  PAID: "Pagado",
+};
+
 export function isUserPlanUsable(plan: UserPlan, now = new Date()): boolean {
   if (plan.status !== "ACTIVE") return false;
+  if (plan.validFrom > now) return false;
   if (plan.validUntil && plan.validUntil < now) return false;
   if (plan.classesTotal !== null && plan.classesUsed >= plan.classesTotal) return false;
   return true;
