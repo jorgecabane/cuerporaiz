@@ -14,7 +14,7 @@ const mocks = vi.hoisted(() => ({
   },
   liveClassRepository: { findById: vi.fn() },
   centerRepository: { findById: vi.fn() },
-  userPlanRepository: { decrementClassesUsed: vi.fn() },
+  userPlanRepository: { findById: vi.fn(), decrementClassesUsed: vi.fn() },
 }));
 
 vi.mock("@/lib/adapters/db", () => ({
@@ -78,6 +78,7 @@ describe("cancelReservationUseCase", () => {
       id: centerId,
       cancelBeforeHours: 12,
     });
+    mocks.userPlanRepository.findById.mockResolvedValue({ id: "up-1", classesTotal: 10, classesUsed: 0 });
     mocks.reservationRepository.updateStatus.mockImplementation(
       async (_id: string, status: Reservation["status"]) => makeReservation({ status })
     );
@@ -152,6 +153,7 @@ describe("cancelReservationByStaffUseCase", () => {
       id: centerId,
       cancelBeforeHours: 12,
     });
+    mocks.userPlanRepository.findById.mockResolvedValue({ id: "up-1", classesTotal: 10, classesUsed: 0 });
     mocks.reservationRepository.updateStatus.mockImplementation(
       async (_id: string, status: Reservation["status"]) => makeReservation({ status })
     );

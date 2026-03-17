@@ -71,12 +71,11 @@ describe("reservation-dto", () => {
       }
     });
 
-    it("status inválido devuelve statuses undefined (parseo permisivo)", () => {
+    it("status inválido falla (parseo estricto)", () => {
       const result = listReservationsQuerySchema.safeParse({
         statuses: "CONFIRMED,INVALID_STATUS",
       });
-      expect(result.success).toBe(true);
-      if (result.success) expect(result.data.statuses).toBeUndefined();
+      expect(result.success).toBe(false);
     });
   });
 });

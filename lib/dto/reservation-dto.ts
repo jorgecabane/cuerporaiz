@@ -19,16 +19,22 @@ export const listReservationsQuerySchema = z.object({
   statuses: z
     .string()
     .optional()
-    .transform((s): ReservationStatus[] | undefined => {
+    .transform((s, ctx): ReservationStatus[] | undefined => {
       if (!s) return undefined;
       const parts = s.split(",").map((x) => x.trim()).filter(Boolean);
       if (parts.length === 0) return undefined;
       const parsed = z.array(reservationStatusSchema).safeParse(parts);
-      if (!parsed.success) return undefined;
+      if (!parsed.success) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "statuses contiene valores inválidos",
+        });
+        return z.NEVER;
+      }
       return parsed.data;
     }),
-  page: z.string().optional(),
-  pageSize: z.string().optional(),
+  page: z.coerce.number().int().min(1).optional(),
+  pageSize: z.coerce.number().int().min(1).max(50).optional(),
 });
 
 export type ListReservationsQuery = z.infer<typeof listReservationsQuerySchema>;

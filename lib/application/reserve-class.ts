@@ -278,7 +278,10 @@ export async function cancelReservationUseCase(
   const updated = await reservationRepository.updateStatus(reservationId, newStatus);
 
   if (newStatus === "CANCELLED" && reservation.userPlanId) {
-    await userPlanRepository.decrementClassesUsed(reservation.userPlanId);
+    const userPlan = await userPlanRepository.findById(reservation.userPlanId);
+    if (userPlan?.classesTotal !== null) {
+      await userPlanRepository.decrementClassesUsed(reservation.userPlanId);
+    }
   }
   const liveClassDto = toLiveClassDto(
     liveClass.id,
@@ -344,7 +347,10 @@ export async function cancelReservationByStaffUseCase(
   const updated = await reservationRepository.updateStatus(reservationId, newStatus);
 
   if (newStatus === "CANCELLED" && reservation.userPlanId) {
-    await userPlanRepository.decrementClassesUsed(reservation.userPlanId);
+    const userPlan = await userPlanRepository.findById(reservation.userPlanId);
+    if (userPlan?.classesTotal !== null) {
+      await userPlanRepository.decrementClassesUsed(reservation.userPlanId);
+    }
   }
   const liveClassDto = toLiveClassDto(
     liveClass.id,

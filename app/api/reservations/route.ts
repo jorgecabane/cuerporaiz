@@ -25,11 +25,9 @@ export async function GET(request: Request) {
         { status: 400 }
       );
     }
-    const page = query.data.page ? Number(query.data.page) : undefined;
-    const pageSize = query.data.pageSize ? Number(query.data.pageSize) : undefined;
     const result = await listMyReservationsPaginated(session.user.id, session.user.centerId, {
-      page,
-      pageSize,
+      page: query.data.page,
+      pageSize: query.data.pageSize,
       statuses: query.data.statuses,
     });
     return NextResponse.json(result);
