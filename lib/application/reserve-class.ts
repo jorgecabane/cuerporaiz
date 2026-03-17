@@ -8,7 +8,7 @@ import type {
   ReservationDto,
   LiveClassDto,
 } from "@/lib/dto/reservation-dto";
-import type { Reservation } from "@/lib/domain";
+import type { Reservation, ReservationStatus } from "@/lib/domain";
 import { isUserPlanUsable } from "@/lib/domain/user-plan";
 import {
   centerRepository,
@@ -256,15 +256,32 @@ export async function cancelReservationUseCase(
     return { success: false, code: "CENTER_NOT_FOUND", message: "Centro no encontrado" };
   }
 
-  // Devolver clase al plan si la cancelación es dentro del plazo
+  const cancelBeforeHours = center.cancelBeforeHours ?? 0;
   const hoursBeforeClass =
     (liveClass.startsAt.getTime() - Date.now()) / (1000 * 60 * 60);
-  const withinCancelWindow = hoursBeforeClass >= (center.cancelBeforeHours ?? 0);
 
-  const updated = await reservationRepository.updateStatus(reservationId, "CANCELLED");
+  if (hoursBeforeClass < 0) {
+    return {
+      success: false,
+      code: "CLASS_STARTED",
+      message: "No se puede cancelar: la clase ya inició",
+    };
+  }
 
-  if (withinCancelWindow && reservation.userPlanId) {
-    await userPlanRepository.decrementClassesUsed(reservation.userPlanId);
+  let newStatus: "CANCELLED" | "LATE_CANCELLED";
+  if (hoursBeforeClass >= cancelBeforeHours) {
+    newStatus = "CANCELLED";
+  } else {
+    newStatus = "LATE_CANCELLED";
+  }
+
+  const updated = await reservationRepository.updateStatus(reservationId, newStatus);
+
+  if (newStatus === "CANCELLED" && reservation.userPlanId) {
+    const userPlan = await userPlanRepository.findById(reservation.userPlanId);
+    if (userPlan?.classesTotal !== null) {
+      await userPlanRepository.decrementClassesUsed(reservation.userPlanId);
+    }
   }
   const liveClassDto = toLiveClassDto(
     liveClass.id,
@@ -308,14 +325,32 @@ export async function cancelReservationByStaffUseCase(
     return { success: false, code: "CENTER_NOT_FOUND", message: "Centro no encontrado" };
   }
 
+  const cancelBeforeHours = center.cancelBeforeHours ?? 0;
   const hoursBeforeClass =
     (liveClass.startsAt.getTime() - Date.now()) / (1000 * 60 * 60);
-  const withinCancelWindow = hoursBeforeClass >= (center.cancelBeforeHours ?? 0);
 
-  const updated = await reservationRepository.updateStatus(reservationId, "CANCELLED");
+  if (hoursBeforeClass < 0) {
+    return {
+      success: false,
+      code: "CLASS_STARTED",
+      message: "No se puede cancelar: la clase ya inició",
+    };
+  }
 
-  if (withinCancelWindow && reservation.userPlanId) {
-    await userPlanRepository.decrementClassesUsed(reservation.userPlanId);
+  let newStatus: "CANCELLED" | "LATE_CANCELLED";
+  if (hoursBeforeClass >= cancelBeforeHours) {
+    newStatus = "CANCELLED";
+  } else {
+    newStatus = "LATE_CANCELLED";
+  }
+
+  const updated = await reservationRepository.updateStatus(reservationId, newStatus);
+
+  if (newStatus === "CANCELLED" && reservation.userPlanId) {
+    const userPlan = await userPlanRepository.findById(reservation.userPlanId);
+    if (userPlan?.classesTotal !== null) {
+      await userPlanRepository.decrementClassesUsed(reservation.userPlanId);
+    }
   }
   const liveClassDto = toLiveClassDto(
     liveClass.id,
@@ -339,7 +374,7 @@ export async function cancelReservationByStaffUseCase(
 export async function listMyReservationsUseCase(
   userId: string,
   centerId: string,
-  options?: { status?: "CONFIRMED" | "CANCELLED" | "ATTENDED" | "NO_SHOW" }
+  options?: { status?: "CONFIRMED" | "CANCELLED" | "LATE_CANCELLED" | "ATTENDED" | "NO_SHOW" }
 ): Promise<ReservationDto[]> {
   const reservations = await reservationRepository.findByUserId(userId, options);
   const dtos: ReservationDto[] = [];
@@ -502,18 +537,19 @@ export interface ListReservationsPaginatedResult {
 
 /**
  * Listar reservas del usuario en el centro con paginación.
+ * Sin statuses = todas (CONFIRMED, CANCELLED, LATE_CANCELLED, ATTENDED, NO_SHOW).
  */
 export async function listMyReservationsPaginated(
   userId: string,
   centerId: string,
-  opts: { page?: number; pageSize?: number }
+  opts: { page?: number; pageSize?: number; statuses?: ReservationStatus[] }
 ): Promise<ListReservationsPaginatedResult> {
   const page = Math.max(1, opts.page ?? 1);
   const pageSize = Math.min(50, Math.max(1, opts.pageSize ?? DEFAULT_PAGE_SIZE));
   const offset = (page - 1) * pageSize;
   const { items: reservations, total } = await reservationRepository.findByUserIdAndCenterPaginated(
     userId,
-    { centerId, limit: pageSize, offset }
+    { centerId, limit: pageSize, offset, ...(opts.statuses?.length ? { statuses: opts.statuses } : {}) }
   );
   const dtos: ReservationDto[] = [];
   for (const r of reservations) {

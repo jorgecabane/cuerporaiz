@@ -15,6 +15,12 @@ import {
   groupClassesByDay,
   ClassCard,
   ReservationsList,
+  segmentReservations,
+  canCancelReservation,
+  TAB_HOY,
+  TAB_PROXIMAS,
+  TAB_CANCELADAS,
+  TAB_HISTORICAS,
 } from "@/components/panel/reservas";
 
 const RESERVATIONS_PAGE_SIZE = 50;
@@ -347,12 +353,13 @@ export function ReservasPanel({
       .map((r) => r.liveClassId)
   );
 
-  const now = new Date();
-  const futureReservations = reservations.filter(
-    (r) => r.liveClass?.startsAt && new Date(r.liveClass.startsAt) >= now
+  const segmentedReservations = useMemo(
+    () => segmentReservations(reservations),
+    [reservations]
   );
-  const pastReservations = reservations.filter(
-    (r) => r.liveClass?.startsAt && new Date(r.liveClass.startsAt) < now
+  const canCancelIds = useMemo(
+    () => new Set(reservations.filter(canCancelReservation).map((r) => r.id)),
+    [reservations]
   );
 
   async function handleReserve(liveClassId: string, userPlanId?: string) {
@@ -625,23 +632,54 @@ export function ReservasPanel({
             <TabsTrigger value="calendario">Calendario</TabsTrigger>
           </TabsList>
           <TabsContent value="reservas" className="space-y-4">
-            <TabsRoot defaultValue="futuras" aria-label="Futuras o pasadas">
+            <TabsRoot defaultValue={TAB_HOY} aria-label="Tabs de reservas">
               <TabsList className="mb-2">
-                <TabsTrigger value="futuras">Futuras</TabsTrigger>
-                <TabsTrigger value="pasadas">Pasadas</TabsTrigger>
+                <TabsTrigger value={TAB_HOY} id="tab-hoy">
+                  Hoy
+                </TabsTrigger>
+                <TabsTrigger value={TAB_PROXIMAS} id="tab-proximas">
+                  Próximas
+                </TabsTrigger>
+                <TabsTrigger value={TAB_CANCELADAS} id="tab-canceladas">
+                  Canceladas
+                </TabsTrigger>
+                <TabsTrigger value={TAB_HISTORICAS} id="tab-historicas">
+                  Históricas
+                </TabsTrigger>
               </TabsList>
-              <TabsContent value="futuras">
+              <TabsContent value={TAB_HOY} className="pt-2">
                 <ReservationsList
-                  reservations={futureReservations}
+                  reservations={segmentedReservations.hoy}
+                  compact
+                  canCancelIds={canCancelIds}
                   onCancel={handleCancel}
                   cancelLoadingId={actionLoading}
-                  emptyMessage="No tenés reservas próximas."
+                  emptyMessage="No tenés reservas para hoy."
                 />
               </TabsContent>
-              <TabsContent value="pasadas">
+              <TabsContent value={TAB_PROXIMAS} className="pt-2">
                 <ReservationsList
-                  reservations={pastReservations}
-                  emptyMessage="No tenés reservas pasadas."
+                  reservations={segmentedReservations.proximas}
+                  compact
+                  canCancelIds={canCancelIds}
+                  onCancel={handleCancel}
+                  cancelLoadingId={actionLoading}
+                  emptyMessage="No tenés próximas reservas."
+                />
+              </TabsContent>
+              <TabsContent value={TAB_CANCELADAS} className="pt-2">
+                <ReservationsList
+                  reservations={segmentedReservations.canceladas}
+                  compact
+                  showCancelBadge
+                  emptyMessage="No tenés reservas canceladas."
+                />
+              </TabsContent>
+              <TabsContent value={TAB_HISTORICAS} className="pt-2">
+                <ReservationsList
+                  reservations={segmentedReservations.historicas}
+                  compact
+                  emptyMessage="No tenés historial de reservas."
                 />
               </TabsContent>
             </TabsRoot>

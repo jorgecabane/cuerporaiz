@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { listMyReservationsPaginated } from "@/lib/application/reserve-class";
-import { reserveClassBodySchema } from "@/lib/dto/reservation-dto";
+import { reserveClassBodySchema, listReservationsQuerySchema } from "@/lib/dto/reservation-dto";
 import { reserveClassUseCase } from "@/lib/application/reserve-class";
 
 export async function GET(request: Request) {
@@ -14,11 +14,21 @@ export async function GET(request: Request) {
       );
     }
     const { searchParams } = new URL(request.url);
-    const page = searchParams.get("page") ? Number(searchParams.get("page")) : undefined;
-    const pageSize = searchParams.get("pageSize") ? Number(searchParams.get("pageSize")) : undefined;
+    const query = listReservationsQuerySchema.safeParse({
+      statuses: searchParams.get("statuses") ?? undefined,
+      page: searchParams.get("page") ?? undefined,
+      pageSize: searchParams.get("pageSize") ?? undefined,
+    });
+    if (!query.success) {
+      return NextResponse.json(
+        { code: "VALIDATION_ERROR", message: "Parámetros inválidos", errors: query.error.flatten() },
+        { status: 400 }
+      );
+    }
     const result = await listMyReservationsPaginated(session.user.id, session.user.centerId, {
-      page,
-      pageSize,
+      page: query.data.page,
+      pageSize: query.data.pageSize,
+      statuses: query.data.statuses,
     });
     return NextResponse.json(result);
   } catch (err) {

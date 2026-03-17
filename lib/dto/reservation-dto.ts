@@ -5,6 +5,40 @@
 import { z } from "zod";
 import type { ReservationStatus } from "@/lib/domain";
 
+const reservationStatusSchema = z.enum([
+  "CONFIRMED",
+  "CANCELLED",
+  "LATE_CANCELLED",
+  "ATTENDED",
+  "NO_SHOW",
+]);
+
+// ─── Query GET /api/reservations ───────────────────────────────────────────
+/** Parsea query param statuses (ej. "CONFIRMED,CANCELLED,LATE_CANCELLED"). Sin param = todas. */
+export const listReservationsQuerySchema = z.object({
+  statuses: z
+    .string()
+    .optional()
+    .transform((s, ctx): ReservationStatus[] | undefined => {
+      if (!s) return undefined;
+      const parts = s.split(",").map((x) => x.trim()).filter(Boolean);
+      if (parts.length === 0) return undefined;
+      const parsed = z.array(reservationStatusSchema).safeParse(parts);
+      if (!parsed.success) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "statuses contiene valores inválidos",
+        });
+        return z.NEVER;
+      }
+      return parsed.data;
+    }),
+  page: z.coerce.number().int().min(1).optional(),
+  pageSize: z.coerce.number().int().min(1).max(50).optional(),
+});
+
+export type ListReservationsQuery = z.infer<typeof listReservationsQuerySchema>;
+
 // ─── Request (validables) ─────────────────────────────────────────────────
 export const reserveClassBodySchema = z.object({
   liveClassId: z.string().min(1, "liveClassId requerido"),

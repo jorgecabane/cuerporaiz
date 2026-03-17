@@ -279,10 +279,11 @@ model InstructorBankAccount {
 
 // Estados de reserva
 enum ReservationStatus {
-  CONFIRMED   // Confirmada
-  CANCELLED   // Cancelada
-  ATTENDED    // Asistió
-  NO_SHOW     // No asistió
+  CONFIRMED    // Confirmada
+  CANCELLED    // Cancelada a tiempo (clase devuelta al plan)
+  LATE_CANCELLED  // Cancelada tarde (clase consumida)
+  ATTENDED     // Asistió
+  NO_SHOW      // No asistió
 }
 
 model Reservation {

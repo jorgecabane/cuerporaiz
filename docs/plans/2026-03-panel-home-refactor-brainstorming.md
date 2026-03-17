@@ -89,3 +89,10 @@
 3. Diseñar componentes compactos (ReservasHoy, ProximasReservas, PlanesActivosResumen, AccesosRapidos) con tope de ítems y enlace "Ver más".
 4. Quitar sección "Tu perfil" del home; opcional: añadir `/panel/cuenta` y enlace en PanelShell.
 5. Ajustar espaciado y tipografía para cumplir "no scroll" en viewport móvil de referencia (validar en 360px y 390px de ancho).
+
+---
+
+## 7. Documentación relacionada
+
+- **Diseño Mis reservas + cancelaciones:** [2026-03-17-panel-reservas-bottom-sheet-cancelaciones-design.md](2026-03-17-panel-reservas-bottom-sheet-cancelaciones-design.md) — Bottom sheet reutilizable, tabs Hoy/Próximas/Canceladas/Históricas, políticas de cancelación (a tiempo vs tardía).
+- **Plan de implementación:** [2026-03-17-panel-home-and-reservas-implementation-plan.md](2026-03-17-panel-home-and-reservas-implementation-plan.md) — Tareas 1–7 (LATE_CANCELLED, API, AdaptiveSheet, MisReservasSheet, tabs en /panel/reservas).

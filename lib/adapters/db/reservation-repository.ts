@@ -59,9 +59,15 @@ export const reservationRepository: IReservationRepository = {
   },
 
   async findByUserIdAndCenterPaginated(userId: string, options: FindByUserIdAndCenterPaginatedOptions) {
+    const statusFilter =
+      options.statuses && options.statuses.length > 0
+        ? { status: { in: options.statuses } }
+        : options.status
+          ? { status: options.status }
+          : {};
     const where = {
       userId,
-      ...(options.status ? { status: options.status } : {}),
+      ...statusFilter,
       liveClass: { centerId: options.centerId },
     };
     const [items, total] = await Promise.all([

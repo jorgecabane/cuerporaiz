@@ -8,7 +8,10 @@ export interface FindByUserIdPaginatedOptions {
 
 export interface FindByUserIdAndCenterPaginatedOptions {
   centerId: string;
+  /** Un solo status (legacy). Ignorado si statuses está presente. */
   status?: ReservationStatus;
+  /** Varios statuses. Si está presente, filtra por status in statuses. Si no se pasa nada, devuelve todas. */
+  statuses?: ReservationStatus[];
   limit: number;
   offset: number;
 }
