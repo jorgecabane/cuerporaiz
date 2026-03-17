@@ -5,3 +5,5 @@ export { ClassCard } from "./ClassCard";
 export type { ClassCardProps } from "./ClassCard";
 export { ReservationsList } from "./ReservationsList";
 export type { ReservationsListProps } from "./ReservationsList";
+export { MisReservasSheet } from "./MisReservasSheet";
+export type { MisReservasSheetProps } from "./MisReservasSheet";

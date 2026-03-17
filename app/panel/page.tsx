@@ -12,6 +12,7 @@ import {
   ArrowRight,
   Sparkles,
 } from "lucide-react";
+import { PanelHomeMisReservasTrigger } from "./PanelHomeMisReservasTrigger";
 
 const QUICK_ACTION_META: Record<
   string,
@@ -152,6 +153,18 @@ export default async function PanelPage() {
           Acciones rápidas
         </h2>
         <ul className="grid gap-3 sm:grid-cols-2">
+          {user.role === "STUDENT" && (
+            <li>
+              <PanelHomeMisReservasTrigger
+                cancelBeforeHours={center?.cancelBeforeHours ?? 12}
+                cancelPolicyCopy={
+                  center
+                    ? `Cancelación sin cargo hasta ${center.cancelBeforeHours} h antes`
+                    : undefined
+                }
+              />
+            </li>
+          )}
           {PANEL_NAV_ITEMS.filter((item) => item.href !== "/panel").map(
             (item) => {
               const meta = QUICK_ACTION_META[item.href];
