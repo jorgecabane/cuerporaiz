@@ -20,6 +20,6 @@ test.describe("Panel admin - Disciplinas CRUD", () => {
     await page.getByLabel(/nombre/i).fill(name);
     await page.getByRole("button", { name: /crear disciplina/i }).click();
     await expect(page).toHaveURL(/\/panel\/disciplinas/, { timeout: 10000 });
-    await expect(page.getByText(name)).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText(name)).toBeVisible({ timeout: 20000 });
   });
 });

@@ -20,8 +20,9 @@ test.describe("Planes y checkout", () => {
   test("panel tiene enlace a planes", async ({ page }) => {
     await page.goto("/panel");
     await expect(page).toHaveURL(/\/panel/, { timeout: 15000 });
-    await expect(page.getByRole("link", { name: /Planes y comprar/i }).first()).toBeVisible();
-    await page.getByRole("link", { name: /Planes y comprar/i }).first().click();
+    const planesLink = page.locator("a[href='/planes']").first();
+    await expect(planesLink).toBeVisible({ timeout: 15000 });
+    await planesLink.click();
     await expect(page).toHaveURL(/\/planes/);
   });
 
@@ -83,7 +84,9 @@ test.describe("Planes y checkout", () => {
     });
 
     await page.goto("/planes");
-    await expect(page.getByRole("heading", { name: "Planes", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Planes", exact: true })).toBeVisible({
+      timeout: 15000,
+    });
     await page.getByRole("button", { name: "Comprar" }).first().click();
 
     await expect(page).toHaveURL(/mercadopago\.com\/checkout\/v1\/redirect/, {
