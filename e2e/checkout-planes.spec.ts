@@ -13,8 +13,8 @@ test.describe("Planes y checkout", () => {
   test("planes carga y muestra sección", async ({ page }) => {
     await page.goto("/planes");
     await expect(page).toHaveURL(/\/planes/);
-    await expect(page.getByRole("heading", { name: /planes/i })).toBeVisible();
-    await expect(page.getByText(/MercadoPago de forma segura/i)).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Planes", exact: true })).toBeVisible();
+    await expect(page.getByText(/Gestioná tus membresías/i)).toBeVisible();
   });
 
   test("panel tiene enlace a planes", async ({ page }) => {

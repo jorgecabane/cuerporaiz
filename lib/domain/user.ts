@@ -11,6 +11,12 @@ export interface User {
   id: UserId;
   email: string;
   name: string | null;
+  lastName: string | null;
+  phone: string | null;
+  rut: string | null;
+  birthday: Date | null;
+  sex: string | null;
+  notes: string | null;
   createdAt: Date;
   updatedAt: Date;
 }

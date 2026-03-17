@@ -7,6 +7,8 @@ import {
   instructorRepository,
   centerRepository,
   liveClassSeriesRepository,
+  zoomConfigRepository,
+  googleMeetConfigRepository,
 } from "@/lib/adapters/db";
 import { Button } from "@/components/ui/Button";
 import { EditClassForm } from "./EditClassForm";
@@ -23,12 +25,19 @@ export default async function EditClassPage({ params }: Props) {
 
   const { id } = await params;
 
-  const [liveClass, disciplines, instructors, center] = await Promise.all([
+  const [liveClass, disciplines, instructors, center, zoomStatus, meetStatus] = await Promise.all([
     liveClassRepository.findById(id),
     disciplineRepository.findActiveByCenterId(centerId),
     instructorRepository.findByCenterId(centerId),
     centerRepository.findById(centerId),
+    zoomConfigRepository.findStatusByCenterId(centerId),
+    googleMeetConfigRepository.findStatusByCenterId(centerId),
   ]);
+
+  const videoProviders = {
+    zoom: !!(zoomStatus?.enabled && zoomStatus?.hasCredentials),
+    meet: !!(meetStatus?.enabled && meetStatus?.hasCredentials),
+  };
 
   if (!liveClass || liveClass.centerId !== centerId) notFound();
 
@@ -58,9 +67,13 @@ export default async function EditClassPage({ params }: Props) {
           series={series}
           reservationCount={reservationCount}
           defaultDuration={center?.defaultClassDurationMinutes ?? 60}
+          videoProviders={videoProviders}
         />
       </div>
-      <div className="mt-6">
+      <div className="mt-6 flex gap-3">
+        <Button href={`/panel/horarios/${id}/asistencia`} variant="primary">
+          Tomar asistencia{reservationCount > 0 ? ` (${reservationCount})` : ""}
+        </Button>
         <Button href="/panel/horarios" variant="secondary">
           Volver a horarios
         </Button>

@@ -11,6 +11,7 @@ type PrismaSeries = {
   maxCapacity: number;
   durationMinutes: number;
   isOnline: boolean;
+  meetingUrl: string | null;
   isTrialClass: boolean;
   trialCapacity: number | null;
   color: string | null;
@@ -37,6 +38,7 @@ function toDomain(s: PrismaSeries): LiveClassSeries {
     maxCapacity: s.maxCapacity,
     durationMinutes: s.durationMinutes,
     isOnline: s.isOnline,
+    meetingUrl: s.meetingUrl,
     isTrialClass: s.isTrialClass,
     trialCapacity: s.trialCapacity,
     color: s.color,
@@ -78,6 +80,7 @@ export const liveClassSeriesRepository: ILiveClassSeriesRepository = {
         maxCapacity: data.maxCapacity,
         durationMinutes: data.durationMinutes,
         isOnline: data.isOnline ?? false,
+        meetingUrl: data.meetingUrl ?? null,
         isTrialClass: data.isTrialClass ?? false,
         trialCapacity: data.trialCapacity ?? null,
         color: data.color ?? null,
@@ -106,6 +109,7 @@ export const liveClassSeriesRepository: ILiveClassSeriesRepository = {
           ...(data.maxCapacity !== undefined && { maxCapacity: data.maxCapacity }),
           ...(data.durationMinutes !== undefined && { durationMinutes: data.durationMinutes }),
           ...(data.isOnline !== undefined && { isOnline: data.isOnline }),
+          ...(data.meetingUrl !== undefined && { meetingUrl: data.meetingUrl }),
           ...(data.isTrialClass !== undefined && { isTrialClass: data.isTrialClass }),
           ...(data.trialCapacity !== undefined && { trialCapacity: data.trialCapacity }),
           ...(data.color !== undefined && { color: data.color }),

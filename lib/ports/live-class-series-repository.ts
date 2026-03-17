@@ -7,6 +7,7 @@ export interface CreateSeriesInput {
   maxCapacity: number;
   durationMinutes: number;
   isOnline?: boolean;
+  meetingUrl?: string | null;
   isTrialClass?: boolean;
   trialCapacity?: number | null;
   color?: string | null;
@@ -28,6 +29,7 @@ export interface UpdateSeriesInput {
   maxCapacity?: number;
   durationMinutes?: number;
   isOnline?: boolean;
+  meetingUrl?: string | null;
   isTrialClass?: boolean;
   trialCapacity?: number | null;
   color?: string | null;

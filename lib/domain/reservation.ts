@@ -13,6 +13,7 @@ export interface Reservation {
   id: ReservationId;
   userId: UserId;
   liveClassId: LiveClassId;
+  userPlanId: string | null;
   status: ReservationStatus;
   createdAt: Date;
   updatedAt: Date;

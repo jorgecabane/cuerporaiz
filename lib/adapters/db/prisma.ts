@@ -2,7 +2,7 @@
  * Cliente Prisma con adaptador Postgres (Prisma 7). Conexión vía DATABASE_URL (Supabase u otro Postgres).
  * Solo se usa desde adaptadores; el dominio no importa este archivo.
  */
-import { PrismaClient } from "@/lib/generated/prisma";
+import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 
 const connectionString = process.env.DATABASE_URL;

@@ -16,6 +16,6 @@ test.describe("Panel admin - Clientes", () => {
     await expect(page.getByRole("link", { name: /^Clientes$/i })).toBeVisible();
     await page.getByRole("link", { name: /^Clientes$/i }).click();
     await expect(page).toHaveURL(/\/panel\/clientes/);
-    await expect(page.getByRole("heading", { name: /Clientes \(admin\)/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /^Alumnas$/i })).toBeVisible();
   });
 });

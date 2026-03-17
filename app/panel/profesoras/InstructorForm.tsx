@@ -58,6 +58,33 @@ export function InstructorForm({ instructor }: { instructor?: Instructor }) {
           </p>
         )}
       </div>
+      <div>
+        <label htmlFor="imageUrl" className="block text-sm font-medium text-[var(--color-text)] mb-1">
+          Imagen de perfil (URL)
+        </label>
+        <div className="flex flex-wrap items-start gap-3">
+          {isEditing && instructor?.imageUrl && (
+            <img
+              src={instructor.imageUrl}
+              alt=""
+              className="h-14 w-14 rounded-full object-cover border border-[var(--color-border)]"
+              width={56}
+              height={56}
+            />
+          )}
+          <input
+            id="imageUrl"
+            name="imageUrl"
+            type="url"
+            defaultValue={instructor?.imageUrl ?? ""}
+            placeholder="https://…"
+            className="flex-1 min-w-0 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-[var(--color-text)]"
+          />
+        </div>
+        <p className="text-xs text-[var(--color-text-muted)] mt-1">
+          Opcional. URL de una imagen para mostrar como avatar en las clases.
+        </p>
+      </div>
       <div className="flex gap-3 pt-2">
         <SubmitButton label={isEditing ? "Guardar cambios" : "Agregar profesora"} />
         <Button href="/panel/profesoras" variant="secondary">

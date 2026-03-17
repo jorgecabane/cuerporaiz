@@ -19,6 +19,13 @@ export interface Center {
   calendarEndHour: number;
   calendarWeekStartDay: number;
   defaultClassDurationMinutes: number;
+  bankTransferEnabled: boolean;
+  bankName: string | null;
+  bankAccountType: string | null;
+  bankAccountNumber: string | null;
+  bankAccountHolder: string | null;
+  bankAccountRut: string | null;
+  bankAccountEmail: string | null;
   createdAt: Date;
   updatedAt: Date;
 }

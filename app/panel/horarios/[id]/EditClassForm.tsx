@@ -1,9 +1,10 @@
 "use client";
 
-import { useTransition, useState, useMemo } from "react";
-import { updateLiveClass, cancelLiveClass, updateSeriesClasses } from "../actions";
+import { useTransition, useState, useMemo, useRef } from "react";
+import { updateLiveClass, cancelLiveClass, updateSeriesClasses, createMeetingForClass } from "../actions";
 import type { EditScope } from "../actions";
 import { Button } from "@/components/ui/Button";
+import { Skeleton } from "@/components/ui/Skeleton";
 import type { LiveClass, Discipline, LiveClassSeries } from "@/lib/domain";
 import type { Instructor } from "@/lib/ports/instructor-repository";
 
@@ -20,6 +21,7 @@ interface Props {
   series: LiveClassSeries | null;
   reservationCount: number;
   defaultDuration: number;
+  videoProviders?: { zoom: boolean; meet: boolean };
 }
 
 export function EditClassForm({
@@ -28,6 +30,8 @@ export function EditClassForm({
   instructors,
   series,
   reservationCount,
+  defaultDuration,
+  videoProviders = { zoom: false, meet: false },
 }: Props) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -44,6 +48,14 @@ export function EditClassForm({
   const [startsAtValue, setStartsAtValue] = useState(
     toLocalISO(new Date(liveClass.startsAt))
   );
+  const [isOnline, setIsOnline] = useState(liveClass.isOnline && !!liveClass.meetingUrl);
+  const [meetingUrlValue, setMeetingUrlValue] = useState(liveClass.meetingUrl ?? "");
+  const [meetingError, setMeetingError] = useState<string | null>(null);
+  const [generatingMeeting, setGeneratingMeeting] = useState(false);
+  const [lastUsedProvider, setLastUsedProvider] = useState<"zoom" | "meet" | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  const hasVideoProvider = videoProviders.zoom || videoProviders.meet;
 
   const disciplineColor = useMemo(() => {
     if (!selectedDisciplineId) return null;
@@ -70,6 +82,7 @@ export function EditClassForm({
 
     if (!title || !startsAt) return;
 
+    const meetingUrl = isOnline ? (meetingUrlValue?.trim() || null) : null;
     const formPayload = {
       id: liveClass.id,
       title,
@@ -78,7 +91,8 @@ export function EditClassForm({
       startsAt,
       durationMinutes,
       maxCapacity,
-      isOnline: false,
+      isOnline: !!meetingUrl,
+      meetingUrl,
       isTrialClass,
       trialCapacity,
       color: effectiveColor,
@@ -101,8 +115,32 @@ export function EditClassForm({
     startTransition(() => cancelLiveClass(liveClass.id));
   }
 
+  async function handleGenerateMeeting(provider: "zoom" | "meet") {
+    if (!formRef.current) return;
+    setMeetingError(null);
+    setGeneratingMeeting(true);
+    const fd = new FormData(formRef.current);
+    const title = (fd.get("title") as string)?.trim();
+    const startsAt = fd.get("startsAt") as string;
+    const durationMinutes = Number(fd.get("durationMinutes")) || defaultDuration;
+    if (!title || !startsAt) {
+      setMeetingError("Completá nombre y fecha/hora.");
+      setGeneratingMeeting(false);
+      return;
+    }
+    try {
+      const res = await createMeetingForClass(provider, { title, startTime: startsAt, durationMinutes });
+      setMeetingUrlValue(res.joinUrl);
+      setLastUsedProvider(provider);
+    } catch (err) {
+      setMeetingError(err instanceof Error ? err.message : "No se pudo crear la reunión.");
+    } finally {
+      setGeneratingMeeting(false);
+    }
+  }
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
       {series && (
         <div className="rounded-[var(--radius-md)] border border-[var(--color-primary-light)] bg-[var(--color-primary-light)]/20 px-4 py-3 space-y-2">
           <p className="text-sm font-medium text-[var(--color-text)]">
@@ -268,16 +306,39 @@ export function EditClassForm({
         </div>
       </div>
 
-      {/* Toggles */}
+      {/* Toggles: clase online + prueba */}
       <div className="flex flex-wrap gap-4">
-        <label
-          className="inline-flex items-center gap-2 cursor-not-allowed opacity-50"
-          title="Requiere configurar Zoom o Meet en Plugins"
-        >
-          <input type="checkbox" disabled className="rounded border-[var(--color-border)]" />
-          <span className="text-sm text-[var(--color-text)]">Clase online</span>
-          <span className="text-xs text-[var(--color-text-muted)]">(requiere plugin)</span>
-        </label>
+        {hasVideoProvider ? (
+          <label className="inline-flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={isOnline}
+              onChange={(e) => {
+                setIsOnline(e.target.checked);
+                if (!e.target.checked) {
+                  setMeetingUrlValue("");
+                  setMeetingError(null);
+                }
+              }}
+              className="rounded border-[var(--color-border)]"
+            />
+            <span className="text-sm text-[var(--color-text)]">Clase online</span>
+          </label>
+        ) : (
+          <div className="flex flex-col gap-2 w-full">
+            <label className="inline-flex items-center gap-2 cursor-not-allowed opacity-50" title="Requiere configurar Zoom o Meet en Plugins">
+              <input type="checkbox" disabled checked={isOnline} className="rounded border-[var(--color-border)]" readOnly />
+              <span className="text-sm text-[var(--color-text)]">Clase online</span>
+              <span className="text-xs text-[var(--color-text-muted)]">(requiere plugin)</span>
+            </label>
+            {isOnline && meetingUrlValue && (
+              <div className="flex gap-2">
+                <input type="text" readOnly value={meetingUrlValue} className="flex-1 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text-muted)]" />
+                <button type="button" onClick={() => navigator.clipboard.writeText(meetingUrlValue)} className="rounded-[var(--radius-md)] border border-[var(--color-border)] px-3 py-2 text-sm font-medium text-[var(--color-text)] hover:bg-[var(--color-surface)]">Copiar</button>
+              </div>
+            )}
+          </div>
+        )}
         <label className="inline-flex items-center gap-2 cursor-pointer">
           <input
             type="checkbox"
@@ -288,6 +349,75 @@ export function EditClassForm({
           <span className="text-sm text-[var(--color-text)]">Acepta clase de prueba</span>
         </label>
       </div>
+
+      {/* URL de reunión (solo si Clase online y hay plugin) */}
+      {isOnline && hasVideoProvider && (
+      <div className="space-y-2">
+        <label htmlFor="meetingUrl" className="block text-sm font-medium text-[var(--color-text)]">
+          Link de la reunión
+        </label>
+        <div className="flex flex-wrap gap-2">
+            {videoProviders.zoom && (
+              <button
+                type="button"
+                disabled={generatingMeeting}
+                onClick={() => handleGenerateMeeting("zoom")}
+                className="rounded-[var(--radius-md)] border border-[var(--color-border)] px-3 py-2 text-sm font-medium text-[var(--color-text)] hover:bg-[var(--color-surface)] disabled:opacity-50"
+              >
+                {generatingMeeting ? "Creando…" : "Generar con Zoom"}
+              </button>
+            )}
+            {videoProviders.meet && (
+              <button
+                type="button"
+                disabled={generatingMeeting}
+                onClick={() => handleGenerateMeeting("meet")}
+                className="rounded-[var(--radius-md)] border border-[var(--color-border)] px-3 py-2 text-sm font-medium text-[var(--color-text)] hover:bg-[var(--color-surface)] disabled:opacity-50"
+              >
+                {generatingMeeting ? "Creando…" : "Generar con Meet"}
+              </button>
+            )}
+          </div>
+        {generatingMeeting && (
+          <div className="space-y-2">
+            <Skeleton className="h-10 w-full" />
+          </div>
+        )}
+        {!generatingMeeting && (
+          <>
+            <input
+              id="meetingUrl"
+              name="meetingUrl"
+              type="url"
+              placeholder="https://zoom.us/j/... o https://meet.google.com/..."
+              value={meetingUrlValue}
+              onChange={(e) => setMeetingUrlValue(e.target.value)}
+              className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-[var(--color-text)] text-sm"
+            />
+            {meetingUrlValue && (
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => navigator.clipboard.writeText(meetingUrlValue)}
+                  className="text-sm font-medium text-[var(--color-primary)] hover:underline"
+                >
+                  Copiar link
+                </button>
+              </div>
+            )}
+          </>
+        )}
+        {meetingError && (
+          <div className="rounded-[var(--radius-md)] bg-[var(--color-error-bg,#fef2f2)] p-3 text-sm text-[var(--color-error,#dc2626)]">
+            {meetingError}
+            <button type="button" onClick={() => handleGenerateMeeting(lastUsedProvider ?? (videoProviders.zoom ? "zoom" : "meet"))} className="ml-2 underline font-medium">Reintentar</button>
+          </div>
+        )}
+        <p className="text-xs text-[var(--color-text-muted)]">
+          Al desmarcar «Clase online» el link se borra al guardar.
+        </p>
+      </div>
+      )}
 
       {isTrialClass && (
         <div>

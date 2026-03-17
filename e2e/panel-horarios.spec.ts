@@ -83,7 +83,14 @@ test.describe("Panel admin - Horarios flow", () => {
   test("clase online is disabled", async ({ page }) => {
     await page.goto("/panel/horarios/nueva");
     const onlineCheckbox = page.getByLabel(/Clase online/i);
-    await expect(onlineCheckbox).toBeDisabled();
+    // Si no hay plugins (Zoom/Meet) configurados, queda deshabilitado.
+    // Si hay plugins, debe estar habilitado.
+    const requiresPluginHint = page.getByText(/\(requiere plugin\)/i);
+    if (await requiresPluginHint.count()) {
+      await expect(onlineCheckbox).toBeDisabled();
+    } else {
+      await expect(onlineCheckbox).toBeEnabled();
+    }
   });
 
   test("trial capacity shows when acepta prueba checked", async ({ page }) => {
@@ -104,15 +111,35 @@ test.describe("Panel admin - Horarios flow", () => {
     expect(minDate.getTime()).toBeGreaterThan(now.getTime());
   });
 
+  const E2E_CLASS_NAME = "E2E Test Class";
+
   test("admin can create a single class", async ({ page }) => {
     await page.goto("/panel/horarios/nueva");
-    await page.getByLabel(/Nombre de la clase/i).fill("E2E Test Class");
+    await page.getByLabel(/Nombre de la clase/i).fill(E2E_CLASS_NAME);
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     tomorrow.setHours(10, 0, 0, 0);
     const dateStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, "0")}-${String(tomorrow.getDate()).padStart(2, "0")}T10:00`;
     await page.getByLabel(/Fecha y hora inicio/i).fill(dateStr);
     await page.getByRole("button", { name: /Crear clase/i }).click();
+    await expect(page).toHaveURL(/\/panel\/horarios/, { timeout: 10000 });
+  });
+
+  test("cleanup: elimina la clase creada por E2E", async ({ page }) => {
+    await page.goto("/panel/horarios");
+    await expect(page.getByRole("heading", { name: /Horarios/i })).toBeVisible({ timeout: 10000 });
+    await page.getByRole("button", { name: /Lista/i }).click();
+    await page.waitForTimeout(1500);
+    const classLink = page.getByRole("link", { name: new RegExp(E2E_CLASS_NAME) }).first();
+    if (!(await classLink.isVisible())) {
+      test.skip();
+      return;
+    }
+    await classLink.click();
+    await expect(page).toHaveURL(/\/panel\/horarios\/.+/, { timeout: 10000 });
+    await expect(page.getByRole("heading", { name: /Editar clase/i })).toBeVisible({ timeout: 5000 });
+    await page.getByRole("button", { name: /Cancelar clase/i }).click();
+    await page.getByRole("button", { name: /Sí, cancelar/i }).click();
     await expect(page).toHaveURL(/\/panel\/horarios/, { timeout: 10000 });
   });
 });
@@ -273,8 +300,8 @@ test.describe("Panel admin - Profesoras", () => {
 
 test.describe("Panel admin - Configuración (calendar settings)", () => {
   test("configuración page has calendar settings", async ({ page }) => {
-    await page.goto("/panel/politicas");
-    await expect(page).toHaveURL(/\/panel\/politicas/);
+    await page.goto("/panel/configuracion");
+    await expect(page).toHaveURL(/\/panel\/configuracion/);
     await expect(page.getByLabel(/Hora de inicio del calendario/i)).toBeVisible({ timeout: 10000 });
     await expect(page.getByLabel(/Hora de fin del calendario/i)).toBeVisible();
     await expect(page.getByLabel(/Duración por defecto de clases/i)).toBeVisible();

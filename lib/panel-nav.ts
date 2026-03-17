@@ -15,7 +15,7 @@ export const PANEL_ADMIN_ITEMS = [
   { href: "/panel/profesoras", label: "Profesoras" },
   { href: "/panel/feriados", label: "Feriados" },
   { href: "/panel/clientes", label: "Clientes" },
-  { href: "/panel/politicas", label: "Configuración" },
+  { href: "/panel/configuracion", label: "Configuración" },
   { href: "/panel/plugins", label: "Plugins" },
   { href: "/panel/planes", label: "Planes" },
   { href: "/panel/pagos", label: "Pagos" },

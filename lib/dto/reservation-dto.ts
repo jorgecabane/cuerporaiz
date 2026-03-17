@@ -8,6 +8,7 @@ import type { ReservationStatus } from "@/lib/domain";
 // ─── Request (validables) ─────────────────────────────────────────────────
 export const reserveClassBodySchema = z.object({
   liveClassId: z.string().min(1, "liveClassId requerido"),
+  userPlanId: z.string().min(1).optional(),
 });
 
 export type ReserveClassBody = z.infer<typeof reserveClassBodySchema>;
@@ -27,12 +28,20 @@ export interface LiveClassDto {
   durationMinutes: number;
   maxCapacity: number;
   spotsLeft: number; // derivado: maxCapacity - reservas CONFIRMED
+  isTrialClass?: boolean;
+  /** Si la clase es online (meetingUrl) o presencial */
+  isOnline?: boolean;
+  /** Nombre del profesor que imparte la clase */
+  instructorName?: string | null;
+  /** URL de la imagen del profesor (avatar) */
+  instructorImageUrl?: string | null;
 }
 
 export interface ReservationDto {
   id: string;
   userId: string;
   liveClassId: string;
+  userPlanId: string | null;
   status: ReservationStatus;
   createdAt: string;
   updatedAt: string;
@@ -49,10 +58,20 @@ export interface CancelReservationResultDto {
   reservation: ReservationDto;
 }
 
+export interface UserPlanOptionDto {
+  id: string;
+  planId: string;
+  planName?: string;
+  classesTotal: number | null;
+  classesUsed: number;
+  validUntil: string | null;
+}
+
 export interface ReservationErrorDto {
   success: false;
   code: string;
   message: string;
+  plans?: UserPlanOptionDto[];
 }
 
 export type ReserveClassResult = ReserveClassResultDto | ReservationErrorDto;

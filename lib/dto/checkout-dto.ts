@@ -30,6 +30,18 @@ export interface CreatePreferenceDto {
   autoReturn?: "approved";
   /** Email del pagador (opcional, MP puede pedirlo en checkout) */
   payerEmail?: string;
+  /** Nombre del pagador (mejora tasa de aprobación, recomendación MP) */
+  payerFirstName?: string;
+  /** Apellido del pagador (mejora tasa de aprobación, recomendación MP) */
+  payerLastName?: string;
+  /** Descripción en resumen de tarjeta (máx. 22 caracteres, ej. "CUERPORAIZ") */
+  statementDescriptor?: string;
+  /** ID del ítem en nuestro sistema (mejora aprobación) */
+  itemId?: string;
+  /** Descripción del ítem (mejora aprobación) */
+  itemDescription?: string;
+  /** Categoría MP del ítem (ej. "services") */
+  itemCategoryId?: string;
 }
 
 export const createPreferenceDtoSchema = z.object({
@@ -46,6 +58,12 @@ export const createPreferenceDtoSchema = z.object({
   notificationUrl: z.string().url(),
   autoReturn: z.literal("approved").optional(),
   payerEmail: z.string().email().optional(),
+  payerFirstName: z.string().optional(),
+  payerLastName: z.string().optional(),
+  statementDescriptor: z.string().max(22).optional(),
+  itemId: z.string().optional(),
+  itemDescription: z.string().optional(),
+  itemCategoryId: z.string().optional(),
 });
 
 /** Resultado de crear preferencia: URL de checkout y ID de preferencia */

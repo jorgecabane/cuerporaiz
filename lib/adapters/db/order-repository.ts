@@ -1,7 +1,7 @@
 import type { IOrderRepository, Order, CreateOrderInput, OrderStatus } from "@/lib/ports";
 import type { OrderListFilters } from "@/lib/ports/order-repository";
 import { prisma } from "./prisma";
-import { OrderStatus as PrismaOrderStatus } from "@/lib/generated/prisma";
+import type { OrderStatus as PrismaOrderStatus } from "@prisma/client";
 
 function toDomain(o: {
   id: string;

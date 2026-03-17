@@ -277,3 +277,46 @@ export function buildPaymentFailedEmail(data: PaymentFailedData): SendEmailDto {
     text,
   };
 }
+
+// ─── Bienvenida a profesora/admin ──────────────────────────────────────────
+export interface WelcomeStaffData {
+  toEmail: string;
+  name?: string;
+  role: string;
+  centerName: string;
+  loginUrl: string;
+}
+
+export function buildWelcomeStaffEmail(data: WelcomeStaffData): SendEmailDto {
+  const greeting = data.name ? `Hola ${data.name}` : "Hola";
+  const roleLabel = data.role === "INSTRUCTOR" ? "profesora" : "administradora";
+  const html = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family: sans-serif; line-height: 1.5; color: #333;">
+  <p>${greeting},</p>
+  <p>Te damos la bienvenida a <strong>${data.centerName}</strong>. Fuiste agregada como <strong>${roleLabel}</strong>.</p>
+  <p>Para acceder al panel, creá tu cuenta usando este email (<strong>${data.toEmail}</strong>):</p>
+  <p><a href="${data.loginUrl}" style="display:inline-block;background:#2D3B2A;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:500;">Crear mi cuenta</a></p>
+  <p>Si ya tenés cuenta con este email, simplemente iniciá sesión.</p>
+  <p>— ${SITE_NAME}</p>
+</body>
+</html>`;
+  const text = [
+    `${greeting},`,
+    `Te damos la bienvenida a ${data.centerName}. Fuiste agregada como ${roleLabel}.`,
+    `Para acceder, creá tu cuenta usando este email (${data.toEmail}):`,
+    data.loginUrl,
+    "Si ya tenés cuenta con este email, simplemente iniciá sesión.",
+    `— ${SITE_NAME}`,
+  ].join("\n");
+
+  return {
+    from: DEFAULT_FROM,
+    to: [data.toEmail],
+    subject: `Bienvenida a ${data.centerName} — ${SITE_NAME}`,
+    html,
+    text,
+  };
+}
