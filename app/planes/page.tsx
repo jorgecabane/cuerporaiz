@@ -111,10 +111,9 @@ export default async function PlanesPage() {
     (id) => !planMap.has(id)
   );
   if (missingPlanIds.length > 0) {
-    const missing = await Promise.all(
-      missingPlanIds.map((id) => planRepository.findById(id))
-    );
-    missingPlanIds.forEach((id, i) => planMap.set(id, missing[i] ?? null));
+    const missing = await planRepository.findManyByIds(missingPlanIds);
+    const missingMap = new Map(missing.map((p) => [p.id, p]));
+    missingPlanIds.forEach((id) => planMap.set(id, missingMap.get(id) ?? null));
   }
 
   const misPlansItems: MisPlanItem[] = userPlans.map((up) => ({

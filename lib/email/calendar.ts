@@ -39,10 +39,11 @@ function toGoogleCalendarDate(iso: string, useUtc = false): string {
  */
 export function buildGoogleCalendarUrl(params: GoogleCalendarEventParams): string {
   const base = "https://calendar.google.com/calendar/render";
+  const shouldUseUtc = (iso: string) => /([zZ]|[+-]\d\d:\d\d)$/.test(iso);
   const search = new URLSearchParams({
     action: "TEMPLATE",
     text: params.title,
-    dates: `${toGoogleCalendarDate(params.start)}/${toGoogleCalendarDate(params.end)}`,
+    dates: `${toGoogleCalendarDate(params.start, shouldUseUtc(params.start))}/${toGoogleCalendarDate(params.end, shouldUseUtc(params.end))}`,
   });
   if (params.details) search.set("details", params.details);
   if (params.location) search.set("location", params.location);

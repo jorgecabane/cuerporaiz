@@ -35,6 +35,9 @@ yarn-error.log*
 .pnpm-debug.log*
 .cursor/debug-*.log*
 
+# git worktrees (local)
+.worktrees/
+
 # env files (can opt-in for committing if needed)
 .env*
 !.env.example

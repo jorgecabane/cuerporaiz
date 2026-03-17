@@ -44,6 +44,31 @@ async function main() {
     update: {},
   });
 
+  // Usuario Student fijo para E2E (credenciales estables)
+  const studentEmail = process.env.SEED_STUDENT_EMAIL ?? "student@cuerporaiz.cl";
+  const studentPassword = process.env.SEED_STUDENT_PASSWORD ?? "student123";
+  const studentHash = await bcrypt.hash(studentPassword, 12);
+  const student = await prisma.user.upsert({
+    where: { email: studentEmail },
+    create: {
+      email: studentEmail,
+      passwordHash: studentHash,
+      name: "Student E2E",
+    },
+    update: {},
+  });
+  await prisma.userCenterRole.upsert({
+    where: {
+      userId_centerId: { userId: student.id, centerId: center.id },
+    },
+    create: {
+      userId: student.id,
+      centerId: center.id,
+      role: "STUDENT",
+    },
+    update: { role: "STUDENT" },
+  });
+
   // Clases live de ejemplo para reservas (solo si no hay ninguna)
   const existingClass = await prisma.liveClass.findFirst({ where: { centerId: center.id } });
   if (!existingClass) {
@@ -71,6 +96,29 @@ async function main() {
         },
       ],
     });
+  }
+  // Asegurar al menos 1 clase futura "reservable" (lejos de ventanas de bloqueo).
+  const now = new Date();
+  // Center.bookBeforeHours default = 24 → dejamos margen (48h) para evitar flakiness.
+  const minReservable = new Date(now.getTime() + 48 * 60 * 60 * 1000);
+  const hasFutureReservable = await prisma.liveClass.findFirst({
+    where: {
+      centerId: center.id,
+      startsAt: { gte: minReservable },
+    },
+  });
+  if (!hasFutureReservable) {
+    const startsAt = new Date(minReservable);
+    await prisma.liveClass.create({
+      data: {
+        centerId: center.id,
+        title: "Clase E2E (futura)",
+        startsAt,
+        durationMinutes: 60,
+        maxCapacity: 10,
+      },
+    });
+    console.log("Clase futura creada para E2E");
   }
 
   console.log("Seed OK: center", center.slug, "user", user.email, "role ADMINISTRATOR");
@@ -122,6 +170,37 @@ async function main() {
       ],
     });
     console.log("Planes de ejemplo creados (Live 6 clases, Membresía mensual)");
+  }
+
+  // Plan activo usable para student (necesario para reservar clases LIVE)
+  const livePlan = await prisma.plan.findFirst({
+    where: { centerId: center.id, type: "LIVE" },
+    orderBy: { createdAt: "asc" },
+  });
+  if (livePlan) {
+    const existingUserPlan = await prisma.userPlan.findFirst({
+      where: { userId: student.id, centerId: center.id, planId: livePlan.id, status: "ACTIVE" },
+    });
+    if (!existingUserPlan) {
+      const validFrom = new Date();
+      const validUntil = new Date();
+      validUntil.setDate(validUntil.getDate() + 31);
+      await prisma.userPlan.create({
+        data: {
+          userId: student.id,
+          centerId: center.id,
+          planId: livePlan.id,
+          orderId: null,
+          status: "ACTIVE",
+          paymentStatus: "PAID",
+          classesTotal: livePlan.maxReservations ?? 6,
+          classesUsed: 0,
+          validFrom,
+          validUntil,
+        },
+      });
+      console.log("UserPlan ACTIVE creado para student e2e:", student.email);
+    }
   }
 }
 

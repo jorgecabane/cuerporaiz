@@ -1,6 +1,5 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { isAdminRole } from "@/lib/domain/role";
 import { centerRepository } from "@/lib/adapters/db";
 import { PoliticasForm } from "./PoliticasForm";

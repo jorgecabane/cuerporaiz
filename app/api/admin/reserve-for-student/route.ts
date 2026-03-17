@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { isAdminRole } from "@/lib/domain/role";
 import { centerRepository } from "@/lib/adapters/db";
 import { reserveClassUseCase } from "@/lib/application/reserve-class";
 import { reserveClassBodySchema } from "@/lib/dto/reservation-dto";

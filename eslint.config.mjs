@@ -14,6 +14,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     "lib/generated/**",
     "coverage/**",
+    // Local git worktrees (Cursor skill / dev workflow):
+    ".worktrees/**",
   ]),
 ]);
 

@@ -1,4 +1,0 @@
--- Rename Role enum values to English (code and identifiers must be in English)
-ALTER TYPE "Role" RENAME VALUE 'ADMINISTRADORA' TO 'ADMINISTRATOR';
-ALTER TYPE "Role" RENAME VALUE 'PROFESORA' TO 'INSTRUCTOR';
-ALTER TYPE "Role" RENAME VALUE 'ALUMNA' TO 'STUDENT';

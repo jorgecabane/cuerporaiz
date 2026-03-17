@@ -43,6 +43,14 @@ export const planRepository: IPlanRepository = {
     return p ? toDomain(p) : null;
   },
 
+  async findManyByIds(ids: string[]) {
+    if (ids.length === 0) return [];
+    const list = await prisma.plan.findMany({
+      where: { id: { in: ids } },
+    });
+    return list.map(toDomain);
+  },
+
   async findByCenterAndSlug(centerId: string, slug: string) {
     const p = await prisma.plan.findUnique({
       where: { centerId_slug: { centerId, slug } },

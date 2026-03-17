@@ -32,13 +32,15 @@ export default async function PanelPagosPage({
 
   const userIds = [...new Set(orders.map((o) => o.userId))];
   const planIds = [...new Set(orders.map((o) => o.planId))];
-  const users = await Promise.all(userIds.map((id) => userRepository.findById(id)));
-  const plans = await Promise.all(planIds.map((id) => planRepository.findById(id)));
+  const [users, plans] = await Promise.all([
+    userRepository.findManyByIds(userIds),
+    planRepository.findManyByIds(planIds),
+  ]);
   const userMap = Object.fromEntries(
-    users.filter(Boolean).map((u) => [u!.id, u!])
+    users.map((u) => [u.id, u])
   );
   const planMap = Object.fromEntries(
-    plans.filter(Boolean).map((p) => [p!.id, p!])
+    plans.map((p) => [p.id, p])
   );
 
   return (

@@ -1,12 +1,9 @@
 import { auth } from "@/auth";
 import { redirect, notFound } from "next/navigation";
 import {
-  userRepository,
   orderRepository,
   planRepository,
   userPlanRepository,
-  reservationRepository,
-  liveClassRepository,
 } from "@/lib/adapters/db";
 import { isAdminRole } from "@/lib/domain";
 import {
@@ -47,15 +44,17 @@ export default async function ClientDetailPage({
   const centerId = session.user.centerId as string;
   const { id: userId } = await params;
 
-  const clients = await userRepository.findManyByCenterId(centerId);
-  const client = clients.find((u) => u.id === userId);
-  if (!client) notFound();
+  const membership = await prisma.userCenterRole.findFirst({
+    where: { userId, centerId },
+    include: { user: true },
+  });
+  if (!membership || membership.role !== "STUDENT") notFound();
+  const client = membership.user;
 
-  const [userPlans, orders, plans, reservations, manualPayments] = await Promise.all([
+  const [userPlans, orders, plans, manualPayments] = await Promise.all([
     userPlanRepository.findByUserAndCenter(userId, centerId),
     orderRepository.findManyByUserIdAndCenterId(userId, centerId),
     planRepository.findManyByCenterId(centerId),
-    reservationRepository.findByUserId(userId),
     prisma.manualPayment.findMany({
       where: { centerId, userId },
       orderBy: { paidAt: "desc" },
@@ -64,15 +63,11 @@ export default async function ClientDetailPage({
 
   const planMap = Object.fromEntries(plans.map((p) => [p.id, p]));
 
-  const classReservations = [];
-  for (const r of reservations) {
-    const lc = await liveClassRepository.findById(r.liveClassId);
-    if (!lc || lc.centerId !== centerId) continue;
-    classReservations.push({ ...r, liveClass: lc });
-  }
-  classReservations.sort(
-    (a, b) => b.liveClass.startsAt.getTime() - a.liveClass.startsAt.getTime()
-  );
+  const classReservations = await prisma.reservation.findMany({
+    where: { userId, liveClass: { centerId } },
+    include: { liveClass: true },
+    orderBy: { liveClass: { startsAt: "desc" } },
+  });
 
   const now = new Date();
   const pastClasses = classReservations.filter((r) => r.liveClass.startsAt < now);
@@ -224,7 +219,7 @@ export default async function ClientDetailPage({
           </ul>
         )}
         <div className="mt-3">
-          <AssignPlanForm userId={userId} centerId={centerId} plans={plans} />
+          <AssignPlanForm userId={userId} plans={plans} />
         </div>
       </section>
 
