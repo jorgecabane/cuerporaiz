@@ -16,7 +16,6 @@ function getWeekBounds(date: Date, weekStartDay: number): { start: Date; end: Da
 }
 
 function formatWeekLabel(start: Date, end: Date): string {
-  const opts: Intl.DateTimeFormatOptions = { day: "numeric", month: "short" };
   return `${start.getDate()}–${end.getDate()} ${end.toLocaleDateString("es-CL", { month: "short" })}`;
 }
 
@@ -59,8 +58,6 @@ export function WeekNav({
   }, [start, onWeekChange]);
 
   const now = new Date();
-  const thisWeekStart = getWeekBounds(now, weekStartDay).start;
-  const isCurrentWeek = start.getTime() === thisWeekStart.getTime();
   const canGoPrev = allowPastWeeks || start > now;
 
   return (

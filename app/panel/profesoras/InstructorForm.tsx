@@ -1,6 +1,7 @@
 "use client";
 
 import { useFormStatus } from "react-dom";
+import Image from "next/image";
 import { createInstructor, updateInstructor } from "./actions";
 import { Button } from "@/components/ui/Button";
 import type { Instructor } from "@/lib/ports";
@@ -64,12 +65,13 @@ export function InstructorForm({ instructor }: { instructor?: Instructor }) {
         </label>
         <div className="flex flex-wrap items-start gap-3">
           {isEditing && instructor?.imageUrl && (
-            <img
+            <Image
               src={instructor.imageUrl}
               alt=""
               className="h-14 w-14 rounded-full object-cover border border-[var(--color-border)]"
               width={56}
               height={56}
+              unoptimized
             />
           )}
           <input

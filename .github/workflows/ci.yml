@@ -48,4 +48,5 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: E2E tests
+        if: ${{ env.DATABASE_URL != '' && env.AUTH_SECRET != '' }}
         run: npm run e2e

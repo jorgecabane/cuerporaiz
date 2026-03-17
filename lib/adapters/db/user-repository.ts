@@ -59,6 +59,14 @@ export const userRepository: IUserRepository = {
     return u ? toDomainUser(u) : null;
   },
 
+  async findManyByIds(ids: string[]) {
+    if (ids.length === 0) return [];
+    const list = await prisma.user.findMany({
+      where: { id: { in: ids } },
+    });
+    return list.map(toDomainUser);
+  },
+
   async findByIdWithMemberships(id: string) {
     const u = await prisma.user.findUnique({
       where: { id },

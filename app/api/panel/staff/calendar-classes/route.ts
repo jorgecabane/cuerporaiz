@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { isAdminRole } from "@/lib/domain/role";
 import { listLiveClassesByRange } from "@/lib/application/reserve-class";
 import { instructorRepository } from "@/lib/adapters/db";
 
