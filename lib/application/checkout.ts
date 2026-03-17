@@ -81,6 +81,10 @@ export async function createCheckoutUseCase(
   });
 
   const base = input.baseUrl.replace(/\/$/, "");
+  // MercadoPago valida `auto_return=approved` solo si `back_urls.success` es una URL válida (y en la práctica
+  // suele rechazar `http://localhost...`). En dev/local evitamos auto_return para no bloquear el checkout.
+  const isHttps = base.startsWith("https://");
+  const autoReturn = isHttps ? ("approved" as const) : undefined;
   const statementDescriptor = (center.name ?? "CUERPORAIZ")
     .replace(/[^a-zA-Z0-9]/g, "")
     .toUpperCase()
@@ -97,7 +101,7 @@ export async function createCheckoutUseCase(
       pending: `${base}/api/checkout/pending?centerId=${center.id}`,
     },
     notificationUrl: `${base}/api/webhooks/mercadopago/${center.id}`,
-    autoReturn: "approved",
+    autoReturn,
     payerEmail: input.payerEmail,
     payerFirstName: input.payerFirstName,
     payerLastName: input.payerLastName,
