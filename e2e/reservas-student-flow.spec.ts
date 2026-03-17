@@ -5,7 +5,8 @@ test.describe("Reservas (student)", () => {
     // Mockeamos API para que el flow sea estable en pre-commit/CI (sin depender de estado DB).
     const liveClassId = "lc_e2e_student_1";
     const reservationId = "res_e2e_student_1";
-    const startsAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+    // Debe caer en la semana visible para que aparezca en "Calendario".
+    const startsAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
     let reserved = false;
 
     await page.route("**/api/reservations/live-classes**", async (route) => {
@@ -99,10 +100,13 @@ test.describe("Reservas (student)", () => {
     await expect(page).toHaveURL(/\/panel\/reservas/);
     await expect(page.getByRole("heading", { name: /clases en vivo y reservas/i })).toBeVisible({ timeout: 15000 });
 
+    // Reservar desde Calendario (dispara POST /api/reservations y setea `reserved=true` en el mock).
+    await page.getByRole("tab", { name: "Calendario", exact: true }).click();
+    await expect(page.getByRole("button", { name: "Reservar", exact: true }).first()).toBeVisible({ timeout: 15000 });
+    await page.getByRole("button", { name: "Reservar", exact: true }).first().click();
+
     // En Mis reservas debe aparecer opción de cancelar.
     await page.getByRole("tab", { name: "Mis reservas", exact: true }).click();
-    // Forzamos re-carga para que consuma el mock ya "reserved".
-    await page.reload();
     const cancelarBtn = page.getByRole("button", { name: "Cancelar reserva", exact: true }).first();
     await expect(cancelarBtn).toBeVisible({ timeout: 15000 });
     await cancelarBtn.click();
