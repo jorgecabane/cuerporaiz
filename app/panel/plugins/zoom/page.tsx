@@ -52,7 +52,7 @@ export default async function ZoomPluginPage({
           {sp.error === "oauth_invalid" && "Autorización inválida o cancelada."}
           {sp.error === "zoom_not_configured" && "Zoom no está configurado en el servidor (ZOOM_CLIENT_ID / ZOOM_CLIENT_SECRET)."}
           {sp.error === "oauth_exchange_failed" && "No se pudo completar la conexión. Intentá de nuevo."}
-          {sp.error === "no-config" && "Primero conectá tu cuenta de Zoom."}
+          {sp.error === "no-config" && "Primero conecta tu cuenta de Zoom."}
           {!["oauth_invalid", "zoom_not_configured", "oauth_exchange_failed", "no-config"].includes(sp.error) && `Error: ${sp.error}`}
         </div>
       )}
@@ -61,7 +61,7 @@ export default async function ZoomPluginPage({
         {zoomStatus === null ? (
           <div className="space-y-4">
             <p className="text-sm text-[var(--color-text-muted)]">
-              Conectá tu cuenta de Zoom para generar links de videollamada automáticamente al marcar una clase como online en Horarios.
+              Conecta tu cuenta de Zoom para generar links de videollamada automáticamente al marcar una clase como online en Horarios.
             </p>
             {hasOAuthEnv ? (
               <a

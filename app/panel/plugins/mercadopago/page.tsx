@@ -39,7 +39,7 @@ export default async function MercadoPagoPluginPage() {
         {mpStatus === null ? (
           <div className="space-y-4">
             <p className="text-sm text-[var(--color-text-muted)]">
-              Conectá tu cuenta de MercadoPago para poder cobrar a tus alumnas con tarjeta, débito y otros medios de pago.
+              Conecta tu cuenta de MercadoPago para poder cobrar a tus estudiantes con tarjeta, débito y otros medios de pago.
             </p>
             {hasOAuthEnv ? (
               <a

@@ -36,7 +36,7 @@ export function InstructorBankAccountForm({
   return (
     <form onSubmit={handleSave} className="space-y-4">
       <p className="text-sm text-[var(--color-text-muted)]">
-        Estos datos se usan para depósitos/pagos a la profesora. Son específicos por centro.
+        Estos datos se usan para depósitos/pagos al profesor. Son específicos por centro.
       </p>
 
       <BankAccountFields defaultValues={defaultValues} disabled={isPending} />

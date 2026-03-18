@@ -84,7 +84,7 @@ export function Header() {
               </Link>
             ))}
             <Link
-              href="#contacto"
+              href="/panel"
               className={`rounded-[var(--radius-md)] px-[var(--space-5)] py-[var(--space-3)] text-sm font-medium transition-all duration-[var(--duration-normal)] ${
                 solid
                   ? "bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-hover)]"
@@ -92,14 +92,6 @@ export function Header() {
               }`}
             >
               {CTAS.comenzarPractica}
-            </Link>
-            <Link
-              href="/auth/login"
-              className={`text-sm font-medium transition-colors duration-[var(--duration-normal)] hover:text-[var(--color-secondary)] ${
-                solid ? "text-[var(--color-text-muted)]" : "text-white/80"
-              }`}
-            >
-              {CTAS.entrar}
             </Link>
           </nav>
 
@@ -156,18 +148,11 @@ export function Header() {
                 className="mt-[var(--space-4)]"
               >
                 <Link
-                  href="#contacto"
+                  href="/panel"
                   onClick={() => setIsOpen(false)}
                   className="rounded-[var(--radius-md)] border-2 border-[var(--color-secondary)] px-[var(--space-8)] py-[var(--space-4)] text-base font-medium text-[var(--color-secondary)] transition-all hover:bg-[var(--color-secondary)] hover:text-white"
                 >
                   {CTAS.comenzarPractica}
-                </Link>
-                <Link
-                  href="/auth/login"
-                  onClick={() => setIsOpen(false)}
-                  className="font-display text-2xl font-semibold text-white/70 transition-colors hover:text-white"
-                >
-                  {CTAS.entrar}
                 </Link>
               </motion.div>
             </nav>

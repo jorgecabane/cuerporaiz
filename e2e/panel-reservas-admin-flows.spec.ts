@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("Panel reservas (admin) flujos críticos", () => {
-  test("admin: reservar alumna, marcar asistencia y des-reservar", async ({ page }) => {
+  test("admin: reservar estudiante, marcar asistencia y des-reservar", async ({ page }) => {
     const liveClassId = "lc_e2e_1";
     const reservationId = "res_e2e_1";
     const startsAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
@@ -80,27 +80,46 @@ test.describe("Panel reservas (admin) flujos críticos", () => {
       });
     });
 
-    await page.goto("/panel/reservas");
-    await expect(page).toHaveURL(/\/panel\/reservas/);
+    await page.goto("/panel");
+    await expect(page).toHaveURL(/\/panel/);
 
-    // Expand alumnos inscritos
-    await page.getByRole("button", { name: /Alumnos inscritos/i }).click();
+    // Expand estudiantes inscritos
+    await page.getByRole("button", { name: /Estudiantes inscritos/i }).click();
     await expect(page.getByText("Ana", { exact: true })).toBeVisible();
 
-    // Reservar alumna dentro de la card
-    await page.getByRole("button", { name: "Reservar alumno", exact: true }).click();
-    await expect(page.getByText("Reservar alumna para esta clase")).toBeVisible();
+    // Reservar estudiante dentro de la card
+    await page.getByRole("button", { name: "Reservar estudiante", exact: true }).click();
+    await expect(page.getByText("Reservar estudiante para esta clase")).toBeVisible();
     await page.getByRole("combobox").selectOption("stu_e2e_1");
+    const reserveReq = page.waitForRequest((req) => {
+      return (
+        req.method() === "POST" &&
+        new URL(req.url()).pathname.endsWith("/api/admin/reserve-for-student")
+      );
+    });
     await page.getByRole("button", { name: "Reservar", exact: true }).click();
-    await expect(page.getByText("Reserva confirmada para la alumna")).toBeVisible();
+    await reserveReq;
+    await expect(page.getByText("Reservar estudiante para esta clase")).not.toBeVisible();
 
     // Marcar asistencia
+    const attendanceReq = page.waitForRequest((req) => {
+      return (
+        req.method() === "POST" &&
+        new URL(req.url()).pathname.endsWith("/api/admin/attendance")
+      );
+    });
     await page.getByRole("button", { name: "Presente", exact: true }).click();
-    await expect(page.getByText("Marcada como presente")).toBeVisible();
+    await attendanceReq;
 
     // Des-reservar
+    const cancelReq = page.waitForRequest((req) => {
+      return (
+        req.method() === "PATCH" &&
+        new URL(req.url()).pathname.endsWith(`/api/admin/reservations/${reservationId}/cancel`)
+      );
+    });
     await page.getByRole("button", { name: /Des-reservar/i }).click();
-    await expect(page.getByText("Reserva cancelada")).toBeVisible();
+    await cancelReq;
   });
 });
 

@@ -139,7 +139,7 @@ export default async function PlanesPage() {
         Planes
       </h1>
       <p className="text-[var(--color-text-muted)] mb-8">
-        Gestioná tus membresías y comprá nuevos planes con Mercado Pago.
+        Gestiona tus membresías y compra nuevos planes con Mercado Pago.
       </p>
 
       {/* Mis planes con pestañas Activos / Históricos */}

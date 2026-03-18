@@ -195,7 +195,7 @@ export function HolidayList({ holidays }: Props) {
       {holidays.length === 0 && !showForm && (
         <div className="rounded-[var(--radius-lg)] bg-[var(--color-surface)] p-6 text-center shadow-[var(--shadow-md)]">
           <p className="text-[var(--color-text-muted)]">
-            No hay feriados registrados. Agregá uno para bloquear clases ese día.
+            No hay feriados registrados. Agrega uno para bloquear clases ese día.
           </p>
         </div>
       )}

@@ -99,7 +99,7 @@ export function PoliticasForm({ center }: Props) {
             className="rounded border-[var(--color-border)]"
           />
           <label htmlFor="instructorCanReserveForStudent" className="text-sm text-[var(--color-text)]">
-            La profesora puede reservar en nombre de una alumna
+            El profesor puede reservar en nombre de un estudiante
           </label>
         </div>
         <div className="flex items-center gap-2">

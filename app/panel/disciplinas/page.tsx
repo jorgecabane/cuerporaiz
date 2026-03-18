@@ -29,7 +29,7 @@ export default async function PanelDisciplinasPage() {
       {disciplines.length === 0 ? (
         <div className="rounded-[var(--radius-lg)] bg-[var(--color-surface)] p-6">
           <p className="text-[var(--color-text-muted)]">
-            No hay disciplinas. Creá una desde &quot;Nueva disciplina&quot;.
+            No hay disciplinas. Crea una desde &quot;Nueva disciplina&quot;.
           </p>
         </div>
       ) : (

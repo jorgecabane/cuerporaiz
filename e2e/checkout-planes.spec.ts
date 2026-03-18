@@ -14,7 +14,7 @@ test.describe("Planes y checkout", () => {
     await page.goto("/planes");
     await expect(page).toHaveURL(/\/planes/);
     await expect(page.getByRole("heading", { name: "Planes", exact: true })).toBeVisible();
-    await expect(page.getByText(/Gestioná tus membresías/i)).toBeVisible();
+    await expect(page.getByText(/Gestiona tus membresías/i)).toBeVisible();
   });
 
   test("panel tiene enlace a planes", async ({ page }) => {

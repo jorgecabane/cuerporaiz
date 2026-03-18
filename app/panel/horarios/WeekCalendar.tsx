@@ -217,7 +217,7 @@ export function WeekCalendar({
       {classes.length === 0 && !loading && (
         <div className="mt-6 rounded-[var(--radius-lg)] bg-[var(--color-surface)] p-6 text-center">
           <p className="text-[var(--color-text-muted)]">
-            No hay clases esta semana. Creá una desde &quot;Nueva clase&quot;.
+            No hay clases esta semana. Crea una desde &quot;Nueva clase&quot;.
           </p>
         </div>
       )}

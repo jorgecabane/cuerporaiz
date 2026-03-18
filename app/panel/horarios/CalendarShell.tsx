@@ -235,7 +235,7 @@ export function CalendarShell({
           onChange={(e) => setFilters((f) => ({ ...f, instructorId: e.target.value || null }))}
           className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-1.5 text-xs text-[var(--color-text)]"
         >
-          <option value="">Todas las profesoras</option>
+          <option value="">Todos los profesores</option>
           {instructors.map((inst) => (
             <option key={inst.id} value={inst.userId}>{inst.name || inst.email}</option>
           ))}

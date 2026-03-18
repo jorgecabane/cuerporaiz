@@ -48,7 +48,7 @@ export interface ClassCardProps {
   onReserveForStudent?: (liveClassId: string) => void;
   reserveForStudentLoading?: boolean;
   studentsForPicker?: Array<{ id: string; name: string | null; email: string }>;
-  /** ID de la clase para la que se muestra el formulario "Reservar alumna" dentro de la card */
+  /** ID de la clase para la que se muestra el formulario "Reservar estudiante" dentro de la card */
   reserveForClassId?: string | null;
   reserveForUserId?: string;
   setReserveForUserId?: (id: string) => void;
@@ -155,7 +155,7 @@ export function ClassCard({
                     onClick={() => setExpanded((e) => !e)}
                     className="flex w-full items-center justify-between gap-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-left text-sm font-medium text-[var(--color-primary)] hover:bg-[var(--color-border)]/30 cursor-pointer"
                   >
-                    <span>Alumnos inscritos ({attendeeCount})</span>
+                    <span>Estudiantes inscritos ({attendeeCount})</span>
                     {expanded ? (
                       <ChevronUp className="h-4 w-4 shrink-0" aria-hidden />
                     ) : (
@@ -210,7 +210,7 @@ export function ClassCard({
                           ))}
                         </ul>
                       ) : (
-                        <p className="text-sm text-[var(--color-text-muted)]">Sin inscriptos</p>
+                        <p className="text-sm text-[var(--color-text-muted)]">Sin inscritos</p>
                       )}
                       {onReserveForStudent && (
                         <Button
@@ -219,23 +219,23 @@ export function ClassCard({
                           disabled={noSpots || reserveForStudentLoading}
                           onClick={() => onReserveForStudent(c.id)}
                         >
-                          {reserveForStudentLoading ? "…" : "Reservar alumno"}
+                          {reserveForStudentLoading ? "…" : "Reservar estudiante"}
                         </Button>
                       )}
                     </div>
                   )}
                   {showReserveFormHere && studentsForPicker && setReserveForUserId && onReserveForStudentSubmit && onCloseReserveForStudent && (
                     <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] p-3 mt-2">
-                      <p className="text-sm font-medium text-[var(--color-text)] mb-2">Reservar alumna para esta clase</p>
+                      <p className="text-sm font-medium text-[var(--color-text)] mb-2">Reservar estudiante para esta clase</p>
                       <div className="space-y-2">
                         <div>
-                          <label className="block text-xs text-[var(--color-text-muted)] mb-1">Alumna</label>
+                          <label className="block text-xs text-[var(--color-text-muted)] mb-1">Estudiante</label>
                           <select
                             value={reserveForUserId}
                             onChange={(e) => setReserveForUserId(e.target.value)}
                             className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)]"
                           >
-                            <option value="">Elegir alumna</option>
+                            <option value="">Elegir estudiante</option>
                             {studentsForPicker.map((s) => (
                               <option key={s.id} value={s.id}>
                                 {s.name || s.email}
@@ -300,7 +300,7 @@ export function ClassCard({
                       ))}
                     </ul>
                   ) : (
-                    <p className="text-sm text-[var(--color-text-muted)]">Sin inscriptos</p>
+                    <p className="text-sm text-[var(--color-text-muted)]">Sin inscritos</p>
                   )}
                 </>
               )}

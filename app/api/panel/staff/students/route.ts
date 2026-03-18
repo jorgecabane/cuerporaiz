@@ -3,8 +3,8 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/adapters/db";
 
 /**
- * Lista alumnas del centro para selector "Reservar por alumno".
- * Solo admin y profesoras (con permiso de centro).
+ * Lista estudiantes del centro para selector "Reservar por estudiante".
+ * Solo administración y profesores (con permiso del centro).
  */
 export async function GET() {
   try {
@@ -18,7 +18,7 @@ export async function GET() {
     const role = session.user.role;
     if (role !== "ADMINISTRATOR" && role !== "INSTRUCTOR") {
       return NextResponse.json(
-        { code: "FORBIDDEN", message: "Solo profesoras y administradoras" },
+        { code: "FORBIDDEN", message: "Solo profesores y administración" },
         { status: 403 }
       );
     }
@@ -37,7 +37,7 @@ export async function GET() {
   } catch (err) {
     console.error("[panel staff students]", err);
     return NextResponse.json(
-      { code: "SERVER_ERROR", message: "Error al listar alumnas" },
+      { code: "SERVER_ERROR", message: "Error al listar estudiantes" },
       { status: 500 }
     );
   }

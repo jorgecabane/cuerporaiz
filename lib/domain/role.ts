@@ -11,9 +11,9 @@ export const ADMIN_ROLE: Role = "ADMINISTRATOR";
 
 /** Etiquetas para UI. Tipado para no olvidar ningún rol. */
 export const ROLE_LABELS: Record<Role, string> = {
-  ADMINISTRATOR: "Administradora",
-  INSTRUCTOR: "Profesora",
-  STUDENT: "Alumna",
+  ADMINISTRATOR: "Administración",
+  INSTRUCTOR: "Profesores",
+  STUDENT: "Estudiantes",
 };
 
 export function isRole(value: string): value is Role {
@@ -22,6 +22,19 @@ export function isRole(value: string): value is Role {
 
 export function isAdminRole(role: Role): boolean {
   return role === ADMIN_ROLE;
+}
+
+export function isStudentRole(role: Role): boolean {
+  return role === "STUDENT";
+}
+
+export function isInstructorRole(role: Role): boolean {
+  return role === "INSTRUCTOR";
+}
+
+/** Staff = administración o profesor. */
+export function isStaffRole(role: Role): boolean {
+  return role === "ADMINISTRATOR" || role === "INSTRUCTOR";
 }
 
 /** Rol por defecto en signup. */

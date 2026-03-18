@@ -83,7 +83,7 @@ export default async function ClientDetailPage({
       <section>
         <div className="flex items-center justify-between mb-4">
           <h1 className="font-display text-section text-[var(--color-primary)]">
-            Ficha de alumna
+            Ficha de estudiante
           </h1>
         </div>
         <div className="rounded-[var(--radius-lg)] bg-[var(--color-surface)] p-6 shadow-[var(--shadow-md)]">
@@ -396,7 +396,7 @@ export default async function ClientDetailPage({
 
       <div className="pt-4">
         <Button href="/panel/clientes" variant="secondary">
-          Volver a alumnas
+          Volver a estudiantes
         </Button>
       </div>
     </div>

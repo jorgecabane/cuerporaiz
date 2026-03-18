@@ -10,13 +10,13 @@ const MESSAGES: Record<
 > = {
   success: {
     title: "¡Pago aprobado!",
-    body: "Tu compra fue procesada correctamente. Recibirás la confirmación por email y podés acceder a tu contenido desde el panel.",
+    body: "Tu compra fue procesada correctamente. Recibirás la confirmación por email y puedes acceder a tu contenido desde el panel.",
     icon: CheckCircle,
     iconClassName: "text-[var(--color-success)]",
   },
   failure: {
     title: "Pago no realizado",
-    body: "El pago fue rechazado o cancelado. Podés intentar de nuevo desde la sección Planes cuando quieras.",
+    body: "El pago fue rechazado o cancelado. Puedes intentarlo de nuevo desde la sección Planes cuando quieras.",
     icon: XCircle,
     iconClassName: "text-[var(--color-error)]",
   },

@@ -1,5 +1,5 @@
 import type { IReservationRepository } from "@/lib/ports";
-import type { FindByUserIdPaginatedOptions, FindByUserIdAndCenterPaginatedOptions } from "@/lib/ports/reservation-repository";
+import type { FindByUserIdPaginatedOptions, FindByUserIdAndCenterPaginatedOptions, FindPageByCenterIdOptions } from "@/lib/ports/reservation-repository";
 import type { Reservation, ReservationStatus } from "@/lib/domain";
 import { prisma } from "./prisma";
 
@@ -69,6 +69,27 @@ export const reservationRepository: IReservationRepository = {
       userId,
       ...statusFilter,
       liveClass: { centerId: options.centerId },
+    };
+    const [items, total] = await Promise.all([
+      prisma.reservation.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        take: options.limit,
+        skip: options.offset,
+      }),
+      prisma.reservation.count({ where }),
+    ]);
+    return { items: items.map(toDomainReservation), total };
+  },
+
+  async findPageByCenterId(centerId: string, options: FindPageByCenterIdOptions) {
+    const statusFilter =
+      options.statuses && options.statuses.length > 0
+        ? { status: { in: options.statuses } }
+        : {};
+    const where = {
+      ...statusFilter,
+      liveClass: { centerId },
     };
     const [items, total] = await Promise.all([
       prisma.reservation.findMany({

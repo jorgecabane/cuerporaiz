@@ -87,7 +87,7 @@ export function MisPlansTabs({ items }: { items: MisPlanItem[] }) {
           <div className="rounded-[var(--radius-lg)] bg-[var(--color-surface)] p-6 border border-[var(--color-border)]">
             <p className="text-[var(--color-text-muted)]">
               {tab === "active"
-                ? "No tenés planes activos. Comprá uno más abajo."
+                ? "No tienes planes activos. Compra uno más abajo."
                 : "No hay planes en el historial."}
             </p>
           </div>

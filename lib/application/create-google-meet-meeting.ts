@@ -39,7 +39,7 @@ async function refreshGoogleMeetToken(centerId: string): Promise<string> {
   if (!res.ok) {
     const text = await res.text();
     console.error("Google token refresh failed:", text);
-    throw new Error("No se pudo renovar la sesión de Google Meet. Reconectá Meet en Plugins.");
+    throw new Error("No se pudo renovar la sesión de Google Meet. Vuelve a conectar Meet en Plugins.");
   }
 
   const data = (await res.json()) as {
@@ -115,7 +115,7 @@ export async function createGoogleMeetMeeting(
   if (!res.ok) {
     const text = await res.text();
     console.error("Google Calendar create event failed:", res.status, text);
-    throw new Error("No se pudo crear la reunión en Google Meet. Revisá la conexión o reconectá Meet en Plugins.");
+    throw new Error("No se pudo crear la reunión en Google Meet. Revisa la conexión o vuelve a conectar Meet en Plugins.");
   }
 
   const data = (await res.json()) as { hangoutLink?: string; conferenceData?: { entryPoints?: Array<{ uri?: string }> } };

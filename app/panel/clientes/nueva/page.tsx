@@ -35,10 +35,10 @@ export default function NuevaClientaPage() {
         href="/panel/clientes"
         className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-primary)] mb-4 inline-block"
       >
-        &larr; Alumnas
+        &larr; Estudiantes
       </Link>
       <h1 className="font-display text-section text-[var(--color-primary)] mb-6">
-        Agregar alumna
+        Agregar estudiante
       </h1>
       <form
         onSubmit={handleSubmit}
@@ -78,7 +78,7 @@ export default function NuevaClientaPage() {
           disabled={isPending}
           className="rounded-[var(--radius-md)] bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-primary-hover)] disabled:opacity-50"
         >
-          {isPending ? "Creando..." : "Agregar alumna"}
+          {isPending ? "Creando..." : "Agregar estudiante"}
         </button>
       </form>
     </div>

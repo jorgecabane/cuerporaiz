@@ -7,6 +7,8 @@ export { ReservationsList } from "./ReservationsList";
 export type { ReservationsListProps } from "./ReservationsList";
 export { MisReservasSheet } from "./MisReservasSheet";
 export type { MisReservasSheetProps } from "./MisReservasSheet";
+export { MisClasesSheet } from "./MisClasesSheet";
+export type { MisClasesSheetProps } from "./MisClasesSheet";
 export {
   TAB_HOY,
   TAB_PROXIMAS,

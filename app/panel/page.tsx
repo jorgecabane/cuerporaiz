@@ -1,41 +1,75 @@
 import Link from "next/link";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import { centerRepository } from "@/lib/adapters/db";
-import { canShowTrialCta } from "@/lib/application/reserve-class";
-import { ROLE_LABELS, isAdminRole } from "@/lib/domain";
-import { PANEL_NAV_ITEMS, PANEL_ADMIN_ITEMS } from "@/lib/panel-nav";
+import { centerRepository, userPlanRepository, planRepository } from "@/lib/adapters/db";
+import { canShowTrialCta, listMyReservationsPaginated } from "@/lib/application/reserve-class";
 import {
-  Calendar,
-  CreditCard,
-  LayoutDashboard,
   ArrowRight,
+  Banknote,
+  Calendar,
+  CalendarDays,
+  CreditCard,
   Sparkles,
+  Users,
 } from "lucide-react";
 import { PanelHomeMisReservasTrigger } from "./PanelHomeMisReservasTrigger";
+import { PanelHomeMisClasesTrigger } from "./PanelHomeMisClasesTrigger";
+import { PanelHomeCalendar } from "./PanelHomeCalendar";
+import type { ReservationDto } from "@/lib/dto/reservation-dto";
+import type { Role } from "@/lib/domain/role";
+import { isAdminRole, isInstructorRole, isStudentRole } from "@/lib/domain";
+import type { LucideIcon } from "lucide-react";
 
-const QUICK_ACTION_META: Record<
-  string,
-  { description: string; Icon: typeof Calendar }
-> = {
-  "/panel/reservas": {
-    description: "Ver agenda y tus reservas",
-    Icon: Calendar,
-  },
-  "/planes": {
-    description: "Ver planes y membresías",
-    Icon: CreditCard,
-  },
-  "/panel/planes": {
-    description: "Gestionar planes del centro",
-    Icon: LayoutDashboard,
-  },
-};
+type QuickAccessItem =
+  | { type: "link"; href: string; label: string; Icon: LucideIcon }
+  | { type: "sheet-reservas"; cancelBeforeHours: number; cancelPolicyCopy?: string }
+  | { type: "sheet-mis-clases" }
+  | { type: "disabled"; label: string; Icon: LucideIcon };
+
+function getQuickAccessItems(
+  role: Role,
+  cancelBeforeHours: number,
+  cancelPolicyCopy?: string
+): QuickAccessItem[] {
+  if (isStudentRole(role)) {
+    return [
+      { type: "sheet-reservas", cancelBeforeHours, cancelPolicyCopy },
+      { type: "link", href: "/planes", label: "Planes", Icon: CreditCard },
+      { type: "link", href: "/panel/mis-pagos", label: "Mis pagos", Icon: Banknote },
+    ];
+  }
+  if (isInstructorRole(role)) {
+    return [
+      { type: "sheet-mis-clases" },
+      { type: "link", href: "/planes", label: "Planes", Icon: CreditCard },
+      { type: "disabled", label: "Mis pagos", Icon: Banknote },
+    ];
+  }
+  if (isAdminRole(role)) {
+    return [
+      { type: "link", href: "/panel/horarios", label: "Horarios", Icon: Calendar },
+      { type: "link", href: "/panel/clientes", label: "Clientes", Icon: Users },
+      { type: "link", href: "/panel/pagos", label: "Pagos", Icon: Banknote },
+    ];
+  }
+  return [];
+}
 
 export const metadata = {
-  title: "Mi cuenta | Cuerpo Raíz",
+  title: "Home | Cuerpo Raíz",
   description: "Tu espacio en Cuerpo Raíz. Clases, reservas y planes.",
 };
+
+function isToday(iso: string | undefined): boolean {
+  if (!iso) return false;
+  const d = new Date(iso);
+  const today = new Date();
+  return (
+    d.getFullYear() === today.getFullYear() &&
+    d.getMonth() === today.getMonth() &&
+    d.getDate() === today.getDate()
+  );
+}
 
 export default async function PanelPage() {
   const session = await auth();
@@ -45,189 +79,163 @@ export default async function PanelPage() {
   const { user } = session;
   const centerId = user.centerId as string;
   const center = await centerRepository.findById(centerId);
-  const centerName = center?.name ?? centerId;
-  const roleLabel = ROLE_LABELS[user.role];
-  const admin = isAdminRole(user.role);
   const showTrialCta =
-    user.role === "STUDENT" &&
+    isStudentRole(user.role as Role) &&
     (await canShowTrialCta(user.id, centerId));
 
-  return (
-    <div className="mx-auto max-w-3xl px-1 sm:px-0">
-      {/* Welcome */}
-      <section className="mb-6 md:mb-8">
-        <h1 className="font-display text-section text-[var(--color-primary)] mb-1">
-          Mi cuenta
-        </h1>
-        <p className="text-[var(--color-text-muted)] text-lg">
-          {user.name
-            ? `Hola, ${user.name}.`
-            : "Hola."}{" "}
-          Aquí puedes ver tus reservas, planes y acceder a tu contenido.
-        </p>
-      </section>
+  const [activePlans, reservationsResult] = await Promise.all([
+    userPlanRepository.findActiveByUserAndCenter(user.id, centerId),
+    listMyReservationsPaginated(user.id, centerId, { page: 1, pageSize: 100 }),
+  ]);
+  const firstPlan = activePlans[0];
+  const planName = firstPlan
+    ? (await planRepository.findById(firstPlan.planId))?.name ?? null
+    : null;
+  const todayReservations: ReservationDto[] = (reservationsResult.items ?? []).filter(
+    (r) => r.status === "CONFIRMED" && r.liveClass?.startsAt && isToday(r.liveClass.startsAt)
+  );
 
-      {/* Resumen útil — placeholder hasta tener datos (próxima clase, plan activo, cupos) */}
+  const hasActivePlan = Boolean(planName);
+
+  return (
+    <div className="mx-auto flex min-h-[100dvh] max-w-3xl flex-col px-1 pb-20 sm:px-0">
+      {/* Header mínimo */}
+      <header className="mb-3 sm:mb-4 shrink-0">
+        <h1 className="font-display text-section text-[var(--color-primary)]">
+          {user.name ? `Hola, ${user.name}` : "Home"}
+        </h1>
+        <p className="text-[var(--color-text-muted)] text-sm sm:text-base mt-0.5 truncate max-w-full">
+          {user.name ? "Calendario y reservas" : "Calendario de clases"}
+        </p>
+      </header>
+
+      {/* Planes activos / resumen: antes del calendario, con margen superior */}
       <section
-        className="rounded-[var(--radius-xl)] border border-[var(--color-border)] border-dashed bg-[var(--color-surface)] p-5 md:p-6 mb-8"
+        className="mt-[18px] mb-4 shrink-0 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2.5 shadow-[var(--shadow-sm)] sm:p-4"
         aria-labelledby="resumen-heading"
       >
-        <h2
-          id="resumen-heading"
-          className="font-display text-lg font-semibold text-[var(--color-primary)] mb-2 flex items-center gap-2"
-        >
-          <Sparkles className="h-5 w-5 text-[var(--color-secondary)]" aria-hidden />
+        <h2 id="resumen-heading" className="sr-only">
           Tu resumen
         </h2>
-        <p className="text-[var(--color-text-muted)] text-sm md:text-base leading-relaxed">
-          Cuando tengas clases reservadas o un plan activo, aquí verás tu próxima clase y tus cupos restantes.
-        </p>
-        {showTrialCta && (
-          <p className="mt-3 text-sm">
+        {hasActivePlan ? (
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+            <span className="flex items-center gap-1.5 text-[var(--color-text)]">
+              <Sparkles className="h-4 w-4 text-[var(--color-secondary)] shrink-0" aria-hidden />
+              <span className="font-medium text-[var(--color-primary)]">{planName}</span>
+            </span>
+            {todayReservations.length > 0 ? (
+              <span className="text-[var(--color-text-muted)]">
+                Hoy: {todayReservations.length} {todayReservations.length === 1 ? "reserva" : "reservas"}
+              </span>
+            ) : (
+              <span className="text-[var(--color-text-muted)]">Hoy sin reservas</span>
+            )}
+            {showTrialCta && (
+              <Link
+                href="/panel/reservas"
+                className="text-[var(--color-primary)] font-medium hover:underline cursor-pointer"
+              >
+                Clase de prueba gratis
+              </Link>
+            )}
+          </div>
+        ) : (
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-sm text-[var(--color-text-muted)]">
+              Sin plan activo
+            </p>
             <Link
-              href="/panel/reservas"
-              className="font-medium text-[var(--color-primary)] hover:underline"
+              href="/planes"
+              className="inline-flex items-center gap-1.5 rounded-[var(--radius-md)] bg-[var(--color-primary)] px-3 py-2 text-sm font-medium text-[var(--color-text-inverse)] transition-colors hover:bg-[var(--color-primary-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:ring-offset-2 cursor-pointer"
             >
-              Podés reservar una clase de prueba gratis
+              Ver planes
+              <ArrowRight className="h-4 w-4" aria-hidden />
             </Link>
-          </p>
+          </div>
         )}
       </section>
 
-      {/* Tu perfil — card con jerarquía clara */}
+      {/* Calendario: protagonista */}
       <section
-        className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-5 md:p-6 shadow-[var(--shadow-md)] mb-8 border-t-4 border-t-[var(--color-primary)]"
-        aria-labelledby="profile-heading"
+        className="min-h-0 flex-1 py-[18px] pb-4 sm:pb-6"
+        aria-labelledby="calendario-heading"
       >
         <h2
-          id="profile-heading"
-          className="font-display text-lg font-semibold text-[var(--color-primary)] mb-4"
+          id="calendario-heading"
+          className="sr-only sm:not-sr-only font-display text-lg font-semibold text-[var(--color-primary)] mb-3 sm:mb-4"
         >
-          Tu perfil
+          Calendario
         </h2>
-        <dl className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <dt className="text-sm font-medium text-[var(--color-text-muted)]">
-              Email
-            </dt>
-            <dd className="mt-0.5 font-medium text-[var(--color-text)]">
-              {user.email}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-sm font-medium text-[var(--color-text-muted)]">
-              Nombre
-            </dt>
-            <dd className="mt-0.5 font-medium text-[var(--color-text)]">
-              {user.name ?? "No configurado"}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-sm font-medium text-[var(--color-text-muted)]">
-              Rol en este centro
-            </dt>
-            <dd className="mt-0.5 font-medium text-[var(--color-text)]">
-              {roleLabel}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-sm font-medium text-[var(--color-text-muted)]">
-              Centro
-            </dt>
-            <dd className="mt-0.5 font-medium text-[var(--color-text)]">
-              {centerName}
-            </dd>
-          </div>
-        </dl>
+        <PanelHomeCalendar
+          centerId={centerId}
+          weekStartDay={center?.calendarWeekStartDay ?? 1}
+          role={user.role}
+        />
       </section>
 
-      {/* Acciones rápidas — separación visual y touch targets móvil (C.8, C.11) */}
+      {/* Accesos rápidos: fijos al fondo del viewport (siempre visibles al scroll) */}
       <section
         aria-labelledby="actions-heading"
-        className="pt-2 border-t border-[var(--color-border)]"
+        className="fixed bottom-0 left-0 right-0 z-30 border-t border-[var(--color-border)] bg-[var(--color-surface)]/95 py-3 backdrop-blur-sm"
       >
-        <h2
-          id="actions-heading"
-          className="font-display text-lg font-semibold text-[var(--color-primary)] mb-4 mt-2"
-        >
-          Acciones rápidas
-        </h2>
-        <ul className="grid gap-3 sm:grid-cols-2">
-          {user.role === "STUDENT" && (
-            <li>
-              <PanelHomeMisReservasTrigger
-                cancelBeforeHours={center?.cancelBeforeHours ?? 12}
-                cancelPolicyCopy={
-                  center
-                    ? `Cancelación sin cargo hasta ${center.cancelBeforeHours} h antes`
-                    : undefined
-                }
-              />
-            </li>
-          )}
-          {PANEL_NAV_ITEMS.filter((item) => item.href !== "/panel").map(
-            (item) => {
-              const meta = QUICK_ACTION_META[item.href];
-              if (!meta) return null;
-              const { Icon } = meta;
+        <div className="mx-auto max-w-3xl px-2 sm:px-4">
+          <h2 id="actions-heading" className="sr-only">
+            Accesos rápidos
+          </h2>
+          <ul className="flex flex-wrap items-center justify-center gap-2 sm:gap-4">
+          {getQuickAccessItems(
+            user.role,
+            center?.cancelBeforeHours ?? 12,
+            center ? `Cancelación sin cargo hasta ${center.cancelBeforeHours} h antes` : undefined
+          ).map((item) => {
+            const baseClass =
+              "flex h-11 shrink-0 cursor-pointer items-center gap-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 shadow-[var(--shadow-sm)] transition-colors duration-200 hover:border-[var(--color-primary)] hover:shadow-[var(--shadow-md)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:ring-offset-2";
+            if (item.type === "link") {
+              const { href, label, Icon } = item;
               return (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    className="flex min-h-[3.5rem] cursor-pointer items-center gap-4 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 py-5 shadow-[var(--shadow-sm)] transition-all duration-200 hover:border-[var(--color-primary)] hover:shadow-[var(--shadow-md)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:ring-offset-2 sm:min-h-0 sm:py-4"
-                  >
-                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-primary-light)] text-[var(--color-primary)]">
-                      <Icon className="h-5 w-5" aria-hidden />
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="font-medium text-[var(--color-text)] block">
-                        {item.label}
-                      </span>
-                      <span className="text-sm text-[var(--color-text-muted)]">
-                        {meta.description}
-                      </span>
-                    </span>
-                    <ArrowRight
-                      className="h-5 w-5 shrink-0 text-[var(--color-text-muted)]"
-                      aria-hidden
-                    />
+                <li key={href}>
+                  <Link href={href} className={baseClass}>
+                    <Icon className="h-5 w-5 shrink-0 text-[var(--color-primary)]" aria-hidden />
+                    <span className="text-sm font-medium text-[var(--color-text)]">{label}</span>
                   </Link>
                 </li>
               );
             }
-          )}
-          {admin && (() => {
-            const item = PANEL_ADMIN_ITEMS.find((i) => i.href === "/panel/planes");
-            if (!item) return null;
-            const meta = QUICK_ACTION_META[item.href];
-            if (!meta) return null;
-            const { Icon } = meta;
-            return (
-              <li key={item.href} className="sm:col-span-2">
-                <Link
-                  href={item.href}
-                  className="flex min-h-[3.5rem] cursor-pointer items-center gap-4 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 py-5 shadow-[var(--shadow-sm)] transition-all duration-200 hover:border-[var(--color-secondary)] hover:shadow-[var(--shadow-md)] focus:outline-none focus:ring-2 focus:ring-[var(--color-secondary)] focus:ring-offset-2 sm:min-h-0 sm:py-4"
-                >
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-secondary-light)] text-[var(--color-secondary)]">
-                    <Icon className="h-5 w-5" aria-hidden />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="font-medium text-[var(--color-text)] block">
-                      Administración · {item.label}
-                    </span>
-                    <span className="text-sm text-[var(--color-text-muted)]">
-                      {meta.description}
-                    </span>
-                  </span>
-                  <ArrowRight
-                    className="h-5 w-5 shrink-0 text-[var(--color-text-muted)]"
-                    aria-hidden
+            if (item.type === "sheet-reservas") {
+              return (
+                <li key="sheet-reservas">
+                  <PanelHomeMisReservasTrigger
+                    cancelBeforeHours={item.cancelBeforeHours}
+                    cancelPolicyCopy={item.cancelPolicyCopy}
                   />
-                </Link>
-              </li>
-            );
-          })()}
-        </ul>
+                </li>
+              );
+            }
+            if (item.type === "sheet-mis-clases") {
+              return (
+                <li key="sheet-mis-clases">
+                  <PanelHomeMisClasesTrigger />
+                </li>
+              );
+            }
+            if (item.type === "disabled") {
+              const { label, Icon } = item;
+              return (
+                <li key="disabled-mis-pagos">
+                  <div
+                    className={`${baseClass} cursor-not-allowed opacity-60`}
+                    aria-disabled="true"
+                  >
+                    <Icon className="h-5 w-5 shrink-0 text-[var(--color-text-muted)]" aria-hidden />
+                    <span className="text-sm font-medium text-[var(--color-text-muted)]">{label}</span>
+                  </div>
+                </li>
+              );
+            }
+            return null;
+          })}
+          </ul>
+        </div>
       </section>
     </div>
   );

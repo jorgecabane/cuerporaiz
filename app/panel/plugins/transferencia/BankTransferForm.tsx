@@ -55,7 +55,7 @@ export function BankTransferForm({ center }: Props) {
           </button>
           <span className="text-sm text-[var(--color-text-muted)]">
             {enabled
-              ? "Activo: las alumnas verán tus datos bancarios como opción de pago"
+              ? "Activo: los estudiantes verán tus datos bancarios como opción de pago"
               : "Desactivado"}
           </span>
         </div>
@@ -64,7 +64,7 @@ export function BankTransferForm({ center }: Props) {
       {enabled && (
         <form onSubmit={handleSave} className="space-y-4 border-t border-[var(--color-border,#e5e7eb)] pt-5">
           <p className="text-sm text-[var(--color-text-muted)]">
-            Estos datos se muestran a las alumnas que elijan pagar por transferencia.
+            Estos datos se muestran a los estudiantes que elijan pagar por transferencia.
           </p>
 
           <BankAccountFields

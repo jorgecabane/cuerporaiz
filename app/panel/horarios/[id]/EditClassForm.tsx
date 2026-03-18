@@ -196,7 +196,7 @@ export function EditClassForm({
         />
       </div>
 
-      {/* Disciplina + Profesora */}
+      {/* Disciplina + Profesor */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label htmlFor="disciplineId" className="block text-sm font-medium text-[var(--color-text)] mb-1">
@@ -222,7 +222,7 @@ export function EditClassForm({
         </div>
         <div>
           <label htmlFor="instructorId" className="block text-sm font-medium text-[var(--color-text)] mb-1">
-            Profesora
+            Profesor
           </label>
           <select
             id="instructorId"
@@ -300,7 +300,7 @@ export function EditClassForm({
           />
           <span className="text-sm text-[var(--color-text-muted)]">
             {selectedDisciplineId
-              ? "Heredado de la disciplina. Podés cambiarlo."
+              ? "Heredado de la disciplina. Puedes cambiarlo."
               : "Color para el calendario."}
           </span>
         </div>

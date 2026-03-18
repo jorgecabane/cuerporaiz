@@ -49,6 +49,8 @@ export interface OrderListFilters {
 export interface OrderPageFilters {
   status?: OrderStatus;
   email?: string;
+  /** Cuando se setea, solo se devuelven órdenes de ese usuario (ej. Mis pagos). */
+  userId?: string;
   from?: Date;
   to?: Date;
   page: number;
