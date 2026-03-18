@@ -300,7 +300,7 @@ export async function cancelReservationUseCase(
 }
 
 /**
- * Cancelar una reserva en nombre de un alumno (solo staff: admin o profesora).
+ * Cancelar una reserva en nombre de un estudiante (solo staff: administración o profesor).
  * Misma lógica de cupo y plan que cancelReservationUseCase.
  */
 export async function cancelReservationByStaffUseCase(
@@ -489,7 +489,7 @@ export async function listLiveClassesPaginated(
 
 /**
  * Listar clases en vivo del centro en un rango de fechas (ej. una semana).
- * Si instructorId se pasa, solo se devuelven las clases de esa profesora.
+ * Si instructorId se pasa, solo se devuelven las clases de ese profesor.
  */
 export async function listLiveClassesByRange(
   centerId: string,
@@ -576,8 +576,50 @@ export async function listMyReservationsPaginated(
   return { items: sorted, total, page, pageSize };
 }
 
+const DEFAULT_CENTER_PAGE_SIZE = 50;
+
 /**
- * Indica si se debe mostrar el CTA "Podés reservar una clase de prueba gratis".
+ * Listar reservas del centro (admin). Misma forma que listMyReservationsPaginated pero por centerId.
+ */
+export async function listCenterReservationsPaginated(
+  centerId: string,
+  opts: { page?: number; pageSize?: number; statuses?: ReservationStatus[] }
+): Promise<ListReservationsPaginatedResult> {
+  const page = Math.max(1, opts.page ?? 1);
+  const pageSize = Math.min(100, Math.max(1, opts.pageSize ?? DEFAULT_CENTER_PAGE_SIZE));
+  const offset = (page - 1) * pageSize;
+  const { items: reservations, total } = await reservationRepository.findPageByCenterId(centerId, {
+    limit: pageSize,
+    offset,
+    ...(opts.statuses?.length ? { statuses: opts.statuses } : {}),
+  });
+  const dtos: ReservationDto[] = [];
+  for (const r of reservations) {
+    const liveClass = await liveClassRepository.findById(r.liveClassId);
+    if (!liveClass) continue;
+    const confirmed = await liveClassRepository.countConfirmedReservations(r.liveClassId);
+    const spotsLeft = liveClass.maxCapacity - confirmed;
+    const liveClassDto = toLiveClassDto(
+      liveClass.id,
+      liveClass.centerId,
+      liveClass.title,
+      liveClass.startsAt,
+      liveClass.durationMinutes,
+      liveClass.maxCapacity,
+      spotsLeft,
+      { isTrialClass: liveClass.isTrialClass, isOnline: liveClass.isOnline }
+    );
+    dtos.push(toReservationDto(r, liveClassDto));
+  }
+  const sorted = dtos.sort(
+    (a, b) =>
+      new Date(a.liveClass?.startsAt ?? 0).getTime() - new Date(b.liveClass?.startsAt ?? 0).getTime()
+  );
+  return { items: sorted, total, page, pageSize };
+}
+
+/**
+ * Indica si se debe mostrar el CTA "Puedes reservar una clase de prueba gratis".
  * Condiciones: centro permite trial, usuario nunca reservó en el centro, y hay al menos
  * una clase futura con isTrialClass y cupos disponibles.
  */

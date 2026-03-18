@@ -104,6 +104,7 @@ export const orderRepository: IOrderRepository = {
     const list = await prisma.order.findMany({
       where: {
         centerId,
+        ...(filters.userId != null && { userId: filters.userId }),
         ...(filters.status != null && {
           status: filters.status as unknown as PrismaOrderStatus,
         }),
@@ -115,7 +116,7 @@ export const orderRepository: IOrderRepository = {
               },
             }
           : {}),
-        ...(filters.email
+        ...(filters.email != null && filters.email !== ""
           ? {
               user: {
                 email: { contains: filters.email, mode: "insensitive" },

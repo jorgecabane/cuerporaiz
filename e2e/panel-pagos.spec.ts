@@ -13,8 +13,8 @@ test.describe("Panel admin - Pagos", () => {
   test("admin llega a pagos y ve heading", async ({ page }) => {
     await page.goto("/panel");
     await expect(page).toHaveURL(/\/panel/, { timeout: 15000 });
-    await expect(page.getByRole("link", { name: /^Pagos$/i })).toBeVisible();
-    await page.getByRole("link", { name: /^Pagos$/i }).click();
+    await expect(page.getByRole("link", { name: /^Pagos$/i }).first()).toBeVisible();
+    await page.getByRole("link", { name: /^Pagos$/i }).first().click();
     await expect(page).toHaveURL(/\/panel\/pagos/);
     await expect(
       page.getByRole("heading", { name: /^Pagos$/i })

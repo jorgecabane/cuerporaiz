@@ -1,6 +1,6 @@
 /**
  * Caso de uso: tomar asistencia (marcar ATTENDED / NO_SHOW).
- * Solo profesoras y admins del centro pueden tomar asistencia.
+ * Solo profesores y administración del centro pueden tomar asistencia.
  */
 import {
   liveClassRepository,

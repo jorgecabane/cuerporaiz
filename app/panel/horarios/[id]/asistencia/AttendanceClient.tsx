@@ -81,7 +81,7 @@ export function AttendanceClient({
       ) : attendees.length === 0 ? (
         <div className="rounded-[var(--radius-lg)] bg-[var(--color-surface)] p-6 text-center">
           <p className="text-[var(--color-text-muted)]">
-            No hay alumnas reservadas para esta clase.
+            No hay estudiantes reservados para esta clase.
           </p>
         </div>
       ) : (

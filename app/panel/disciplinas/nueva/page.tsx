@@ -15,7 +15,7 @@ export default async function NuevaDisciplinaPage() {
         Nueva disciplina
       </h1>
       <p className="text-[var(--color-text-muted)] mb-6">
-        Creá una práctica nueva para tu centro.
+        Crea una práctica nueva para tu centro.
       </p>
       <div className="rounded-[var(--radius-lg)] bg-[var(--color-surface)] p-6 shadow-[var(--shadow-md)]">
         <DisciplineForm />

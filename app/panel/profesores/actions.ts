@@ -35,7 +35,7 @@ export async function createInstructor(formData: FormData): Promise<void> {
     })
   );
 
-  redirect("/panel/profesoras");
+  redirect("/panel/profesores");
 }
 
 export async function updateInstructor(formData: FormData): Promise<void> {
@@ -45,7 +45,7 @@ export async function updateInstructor(formData: FormData): Promise<void> {
   const imageUrl = (formData.get("imageUrl") as string)?.trim() || "";
   if (!id || !name) return;
   await instructorRepository.update(id, centerId, { name, imageUrl: imageUrl || null });
-  redirect("/panel/profesoras");
+  redirect("/panel/profesores");
 }
 
 export async function deactivateInstructor(formData: FormData): Promise<void> {
@@ -53,7 +53,7 @@ export async function deactivateInstructor(formData: FormData): Promise<void> {
   const id = formData.get("id") as string;
   if (!id) return;
   await instructorRepository.deactivate(id, centerId);
-  redirect("/panel/profesoras");
+  redirect("/panel/profesores");
 }
 
 export async function saveInstructorBankData(input: {

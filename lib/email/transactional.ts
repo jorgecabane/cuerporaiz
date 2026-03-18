@@ -97,7 +97,7 @@ export function buildClassReminderEmail(data: ClassReminderData): SendEmailDto {
 <head><meta charset="utf-8"></head>
 <body style="font-family: sans-serif; line-height: 1.5; color: #333;">
   <p>${greeting},</p>
-  <p>Te recordamos que en ${data.hoursBefore} hora(s) tenés clase:</p>
+  <p>Te recordamos que en ${data.hoursBefore} hora(s) tienes clase:</p>
   <p><strong>${data.className}</strong><br>
   ${new Date(data.startAt).toLocaleString("es-CL", { timeZone: DEFAULT_TIMEZONE })}<br>
   ${data.location}</p>
@@ -107,7 +107,7 @@ export function buildClassReminderEmail(data: ClassReminderData): SendEmailDto {
 </html>`;
   const text = [
     `${greeting},`,
-    `Te recordamos que en ${data.hoursBefore} hora(s) tenés clase:`,
+    `Te recordamos que en ${data.hoursBefore} hora(s) tienes clase:`,
     `${data.className} | ${new Date(data.startAt).toLocaleString("es-CL", { timeZone: DEFAULT_TIMEZONE })} | ${data.location}`,
     getAddToCalendarInstruction(calendarUrl),
     `— ${SITE_NAME}`,
@@ -176,9 +176,9 @@ export function buildSpotFreedEmail(data: SpotFreedData): SendEmailDto {
   };
 }
 
-// ─── Aviso a profesora por clase de prueba ──────────────────────────────────
+// ─── Aviso a profesor por clase de prueba ───────────────────────────────────
 export interface TrialClassNoticeToTeacherData {
-  toEmail: string; // email de la profesora/admin
+  toEmail: string; // email de profesor/administración
   teacherName?: string;
   studentName: string;
   studentEmail: string;
@@ -252,18 +252,18 @@ export function buildPaymentFailedEmail(data: PaymentFailedData): SendEmailDto {
 <body style="font-family: sans-serif; line-height: 1.5; color: #333;">
   <p>${greeting},</p>
   <p>No pudimos procesar el pago de <strong>${data.productName}</strong>.</p>
-  <p>Revisá que tu método de pago sea válido y que tengas saldo disponible.</p>
+  <p>Revisa que tu método de pago sea válido y que tengas saldo disponible.</p>
   ${data.retryPaymentUrl ? `<p><a href="${data.retryPaymentUrl}" style="color: #2563eb;">Reintentar pago</a></p>` : ""}
-  <p>Si el problema continúa, escribinos por WhatsApp o respondé este correo.</p>
+  <p>Si el problema continúa, escríbenos por WhatsApp o responde este correo.</p>
   <p>— ${SITE_NAME}</p>
 </body>
 </html>`;
   const text = [
     `${greeting},`,
     `No pudimos procesar el pago de ${data.productName}.`,
-    "Revisá que tu método de pago sea válido y que tengas saldo disponible.",
+    "Revisa que tu método de pago sea válido y que tengas saldo disponible.",
     data.retryPaymentUrl ? `Reintentar pago: ${data.retryPaymentUrl}` : "",
-    "Si el problema continúa, escribinos por WhatsApp o respondé este correo.",
+    "Si el problema continúa, escríbenos por WhatsApp o responde este correo.",
     `— ${SITE_NAME}`,
   ]
     .filter(Boolean)
@@ -278,7 +278,7 @@ export function buildPaymentFailedEmail(data: PaymentFailedData): SendEmailDto {
   };
 }
 
-// ─── Bienvenida a profesora/admin ──────────────────────────────────────────
+// ─── Bienvenida a profesor/administración ───────────────────────────────────
 export interface WelcomeStaffData {
   toEmail: string;
   name?: string;
@@ -289,26 +289,26 @@ export interface WelcomeStaffData {
 
 export function buildWelcomeStaffEmail(data: WelcomeStaffData): SendEmailDto {
   const greeting = data.name ? `Hola ${data.name}` : "Hola";
-  const roleLabel = data.role === "INSTRUCTOR" ? "profesora" : "administradora";
+  const roleLabel = data.role === "INSTRUCTOR" ? "profesor" : "administración";
   const html = `
 <!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"></head>
 <body style="font-family: sans-serif; line-height: 1.5; color: #333;">
   <p>${greeting},</p>
-  <p>Te damos la bienvenida a <strong>${data.centerName}</strong>. Fuiste agregada como <strong>${roleLabel}</strong>.</p>
-  <p>Para acceder al panel, creá tu cuenta usando este email (<strong>${data.toEmail}</strong>):</p>
+  <p>Te damos la bienvenida a <strong>${data.centerName}</strong>. Fuiste agregado como <strong>${roleLabel}</strong>.</p>
+  <p>Para acceder al panel, crea tu cuenta usando este email (<strong>${data.toEmail}</strong>):</p>
   <p><a href="${data.loginUrl}" style="display:inline-block;background:#2D3B2A;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:500;">Crear mi cuenta</a></p>
-  <p>Si ya tenés cuenta con este email, simplemente iniciá sesión.</p>
+  <p>Si ya tienes cuenta con este email, simplemente inicia sesión.</p>
   <p>— ${SITE_NAME}</p>
 </body>
 </html>`;
   const text = [
     `${greeting},`,
-    `Te damos la bienvenida a ${data.centerName}. Fuiste agregada como ${roleLabel}.`,
-    `Para acceder, creá tu cuenta usando este email (${data.toEmail}):`,
+    `Te damos la bienvenida a ${data.centerName}. Fuiste agregado como ${roleLabel}.`,
+    `Para acceder, crea tu cuenta usando este email (${data.toEmail}):`,
     data.loginUrl,
-    "Si ya tenés cuenta con este email, simplemente iniciá sesión.",
+    "Si ya tienes cuenta con este email, simplemente inicia sesión.",
     `— ${SITE_NAME}`,
   ].join("\n");
 

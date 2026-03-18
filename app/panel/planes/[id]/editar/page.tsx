@@ -27,7 +27,7 @@ export default async function PanelPlanesEditarPage({
         Editar plan
       </h1>
       <p className="text-[var(--color-text-muted)] mb-6">
-        Modificá los datos del plan.
+        Modifica los datos del plan.
       </p>
       <div className="rounded-[var(--radius-lg)] bg-[var(--color-surface)] p-6 shadow-[var(--shadow-md)]">
         <PlanFormEdit plan={plan} slugError={error === "slug"} />

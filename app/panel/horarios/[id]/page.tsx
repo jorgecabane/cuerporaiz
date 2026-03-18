@@ -53,7 +53,7 @@ export default async function EditClassPage({ params }: Props) {
         Editar clase
       </h1>
       <p className="text-[var(--color-text-muted)] mb-6">
-        Modificá los datos de esta clase. {reservationCount > 0 && (
+        Modifica los datos de esta clase. {reservationCount > 0 && (
           <span className="font-medium text-[var(--color-warning)]">
             Tiene {reservationCount} reserva{reservationCount !== 1 ? "s" : ""} confirmada{reservationCount !== 1 ? "s" : ""}.
           </span>

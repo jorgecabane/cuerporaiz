@@ -13,7 +13,7 @@ export async function PATCH(
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
   if (!isAdminRole(session.user.role)) {
-    return NextResponse.json({ error: "Solo admins" }, { status: 403 });
+    return NextResponse.json({ error: "Solo administración" }, { status: 403 });
   }
 
   const { id } = await params;

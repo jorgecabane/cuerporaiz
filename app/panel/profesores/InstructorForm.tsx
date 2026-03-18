@@ -88,8 +88,8 @@ export function InstructorForm({ instructor }: { instructor?: Instructor }) {
         </p>
       </div>
       <div className="flex gap-3 pt-2">
-        <SubmitButton label={isEditing ? "Guardar cambios" : "Agregar profesora"} />
-        <Button href="/panel/profesoras" variant="secondary">
+        <SubmitButton label={isEditing ? "Guardar cambios" : "Agregar profesor"} />
+        <Button href="/panel/profesores" variant="secondary">
           Cancelar
         </Button>
       </div>

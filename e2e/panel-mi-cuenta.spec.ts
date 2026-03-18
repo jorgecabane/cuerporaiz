@@ -31,10 +31,10 @@ test.describe("Panel Mi cuenta", () => {
 
     await expect(page).toHaveURL(/\/panel/, { timeout: 15000 });
     await expect(
-      page.getByRole("heading", { name: /mi cuenta/i, level: 1 })
+      page.getByRole("heading", { level: 1 }).filter({ hasText: /hola|home/i })
     ).toBeVisible();
     await expect(
-      page.getByRole("link", { name: /clases y reservas/i }).first()
+      page.getByRole("link", { name: /reservas/i }).first()
     ).toBeVisible();
     await expect(
       page.getByRole("button", { name: /cerrar sesión/i })

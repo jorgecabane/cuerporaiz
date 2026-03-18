@@ -293,7 +293,7 @@ export function CreateClassForm({ disciplines, instructors, defaultDate, default
         />
       </div>
 
-      {/* Disciplina + Profesora */}
+      {/* Disciplina + Profesor */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label htmlFor="disciplineId" className="block text-sm font-medium text-[var(--color-text)] mb-1">
@@ -317,7 +317,7 @@ export function CreateClassForm({ disciplines, instructors, defaultDate, default
         </div>
         <div>
           <label htmlFor="instructorId" className="block text-sm font-medium text-[var(--color-text)] mb-1">
-            Profesora
+            Profesor
           </label>
           <select
             id="instructorId"
@@ -392,7 +392,7 @@ export function CreateClassForm({ disciplines, instructors, defaultDate, default
             className="h-10 w-10 cursor-pointer rounded-[var(--radius-md)] border border-[var(--color-border)] bg-transparent p-0.5"
           />
           <span className="text-sm text-[var(--color-text-muted)]">
-            {selectedDisciplineId ? "Heredado de la disciplina. Podés cambiarlo." : "Color para el calendario."}
+            {selectedDisciplineId ? "Heredado de la disciplina. Puedes cambiarlo." : "Color para el calendario."}
           </span>
         </div>
       </div>

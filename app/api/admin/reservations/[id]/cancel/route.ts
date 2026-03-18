@@ -3,7 +3,7 @@ import { auth } from "@/auth";
 import { cancelReservationByStaffUseCase } from "@/lib/application/reserve-class";
 
 /**
- * Cancelar una reserva en nombre de un alumno (solo admin o profesora del centro).
+ * Cancelar una reserva en nombre de un estudiante (solo administración o profesor del centro).
  */
 export async function PATCH(
   _request: Request,
@@ -20,7 +20,7 @@ export async function PATCH(
     const role = session.user.role;
     if (role !== "ADMINISTRATOR" && role !== "INSTRUCTOR") {
       return NextResponse.json(
-        { code: "FORBIDDEN", message: "Solo administradoras y profesoras" },
+        { code: "FORBIDDEN", message: "Solo administración y profesores" },
         { status: 403 }
       );
     }

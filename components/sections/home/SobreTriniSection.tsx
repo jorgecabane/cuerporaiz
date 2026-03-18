@@ -25,7 +25,7 @@ export function SobreTriniSection() {
             <div className="relative aspect-[3/4] overflow-hidden rounded-[var(--radius-xl)] sm:aspect-[4/5]">
               <Image
                 src="https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800&q=80"
-                alt="Trinidad Cáceres — profesora de yoga y sexóloga"
+                alt="Trinidad Cáceres — profesor de yoga y sexólogo"
                 fill
                 className="object-cover object-top"
                 sizes="(max-width: 768px) 100vw, 50vw"
@@ -52,7 +52,7 @@ export function SobreTriniSection() {
 
             <AnimateIn delay={0.25}>
               <p className="text-base leading-relaxed text-[var(--color-text-muted)]">
-                Profesora de yoga y sexóloga. Combina el movimiento, la
+                Profesor de yoga y sexólogo. Combina el movimiento, la
                 respiración y la consciencia corporal con una mirada profunda
                 sobre el placer y la sensualidad.
               </p>

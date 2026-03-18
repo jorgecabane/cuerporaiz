@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { listLiveClassesByRange } from "@/lib/application/reserve-class";
 import { instructorRepository } from "@/lib/adapters/db";
+import { isInstructorRole, isStaffRole } from "@/lib/domain";
 
 /**
  * Clases en vivo para staff (profe o admin) en un rango de fechas.
@@ -17,9 +18,9 @@ export async function GET(request: Request) {
       );
     }
     const role = session.user.role;
-    if (role !== "ADMINISTRATOR" && role !== "INSTRUCTOR") {
+    if (!isStaffRole(role)) {
       return NextResponse.json(
-        { code: "FORBIDDEN", message: "Solo profesoras y administradoras" },
+        { code: "FORBIDDEN", message: "Solo profesores y administración" },
         { status: 403 }
       );
     }
@@ -43,13 +44,13 @@ export async function GET(request: Request) {
     }
 
     let instructorId: string | undefined;
-    if (role === "INSTRUCTOR") {
+    if (isInstructorRole(role)) {
       const instructors = await instructorRepository.findByCenterId(centerId);
       const me = instructors.find((i) => i.userId === session.user.id);
       if (!me) {
         return NextResponse.json({ items: [], total: 0 });
       }
-      instructorId = me.id;
+      instructorId = me.userId;
     }
 
     const items = await listLiveClassesByRange(centerId, from, to, instructorId);

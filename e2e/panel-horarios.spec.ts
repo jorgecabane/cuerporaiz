@@ -39,7 +39,7 @@ test.describe("Panel admin - Horarios flow", () => {
     await expect(page.getByRole("heading", { name: /Nueva clase/i })).toBeVisible();
     await expect(page.getByLabel(/Nombre de la clase/i)).toBeVisible();
     await expect(page.getByLabel(/Disciplina/i)).toBeVisible();
-    await expect(page.getByLabel(/Profesora/i)).toBeVisible();
+    await expect(page.getByLabel(/Profesor/i)).toBeVisible();
     await expect(page.getByLabel(/Fecha y hora inicio/i)).toBeVisible();
     await expect(page.getByLabel(/Duración/i)).toBeVisible();
     await expect(page.getByLabel(/Cupos/i)).toBeVisible();
@@ -189,7 +189,7 @@ test.describe("Panel admin - Calendar views and filters", () => {
     await page.waitForTimeout(1000);
     const disciplineSelect = page.locator("select").filter({ hasText: /disciplinas/i });
     await expect(disciplineSelect).toBeVisible();
-    const instructorSelect = page.locator("select").filter({ hasText: /profesoras/i });
+    const instructorSelect = page.locator("select").filter({ hasText: /profesores/i });
     await expect(instructorSelect).toBeVisible();
     const modeSelect = page.locator("select").filter({ hasText: /Presencial/i });
     await expect(modeSelect).toBeVisible();
@@ -286,20 +286,20 @@ test.describe("Panel admin - Disciplinas", () => {
   });
 });
 
-test.describe("Panel admin - Profesoras", () => {
+test.describe("Panel admin - Profesores", () => {
   test.describe("requires login", () => {
     test.use({ storageState: { cookies: [], origins: [] } });
 
-    test("profesoras requires login", async ({ page }) => {
-      await page.goto("/panel/profesoras");
+    test("profesores requires login", async ({ page }) => {
+      await page.goto("/panel/profesores");
       await expect(page).toHaveURL(/\/auth\/login/);
     });
   });
 
-  test("admin sees profesoras page", async ({ page }) => {
-    await page.goto("/panel/profesoras");
-    await expect(page).toHaveURL(/\/panel\/profesoras/);
-    await expect(page.getByRole("heading", { name: /Profesoras/i })).toBeVisible({ timeout: 10000 });
+  test("admin sees profesores page", async ({ page }) => {
+    await page.goto("/panel/profesores");
+    await expect(page).toHaveURL(/\/panel\/profesores/);
+    await expect(page.getByRole("heading", { name: /Profesores/i })).toBeVisible({ timeout: 10000 });
   });
 });
 

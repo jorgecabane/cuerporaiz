@@ -13,9 +13,9 @@ test.describe("Panel admin - Clientes", () => {
   test("admin llega a clientes y ve heading", async ({ page }) => {
     await page.goto("/panel");
     await expect(page).toHaveURL(/\/panel/, { timeout: 15000 });
-    await expect(page.getByRole("link", { name: /^Clientes$/i })).toBeVisible();
-    await page.getByRole("link", { name: /^Clientes$/i }).click();
+    await expect(page.getByRole("link", { name: /^Clientes$/i }).first()).toBeVisible();
+    await page.getByRole("link", { name: /^Clientes$/i }).first().click();
     await expect(page).toHaveURL(/\/panel\/clientes/);
-    await expect(page.getByRole("heading", { name: /^Alumnas$/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /^Estudiantes$/i })).toBeVisible();
   });
 });

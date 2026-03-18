@@ -10,7 +10,7 @@ export function InstructorList({ instructors }: { instructors: Instructor[] }) {
   const [isPending, startTransition] = useTransition();
 
   function handleDeactivate(id: string, name: string | null) {
-    if (!window.confirm(`¿Desactivar a la profesora "${name ?? "sin nombre"}"?`)) return;
+    if (!window.confirm(`¿Desactivar al profesor "${name ?? "sin nombre"}"?`)) return;
     const fd = new FormData();
     fd.set("id", id);
     startTransition(() => deactivateInstructor(fd));
@@ -50,7 +50,7 @@ export function InstructorList({ instructors }: { instructors: Instructor[] }) {
           </div>
           <div className="flex gap-2">
             <Button
-              href={`/panel/profesoras/${i.id}/editar`}
+              href={`/panel/profesores/${i.id}/editar`}
               variant="secondary"
             >
               Editar

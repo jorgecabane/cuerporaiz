@@ -13,6 +13,7 @@ export const manualPaymentRepository: IManualPaymentRepository = {
     const list = await prisma.manualPayment.findMany({
       where: {
         centerId,
+        ...(filters.userId != null && { userId: filters.userId }),
         ...(filters.from || filters.to
           ? {
               paidAt: {
@@ -21,7 +22,7 @@ export const manualPaymentRepository: IManualPaymentRepository = {
               },
             }
           : {}),
-        ...(filters.email
+        ...(filters.email != null && filters.email !== ""
           ? {
               user: {
                 email: { contains: filters.email, mode: "insensitive" },

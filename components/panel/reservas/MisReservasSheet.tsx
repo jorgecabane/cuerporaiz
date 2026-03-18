@@ -56,7 +56,7 @@ function CancelConfirmModal({
         <p className="mt-2 text-sm text-[var(--color-text-muted)]">
           {isLate
             ? "Se descontará 1 clase de tu plan. Se liberará tu cupo."
-            : "Podés cancelar sin perder tu clase. Se liberará tu cupo."}
+            : "Puedes cancelar sin perder tu clase. Se liberará tu cupo."}
         </p>
         <div className="mt-6 flex flex-wrap gap-3">
           <Button
@@ -181,10 +181,10 @@ export function MisReservasSheet({
         title="Mis reservas"
         variant="auto"
       >
-        <div className="px-4 pb-6">
+        <div className="px-4 py-5 pb-6">
           {cancelPolicyCopy && (
-            <p className="mb-3 text-xs text-[var(--color-text-muted)]">
-              {cancelPolicyCopy}
+            <p className="mb-4 px-1 text-sm text-[var(--color-text-muted)] leading-relaxed">
+              Recuerda que puedes cancelar con hasta {cancelBeforeHours} horas de anticipación sin que se consuma tu clase. Si cancelas más tarde, se descontará 1 clase de tu plan, pero se libera tu cupo para que otra persona pueda reservar.
             </p>
           )}
           {toast && (
@@ -222,7 +222,7 @@ export function MisReservasSheet({
                   canCancelIds={canCancelIds}
                   onCancel={handleCancelClick}
                   cancelLoadingId={cancelLoadingId}
-                  emptyMessage="No tenés reservas para hoy."
+                  emptyMessage="No tienes reservas para hoy."
                 />
               </TabsContent>
               <TabsContent value={TAB_PROXIMAS} className="pt-2">
@@ -232,7 +232,7 @@ export function MisReservasSheet({
                   canCancelIds={canCancelIds}
                   onCancel={handleCancelClick}
                   cancelLoadingId={cancelLoadingId}
-                  emptyMessage="No tenés próximas reservas."
+                  emptyMessage="No tienes próximas reservas."
                 />
               </TabsContent>
               <TabsContent value={TAB_CANCELADAS} className="pt-2">
@@ -240,14 +240,14 @@ export function MisReservasSheet({
                   reservations={segmented.canceladas}
                   compact
                   showCancelBadge
-                  emptyMessage="No tenés reservas canceladas."
+                  emptyMessage="No tienes reservas canceladas."
                 />
               </TabsContent>
               <TabsContent value={TAB_HISTORICAS} className="pt-2">
                 <ReservationsList
                   reservations={segmented.historicas}
                   compact
-                  emptyMessage="No tenés historial de reservas."
+                  emptyMessage="No tienes historial de reservas."
                 />
               </TabsContent>
             </TabsRoot>

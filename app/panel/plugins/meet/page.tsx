@@ -52,7 +52,7 @@ export default async function GoogleMeetPluginPage({
           {sp.error === "oauth_invalid" && "Autorización inválida o cancelada."}
           {sp.error === "meet_not_configured" && "Google Meet no está configurado en el servidor (GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET)."}
           {sp.error === "oauth_exchange_failed" && "No se pudo completar la conexión. Intentá de nuevo."}
-          {sp.error === "no-config" && "Primero conectá tu cuenta de Google."}
+          {sp.error === "no-config" && "Primero conecta tu cuenta de Google."}
           {!["oauth_invalid", "meet_not_configured", "oauth_exchange_failed", "no-config"].includes(sp.error) && `Error: ${sp.error}`}
         </div>
       )}
@@ -61,7 +61,7 @@ export default async function GoogleMeetPluginPage({
         {meetStatus === null ? (
           <div className="space-y-4">
             <p className="text-sm text-[var(--color-text-muted)]">
-              Conectá tu cuenta de Google para generar links de Meet automáticamente al marcar una clase como online en Horarios (se usa Google Calendar).
+              Conecta tu cuenta de Google para generar links de Meet automáticamente al marcar una clase como online en Horarios (se usa Google Calendar).
             </p>
             {hasOAuthEnv ? (
               <a

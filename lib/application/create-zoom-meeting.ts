@@ -40,7 +40,7 @@ async function refreshZoomToken(centerId: string): Promise<string> {
   if (!res.ok) {
     const text = await res.text();
     console.error("Zoom token refresh failed:", text);
-    throw new Error("No se pudo renovar la sesión de Zoom. Reconectá Zoom en Plugins.");
+    throw new Error("No se pudo renovar la sesión de Zoom. Vuelve a conectar Zoom en Plugins.");
   }
 
   const data = (await res.json()) as {
@@ -101,7 +101,7 @@ export async function createZoomMeeting(
   if (!res.ok) {
     const text = await res.text();
     console.error("Zoom create meeting failed:", res.status, text);
-    throw new Error("No se pudo crear la reunión en Zoom. Revisá la conexión o reconectá Zoom en Plugins.");
+    throw new Error("No se pudo crear la reunión en Zoom. Revisa la conexión o vuelve a conectar Zoom en Plugins.");
   }
 
   const data = (await res.json()) as { join_url?: string };

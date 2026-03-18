@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
 
 type TabsContextValue = {
   value: string;
@@ -85,7 +85,9 @@ export function TabsTrigger({
 }) {
   const { value: selected, onChange, registerTab } = useTabs();
   const tabId = id ?? `tab-${value}`;
-  registerTab(value);
+  useEffect(() => {
+    registerTab(value);
+  }, [value, registerTab]);
 
   const isSelected = selected === value;
   const triggerStyle = {

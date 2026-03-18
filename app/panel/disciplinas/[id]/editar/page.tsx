@@ -23,7 +23,7 @@ export default async function EditarDisciplinaPage({
         Editar disciplina
       </h1>
       <p className="text-[var(--color-text-muted)] mb-6">
-        Modificá el nombre, color o estado de esta disciplina.
+        Modifica el nombre, color o estado de esta disciplina.
       </p>
       <div className="rounded-[var(--radius-lg)] bg-[var(--color-surface)] p-6 shadow-[var(--shadow-md)]">
         <DisciplineForm discipline={discipline} />

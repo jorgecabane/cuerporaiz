@@ -21,7 +21,7 @@ export default async function PanelPoliticasPage() {
       </h1>
       <p className="text-[var(--color-text-muted)] mb-6">
         Configurá las ventanas para reservar y cancelar, no-show, aviso de cupo liberado, acciones de
-        profesora y clase de prueba.
+        profesor y clase de prueba.
       </p>
       <div className="rounded-[var(--radius-lg)] bg-[var(--color-surface)] p-6 shadow-[var(--shadow-md)]">
         <PoliticasForm center={center} />

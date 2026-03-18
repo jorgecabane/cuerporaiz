@@ -14,6 +14,8 @@ export interface ManualPaymentListItem {
 
 export interface ManualPaymentPageFilters {
   email?: string;
+  /** Cuando se setea, solo se devuelven pagos de ese usuario (ej. Mis pagos). */
+  userId?: string;
   from?: Date;
   to?: Date;
   page: number;

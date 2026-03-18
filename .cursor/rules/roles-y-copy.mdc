@@ -1,0 +1,36 @@
+---
+description: Roles (helpers) y copy en español neutro para UI y emails
+alwaysApply: true
+---
+
+# Roles y copy
+
+## Roles
+
+No comparar roles con strings literales. Usar los helpers de `@/lib/domain/role` (o `@/lib/domain`):
+
+- `isAdminRole(role)`, `isStudentRole(role)`, `isInstructorRole(role)`, `isStaffRole(role)`
+- Para etiquetas de UI: `ROLE_LABELS` desde `lib/domain/role`.
+
+**Ejemplo:**
+
+```ts
+// ❌ Evitar
+if (role === "STUDENT") { ... }
+if (user.role === "INSTRUCTOR") { ... }
+
+// ✅ Usar
+import { isStudentRole, isInstructorRole } from "@/lib/domain/role";
+if (isStudentRole(role)) { ... }
+if (isInstructorRole(user.role)) { ... }
+```
+
+## Copy en español neutro (Chile)
+
+- Trato **tú** (no voseo). Ejemplos: "tienes", "puedes", "agrega", "revisa", "conecta".
+- No usar: "tenés", "podés", "agregá", "revisá", "conectá".
+- Aplicar en UI (panel, checkout, componentes) y en `lib/email/transactional.ts`.
+
+## Labels sin género
+
+Usar términos neutros en etiquetas y mensajes: "Estudiantes", "Profesores", "Administración". No "Alumnas", "Profesoras", "administradora". Rutas y nav ya usan `/panel/profesores`; mantener esa línea.

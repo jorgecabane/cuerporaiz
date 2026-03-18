@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { isAdminRole } from "@/lib/domain";
+import { isAdminRole, isInstructorRole } from "@/lib/domain";
 import {
   markAttendanceUseCase,
   listClassAttendanceUseCase,
@@ -12,8 +12,8 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
   const role = session.user.role;
-  if (!isAdminRole(role) && role !== "INSTRUCTOR") {
-    return NextResponse.json({ error: "Solo admins y profesoras" }, { status: 403 });
+  if (!isAdminRole(role) && !isInstructorRole(role)) {
+    return NextResponse.json({ error: "Solo administración y profesores" }, { status: 403 });
   }
 
   const { searchParams } = new URL(request.url);
@@ -35,8 +35,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
   const role = session.user.role;
-  if (!isAdminRole(role) && role !== "INSTRUCTOR") {
-    return NextResponse.json({ error: "Solo admins y profesoras" }, { status: 403 });
+  if (!isAdminRole(role) && !isInstructorRole(role)) {
+    return NextResponse.json({ error: "Solo administración y profesores" }, { status: 403 });
   }
 
   const body = await request.json();

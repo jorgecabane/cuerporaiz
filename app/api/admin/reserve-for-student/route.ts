@@ -3,11 +3,12 @@ import { auth } from "@/auth";
 import { centerRepository } from "@/lib/adapters/db";
 import { reserveClassUseCase } from "@/lib/application/reserve-class";
 import { reserveClassBodySchema } from "@/lib/dto/reservation-dto";
+import { isAdminRole, isInstructorRole, isStudentRole } from "@/lib/domain";
 
 /**
- * Reservar una clase en nombre de una alumna.
+ * Reservar una clase en nombre de un estudiante.
  * Body: { userId, liveClassId, userPlanId? }.
- * Solo admin, o profesora si el centro tiene instructorCanReserveForStudent.
+ * Solo administración, o profesor si el centro tiene instructorCanReserveForStudent.
  */
 export async function POST(request: Request) {
   try {
@@ -21,19 +22,24 @@ export async function POST(request: Request) {
     const role = session.user.role;
     const centerId = session.user.centerId;
 
-    if (role === "ADMINISTRATOR") {
+    if (isAdminRole(role)) {
       // ok
-    } else if (role === "INSTRUCTOR") {
+    } else if (isInstructorRole(role)) {
       const center = await centerRepository.findById(centerId);
       if (!center?.instructorCanReserveForStudent) {
         return NextResponse.json(
-          { code: "FORBIDDEN", message: "No tenés permiso para reservar por alumnas" },
+          { code: "FORBIDDEN", message: "No tienes permiso para reservar por estudiantes" },
           { status: 403 }
         );
       }
+    } else if (isStudentRole(role)) {
+      return NextResponse.json(
+        { code: "FORBIDDEN", message: "Solo administración y profesores" },
+        { status: 403 }
+      );
     } else {
       return NextResponse.json(
-        { code: "FORBIDDEN", message: "Solo administradoras y profesoras" },
+        { code: "FORBIDDEN", message: "Rol inválido" },
         { status: 403 }
       );
     }
