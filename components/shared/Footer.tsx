@@ -5,6 +5,9 @@ const WHATSAPP_URL =
   "https://wa.me/56900000000?text=Hola%20Trini%2C%20me%20interesa%20conocer%20m%C3%A1s%20sobre%20Cuerpo%20Ra%C3%ADz";
 
 export function Footer() {
+  const supportEmail =
+    process.env.NEXT_PUBLIC_SUPPORT_EMAIL ?? "cuerporaiztrinidad@gmail.com";
+
   return (
     <footer
       className="bg-[var(--color-primary)] px-[var(--space-4)] pb-[var(--space-8)] pt-[var(--space-16)] md:px-[var(--space-8)]"
@@ -71,7 +74,23 @@ export function Footer() {
           <p className="text-xs text-white/30">
             &copy; {new Date().getFullYear()} {SITE_NAME}. Todos los derechos reservados.
           </p>
-          <p className="text-xs text-white/20">Santiago, Chile</p>
+          <div className="flex flex-col items-center gap-1 text-xs text-white/20 md:flex-row md:gap-4">
+            <p>Santiago, Chile</p>
+            <div className="flex items-center gap-3">
+              <Link href="/tyc" className="underline underline-offset-2 hover:text-white">
+                Términos
+              </Link>
+              <Link href="/privacy" className="underline underline-offset-2 hover:text-white">
+                Privacidad
+              </Link>
+              <a
+                href={`mailto:${supportEmail}`}
+                className="underline underline-offset-2 hover:text-white"
+              >
+                Contacto
+              </a>
+            </div>
+          </div>
         </div>
       </div>
     </footer>
