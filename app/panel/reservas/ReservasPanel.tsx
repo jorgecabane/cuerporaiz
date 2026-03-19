@@ -253,7 +253,7 @@ export function ReservasPanel({
           aria-labelledby="plan-selection-title"
         >
           <h2 id="plan-selection-title" className="font-medium text-[var(--color-text)] mb-2">
-            Elegí con qué plan reservar
+            Elige con qué plan reservar
           </h2>
           <ul className="space-y-2 mb-4">
             {planSelectionFor.plans.map((p) => (

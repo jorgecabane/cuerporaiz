@@ -98,6 +98,8 @@ test.describe("Planes y checkout", () => {
     if (hasDb) {
       const orderAfter = await prisma!.order.findUnique({ where: { id: orderId } });
       expect(orderAfter?.status).toBe("PENDING");
+      // Cleanup: borrar la orden creada por E2E para no dejar basura en DB.
+      await prisma!.order.delete({ where: { id: orderId } });
     }
   });
 });

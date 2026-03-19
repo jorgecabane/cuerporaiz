@@ -1,8 +1,8 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("Reservas (student) secciones", () => {
-  test("puede ver futuras y pasadas sin scroll extraño", async ({ page }) => {
-    // Mock de reservas: una futura y una pasada.
+  test("puede ver Hoy, Próximas, Canceladas e Históricas en /panel/reservas", async ({ page }) => {
+    // Mock de reservas: una futura (próximas) y una pasada (históricas).
     const now = Date.now();
     const futureStart = new Date(now + 7 * 24 * 60 * 60 * 1000).toISOString();
     const pastStart = new Date(now - 7 * 24 * 60 * 60 * 1000).toISOString();
@@ -37,7 +37,7 @@ test.describe("Reservas (student) secciones", () => {
               userId: "me",
               liveClassId: "lc_past",
               userPlanId: "up",
-              status: "CONFIRMED",
+              status: "ATTENDED",
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString(),
               liveClass: {
@@ -76,19 +76,21 @@ test.describe("Reservas (student) secciones", () => {
     });
 
     await page.goto("/panel/reservas");
-    await expect(page.getByRole("heading", { name: /clases en vivo y reservas/i })).toBeVisible();
+    await expect(page).toHaveURL(/\/panel\/reservas/);
+    await expect(page.getByRole("heading", { name: "Reservas", exact: true })).toBeVisible({ timeout: 15000 });
 
-    await page.getByRole("tab", { name: "Mis reservas", exact: true }).click();
-    await expect(page.getByRole("tab", { name: "Futuras", exact: true })).toBeVisible();
-    await expect(page.getByRole("tab", { name: "Pasadas", exact: true })).toBeVisible();
+    // Tabs actuales: Hoy, Próximas, Canceladas, Históricas.
+    await expect(page.getByRole("tab", { name: "Hoy", exact: true })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Próximas", exact: true })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Canceladas", exact: true })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Históricas", exact: true })).toBeVisible();
 
-    // Futuras
-    await page.getByRole("tab", { name: "Futuras", exact: true }).click();
+    // Próximas: debe aparecer la clase futura.
+    await page.getByRole("tab", { name: "Próximas", exact: true }).click();
     await expect(page.getByText("Clase Futura")).toBeVisible();
 
-    // Pasadas
-    await page.getByRole("tab", { name: "Pasadas", exact: true }).click();
+    // Históricas: debe aparecer la clase pasada.
+    await page.getByRole("tab", { name: "Históricas", exact: true }).click();
     await expect(page.getByText("Clase Pasada")).toBeVisible();
   });
 });
-

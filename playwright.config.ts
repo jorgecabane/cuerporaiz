@@ -13,12 +13,12 @@ const port = process.env.E2E_PORT ? parseInt(process.env.E2E_PORT, 10) : 3000;
 
 export default defineConfig({
   testDir: "./e2e",
-  // La app usa Prisma + Postgres; demasiada concurrencia puede saturar el pool
-  // (especialmente en Session mode del adapter pg).
+  // La app usa Prisma + Postgres; en CI usamos 1 worker para no saturar el pool.
+  // En local se pueden usar más workers para acortar tiempo (probar con 2–4 si la DB aguanta).
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: 2,
-  workers: process.env.CI ? 1 : 1,
+  workers: process.env.CI ? 1 : 2,
   reporter: process.env.CI ? "github" : "list",
   use: {
     baseURL: `http://localhost:${port}`,

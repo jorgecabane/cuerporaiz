@@ -132,9 +132,11 @@ test.describe("Panel admin - Horarios flow", () => {
     await page.goto("/panel/horarios");
     await expect(page.getByRole("heading", { name: /Horarios/i })).toBeVisible({ timeout: 10000 });
     await page.getByRole("button", { name: /Lista/i }).click();
-    await page.waitForTimeout(1500);
+    // Esperar a que la vista Lista termine de cargar (desaparece "Cargando…").
+    const loading = page.getByText("Cargando…");
+    await loading.waitFor({ state: "hidden", timeout: 10000 }).catch(() => {});
     const classLink = page.getByRole("link", { name: new RegExp(E2E_CLASS_NAME) }).first();
-    if (!(await classLink.isVisible())) {
+    if (!(await classLink.isVisible({ timeout: 8000 }))) {
       test.skip();
       return;
     }
