@@ -205,7 +205,6 @@ export function CreateClassForm({ disciplines, instructors, defaultDate, default
     const trialCapacity = isTrialClass ? Number(fd.get("trialCapacity")) || 2 : null;
 
     if (!title || !startsAt) return;
-
     if (new Date(startsAt) <= new Date()) {
       setError("No se pueden agendar clases en el pasado.");
       return;
@@ -219,6 +218,7 @@ export function CreateClassForm({ disciplines, instructors, defaultDate, default
 
     const repeat = getRepeatValue();
     const startsAtDate = new Date(startsAt);
+    const startsAtIso = startsAtDate.toISOString();
     const repeatOnDays = getRepeatOnDays(startsAtDate);
     const effectiveEveryN = recurrencePreset === "custom" ? repeatEveryN : 1;
 
@@ -227,7 +227,7 @@ export function CreateClassForm({ disciplines, instructors, defaultDate, default
         title,
         disciplineId,
         instructorId,
-        startsAt,
+        startsAt: startsAtIso,
         durationMinutes,
         maxCapacity,
         isOnline: !!meetingUrlToUse,
@@ -259,7 +259,8 @@ export function CreateClassForm({ disciplines, instructors, defaultDate, default
     setMeetingError(null);
     setMeetingLoading(true);
     try {
-      const res = await createMeetingForClass(provider, { title, startTime: startsAt, durationMinutes });
+      const startTime = new Date(startsAt).toISOString();
+      const res = await createMeetingForClass(provider, { title, startTime, durationMinutes });
       setMeetingUrl(res.joinUrl);
       setManualMeetingUrl("");
       setLastUsedProvider(provider);

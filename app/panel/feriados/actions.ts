@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { isAdminRole } from "@/lib/domain/role";
 import { centerHolidayRepository, liveClassRepository } from "@/lib/adapters/db";
+import { parseHolidayDateInput } from "@/lib/domain/holiday-date";
 
 async function requireAdminCenterId(): Promise<string> {
   const session = await auth();
@@ -24,14 +25,17 @@ export async function createHoliday(
   label: string,
 ): Promise<CreateHolidayResult> {
   const centerId = await requireAdminCenterId();
-  const date = new Date(dateStr + "T00:00:00Z");
+  const date = parseHolidayDateInput(dateStr);
+  if (Number.isNaN(date.getTime())) {
+    return { ok: false, error: "Fecha inválida." };
+  }
 
   const existing = await centerHolidayRepository.findByCenterIdAndDate(centerId, date);
   if (existing) {
     return { ok: false, error: "Ya existe un feriado para esa fecha." };
   }
 
-  const dayStart = new Date(date);
+  const dayStart = date;
   const dayEnd = new Date(date);
   dayEnd.setUTCDate(dayEnd.getUTCDate() + 1);
 

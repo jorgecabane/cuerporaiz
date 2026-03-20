@@ -5,7 +5,7 @@ import { Calendar } from "lucide-react";
 import { MisReservasSheet } from "@/components/panel/reservas";
 
 export interface PanelHomeMisReservasTriggerProps {
-  cancelBeforeHours: number;
+  cancelBeforeMinutes: number;
   cancelPolicyCopy?: string;
 }
 
@@ -14,7 +14,7 @@ export interface PanelHomeMisReservasTriggerProps {
  * Se renderiza como ítem de acción rápida con el mismo estilo que los links.
  */
 export function PanelHomeMisReservasTrigger({
-  cancelBeforeHours,
+  cancelBeforeMinutes,
   cancelPolicyCopy,
 }: PanelHomeMisReservasTriggerProps) {
   const [open, setOpen] = useState(false);
@@ -32,7 +32,7 @@ export function PanelHomeMisReservasTrigger({
       <MisReservasSheet
         open={open}
         onOpenChange={setOpen}
-        cancelBeforeHours={cancelBeforeHours}
+        cancelBeforeMinutes={cancelBeforeMinutes}
         cancelPolicyCopy={cancelPolicyCopy}
       />
     </>

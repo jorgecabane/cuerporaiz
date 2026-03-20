@@ -61,7 +61,7 @@ describe("cancelReservationUseCase", () => {
     });
     mocks.centerRepository.findById.mockResolvedValue({
       id: "c1",
-      cancelBeforeHours: 2,
+      cancelBeforeMinutes: 2 * 60,
     });
     mocks.reservationRepository.updateStatus.mockResolvedValue({
       id: "r1",

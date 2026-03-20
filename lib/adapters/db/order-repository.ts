@@ -14,6 +14,7 @@ function toDomain(o: {
   centerId: string;
   userId: string;
   planId: string;
+  subscriptionId: string | null;
   amountCents: number;
   currency: string;
   status: PrismaOrderStatus;
@@ -28,6 +29,7 @@ function toDomain(o: {
     centerId: o.centerId,
     userId: o.userId,
     planId: o.planId,
+    subscriptionId: o.subscriptionId,
     amountCents: o.amountCents,
     currency: o.currency,
     status: o.status as unknown as OrderStatus,
@@ -46,6 +48,7 @@ export const orderRepository: IOrderRepository = {
         centerId: data.centerId,
         userId: data.userId,
         planId: data.planId,
+        subscriptionId: data.subscriptionId ?? null,
         amountCents: data.amountCents,
         currency: data.currency,
         externalReference: data.externalReference,

@@ -10,6 +10,7 @@ export interface CreateUserPlanInput {
   planId: string;
   centerId: string;
   orderId?: string | null;
+  subscriptionId?: string | null;
   paymentStatus?: PlanPaymentStatus;
   classesTotal?: number | null;
   validFrom?: Date;

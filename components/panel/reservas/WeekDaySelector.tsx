@@ -1,5 +1,6 @@
 "use client";
 
+import { localYmdFromDate, localYmdFromIso } from "@/lib/datetime/local-ymd";
 import { getWeekBounds } from "./WeekNav";
 
 export interface WeekDaySelectorProps {
@@ -12,7 +13,7 @@ export interface WeekDaySelectorProps {
 }
 
 function toDateKey(d: Date): string {
-  return d.toISOString().slice(0, 10);
+  return localYmdFromDate(d);
 }
 
 export function WeekDaySelector({
@@ -81,7 +82,7 @@ export function WeekDaySelector({
 export function groupClassesByDay<T extends { startsAt: string }>(classes: T[]): Map<string, T[]> {
   const byDay = new Map<string, T[]>();
   for (const c of classes) {
-    const key = c.startsAt.slice(0, 10);
+    const key = localYmdFromIso(c.startsAt);
     if (!byDay.has(key)) byDay.set(key, []);
     byDay.get(key)!.push(c);
   }

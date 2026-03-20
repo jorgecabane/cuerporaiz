@@ -6,6 +6,10 @@ import { revalidatePath } from "next/cache";
 import { isAdminRole } from "@/lib/domain/role";
 import { centerRepository } from "@/lib/adapters/db";
 import type { CenterPoliciesUpdate } from "@/lib/ports";
+import {
+  MAX_BOOK_BEFORE_MINUTES,
+  MAX_CANCEL_BEFORE_MINUTES,
+} from "@/lib/domain/center-policy";
 
 export async function updateCenterPolicies(
   centerId: string,
@@ -19,9 +23,11 @@ export async function updateCenterPolicies(
     redirect("/panel");
   }
   if (
-    (data.cancelBeforeHours !== undefined && (data.cancelBeforeHours < 0 || data.cancelBeforeHours > 168)) ||
+    (data.cancelBeforeMinutes !== undefined &&
+      (data.cancelBeforeMinutes < 0 || data.cancelBeforeMinutes > MAX_CANCEL_BEFORE_MINUTES)) ||
     (data.maxNoShowsPerMonth !== undefined && (data.maxNoShowsPerMonth < 0 || data.maxNoShowsPerMonth > 31)) ||
-    (data.bookBeforeHours !== undefined && (data.bookBeforeHours < 0 || data.bookBeforeHours > 720)) ||
+    (data.bookBeforeMinutes !== undefined &&
+      (data.bookBeforeMinutes < 0 || data.bookBeforeMinutes > MAX_BOOK_BEFORE_MINUTES)) ||
     (data.calendarStartHour !== undefined && (data.calendarStartHour < 0 || data.calendarStartHour > 12)) ||
     (data.calendarEndHour !== undefined && (data.calendarEndHour < 12 || data.calendarEndHour > 24)) ||
     (data.defaultClassDurationMinutes !== undefined && (data.defaultClassDurationMinutes < 15 || data.defaultClassDurationMinutes > 240))

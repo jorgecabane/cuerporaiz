@@ -63,8 +63,10 @@ export function PlanFormCreate({ slugError }: { slugError?: boolean }) {
   const [validityPeriodInput, setValidityPeriodInput] = useState<ValidityPeriod | "">("");
   const [planType, setPlanType] = useState<PlanType>("LIVE");
   const [usesLimit, setUsesLimit] = useState<UsesLimit>("unlimited");
+  const [billingMode, setBillingMode] = useState<BillingMode | "">("");
 
   const displaySlug = slugManuallyEdited ? slug : slugify(name);
+  const showRecurringDiscount = billingMode === "RECURRING" || billingMode === "BOTH";
 
   const showDistribution = planType === "LIVE" || planType === "ON_DEMAND";
 
@@ -79,7 +81,12 @@ export function PlanFormCreate({ slugError }: { slugError?: boolean }) {
         const kind = (formData.get("validityKind") as ValidityKind) || "";
         const validityDays = kind === "days" ? parseOptionalInt(formData.get("validityDays")) : null;
         const validityPeriod = kind === "period" ? parseOptionalEnum(formData.get("validityPeriod"), ["MONTHLY", "QUARTERLY", "QUADRIMESTRAL", "SEMESTER", "ANNUAL"]) as ValidityPeriod | null : null;
-        const billingMode = parseOptionalEnum(formData.get("billingMode"), ["ONE_TIME", "RECURRING", "BOTH"]) as BillingMode | null;
+        const billingModeVal = parseOptionalEnum(formData.get("billingMode"), ["ONE_TIME", "RECURRING", "BOTH"]) as BillingMode | null;
+        const recurringDiscountRaw = parseOptionalInt(formData.get("recurringDiscountPercent"));
+        const recurringDiscountPercent =
+          (billingModeVal === "RECURRING" || billingModeVal === "BOTH") && recurringDiscountRaw != null
+            ? Math.min(100, Math.max(0, recurringDiscountRaw))
+            : undefined;
         const usesLimitVal = formData.get("usesLimit") as UsesLimit | null;
         const maxReservations =
           usesLimitVal === "limited" ? parseOptionalInt(formData.get("maxReservationsCount")) : null;
@@ -95,7 +102,8 @@ export function PlanFormCreate({ slugError }: { slugError?: boolean }) {
             type,
             validityDays: validityDays ?? undefined,
             validityPeriod: validityPeriod ?? undefined,
-            billingMode: billingMode ?? undefined,
+            billingMode: billingModeVal ?? undefined,
+            recurringDiscountPercent,
             maxReservations: usesLimitVal === "unlimited" ? null : (maxReservations ?? undefined),
             maxReservationsPerDay: maxReservationsPerDay ?? undefined,
             maxReservationsPerWeek: maxReservationsPerWeek ?? undefined,
@@ -361,14 +369,36 @@ export function PlanFormCreate({ slugError }: { slugError?: boolean }) {
         <select
           id="billingMode"
           name="billingMode"
+          value={billingMode}
+          onChange={(e) => setBillingMode((e.target.value || "") as BillingMode | "")}
           className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-[var(--color-text)]"
         >
           <option value="">—</option>
-          <option value="ONE_TIME">Pago único</option>
-          <option value="RECURRING">Recurrente</option>
-          <option value="BOTH">Ambos</option>
+          <option value="ONE_TIME">Solo pago único</option>
+          <option value="RECURRING">Solo recurrente</option>
+          <option value="BOTH">Pago único y recurrente</option>
         </select>
       </div>
+
+      {showRecurringDiscount && (
+        <div>
+          <label htmlFor="recurringDiscountPercent" className="block text-sm font-medium text-[var(--color-text)] mb-1">
+            Descuento % si recurrente (0–100)
+          </label>
+          <input
+            id="recurringDiscountPercent"
+            name="recurringDiscountPercent"
+            type="number"
+            min={0}
+            max={100}
+            placeholder="0"
+            className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-[var(--color-text)]"
+          />
+          <p className="mt-1 text-xs text-[var(--color-text-muted)]">
+            Por ejemplo 10 = 10% de descuento sobre el precio al elegir suscripción recurrente.
+          </p>
+        </div>
+      )}
 
       {slugError && (
         <p className="text-sm text-[var(--color-error)]">Ese slug ya existe en este centro.</p>

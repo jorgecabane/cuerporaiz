@@ -9,6 +9,8 @@ export interface MisPlanItem {
   planId: string;
   planName: string;
   status: UserPlanStatus;
+  /** Si true, este plan fue activado por una suscripción recurrente (MP). */
+  isRecurring?: boolean;
   classesTotal: number | null;
   classesUsed: number;
   validFrom: string;
@@ -111,9 +113,16 @@ export function MisPlansTabs({ items }: { items: MisPlanItem[] }) {
                   key={item.id}
                   className={`rounded-[var(--radius-lg)] bg-[var(--color-surface)] p-4 sm:p-6 shadow-[var(--shadow-md)] border border-[var(--color-border)] border-l-4 ${borderColor}`}
                 >
-                  <h3 className="font-semibold text-[var(--color-text)]">
-                    {item.planName}
-                  </h3>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="font-semibold text-[var(--color-text)]">
+                      {item.planName}
+                    </h3>
+                    {item.isRecurring && (
+                      <span className="rounded-full bg-[var(--color-primary-light)] px-2 py-0.5 text-xs font-medium text-[var(--color-primary)]">
+                        Recurrente
+                      </span>
+                    )}
+                  </div>
                   <p className="mt-1 text-sm text-[var(--color-text-muted)]">
                     {statusLabel}
                   </p>

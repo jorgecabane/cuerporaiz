@@ -23,15 +23,15 @@ test.describe("Checkout (student)", () => {
       });
     });
 
-    await page.goto("/planes");
+    await page.goto("/panel/tienda");
     await expect(page.getByRole("heading", { name: "Planes", exact: true })).toBeVisible();
 
     await page.getByRole("button", { name: "Comprar", exact: true }).first().click();
     await expect(page).toHaveURL(/mercadopago\.com\/checkout\/v1\/redirect/, { timeout: 15000 });
 
     // Simula cerrar MP: volver a la app.
-    await page.goto("/planes");
-    await expect(page).toHaveURL(/\/planes/);
+    await page.goto("/panel/tienda");
+    await expect(page).toHaveURL(/\/panel\/tienda/);
   });
 });
 

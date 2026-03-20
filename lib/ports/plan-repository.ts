@@ -18,6 +18,8 @@ export interface Plan {
   validityDays: number | null;
   validityPeriod: ValidityPeriod | null;
   billingMode: BillingMode | null;
+  /** Descuento % (0-100) si el cliente elige pago recurrente; solo si billingMode RECURRING o BOTH */
+  recurringDiscountPercent: number | null;
   maxReservations: number | null;       // null = ilimitado en el período
   maxReservationsPerDay: number | null;
   maxReservationsPerWeek: number | null;
@@ -33,6 +35,7 @@ export interface PlanCreateInput {
   validityDays?: number | null;
   validityPeriod?: ValidityPeriod | null;
   billingMode?: BillingMode | null;
+  recurringDiscountPercent?: number | null;
   maxReservations?: number | null;
   maxReservationsPerDay?: number | null;
   maxReservationsPerWeek?: number | null;
@@ -48,6 +51,7 @@ export interface PlanUpdateInput {
   validityDays?: number | null;
   validityPeriod?: ValidityPeriod | null;
   billingMode?: BillingMode | null;
+  recurringDiscountPercent?: number | null;
   maxReservations?: number | null;
   maxReservationsPerDay?: number | null;
   maxReservationsPerWeek?: number | null;

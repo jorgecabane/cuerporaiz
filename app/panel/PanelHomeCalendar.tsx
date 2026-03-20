@@ -11,6 +11,7 @@ import {
   groupClassesByDay,
   ClassCard,
 } from "@/components/panel/reservas";
+import { localYmdFromDate } from "@/lib/datetime/local-ymd";
 
 const RESERVATIONS_PAGE_SIZE = 50;
 
@@ -50,6 +51,7 @@ export function PanelHomeCalendar({
   const [reserveForClassId, setReserveForClassId] = useState("");
   const [reserveForStudentLoading, setReserveForStudentLoading] = useState(false);
   const [cancelReservationLoadingId, setCancelReservationLoadingId] = useState<string | null>(null);
+  const [cancelMyReservationLoadingId, setCancelMyReservationLoadingId] = useState<string | null>(null);
   const [planSelectionForStudent, setPlanSelectionForStudent] = useState<{
     userId: string;
     liveClassId: string;
@@ -163,7 +165,7 @@ export function PanelHomeCalendar({
     for (let i = 0; i < 7; i++) {
       const d = new Date(weekStart);
       d.setDate(weekStart.getDate() + i);
-      keys.push(d.toISOString().slice(0, 10));
+      keys.push(localYmdFromDate(d));
     }
     return keys;
   }, [weekStart]);
@@ -187,7 +189,7 @@ export function PanelHomeCalendar({
 
   const effectiveSelectedDay = useMemo(() => {
     if (selectedDay && weekDayKeys.includes(selectedDay)) return selectedDay;
-    const today = new Date().toISOString().slice(0, 10);
+    const today = localYmdFromDate(new Date());
     if (weekDayKeys.includes(today)) return today;
     return weekDayKeys[0] ?? null;
   }, [selectedDay, weekDayKeys]);
@@ -216,6 +218,29 @@ export function PanelHomeCalendar({
       ),
     [reservations]
   );
+
+  const myReservationIdByLiveClassId = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const r of reservations) {
+      if (r.status === "CONFIRMED") map.set(r.liveClassId, r.id);
+    }
+    return map;
+  }, [reservations]);
+
+  async function handleCancelMyReservation(reservationId: string) {
+    setCancelMyReservationLoadingId(reservationId);
+    try {
+      const res = await fetch(`/api/reservations/${reservationId}/cancel`, {
+        method: "PATCH",
+      });
+      if (res.ok) {
+        await loadReservations();
+        await loadClassesForWeek(weekAnchor);
+      }
+    } finally {
+      setCancelMyReservationLoadingId(null);
+    }
+  }
 
   async function handleReserve(liveClassId: string, userPlanId?: string) {
     setActionLoading(liveClassId);
@@ -440,7 +465,10 @@ export function PanelHomeCalendar({
               class={c}
               isPast={new Date(c.startsAt) < new Date()}
               alreadyReserved={myConfirmedLiveClassIds.has(c.id)}
+              myReservationId={myReservationIdByLiveClassId.get(c.id) ?? null}
               onReserve={handleReserve}
+              onCancelMyReservation={handleCancelMyReservation}
+              cancelMyReservationLoadingId={cancelMyReservationLoadingId}
               actionLoadingId={actionLoading}
             />
           ))}

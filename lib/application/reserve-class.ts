@@ -21,6 +21,7 @@ import {
 import { planRepository } from "@/lib/adapters/db";
 import { sendEmailSafe } from "@/lib/application/send-email";
 import { buildReservationConfirmationEmail } from "@/lib/email/transactional";
+import { formatMinutesAsShortSpanish } from "@/lib/domain/center-policy";
 
 function toReservationDto(r: Reservation, liveClassDto?: LiveClassDto): ReservationDto {
   return {
@@ -82,16 +83,17 @@ export async function reserveClassUseCase(
     return { success: false, code: "CLASS_PAST", message: "La clase ya pasó" };
   }
 
-  // Política: bookBeforeHours
+  // Política: bookBeforeMinutes
   const center = await centerRepository.findById(centerId);
   if (center) {
-    const hoursUntilClass =
-      (liveClass.startsAt.getTime() - Date.now()) / (1000 * 60 * 60);
-    if (hoursUntilClass < center.bookBeforeHours) {
+    const minutesUntilClass =
+      (liveClass.startsAt.getTime() - Date.now()) / (1000 * 60);
+    if (minutesUntilClass < center.bookBeforeMinutes) {
+      const need = formatMinutesAsShortSpanish(center.bookBeforeMinutes);
       return {
         success: false,
         code: "BOOKING_WINDOW_CLOSED",
-        message: `Solo puedes reservar con al menos ${center.bookBeforeHours} horas de anticipación`,
+        message: `Solo puedes reservar con al menos ${need} de anticipación`,
       };
     }
 
@@ -228,7 +230,7 @@ export async function reserveClassUseCase(
 
 /**
  * Cancelar una reserva.
- * Respeta políticas del centro (cancelBeforeHours): si se cancela dentro del plazo, se libera cupo.
+ * Respeta políticas del centro (cancelBeforeMinutes): si se cancela dentro del plazo, se libera cupo.
  */
 export async function cancelReservationUseCase(
   userId: string,
@@ -256,11 +258,11 @@ export async function cancelReservationUseCase(
     return { success: false, code: "CENTER_NOT_FOUND", message: "Centro no encontrado" };
   }
 
-  const cancelBeforeHours = center.cancelBeforeHours ?? 0;
-  const hoursBeforeClass =
-    (liveClass.startsAt.getTime() - Date.now()) / (1000 * 60 * 60);
+  const cancelBeforeMinutes = center.cancelBeforeMinutes ?? 0;
+  const minutesBeforeClass =
+    (liveClass.startsAt.getTime() - Date.now()) / (1000 * 60);
 
-  if (hoursBeforeClass < 0) {
+  if (minutesBeforeClass < 0) {
     return {
       success: false,
       code: "CLASS_STARTED",
@@ -269,7 +271,7 @@ export async function cancelReservationUseCase(
   }
 
   let newStatus: "CANCELLED" | "LATE_CANCELLED";
-  if (hoursBeforeClass >= cancelBeforeHours) {
+  if (minutesBeforeClass >= cancelBeforeMinutes) {
     newStatus = "CANCELLED";
   } else {
     newStatus = "LATE_CANCELLED";
@@ -325,11 +327,11 @@ export async function cancelReservationByStaffUseCase(
     return { success: false, code: "CENTER_NOT_FOUND", message: "Centro no encontrado" };
   }
 
-  const cancelBeforeHours = center.cancelBeforeHours ?? 0;
-  const hoursBeforeClass =
-    (liveClass.startsAt.getTime() - Date.now()) / (1000 * 60 * 60);
+  const cancelBeforeMinutes = center.cancelBeforeMinutes ?? 0;
+  const minutesBeforeClass =
+    (liveClass.startsAt.getTime() - Date.now()) / (1000 * 60);
 
-  if (hoursBeforeClass < 0) {
+  if (minutesBeforeClass < 0) {
     return {
       success: false,
       code: "CLASS_STARTED",
@@ -338,7 +340,7 @@ export async function cancelReservationByStaffUseCase(
   }
 
   let newStatus: "CANCELLED" | "LATE_CANCELLED";
-  if (hoursBeforeClass >= cancelBeforeHours) {
+  if (minutesBeforeClass >= cancelBeforeMinutes) {
     newStatus = "CANCELLED";
   } else {
     newStatus = "LATE_CANCELLED";

@@ -15,6 +15,7 @@ function toDomain(p: {
   validityDays: number | null;
   validityPeriod: PrismaValidityPeriod | null;
   billingMode: PrismaBillingMode | null;
+  recurringDiscountPercent: number | null;
   maxReservations: number | null;
   maxReservationsPerDay: number | null;
   maxReservationsPerWeek: number | null;
@@ -31,6 +32,7 @@ function toDomain(p: {
     validityDays: p.validityDays,
     validityPeriod: p.validityPeriod as unknown as ValidityPeriod | null,
     billingMode: p.billingMode as unknown as BillingMode | null,
+    recurringDiscountPercent: p.recurringDiscountPercent,
     maxReservations: p.maxReservations,
     maxReservationsPerDay: p.maxReservationsPerDay,
     maxReservationsPerWeek: p.maxReservationsPerWeek,
@@ -79,6 +81,7 @@ export const planRepository: IPlanRepository = {
         validityDays: data.validityDays ?? null,
         validityPeriod: (data.validityPeriod ?? null) as PrismaValidityPeriod | null,
         billingMode: (data.billingMode ?? null) as PrismaBillingMode | null,
+        recurringDiscountPercent: data.recurringDiscountPercent ?? null,
         maxReservations: data.maxReservations ?? null,
         maxReservationsPerDay: data.maxReservationsPerDay ?? null,
         maxReservationsPerWeek: data.maxReservationsPerWeek ?? null,
@@ -102,6 +105,7 @@ export const planRepository: IPlanRepository = {
         ...(data.validityDays !== undefined && { validityDays: data.validityDays }),
         ...(data.validityPeriod !== undefined && { validityPeriod: data.validityPeriod as PrismaValidityPeriod | null }),
         ...(data.billingMode !== undefined && { billingMode: data.billingMode as PrismaBillingMode | null }),
+        ...(data.recurringDiscountPercent !== undefined && { recurringDiscountPercent: data.recurringDiscountPercent }),
         ...(data.maxReservations !== undefined && { maxReservations: data.maxReservations }),
         ...(data.maxReservationsPerDay !== undefined && { maxReservationsPerDay: data.maxReservationsPerDay }),
         ...(data.maxReservationsPerWeek !== undefined && { maxReservationsPerWeek: data.maxReservationsPerWeek }),

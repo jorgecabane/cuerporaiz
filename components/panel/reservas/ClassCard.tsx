@@ -31,8 +31,14 @@ export interface ClassCardProps {
   isPast?: boolean;
   /** Solo para alumno: ya tiene reserva confirmada en esta clase */
   alreadyReserved?: boolean;
+  /** Solo para alumno: id de la reserva confirmada (para cancelar desde el calendario) */
+  myReservationId?: string | null;
   /** Solo para alumno: callback al reservar */
   onReserve?: (liveClassId: string) => void;
+  /** Solo para alumno: cancelar mi reserva */
+  onCancelMyReservation?: (reservationId: string) => void;
+  /** Solo para alumno: id de reserva en proceso de cancelación */
+  cancelMyReservationLoadingId?: string | null;
   /** Solo para alumno: id de la clase que está cargando (reservando) */
   actionLoadingId?: string | null;
   /** Variante staff: lista de asistentes (reservationId, userName, status) */
@@ -60,7 +66,10 @@ export function ClassCard({
   class: c,
   isPast = false,
   alreadyReserved = false,
+  myReservationId = null,
   onReserve,
+  onCancelMyReservation,
+  cancelMyReservationLoadingId = null,
   actionLoadingId,
   attendees,
   onMarkAttendance,
@@ -320,9 +329,25 @@ export function ClassCard({
               </Button>
             )}
             {alreadyReserved && (
-              <span className="rounded-[var(--radius-md)] border border-[var(--color-border)] px-3 py-2 text-sm text-[var(--color-text-muted)]">
-                Ya reservaste
-              </span>
+              <div className="flex flex-col items-end gap-2 sm:flex-row sm:items-center">
+                <span className="rounded-[var(--radius-md)] border border-[var(--color-border)] px-3 py-2 text-sm text-[var(--color-text-muted)]">
+                  Ya reservaste
+                </span>
+                {!isPast &&
+                  myReservationId &&
+                  onCancelMyReservation && (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      disabled={cancelMyReservationLoadingId != null}
+                      onClick={() => onCancelMyReservation(myReservationId)}
+                    >
+                      {cancelMyReservationLoadingId === myReservationId
+                        ? "Cancelando…"
+                        : "Cancelar reserva"}
+                    </Button>
+                  )}
+              </div>
             )}
             {noSpots && !alreadyReserved && (
               <span className="text-sm text-[var(--color-text-muted)]">Sin cupos</span>

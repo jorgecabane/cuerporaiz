@@ -12,6 +12,7 @@ function toDomain(r: {
   planId: string;
   centerId: string;
   orderId: string | null;
+  subscriptionId: string | null;
   status: PrismaUserPlanStatus;
   paymentStatus: PrismaPlanPaymentStatus;
   classesTotal: number | null;
@@ -31,6 +32,7 @@ function toDomain(r: {
     planId: r.planId,
     centerId: r.centerId,
     orderId: r.orderId,
+    subscriptionId: r.subscriptionId,
     status: r.status as unknown as UserPlanStatus,
     paymentStatus: r.paymentStatus as unknown as PlanPaymentStatus,
     classesTotal: r.classesTotal,
@@ -54,6 +56,7 @@ export const userPlanRepository: IUserPlanRepository = {
         planId: data.planId,
         centerId: data.centerId,
         orderId: data.orderId ?? null,
+        subscriptionId: data.subscriptionId ?? null,
         paymentStatus: (data.paymentStatus ?? "PENDING") as PrismaPlanPaymentStatus,
         classesTotal: data.classesTotal ?? null,
         validFrom: data.validFrom ?? new Date(),

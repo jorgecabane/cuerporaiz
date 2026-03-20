@@ -1,9 +1,9 @@
 import type { Center } from "@/lib/domain";
 
 export interface CenterPoliciesUpdate {
-  cancelBeforeHours?: number;
+  cancelBeforeMinutes?: number;
   maxNoShowsPerMonth?: number;
-  bookBeforeHours?: number;
+  bookBeforeMinutes?: number;
   notifyWhenSlotFreed?: boolean;
   instructorCanReserveForStudent?: boolean;
   allowTrialClassPerPerson?: boolean;

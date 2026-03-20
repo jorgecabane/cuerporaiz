@@ -2,8 +2,8 @@ import { test, expect } from "@playwright/test";
 
 test.describe("Planes (student)", () => {
   test("ve Mis planes (activos) y Planes disponibles", async ({ page }) => {
-    await page.goto("/planes");
-    await expect(page).toHaveURL(/\/planes/);
+    await page.goto("/panel/tienda");
+    await expect(page).toHaveURL(/\/panel\/tienda/);
 
     await expect(page.getByRole("heading", { name: "Planes", exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Mis planes", exact: true })).toBeVisible();
