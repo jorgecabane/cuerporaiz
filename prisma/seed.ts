@@ -99,7 +99,7 @@ async function main() {
   }
   // Asegurar al menos 1 clase futura "reservable" (lejos de ventanas de bloqueo).
   const now = new Date();
-  // Center.bookBeforeHours default = 24 → dejamos margen (48h) para evitar flakiness.
+  // bookBeforeMinutes default = 24h → dejamos margen (48h) para evitar flakiness.
   const minReservable = new Date(now.getTime() + 48 * 60 * 60 * 1000);
   const hasFutureReservable = await prisma.liveClass.findFirst({
     where: {
@@ -166,6 +166,7 @@ async function main() {
           type: "MEMBERSHIP_ON_DEMAND",
           validityPeriod: "MONTHLY",
           billingMode: "RECURRING",
+          recurringDiscountPercent: 10,
         },
       ],
     });

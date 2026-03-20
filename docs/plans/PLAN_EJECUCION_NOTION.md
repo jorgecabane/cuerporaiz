@@ -128,7 +128,8 @@
   - [ ] Email bienvenida cliente — se debe enviar al agregar un cliente a mano.
   - [ ] Recordatorio antes de la clase — template listo, falta cron/trigger.  
   - [ ] Aviso "cupo liberado" — template listo, falta trigger al cancelar.  
-  - [ ] Aviso pago fallido (centro y alumno) — template listo, falta trigger.  
+  - [ ] Aviso pago fallido (centro y alumno) — template listo, falta trigger. 
+  - [ ] Confirmación de pago plan
   - *Base:* Resend configurado; `sendEmailSafe` wrapper fire-and-forget.
 
 - [ ] **4.2 Reportes (v1)**  

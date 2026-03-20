@@ -4,14 +4,14 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { CenterHoliday } from "@/lib/domain";
 import { createHoliday, deleteHoliday } from "./actions";
+import { formatHolidayDateDisplay, holidayCalendarKey } from "@/lib/domain/holiday-date";
 
-function formatDate(d: Date): string {
-  return new Date(d).toLocaleDateString("es-CL", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
+function localTodayKey(): string {
+  const n = new Date();
+  const y = n.getFullYear();
+  const m = String(n.getMonth() + 1).padStart(2, "0");
+  const d = String(n.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
 }
 
 interface Props {
@@ -47,9 +47,9 @@ export function HolidayList({ holidays }: Props) {
     startTransition(() => deleteHoliday(id));
   }
 
-  const now = new Date();
-  const upcomingHolidays = holidays.filter((h) => new Date(h.date) >= new Date(now.getFullYear(), now.getMonth(), now.getDate()));
-  const pastHolidays = holidays.filter((h) => new Date(h.date) < new Date(now.getFullYear(), now.getMonth(), now.getDate()));
+  const todayKey = localTodayKey();
+  const upcomingHolidays = holidays.filter((h) => holidayCalendarKey(h.date) >= todayKey);
+  const pastHolidays = holidays.filter((h) => holidayCalendarKey(h.date) < todayKey);
 
   return (
     <div className="space-y-6">
@@ -131,7 +131,7 @@ export function HolidayList({ holidays }: Props) {
                     {h.label || "Feriado"}
                   </p>
                   <p className="text-xs text-[var(--color-text-muted)] capitalize">
-                    {formatDate(h.date)}
+                    {formatHolidayDateDisplay(h.date)}
                   </p>
                 </div>
                 <div>
@@ -183,7 +183,7 @@ export function HolidayList({ holidays }: Props) {
                     {h.label || "Feriado"}
                   </p>
                   <p className="text-xs text-[var(--color-text-muted)] capitalize">
-                    {formatDate(h.date)}
+                    {formatHolidayDateDisplay(h.date)}
                   </p>
                 </div>
               </li>

@@ -76,7 +76,7 @@ describe("cancelReservationUseCase", () => {
     mocks.reservationRepository.findById.mockResolvedValue(makeReservation());
     mocks.centerRepository.findById.mockResolvedValue({
       id: centerId,
-      cancelBeforeHours: 12,
+      cancelBeforeMinutes: 12 * 60,
     });
     mocks.userPlanRepository.findById.mockResolvedValue({ id: "up-1", classesTotal: 10, classesUsed: 0 });
     mocks.reservationRepository.updateStatus.mockImplementation(
@@ -151,7 +151,7 @@ describe("cancelReservationByStaffUseCase", () => {
     mocks.reservationRepository.findById.mockResolvedValue(makeReservation());
     mocks.centerRepository.findById.mockResolvedValue({
       id: centerId,
-      cancelBeforeHours: 12,
+      cancelBeforeMinutes: 12 * 60,
     });
     mocks.userPlanRepository.findById.mockResolvedValue({ id: "up-1", classesTotal: 10, classesUsed: 0 });
     mocks.reservationRepository.updateStatus.mockImplementation(

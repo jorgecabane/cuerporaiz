@@ -9,9 +9,11 @@ export interface Center {
   name: string;
   slug: string;
   currency: string; // moneda del centro (ej. CLP); usada en planes
-  cancelBeforeHours: number;
+  /** Minutos antes del inicio para poder cancelar sin consumir clase */
+  cancelBeforeMinutes: number;
   maxNoShowsPerMonth: number;
-  bookBeforeHours: number;
+  /** Minutos mínimos que deben quedar antes del inicio para poder reservar */
+  bookBeforeMinutes: number;
   notifyWhenSlotFreed: boolean;
   instructorCanReserveForStudent: boolean;
   allowTrialClassPerPerson: boolean;

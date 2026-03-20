@@ -14,12 +14,13 @@ import {
   segmentReservations,
   canCancelReservation,
 } from "./segment-reservations";
+import { formatMinutesAsShortSpanish } from "@/lib/domain/center-policy";
 
-function willConsumeClassIfCancelNow(r: ReservationDto, cancelBeforeHours: number): boolean {
+function willConsumeClassIfCancelNow(r: ReservationDto, cancelBeforeMinutes: number): boolean {
   const startsAt = r.liveClass?.startsAt;
   if (!startsAt) return true;
-  const hoursBeforeClass = (new Date(startsAt).getTime() - Date.now()) / (1000 * 60 * 60);
-  return hoursBeforeClass < cancelBeforeHours;
+  const minutesBeforeClass = (new Date(startsAt).getTime() - Date.now()) / (1000 * 60);
+  return minutesBeforeClass < cancelBeforeMinutes;
 }
 
 /** Modal de confirmación: a tiempo vs tardía */
@@ -84,8 +85,8 @@ function CancelConfirmModal({
 export interface MisReservasSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** Horas antes de la clase para cancelar sin consumir (config del centro). */
-  cancelBeforeHours: number;
+  /** Minutos antes de la clase para cancelar sin consumir (config del centro). */
+  cancelBeforeMinutes: number;
   /** Microcopy opcional: "Cancelación sin cargo hasta X h antes" */
   cancelPolicyCopy?: string;
 }
@@ -93,7 +94,7 @@ export interface MisReservasSheetProps {
 export function MisReservasSheet({
   open,
   onOpenChange,
-  cancelBeforeHours,
+  cancelBeforeMinutes,
   cancelPolicyCopy,
 }: MisReservasSheetProps) {
   const [items, setItems] = useState<ReservationDto[]>([]);
@@ -170,7 +171,7 @@ export function MisReservasSheet({
   }, [toast]);
 
   const isLateCancel = reservationToCancel
-    ? willConsumeClassIfCancelNow(reservationToCancel, cancelBeforeHours)
+    ? willConsumeClassIfCancelNow(reservationToCancel, cancelBeforeMinutes)
     : false;
 
   return (
@@ -184,7 +185,7 @@ export function MisReservasSheet({
         <div className="px-4 py-5 pb-6">
           {cancelPolicyCopy && (
             <p className="mb-4 px-1 text-sm text-[var(--color-text-muted)] leading-relaxed">
-              Recuerda que puedes cancelar con hasta {cancelBeforeHours} horas de anticipación sin que se consuma tu clase. Si cancelas más tarde, se descontará 1 clase de tu plan, pero se libera tu cupo para que otra persona pueda reservar.
+              Recuerda que puedes cancelar con hasta {formatMinutesAsShortSpanish(cancelBeforeMinutes)} de anticipación sin que se consuma tu clase. Si cancelas más tarde, se descontará 1 clase de tu plan, pero se libera tu cupo para que otra persona pueda reservar.
             </p>
           )}
           {toast && (

@@ -19,9 +19,9 @@ model Center {
   slug      String   @unique
   currency  String   @default("CLP")  // moneda del centro (localidad); usada en planes
   // Políticas del centro (tenant)
-  cancelBeforeHours   Int      @default(12)  // horas antes para cancelar sin consumir clase
+  cancelBeforeMinutes Int      @default(720)   // anticipación mínima (min) para cancelar sin consumir clase (720 = 12 h)
   maxNoShowsPerMonth   Int      @default(2)   // no-shows máximos antes de advertencia/bloqueo
-  bookBeforeHours      Int      @default(24)  // ventana para reservar: hasta X horas antes del inicio
+  bookBeforeMinutes    Int      @default(1440) // ventana para reservar: minutos antes del inicio deben quedar libres (1440 = 24 h)
   notifyWhenSlotFreed  Boolean  @default(true)  // avisar cuando se libera un cupo
   instructorCanReserveForStudent Boolean @default(true)  // profesora puede reservar en nombre de alumna
   allowTrialClassPerPerson Boolean @default(true)  // una clase de prueba por persona
@@ -54,6 +54,7 @@ model Center {
   userPlans       UserPlan[]
   manualPayments  ManualPayment[]
   instructorBankAccounts InstructorBankAccount[]
+  subscriptions  Subscription[]
 }
 
 // ─── Usuarios (sin datos de infra; dominio puro en lib/domain) ──────────────
@@ -79,6 +80,7 @@ model User {
   userPlans      UserPlan[]
   manualPayments ManualPayment[]
   instructorBankAccounts InstructorBankAccount[]
+  subscriptions  Subscription[]
 }
 
 // ─── Disciplinas (prácticas: Yoga, Pilates, TRX…) ─────────────────────────
@@ -206,6 +208,7 @@ model UserPlan {
   planId          String
   centerId        String
   orderId         String?           // null si fue asignado manualmente por admin
+  subscriptionId  String?           // null = pago único; set = plan recurrente (suscripción MP)
   status          UserPlanStatus    @default(ACTIVE)
   paymentStatus   PlanPaymentStatus @default(PENDING)
   classesTotal    Int?              // null = ilimitado
@@ -222,12 +225,14 @@ model UserPlan {
   user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   plan            Plan              @relation(fields: [planId], references: [id], onDelete: Restrict)
   center          Center            @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  subscription    Subscription?    @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
   reservations    Reservation[]
   manualPayments  ManualPayment[]
 
   @@index([userId, centerId])
   @@index([centerId])
   @@index([status])
+  @@index([subscriptionId])
 }
 
 // Pagos manuales: pueden ser de un UserPlan (cuota, transferencia) o sueltos (registro contable)
@@ -413,6 +418,8 @@ model Plan {
   validityDays   Int?             // vigencia por días (ej. 15 días)
   validityPeriod ValidityPeriod?  // vigencia por período (1 mensual, 1 trimestral, etc.)
   billingMode    BillingMode?
+  // Descuento % (0-100) si el cliente elige pago recurrente; solo si billingMode RECURRING o BOTH
+  recurringDiscountPercent Int?   @default(0)
   // Cuántas veces puede asistir en el período: null = ilimitado
   maxReservations       Int?
   maxReservationsPerDay Int?  // distribución: máx por día
@@ -423,6 +430,7 @@ model Plan {
   center Center @relation(fields: [centerId], references: [id], onDelete: Cascade)
   orders Order[]
   userPlans UserPlan[]
+  subscriptions Subscription[]
 
   @@unique([centerId, slug])
   @@index([centerId])
@@ -441,6 +449,7 @@ model Order {
   centerId           String
   userId             String
   planId             String
+  subscriptionId     String?     // si es cuota de suscripción recurrente
   amountCents        Int
   currency           String      @default("CLP")
   status             OrderStatus @default(PENDING)
@@ -450,15 +459,49 @@ model Order {
   createdAt          DateTime    @default(now())
   updatedAt          DateTime    @updatedAt
 
-  center Center @relation(fields: [centerId], references: [id], onDelete: Cascade)
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  plan   Plan   @relation(fields: [planId], references: [id], onDelete: Restrict)
+  center       Center        @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan         Plan          @relation(fields: [planId], references: [id], onDelete: Restrict)
+  subscription Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
 
   @@index([centerId])
   @@index([centerId, createdAt])
   @@index([userId])
   @@index([externalReference])
   @@index([mpPaymentId])
+  @@index([subscriptionId])
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAUSED
+  CANCELLED
+  PAYMENT_FAILED
+}
+
+model Subscription {
+  id                 String             @id @default(cuid())
+  centerId           String
+  userId             String
+  planId             String
+  mpSubscriptionId   String             @unique
+  mpPayerId          String?
+  status             SubscriptionStatus  @default(ACTIVE)
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  center     Center     @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan       Plan       @relation(fields: [planId], references: [id], onDelete: Restrict)
+  userPlans  UserPlan[]
+  orders     Order[]
+
+  @@index([centerId])
+  @@index([userId])
+  @@index([planId])
+  @@index([mpSubscriptionId])
 }
 
 model MercadoPagoWebhookEvent {

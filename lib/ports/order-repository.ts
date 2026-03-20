@@ -22,6 +22,8 @@ export interface Order {
   centerId: string;
   userId: string;
   planId: string;
+  /** Si no null, esta orden es una cuota de suscripción recurrente */
+  subscriptionId: string | null;
   amountCents: number;
   currency: string;
   status: OrderStatus;
@@ -36,6 +38,7 @@ export interface CreateOrderInput {
   centerId: string;
   userId: string;
   planId: string;
+  subscriptionId?: string | null;
   amountCents: number;
   currency: string;
   externalReference: string;

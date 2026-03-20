@@ -221,7 +221,7 @@ export function ReservasPanel({
           <p className="text-[var(--color-text)] mb-3">{reserveError.message}</p>
           <div className="flex flex-wrap gap-2">
             <Link
-              href="/planes"
+              href="/panel/tienda"
               className="inline-flex items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-[var(--color-text-inverse)] hover:bg-[var(--color-primary-hover)]"
             >
               Ver planes

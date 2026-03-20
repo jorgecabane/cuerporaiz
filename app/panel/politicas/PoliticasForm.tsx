@@ -3,6 +3,14 @@
 import { useTransition, useState } from "react";
 import { updateCenterPolicies } from "./actions";
 import type { Center } from "@/lib/domain";
+import {
+  PolicyAnticipationFields,
+  parsePolicyMinutesFromForm,
+} from "@/components/panel/config/PolicyAnticipationFields";
+import {
+  MAX_BOOK_BEFORE_MINUTES,
+  MAX_CANCEL_BEFORE_MINUTES,
+} from "@/lib/domain/center-policy";
 
 type Props = { center: Center };
 
@@ -14,18 +22,18 @@ export function PoliticasForm({ center }: Props) {
     <form
       action={(formData) => {
         setError(null);
-        const cancelBeforeHours = formData.get("cancelBeforeHours");
+        const cancelBeforeMinutes = parsePolicyMinutesFromForm(formData, "cancelBefore");
         const maxNoShowsPerMonth = formData.get("maxNoShowsPerMonth");
-        const bookBeforeHours = formData.get("bookBeforeHours");
+        const bookBeforeMinutes = parsePolicyMinutesFromForm(formData, "bookBefore");
         const notifyWhenSlotFreed = formData.get("notifyWhenSlotFreed") === "on";
         const instructorCanReserveForStudent = formData.get("instructorCanReserveForStudent") === "on";
         const allowTrialClassPerPerson = formData.get("allowTrialClassPerPerson") === "on";
 
         startTransition(async () => {
           const result = await updateCenterPolicies(center.id, {
-            cancelBeforeHours: cancelBeforeHours != null ? Number(cancelBeforeHours) : undefined,
+            cancelBeforeMinutes,
             maxNoShowsPerMonth: maxNoShowsPerMonth != null ? Number(maxNoShowsPerMonth) : undefined,
-            bookBeforeHours: bookBeforeHours != null ? Number(bookBeforeHours) : undefined,
+            bookBeforeMinutes,
             notifyWhenSlotFreed,
             instructorCanReserveForStudent,
             allowTrialClassPerPerson,
@@ -36,34 +44,22 @@ export function PoliticasForm({ center }: Props) {
       className="space-y-6"
     >
       <div className="grid gap-4 sm:grid-cols-1">
-        <div>
-          <label htmlFor="cancelBeforeHours" className="block text-sm font-medium text-[var(--color-text)] mb-1">
-            Horas antes para cancelar (sin consumir clase)
-          </label>
-          <input
-            id="cancelBeforeHours"
-            name="cancelBeforeHours"
-            type="number"
-            min={0}
-            max={168}
-            defaultValue={center.cancelBeforeHours}
-            className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 text-[var(--color-text)]"
-          />
-        </div>
-        <div>
-          <label htmlFor="bookBeforeHours" className="block text-sm font-medium text-[var(--color-text)] mb-1">
-            Ventana para reservar (hasta cuántas horas antes del inicio se puede reservar)
-          </label>
-          <input
-            id="bookBeforeHours"
-            name="bookBeforeHours"
-            type="number"
-            min={0}
-            max={720}
-            defaultValue={center.bookBeforeHours}
-            className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 text-[var(--color-text)]"
-          />
-        </div>
+        <PolicyAnticipationFields
+          key={`cancel-${center.updatedAt.toISOString()}`}
+          namePrefix="cancelBefore"
+          initialMinutes={center.cancelBeforeMinutes}
+          maxMinutes={MAX_CANCEL_BEFORE_MINUTES}
+          label="Anticipación para cancelar sin consumir clase"
+          description="El alumno puede cancelar sin que se descuente una clase si lo hace con al menos este tiempo antes del inicio."
+        />
+        <PolicyAnticipationFields
+          key={`book-${center.updatedAt.toISOString()}`}
+          namePrefix="bookBefore"
+          initialMinutes={center.bookBeforeMinutes}
+          maxMinutes={MAX_BOOK_BEFORE_MINUTES}
+          label="Ventana mínima para reservar"
+          description="Solo se puede reservar si quedan al menos este tiempo hasta el inicio de la clase."
+        />
         <div>
           <label htmlFor="maxNoShowsPerMonth" className="block text-sm font-medium text-[var(--color-text)] mb-1">
             No-shows máximos por mes (antes de advertencia/bloqueo)

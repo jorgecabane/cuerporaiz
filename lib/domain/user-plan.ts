@@ -12,6 +12,8 @@ export interface UserPlan {
   planId: string;
   centerId: string;
   orderId: string | null;
+  /** Si no null, este plan fue activado por una suscripción recurrente (MP) */
+  subscriptionId: string | null;
   status: UserPlanStatus;
   paymentStatus: PlanPaymentStatus;
   classesTotal: number | null;

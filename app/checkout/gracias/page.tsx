@@ -91,7 +91,7 @@ export default async function CheckoutGraciasPage({
               <Button href="/panel" variant="primary">
                 Ir al panel
               </Button>
-              <Button href="/planes" variant="secondary">
+              <Button href="/panel/tienda" variant="secondary">
                 Ver mis planes
               </Button>
               <Button href="/" variant="ghost">
@@ -101,7 +101,7 @@ export default async function CheckoutGraciasPage({
           )}
           {result === "failure" && (
             <>
-              <Button href="/planes" variant="primary">
+              <Button href="/panel/tienda" variant="primary">
                 Ver más planes
               </Button>
               <Button href="/panel" variant="secondary">
@@ -117,7 +117,7 @@ export default async function CheckoutGraciasPage({
               <Button href="/panel" variant="primary">
                 Ir al panel
               </Button>
-              <Button href="/planes" variant="secondary">
+              <Button href="/panel/tienda" variant="secondary">
                 Ver más planes
               </Button>
               <Button href="/" variant="ghost">

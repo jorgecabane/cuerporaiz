@@ -68,11 +68,11 @@ function NavLink({
 }) {
   const pathname = usePathname();
   const isPanelRoot = href === "/panel";
-  const isPlanesPublic = href === "/planes";
+  const isTienda = href === "/panel/tienda";
   const isActive = isPanelRoot
     ? pathname === "/panel"
-    : isPlanesPublic
-      ? pathname === "/planes"
+    : isTienda
+      ? pathname === "/panel/tienda"
       : pathname?.startsWith(href);
   return (
     <Link

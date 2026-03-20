@@ -8,6 +8,7 @@ function makeUserPlan(overrides: Partial<Parameters<typeof isUserPlanUsable>[0]>
     planId: "p",
     centerId: "c",
     orderId: null,
+    subscriptionId: null,
     status: "ACTIVE" as const,
     paymentStatus: "PAID" as const,
     classesTotal: 10,

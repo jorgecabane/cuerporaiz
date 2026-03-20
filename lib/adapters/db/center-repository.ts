@@ -6,9 +6,9 @@ function toDomainCenter(c: {
   name: string;
   slug: string;
   currency: string;
-  cancelBeforeHours: number;
+  cancelBeforeMinutes: number;
   maxNoShowsPerMonth: number;
-  bookBeforeHours: number;
+  bookBeforeMinutes: number;
   notifyWhenSlotFreed: boolean;
   instructorCanReserveForStudent: boolean;
   allowTrialClassPerPerson: boolean;
@@ -31,9 +31,9 @@ function toDomainCenter(c: {
     name: c.name,
     slug: c.slug,
     currency: c.currency ?? "CLP",
-    cancelBeforeHours: c.cancelBeforeHours,
+    cancelBeforeMinutes: c.cancelBeforeMinutes,
     maxNoShowsPerMonth: c.maxNoShowsPerMonth,
-    bookBeforeHours: c.bookBeforeHours,
+    bookBeforeMinutes: c.bookBeforeMinutes,
     notifyWhenSlotFreed: c.notifyWhenSlotFreed,
     instructorCanReserveForStudent: c.instructorCanReserveForStudent,
     allowTrialClassPerPerson: c.allowTrialClassPerPerson,
@@ -76,9 +76,9 @@ export const centerRepository: ICenterRepository = {
 
   async updatePolicies(centerId: string, data: CenterPoliciesUpdate) {
     const payload: Record<string, unknown> = {};
-    if (data.cancelBeforeHours !== undefined) payload.cancelBeforeHours = data.cancelBeforeHours;
+    if (data.cancelBeforeMinutes !== undefined) payload.cancelBeforeMinutes = data.cancelBeforeMinutes;
     if (data.maxNoShowsPerMonth !== undefined) payload.maxNoShowsPerMonth = data.maxNoShowsPerMonth;
-    if (data.bookBeforeHours !== undefined) payload.bookBeforeHours = data.bookBeforeHours;
+    if (data.bookBeforeMinutes !== undefined) payload.bookBeforeMinutes = data.bookBeforeMinutes;
     if (data.notifyWhenSlotFreed !== undefined) payload.notifyWhenSlotFreed = data.notifyWhenSlotFreed;
     if (data.instructorCanReserveForStudent !== undefined) payload.instructorCanReserveForStudent = data.instructorCanReserveForStudent;
     if (data.allowTrialClassPerPerson !== undefined) payload.allowTrialClassPerPerson = data.allowTrialClassPerPerson;

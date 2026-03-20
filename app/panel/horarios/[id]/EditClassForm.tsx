@@ -81,14 +81,14 @@ export function EditClassForm({
       : null;
 
     if (!title || !startsAt) return;
-
+    const startsAtIso = new Date(startsAt).toISOString();
     const meetingUrl = isOnline ? (meetingUrlValue?.trim() || null) : null;
     const formPayload = {
       id: liveClass.id,
       title,
       disciplineId,
       instructorId,
-      startsAt,
+      startsAt: startsAtIso,
       durationMinutes,
       maxCapacity,
       isOnline: !!meetingUrl,
@@ -129,7 +129,8 @@ export function EditClassForm({
       return;
     }
     try {
-      const res = await createMeetingForClass(provider, { title, startTime: startsAt, durationMinutes });
+      const startTime = new Date(startsAt).toISOString();
+      const res = await createMeetingForClass(provider, { title, startTime, durationMinutes });
       setMeetingUrlValue(res.joinUrl);
       setLastUsedProvider(provider);
     } catch (err) {

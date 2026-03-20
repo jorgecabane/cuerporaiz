@@ -6,7 +6,7 @@
 export const PANEL_NAV_ITEMS = [
   { href: "/panel", label: "Home" },
   { href: "/panel/reservas", label: "Reservas" },
-  { href: "/planes", label: "Planes y comprar" },
+  { href: "/panel/tienda", label: "Planes y comprar" },
   { href: "/panel/mis-pagos", label: "Mis pagos" },
 ] as const;
 

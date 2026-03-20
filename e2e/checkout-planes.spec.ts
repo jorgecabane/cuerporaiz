@@ -5,14 +5,14 @@ test.describe("Planes y checkout", () => {
     test.use({ storageState: { cookies: [], origins: [] } });
 
     test("planes requiere login y redirige", async ({ page }) => {
-      await page.goto("/planes");
+      await page.goto("/panel/tienda");
       await expect(page).toHaveURL(/\/auth\/login/);
     });
   });
 
   test("planes carga y muestra sección", async ({ page }) => {
-    await page.goto("/planes");
-    await expect(page).toHaveURL(/\/planes/);
+    await page.goto("/panel/tienda");
+    await expect(page).toHaveURL(/\/panel\/tienda/);
     await expect(page.getByRole("heading", { name: "Planes", exact: true })).toBeVisible();
     await expect(page.getByText(/Gestiona tus membresías/i)).toBeVisible();
   });
@@ -20,10 +20,10 @@ test.describe("Planes y checkout", () => {
   test("panel tiene enlace a planes", async ({ page }) => {
     await page.goto("/panel");
     await expect(page).toHaveURL(/\/panel/, { timeout: 15000 });
-    const planesLink = page.locator("a[href='/planes']").first();
+    const planesLink = page.locator("a[href='/panel/tienda']").first();
     await expect(planesLink).toBeVisible({ timeout: 15000 });
     await planesLink.click();
-    await expect(page).toHaveURL(/\/planes/);
+    await expect(page).toHaveURL(/\/panel\/tienda/);
   });
 
   test("checkout abre MercadoPago y deja orden PENDING (sin pagar)", async ({ page }) => {
@@ -83,7 +83,7 @@ test.describe("Planes y checkout", () => {
       });
     });
 
-    await page.goto("/planes");
+    await page.goto("/panel/tienda");
     await expect(page.getByRole("heading", { name: "Planes", exact: true })).toBeVisible({
       timeout: 15000,
     });
@@ -94,7 +94,7 @@ test.describe("Planes y checkout", () => {
     });
 
     // Simula cerrar MP (volver a la app) y verifica que la orden sigue pendiente.
-    await page.goto("/planes");
+    await page.goto("/panel/tienda");
     if (hasDb) {
       const orderAfter = await prisma!.order.findUnique({ where: { id: orderId } });
       expect(orderAfter?.status).toBe("PENDING");

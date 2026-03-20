@@ -33,6 +33,10 @@ function formatPrice(cents: number, currency: string): string {
   return `${cents / 100} ${currency}`;
 }
 
+function formatDateOnlyUtc(date: Date): string {
+  return date.toLocaleDateString("es-CL", { timeZone: "UTC" });
+}
+
 export default async function ClientDetailPage({
   params,
 }: {
@@ -115,7 +119,7 @@ export default async function ClientDetailPage({
             <div>
               <dt className="text-xs text-[var(--color-text-muted)] uppercase tracking-wider">Cumpleaños</dt>
               <dd className="font-medium mt-0.5">
-                {client.birthday ? client.birthday.toLocaleDateString("es-CL") : "—"}
+                {client.birthday ? formatDateOnlyUtc(client.birthday) : "—"}
               </dd>
             </div>
             {client.notes && (
@@ -194,15 +198,15 @@ export default async function ClientDetailPage({
                     )}
                   </div>
                   <div className="flex gap-4 mt-1 text-xs text-[var(--color-text-muted)] flex-wrap">
-                    <span>Desde: {up.validFrom.toLocaleDateString("es-CL")}</span>
+                    <span>Desde: {formatDateOnlyUtc(up.validFrom)}</span>
                     {up.validUntil && (
-                      <span>Hasta: {up.validUntil.toLocaleDateString("es-CL")}</span>
+                      <span>Hasta: {formatDateOnlyUtc(up.validUntil)}</span>
                     )}
                     {up.status === "FROZEN" && up.freezeReason && (
                       <span>Motivo: {up.freezeReason}</span>
                     )}
                     {up.status === "FROZEN" && up.frozenUntil && (
-                      <span>Descongelar: {up.frozenUntil.toLocaleDateString("es-CL")}</span>
+                      <span>Descongelar: {formatDateOnlyUtc(up.frozenUntil)}</span>
                     )}
                   </div>
                   <div className="mt-2">

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { localYmdFromDate } from "@/lib/datetime/local-ymd";
 
 interface Plan {
   id: string;
@@ -17,7 +18,7 @@ interface Props {
 }
 
 function todayStr() {
-  return new Date().toISOString().split("T")[0];
+  return localYmdFromDate(new Date());
 }
 
 export function AssignPlanForm({ userId, plans }: Props) {

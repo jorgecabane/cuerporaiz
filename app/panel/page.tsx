@@ -18,30 +18,31 @@ import { PanelHomeCalendar } from "./PanelHomeCalendar";
 import type { ReservationDto } from "@/lib/dto/reservation-dto";
 import type { Role } from "@/lib/domain/role";
 import { isAdminRole, isInstructorRole, isStudentRole } from "@/lib/domain";
+import { formatMinutesAsShortSpanish } from "@/lib/domain/center-policy";
 import type { LucideIcon } from "lucide-react";
 
 type QuickAccessItem =
   | { type: "link"; href: string; label: string; Icon: LucideIcon }
-  | { type: "sheet-reservas"; cancelBeforeHours: number; cancelPolicyCopy?: string }
+  | { type: "sheet-reservas"; cancelBeforeMinutes: number; cancelPolicyCopy?: string }
   | { type: "sheet-mis-clases" }
   | { type: "disabled"; label: string; Icon: LucideIcon };
 
 function getQuickAccessItems(
   role: Role,
-  cancelBeforeHours: number,
+  cancelBeforeMinutes: number,
   cancelPolicyCopy?: string
 ): QuickAccessItem[] {
   if (isStudentRole(role)) {
     return [
-      { type: "sheet-reservas", cancelBeforeHours, cancelPolicyCopy },
-      { type: "link", href: "/planes", label: "Planes", Icon: CreditCard },
+      { type: "sheet-reservas", cancelBeforeMinutes, cancelPolicyCopy },
+      { type: "link", href: "/panel/tienda", label: "Planes", Icon: CreditCard },
       { type: "link", href: "/panel/mis-pagos", label: "Mis pagos", Icon: Banknote },
     ];
   }
   if (isInstructorRole(role)) {
     return [
       { type: "sheet-mis-clases" },
-      { type: "link", href: "/planes", label: "Planes", Icon: CreditCard },
+      { type: "link", href: "/panel/tienda", label: "Planes", Icon: CreditCard },
       { type: "disabled", label: "Mis pagos", Icon: Banknote },
     ];
   }
@@ -145,7 +146,7 @@ export default async function PanelPage() {
               Sin plan activo
             </p>
             <Link
-              href="/planes"
+              href="/panel/tienda"
               className="inline-flex items-center gap-1.5 rounded-[var(--radius-md)] bg-[var(--color-primary)] px-3 py-2 text-sm font-medium text-[var(--color-text-inverse)] transition-colors hover:bg-[var(--color-primary-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:ring-offset-2 cursor-pointer"
             >
               Ver planes
@@ -185,8 +186,10 @@ export default async function PanelPage() {
           <ul className="flex flex-wrap items-center justify-center gap-2 sm:gap-4">
           {getQuickAccessItems(
             user.role,
-            center?.cancelBeforeHours ?? 12,
-            center ? `Cancelación sin cargo hasta ${center.cancelBeforeHours} h antes` : undefined
+            center?.cancelBeforeMinutes ?? 720,
+            center
+              ? `Cancelación sin cargo si cancelás con al menos ${formatMinutesAsShortSpanish(center.cancelBeforeMinutes)} de anticipación`
+              : undefined
           ).map((item) => {
             const baseClass =
               "flex h-11 shrink-0 cursor-pointer items-center gap-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 shadow-[var(--shadow-sm)] transition-colors duration-200 hover:border-[var(--color-primary)] hover:shadow-[var(--shadow-md)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:ring-offset-2";
@@ -205,7 +208,7 @@ export default async function PanelPage() {
               return (
                 <li key="sheet-reservas">
                   <PanelHomeMisReservasTrigger
-                    cancelBeforeHours={item.cancelBeforeHours}
+                    cancelBeforeMinutes={item.cancelBeforeMinutes}
                     cancelPolicyCopy={item.cancelPolicyCopy}
                   />
                 </li>
