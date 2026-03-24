@@ -26,7 +26,7 @@ export default function SuscribirmeButton({
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.message ?? "Error al crear la suscripción");
+        setError(data.error ?? "Error al crear la suscripción");
         return;
       }
       if (data.subscriptionUrl) {

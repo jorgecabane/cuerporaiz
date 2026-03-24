@@ -3,7 +3,7 @@
  * Gestiona pagos automáticos periódicos vía MercadoPago.
  */
 
-export type SubscriptionStatus = "ACTIVE" | "PAUSED" | "CANCELLED" | "PAYMENT_FAILED";
+export type SubscriptionStatus = "PENDING" | "ACTIVE" | "PAUSED" | "CANCELLED" | "PAYMENT_FAILED";
 
 export interface Subscription {
   id: string;
@@ -20,6 +20,7 @@ export interface Subscription {
 }
 
 export const SUBSCRIPTION_STATUS_LABELS: Record<SubscriptionStatus, string> = {
+  PENDING: "Pendiente",
   ACTIVE: "Activa",
   PAUSED: "Pausada",
   CANCELLED: "Cancelada",

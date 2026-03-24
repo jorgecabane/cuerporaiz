@@ -90,7 +90,7 @@ export async function createSubscriptionCheckoutUseCase(
     userId: input.userId,
     planId: plan.id,
     mpSubscriptionId: result.mpSubscriptionId!,
-    status: "ACTIVE",
+    status: "PENDING",
     currentPeriodStart: now,
     currentPeriodEnd: validUntil ?? new Date(now.getFullYear() + 1, now.getMonth(), now.getDate()),
   });

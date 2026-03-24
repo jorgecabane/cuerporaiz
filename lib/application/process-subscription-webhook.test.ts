@@ -11,8 +11,8 @@ describe("mapMpStatusToSubscription", () => {
   it("maps cancelled to CANCELLED", () => {
     expect(mapMpStatusToSubscription("cancelled")).toBe("CANCELLED");
   });
-  it("maps pending to ACTIVE (still billing)", () => {
-    expect(mapMpStatusToSubscription("pending")).toBe("ACTIVE");
+  it("maps pending to PENDING", () => {
+    expect(mapMpStatusToSubscription("pending")).toBe("PENDING");
   });
 });
 
@@ -28,5 +28,8 @@ describe("mapMpStatusToUserPlan", () => {
   });
   it("maps PAYMENT_FAILED to FROZEN userPlan", () => {
     expect(mapMpStatusToUserPlan("PAYMENT_FAILED")).toBe("FROZEN");
+  });
+  it("maps PENDING subscription to ACTIVE userPlan", () => {
+    expect(mapMpStatusToUserPlan("PENDING")).toBe("ACTIVE");
   });
 });

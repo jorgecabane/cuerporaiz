@@ -19,7 +19,8 @@ export function mapMpStatusToSubscription(mpStatus: string): SubscriptionStatus 
     case "authorized": return "ACTIVE";
     case "paused": return "PAUSED";
     case "cancelled": return "CANCELLED";
-    default: return "ACTIVE";
+    case "pending": return "PENDING";
+    default: return "PENDING";
   }
 }
 
@@ -27,6 +28,7 @@ export function mapMpStatusToSubscription(mpStatus: string): SubscriptionStatus 
 export function mapMpStatusToUserPlan(subStatus: SubscriptionStatus): UserPlanStatus {
   switch (subStatus) {
     case "ACTIVE": return "ACTIVE";
+    case "PENDING": return "ACTIVE";
     case "PAUSED": return "FROZEN";
     case "CANCELLED": return "CANCELLED";
     case "PAYMENT_FAILED": return "FROZEN";
@@ -120,6 +122,12 @@ export async function processAuthorizedPaymentWebhook(
 
   if (subscription.status !== "ACTIVE") {
     await subscriptionRepository.updateStatus(subscription.id, "ACTIVE");
+  }
+
+  // Idempotency: skip if a usable UserPlan already exists for this subscription
+  const existingUserPlan = await userPlanRepository.findActiveBySubscriptionId(subscription.id);
+  if (existingUserPlan && existingUserPlan.validUntil && existingUserPlan.validUntil >= now) {
+    return { success: true };
   }
 
   // Create new UserPlan for this billing cycle
