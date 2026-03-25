@@ -5,6 +5,7 @@ import { siteConfigRepository } from "@/lib/adapters/db";
 import Link from "next/link";
 import BrandingForm from "./BrandingForm";
 import ContactForm from "./ContactForm";
+import SectionsManager from "./SectionsManager";
 
 const TABS = [
   { key: "branding", label: "Marca" },
@@ -51,9 +52,7 @@ export default async function PanelSitioPage({
 
       {/* Tab content */}
       {activeTab === "branding" && <BrandingForm config={config} />}
-      {activeTab === "secciones" && (
-        <p className="text-sm text-[var(--color-text-muted)]">Secciones</p>
-      )}
+      {activeTab === "secciones" && <SectionsManager />}
       {activeTab === "contacto" && <ContactForm config={config} />}
     </div>
   );
