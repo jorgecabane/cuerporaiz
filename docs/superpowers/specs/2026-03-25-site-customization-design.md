@@ -250,10 +250,34 @@ Patrón: mismo que `EditClientForm` — `useTransition` + fetch a API routes.
 
 ## Seed Data
 
-Al crear un nuevo centro (o en el seed script), se genera:
+### Centro nuevo (genérico)
+Al crear un nuevo centro, se genera:
 - `CenterSiteConfig` con colores default
 - `CenterSiteSection` para cada key con `visible: true` y orden default
 - No se crean items — el admin los agrega
+
+### Seed del centro "cuerporaiz" (replica el home actual)
+
+El seed script (`prisma/seed.ts`) debe pre-cargar los datos del centro Cuerpo Raíz con el mismo contenido que hoy está hardcodeado en el home, para que al dinamizar la página no se pierda nada visualmente.
+
+**CenterSiteConfig:**
+- Hero: título, subtítulo e imagen actuales del home
+- Branding: colores actuales (`--color-primary: #2D3B2A`, `--color-secondary: #B85C38`), logo
+- Contacto: email, teléfono, dirección, redes sociales actuales
+
+**CenterSiteSection + Items (replicar cada sección hardcodeada):**
+- `about` — propuesta de valor actual (texto + imagen)
+- `how-it-works` — pasos/beneficios actuales (cada paso como un item con ícono + texto)
+- `schedule` — visible, title/subtitle actuales (datos vienen de LiveClass)
+- `plans` — visible, title/subtitle actuales (datos vienen de Plan)
+- `on-demand` — `visible: false` (se activa en Fase 3B)
+- `disciplines` — visible, title/subtitle actuales (datos vienen de Discipline)
+- `team` — items con las fotos, nombres y bios actuales de cada profesora/fundadora
+- `testimonials` — items con los testimonios actuales
+- `cta` — title/subtitle del call to action final
+- `contact` — visible (datos vienen de CenterSiteConfig)
+
+**Importante:** Leer el contenido actual de `app/page.tsx` y los componentes de cada sección (`components/sections/`) para extraer los textos, imágenes y datos exactos que se usan hoy. El seed debe producir un home visualmente idéntico al actual.
 
 ---
 
