@@ -18,3 +18,5 @@ export { centerHolidayRepository } from "./center-holiday-repository";
 export { userPlanRepository } from "./user-plan-repository";
 export { emailPreferenceRepository } from "./email-preference-repository";
 export { subscriptionRepository } from "./subscription-repository";
+export { siteConfigRepository } from "./site-config-repository";
+export { siteSectionRepository } from "./site-section-repository";
