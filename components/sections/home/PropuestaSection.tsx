@@ -1,6 +1,22 @@
 import { AnimateIn } from "@/components/ui/AnimateIn";
 
-export function PropuestaSection() {
+type PropuestaItem = {
+  title?: string;
+  description?: string;
+  imageUrl?: string;
+};
+
+type PropuestaSectionProps = {
+  title?: string;
+  subtitle?: string;
+  items?: PropuestaItem[];
+};
+
+export function PropuestaSection({ title, subtitle, items }: PropuestaSectionProps) {
+  // If items are provided, use first item as quote and second as body paragraph
+  const quote = items?.[0]?.description ?? null;
+  const body = items?.[1]?.description ?? null;
+
   return (
     <section
       id="propuesta"
@@ -11,7 +27,7 @@ export function PropuestaSection() {
         {/* Overline */}
         <AnimateIn>
           <p className="text-xs font-medium uppercase tracking-[0.22em] text-[var(--color-secondary)]">
-            Yoga con identidad
+            {title ?? "Yoga con identidad"}
           </p>
         </AnimateIn>
 
@@ -19,10 +35,7 @@ export function PropuestaSection() {
         <AnimateIn delay={0.12}>
           <blockquote className="mt-[var(--space-6)]">
             <p className="text-quote font-display italic leading-snug text-[var(--color-primary)]">
-              &ldquo;hablar de sexualidad también es hablar de cuerpo,
-              emociones y bienestar. este espacio nace para abrir
-              conversaciones más conscientes, desde el respeto, la educación,
-              la conexión y el placer.&rdquo;
+              &ldquo;{quote ?? "habitar de sexualidad también es hablar de cuerpo, emociones y bienestar. este espacio nace para abrir conversaciones más conscientes, desde el respeto, la educación, la conexión y el placer."}&rdquo;
             </p>
           </blockquote>
         </AnimateIn>
@@ -38,9 +51,7 @@ export function PropuestaSection() {
         {/* Párrafo de cuerpo */}
         <AnimateIn delay={0.3}>
           <p className="max-w-2xl text-lg leading-relaxed text-[var(--color-text-muted)]">
-            El cuerpo sana cuando se siente seguro. Vinimos a hacerlo en
-            compañía, en comunidad. Aquí encontrarás clases para practicar a
-            tu ritmo, con la misma dedicación que en una clase presencial.
+            {body ?? subtitle ?? "El cuerpo sana cuando se siente seguro. Vinimos a hacerlo en compañía, en comunidad. Aquí encontrarás clases para practicar a tu ritmo, con la misma dedicación que en una clase presencial."}
           </p>
         </AnimateIn>
       </div>

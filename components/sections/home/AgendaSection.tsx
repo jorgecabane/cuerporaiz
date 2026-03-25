@@ -13,6 +13,21 @@ type ClassItem = {
   spotsTotal: number;
 };
 
+type LivePlan = {
+  name: string;
+  amountCents: number;
+  currency: string;
+  validityDays?: number;
+  maxReservations?: number;
+  highlight?: boolean;
+};
+
+type AgendaSectionProps = {
+  title?: string;
+  subtitle?: string;
+  livePlans?: LivePlan[];
+};
+
 /* ─── Datos de horario por día de semana (0 = domingo) ───────────────────── */
 const SCHEDULE: Record<number, ClassItem[]> = {
   0: [],
@@ -41,14 +56,14 @@ const SCHEDULE: Record<number, ClassItem[]> = {
   ],
 };
 
-const PLANES = [
-  { name: "Clase suelta", price: "$12.000", note: "30 días de vigencia", highlight: false },
-  { name: "Pack 4 clases", price: "$36.000", note: "31 días", highlight: false },
-  { name: "Pack 6 clases", price: "$48.000", note: "31 días", highlight: false },
-  { name: "Pack 8 clases", price: "$60.000", note: "31 días", highlight: false },
-  { name: "Pack 12 clases", price: "$88.000", note: "31 días", highlight: true },
-  { name: "Ilimitado", price: "$96.000", note: "31 días, clases ilimitadas", highlight: false },
-] as const;
+const DEFAULT_PLANS: LivePlan[] = [
+  { name: "Clase suelta", amountCents: 1200000, currency: "CLP", validityDays: 30, highlight: false },
+  { name: "Pack 4 clases", amountCents: 3600000, currency: "CLP", validityDays: 31, maxReservations: 4, highlight: false },
+  { name: "Pack 6 clases", amountCents: 4800000, currency: "CLP", validityDays: 31, maxReservations: 6, highlight: false },
+  { name: "Pack 8 clases", amountCents: 6000000, currency: "CLP", validityDays: 31, maxReservations: 8, highlight: false },
+  { name: "Pack 12 clases", amountCents: 8800000, currency: "CLP", validityDays: 31, maxReservations: 12, highlight: true },
+  { name: "Ilimitado", amountCents: 9600000, currency: "CLP", validityDays: 31, highlight: false },
+];
 
 const DAY_SHORT = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
 const MONTH_SHORT = [
@@ -81,8 +96,27 @@ function availabilityLabel(used: number, total: number): string {
   return `${total - used} ${total - used === 1 ? "cupo" : "cupos"}`;
 }
 
+function formatPrice(amountCents: number, currency: string): string {
+  const amount = Math.round(amountCents / 100);
+  if (currency === "CLP") {
+    return `$${amount.toLocaleString("es-CL")}`;
+  }
+  return new Intl.NumberFormat("es-CL", { style: "currency", currency }).format(amount);
+}
+
+function planNote(plan: LivePlan): string {
+  const parts: string[] = [];
+  if (plan.validityDays) {
+    parts.push(`${plan.validityDays} días`);
+  }
+  if (!plan.maxReservations) {
+    parts.push("clases ilimitadas");
+  }
+  return parts.join(", ");
+}
+
 /* ─── Componente ─────────────────────────────────────────────────────────── */
-export function AgendaSection() {
+export function AgendaSection({ title, subtitle, livePlans }: AgendaSectionProps) {
   const days = useMemo(() => getUpcomingDays(7), []);
   const [selectedIdx, setSelectedIdx] = useState(0);
 
@@ -91,6 +125,8 @@ export function AgendaSection() {
   const classes = SCHEDULE[dayOfWeek] ?? [];
 
   const headingDate = `${DAY_LONG[dayOfWeek]} ${selectedDay.getDate()} de ${MONTH_SHORT[selectedDay.getMonth()]}`;
+
+  const plans = livePlans ?? DEFAULT_PLANS;
 
   return (
     <section
@@ -102,7 +138,7 @@ export function AgendaSection() {
         {/* Encabezado */}
         <AnimateIn>
           <p className="text-xs font-medium uppercase tracking-[0.22em] text-[var(--color-secondary)]">
-            Presencial — Vitacura
+            {subtitle ?? "Presencial — Vitacura"}
           </p>
         </AnimateIn>
         <AnimateIn delay={0.1}>
@@ -110,7 +146,7 @@ export function AgendaSection() {
             id="agenda-heading"
             className="mt-[var(--space-3)] text-section font-display font-semibold text-[var(--color-primary)]"
           >
-            Reserva tu lugar
+            {title ?? "Reserva tu lugar"}
           </h2>
         </AnimateIn>
 
@@ -258,7 +294,7 @@ export function AgendaSection() {
               </h3>
 
               <ul className="mt-[var(--space-6)] divide-y divide-[var(--color-border)]">
-                {PLANES.map((plan) => (
+                {plans.map((plan) => (
                   <li
                     key={plan.name}
                     className={`flex items-center justify-between py-[var(--space-4)] ${
@@ -282,14 +318,12 @@ export function AgendaSection() {
                           </span>
                         )}
                       </span>
-                      {plan.note && (
-                        <span className="text-xs text-[var(--color-text-muted)]">
-                          {plan.note}
-                        </span>
-                      )}
+                      <span className="text-xs text-[var(--color-text-muted)]">
+                        {planNote(plan)}
+                      </span>
                     </div>
                     <span className="font-display text-base font-semibold text-[var(--color-primary)]">
-                      {plan.price}
+                      {formatPrice(plan.amountCents, plan.currency)}
                     </span>
                   </li>
                 ))}

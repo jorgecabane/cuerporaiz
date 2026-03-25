@@ -6,8 +6,7 @@ import { ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { CTAS } from "@/lib/constants/copy";
 
-
-const HERO_IMAGE =
+const DEFAULT_IMAGE =
   "https://images.unsplash.com/photo-1545205597-3d9d02c29597?w=1920&q=80";
 
 const container = {
@@ -32,7 +31,26 @@ const fadePlain = {
   },
 };
 
-export function HeroSection() {
+type HeroSectionProps = {
+  title?: string;
+  subtitle?: string;
+  imageUrl?: string;
+  ctaText?: string;
+};
+
+export function HeroSection({
+  title,
+  subtitle,
+  imageUrl,
+  ctaText,
+}: HeroSectionProps) {
+  const heroImage = imageUrl ?? DEFAULT_IMAGE;
+  const heroSubtitle = subtitle ?? "el camino de regreso a ti.";
+  const heroCta = ctaText ?? CTAS.comenzarPractica;
+
+  // Split title into lines for staggered animation, or use default
+  const titleLines = title ? title.split("\n") : null;
+
   return (
     <section
       className="relative flex min-h-[100dvh] flex-col justify-end"
@@ -41,7 +59,7 @@ export function HeroSection() {
       {/* Imagen de fondo */}
       <div className="absolute inset-0" aria-hidden>
         <Image
-          src={HERO_IMAGE}
+          src={heroImage}
           alt=""
           fill
           className="object-cover object-center"
@@ -67,17 +85,27 @@ export function HeroSection() {
           yoga con identidad
         </motion.span>
 
-        {/* Headline — cada línea anima independiente */}
+        {/* Headline */}
         <h1 className="text-hero font-display font-bold text-white">
-          <motion.span variants={fadeUp} className="block">
-            cuerpo,
-          </motion.span>
-          <motion.span variants={fadeUp} className="block italic">
-            respiración
-          </motion.span>
-          <motion.span variants={fadeUp} className="block">
-            y placer.
-          </motion.span>
+          {titleLines ? (
+            titleLines.map((line, i) => (
+              <motion.span key={i} variants={fadeUp} className="block">
+                {line}
+              </motion.span>
+            ))
+          ) : (
+            <>
+              <motion.span variants={fadeUp} className="block">
+                cuerpo,
+              </motion.span>
+              <motion.span variants={fadeUp} className="block italic">
+                respiración
+              </motion.span>
+              <motion.span variants={fadeUp} className="block">
+                y placer.
+              </motion.span>
+            </>
+          )}
         </h1>
 
         {/* Tagline */}
@@ -85,7 +113,7 @@ export function HeroSection() {
           variants={fadeUp}
           className="mt-[var(--space-6)] max-w-xs text-base leading-relaxed text-white/70 sm:max-w-sm sm:text-lg"
         >
-          el camino de regreso a ti.
+          {heroSubtitle}
         </motion.p>
 
         {/* CTA único */}
@@ -94,7 +122,7 @@ export function HeroSection() {
           className="mt-[var(--space-8)]"
         >
           <Button href="#como-funciona" variant="light">
-            {CTAS.comenzarPractica}
+            {heroCta}
           </Button>
         </motion.div>
       </motion.div>

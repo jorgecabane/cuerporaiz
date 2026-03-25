@@ -3,6 +3,11 @@ import { AnimateIn, StaggerList, StaggerItem } from "@/components/ui/AnimateIn";
 import { Button } from "@/components/ui/Button";
 import { CTAS } from "@/lib/constants/copy";
 
+type OfertaSectionProps = {
+  title?: string;
+  subtitle?: string;
+  visible?: boolean;
+};
 
 const CARDS = [
   {
@@ -33,7 +38,10 @@ const CARDS = [
   },
 ] as const;
 
-export function OfertaSection() {
+export function OfertaSection({ title, subtitle, visible }: OfertaSectionProps) {
+  // If visible is explicitly false, don't render
+  if (visible === false) return null;
+
   return (
     <section
       id="oferta"
@@ -44,7 +52,7 @@ export function OfertaSection() {
         {/* Encabezado */}
         <AnimateIn>
           <p className="text-xs font-medium uppercase tracking-[0.22em] text-[var(--color-secondary)]">
-            Packs y membresía
+            {subtitle ?? "Packs y membresía"}
           </p>
         </AnimateIn>
         <AnimateIn delay={0.1}>
@@ -52,7 +60,7 @@ export function OfertaSection() {
             id="oferta-heading"
             className="mt-[var(--space-3)] text-section font-display font-semibold text-[var(--color-primary)]"
           >
-            Elige cómo practicar
+            {title ?? "Elige cómo practicar"}
           </h2>
         </AnimateIn>
 
