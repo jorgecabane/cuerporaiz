@@ -22,9 +22,12 @@ const EDITABLE_SECTIONS = new Set(["team", "testimonials", "about", "how-it-work
 
 type Section = {
   id: string;
-  key: string;
+  sectionKey: string;
   visible: boolean;
-  order: number;
+  sortOrder: number;
+  title: string | null;
+  subtitle: string | null;
+  items: unknown[];
 };
 
 export default function SectionsManager() {
@@ -123,11 +126,11 @@ export default function SectionsManager() {
 
             {/* Label */}
             <span className="flex-1 text-sm text-[var(--color-text)]">
-              {SECTION_LABELS[section.key] ?? section.key}
+              {SECTION_LABELS[section.sectionKey] ?? section.sectionKey}
             </span>
 
             {/* Edit content button */}
-            {EDITABLE_SECTIONS.has(section.key) && (
+            {EDITABLE_SECTIONS.has(section.sectionKey) && (
               <button
                 type="button"
                 onClick={() => toggleExpand(section.id)}
@@ -159,7 +162,7 @@ export default function SectionsManager() {
           {/* Expanded items editor */}
           {expandedId === section.id && (
             <div className="border-t border-[var(--color-border)] px-4 py-4 bg-[var(--color-bg)]">
-              <SectionItemsEditor sectionId={section.id} sectionKey={section.key} />
+              <SectionItemsEditor sectionId={section.id} sectionKey={section.sectionKey} />
             </div>
           )}
         </div>
