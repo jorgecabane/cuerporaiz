@@ -287,3 +287,71 @@ export function buildWelcomeStaffEmail(data: WelcomeStaffData): SendEmailDto {
     text,
   };
 }
+
+// ─── Bienvenida a estudiante ────────────────────────────────────────────────
+export interface WelcomeStudentData {
+  toEmail: string;
+  userName: string;
+  centerName: string;
+  dashboardUrl: string;
+  profileUrl: string;
+}
+
+export function buildWelcomeStudentEmail(data: WelcomeStudentData): SendEmailDto {
+  const body = `
+    <p>Hola ${data.userName},</p>
+    <p>Te damos la bienvenida a <strong>${data.centerName}</strong>.</p>
+    <p>Desde tu panel puedes reservar clases, ver tu plan y gestionar tu cuenta.</p>
+    <p><a href="${data.dashboardUrl}" style="${EMAIL_CTA_STYLE}">Ir al panel</a></p>
+    <p style="margin-top: 16px;"><a href="${data.profileUrl}" style="color: #2D3B2A;">Completar mi perfil</a></p>`;
+  const html = emailBaseLayout({ body, centerName: data.centerName });
+  const text = `Hola ${data.userName}, bienvenido/a a ${data.centerName}. Ir al panel: ${data.dashboardUrl}`;
+  return { from: DEFAULT_FROM, to: [data.toEmail], subject: `Bienvenido/a a ${data.centerName}`, html, text };
+}
+
+// ─── Plan por vencer ────────────────────────────────────────────────────────
+export interface PlanExpiringData {
+  toEmail: string;
+  userName: string;
+  centerName: string;
+  planName: string;
+  expiryDate: string;
+  tiendaUrl: string;
+  preferencesUrl: string;
+}
+
+export function buildPlanExpiringEmail(data: PlanExpiringData): SendEmailDto {
+  const body = `
+    <p>Hola ${data.userName},</p>
+    <p>Tu plan <strong>${data.planName}</strong> vence el <strong>${data.expiryDate}</strong>.</p>
+    <p>Renueva para seguir disfrutando de tus clases.</p>
+    <p><a href="${data.tiendaUrl}" style="${EMAIL_CTA_STYLE}">Renovar plan</a></p>`;
+  const html = emailBaseLayout({ body, centerName: data.centerName, preferencesUrl: data.preferencesUrl });
+  const text = `Hola ${data.userName}, tu plan ${data.planName} vence el ${data.expiryDate}. Renueva en: ${data.tiendaUrl}`;
+  return { from: DEFAULT_FROM, to: [data.toEmail], subject: `Tu plan ${data.planName} vence pronto`, html, text };
+}
+
+// ─── Confirmación de compra ─────────────────────────────────────────────────
+export interface PurchaseConfirmationData {
+  toEmail: string;
+  userName: string;
+  centerName: string;
+  planName: string;
+  amountFormatted: string;
+  validUntil: string;
+  tiendaUrl: string;
+  preferencesUrl: string;
+}
+
+export function buildPurchaseConfirmationEmail(data: PurchaseConfirmationData): SendEmailDto {
+  const body = `
+    <p>Hola ${data.userName},</p>
+    <p>Tu compra fue confirmada.</p>
+    <p><strong>${data.planName}</strong><br>
+    Monto: ${data.amountFormatted}<br>
+    Vigencia hasta: ${data.validUntil}</p>
+    <p><a href="${data.tiendaUrl}" style="${EMAIL_CTA_STYLE}">Ver mi plan</a></p>`;
+  const html = emailBaseLayout({ body, centerName: data.centerName, preferencesUrl: data.preferencesUrl });
+  const text = `Hola ${data.userName}, tu compra de ${data.planName} (${data.amountFormatted}) fue confirmada. Vigencia hasta ${data.validUntil}.`;
+  return { from: DEFAULT_FROM, to: [data.toEmail], subject: `Compra confirmada: ${data.planName}`, html, text };
+}
