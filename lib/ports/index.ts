@@ -19,3 +19,4 @@ export type { IWebhookEventRepository } from "./webhook-event-repository";
 export type { IInstructorRepository, Instructor, CreateInstructorInput, UpdateInstructorInput } from "./instructor-repository";
 export type { ICenterHolidayRepository, CreateHolidayInput } from "./center-holiday-repository";
 export type { IUserPlanRepository, CreateUserPlanInput } from "./user-plan-repository";
+export type { IEmailPreferenceRepository, UpsertEmailPreferenceInput } from "./email-preference-repository";
