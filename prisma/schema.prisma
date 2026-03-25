@@ -473,6 +473,7 @@ model Order {
 }
 
 enum SubscriptionStatus {
+  PENDING
   ACTIVE
   PAUSED
   CANCELLED
@@ -486,7 +487,7 @@ model Subscription {
   planId             String
   mpSubscriptionId   String             @unique
   mpPayerId          String?
-  status             SubscriptionStatus  @default(ACTIVE)
+  status             SubscriptionStatus  @default(PENDING)
   currentPeriodStart DateTime
   currentPeriodEnd   DateTime
   createdAt          DateTime           @default(now())

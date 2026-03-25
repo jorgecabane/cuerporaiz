@@ -23,6 +23,7 @@ export interface IUserPlanRepository {
   findActiveByUserAndCenter(userId: string, centerId: string): Promise<UserPlan[]>;
   findByUserAndCenter(userId: string, centerId: string): Promise<UserPlan[]>;
   findByOrderId(orderId: string): Promise<UserPlan | null>;
+  findActiveBySubscriptionId(subscriptionId: string): Promise<UserPlan | null>;
   incrementClassesUsed(id: string): Promise<UserPlan>;
   decrementClassesUsed(id: string): Promise<UserPlan>;
   updateStatus(id: string, status: UserPlanStatus): Promise<UserPlan>;

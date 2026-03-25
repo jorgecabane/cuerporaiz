@@ -92,6 +92,14 @@ export const userPlanRepository: IUserPlanRepository = {
     return r ? toDomain(r) : null;
   },
 
+  async findActiveBySubscriptionId(subscriptionId: string) {
+    const r = await prisma.userPlan.findFirst({
+      where: { subscriptionId, status: { in: ["ACTIVE", "FROZEN"] } },
+      orderBy: { createdAt: "desc" },
+    });
+    return r ? toDomain(r) : null;
+  },
+
   async incrementClassesUsed(id: string) {
     const r = await prisma.userPlan.update({
       where: { id },
