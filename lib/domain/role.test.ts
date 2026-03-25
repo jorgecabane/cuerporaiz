@@ -1,5 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { isRole, isAdminRole, ROLE_LABELS, DEFAULT_SIGNUP_ROLE } from "./role";
+import {
+  isRole, isAdminRole, isStudentRole, isInstructorRole, isStaffRole,
+  ROLE_LABELS, ROLES, DEFAULT_SIGNUP_ROLE,
+} from "./role";
 
 describe("role", () => {
   it("isRole valida roles conocidos", () => {
@@ -14,10 +17,26 @@ describe("role", () => {
     expect(isAdminRole("STUDENT")).toBe(false);
   });
 
+  it("isStudentRole", () => {
+    expect(isStudentRole("STUDENT")).toBe(true);
+    expect(isStudentRole("ADMINISTRATOR")).toBe(false);
+  });
+
+  it("isInstructorRole", () => {
+    expect(isInstructorRole("INSTRUCTOR")).toBe(true);
+    expect(isInstructorRole("STUDENT")).toBe(false);
+  });
+
+  it("isStaffRole returns true for admin and instructor", () => {
+    expect(isStaffRole("ADMINISTRATOR")).toBe(true);
+    expect(isStaffRole("INSTRUCTOR")).toBe(true);
+    expect(isStaffRole("STUDENT")).toBe(false);
+  });
+
   it("ROLE_LABELS cubre todos los roles", () => {
-    expect(ROLE_LABELS.STUDENT).toBeTruthy();
-    expect(ROLE_LABELS.INSTRUCTOR).toBeTruthy();
-    expect(ROLE_LABELS.ADMINISTRATOR).toBeTruthy();
+    for (const role of ROLES) {
+      expect(ROLE_LABELS[role]).toBeTruthy();
+    }
   });
 
   it("DEFAULT_SIGNUP_ROLE es STUDENT", () => {

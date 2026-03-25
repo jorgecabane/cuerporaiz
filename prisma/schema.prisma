@@ -54,7 +54,8 @@ model Center {
   userPlans       UserPlan[]
   manualPayments  ManualPayment[]
   instructorBankAccounts InstructorBankAccount[]
-  subscriptions  Subscription[]
+  subscriptions    Subscription[]
+  emailPreferences EmailPreference[]
 }
 
 // ─── Usuarios (sin datos de infra; dominio puro en lib/domain) ──────────────
@@ -80,7 +81,8 @@ model User {
   userPlans      UserPlan[]
   manualPayments ManualPayment[]
   instructorBankAccounts InstructorBankAccount[]
-  subscriptions  Subscription[]
+  subscriptions    Subscription[]
+  emailPreferences EmailPreference[]
 }
 
 // ─── Disciplinas (prácticas: Yoga, Pilates, TRX…) ─────────────────────────
@@ -514,5 +516,26 @@ model MercadoPagoWebhookEvent {
   center Center @relation(fields: [centerId], references: [id], onDelete: Cascade)
 
   @@unique([centerId, requestId])
+  @@index([centerId])
+}
+
+// ─── Preferencias de email por usuario+centro ─────────────────────────────────
+model EmailPreference {
+  id                  String   @id @default(cuid())
+  userId              String
+  centerId            String
+  classReminder       Boolean  @default(true)
+  spotFreed           Boolean  @default(true)
+  planExpiring        Boolean  @default(true)
+  reservationConfirm  Boolean  @default(true)
+  purchaseConfirm     Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  center Center @relation(fields: [centerId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, centerId])
+  @@index([userId])
   @@index([centerId])
 }

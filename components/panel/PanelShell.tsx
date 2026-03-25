@@ -259,6 +259,15 @@ export function PanelShell({
                   </p>
                 )}
               </div>
+              <Link
+                href="/panel/mi-perfil"
+                className="flex cursor-pointer items-center gap-2 px-3 py-2 text-sm font-medium text-[var(--color-text)] transition-colors duration-200 hover:bg-[var(--color-primary-light)]"
+                role="menuitem"
+                onClick={() => setUserMenuOpen(false)}
+              >
+                <User className="h-4 w-4" aria-hidden />
+                Mi perfil
+              </Link>
               <form action={signOutAction} role="menuitem">
                 <SignOutButton />
               </form>

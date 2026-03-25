@@ -6,6 +6,7 @@
 import type { SendEmailDto } from "@/lib/dto/email-dto";
 import { buildGoogleCalendarUrl, getAddToCalendarInstruction } from "@/lib/email/calendar";
 import { SITE_NAME } from "@/lib/constants/copy";
+import { emailBaseLayout, EMAIL_CTA_STYLE } from "./base-layout";
 
 const DEFAULT_FROM = process.env.EMAIL_FROM ?? `Cuerpo Raíz <onboarding@resend.dev>`;
 const DEFAULT_TIMEZONE = "America/Santiago";
@@ -36,21 +37,16 @@ export function buildReservationConfirmationEmail(
     timeZone: DEFAULT_TIMEZONE,
   });
   const greeting = data.userName ? `Hola ${data.userName}` : "Hola";
-  const html = `
-<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"></head>
-<body style="font-family: sans-serif; line-height: 1.5; color: #333;">
-  <p>${greeting},</p>
-  <p>Tu reserva quedó confirmada.</p>
-  <p><strong>${data.className}</strong><br>
-  ${new Date(data.startAt).toLocaleString("es-CL", { timeZone: DEFAULT_TIMEZONE })}<br>
-  ${data.location}</p>
-  <p><a href="${calendarUrl}" style="color: #2563eb;">Añadir a Google Calendar</a></p>
-  ${data.myReservationsUrl ? `<p><a href="${data.myReservationsUrl}">Ver mis reservas</a></p>` : ""}
-  <p>Nos vemos en la práctica.<br>— ${SITE_NAME}</p>
-</body>
-</html>`;
+  const body = `
+    <p>${greeting},</p>
+    <p>Tu reserva quedó confirmada.</p>
+    <p><strong>${data.className}</strong><br>
+    ${new Date(data.startAt).toLocaleString("es-CL", { timeZone: DEFAULT_TIMEZONE })}<br>
+    ${data.location}</p>
+    <p><a href="${calendarUrl}" style="${EMAIL_CTA_STYLE}">Añadir a Google Calendar</a></p>
+    ${data.myReservationsUrl ? `<p><a href="${data.myReservationsUrl}" style="color: #2D3B2A;">Ver mis reservas</a></p>` : ""}
+    <p>Nos vemos en la práctica.</p>`;
+  const html = emailBaseLayout({ body, centerName: SITE_NAME });
   const text = [
     `${greeting},`,
     "Tu reserva quedó confirmada.",
@@ -91,20 +87,15 @@ export function buildClassReminderEmail(data: ClassReminderData): SendEmailDto {
     timeZone: DEFAULT_TIMEZONE,
   });
   const greeting = data.userName ? `Hola ${data.userName}` : "Hola";
-  const html = `
-<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"></head>
-<body style="font-family: sans-serif; line-height: 1.5; color: #333;">
-  <p>${greeting},</p>
-  <p>Te recordamos que en ${data.hoursBefore} hora(s) tienes clase:</p>
-  <p><strong>${data.className}</strong><br>
-  ${new Date(data.startAt).toLocaleString("es-CL", { timeZone: DEFAULT_TIMEZONE })}<br>
-  ${data.location}</p>
-  <p><a href="${calendarUrl}" style="color: #2563eb;">Añadir a Google Calendar</a></p>
-  <p>Nos vemos ahí.<br>— ${SITE_NAME}</p>
-</body>
-</html>`;
+  const body = `
+    <p>${greeting},</p>
+    <p>Te recordamos que en ${data.hoursBefore} hora(s) tienes clase:</p>
+    <p><strong>${data.className}</strong><br>
+    ${new Date(data.startAt).toLocaleString("es-CL", { timeZone: DEFAULT_TIMEZONE })}<br>
+    ${data.location}</p>
+    <p><a href="${calendarUrl}" style="${EMAIL_CTA_STYLE}">Añadir a Google Calendar</a></p>
+    <p>Nos vemos ahí.</p>`;
+  const html = emailBaseLayout({ body, centerName: SITE_NAME });
   const text = [
     `${greeting},`,
     `Te recordamos que en ${data.hoursBefore} hora(s) tienes clase:`,
@@ -143,21 +134,15 @@ export function buildSpotFreedEmail(data: SpotFreedData): SendEmailDto {
     timeZone: DEFAULT_TIMEZONE,
   });
   const greeting = data.userName ? `Hola ${data.userName}` : "Hola";
-  const html = `
-<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"></head>
-<body style="font-family: sans-serif; line-height: 1.5; color: #333;">
-  <p>${greeting},</p>
-  <p>Se liberó un cupo en la clase que tenías en lista de espera:</p>
-  <p><strong>${data.className}</strong><br>
-  ${new Date(data.startAt).toLocaleString("es-CL", { timeZone: DEFAULT_TIMEZONE })}<br>
-  ${data.location}</p>
-  <p><a href="${data.bookUrl}" style="color: #2563eb;">Reservar ahora</a></p>
-  <p><a href="${calendarUrl}">Añadir a Google Calendar</a></p>
-  <p>— ${SITE_NAME}</p>
-</body>
-</html>`;
+  const body = `
+    <p>${greeting},</p>
+    <p>Se liberó un cupo en la clase que tenías en lista de espera:</p>
+    <p><strong>${data.className}</strong><br>
+    ${new Date(data.startAt).toLocaleString("es-CL", { timeZone: DEFAULT_TIMEZONE })}<br>
+    ${data.location}</p>
+    <p><a href="${data.bookUrl}" style="${EMAIL_CTA_STYLE}">Reservar ahora</a></p>
+    <p><a href="${calendarUrl}" style="color: #2D3B2A;">Añadir a Google Calendar</a></p>`;
+  const html = emailBaseLayout({ body, centerName: SITE_NAME });
   const text = [
     `${greeting},`,
     "Se liberó un cupo en la clase que tenías en lista de espera:",
@@ -200,21 +185,15 @@ export function buildTrialClassNoticeToTeacherEmail(
     timeZone: DEFAULT_TIMEZONE,
   });
   const greeting = data.teacherName ? `Hola ${data.teacherName}` : "Hola";
-  const html = `
-<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"></head>
-<body style="font-family: sans-serif; line-height: 1.5; color: #333;">
-  <p>${greeting},</p>
-  <p>Se agendó una <strong>clase de prueba</strong>:</p>
-  <p><strong>Student:</strong> ${data.studentName} (${data.studentEmail})<br>
-  <strong>Clase:</strong> ${data.className}<br>
-  <strong>Horario:</strong> ${new Date(data.startAt).toLocaleString("es-CL", { timeZone: DEFAULT_TIMEZONE })}<br>
-  <strong>Lugar:</strong> ${data.location}</p>
-  <p><a href="${calendarUrl}" style="color: #2563eb;">Añadir a Google Calendar</a></p>
-  <p>— ${SITE_NAME}</p>
-</body>
-</html>`;
+  const body = `
+    <p>${greeting},</p>
+    <p>Se agendó una <strong>clase de prueba</strong>:</p>
+    <p><strong>Estudiante:</strong> ${data.studentName} (${data.studentEmail})<br>
+    <strong>Clase:</strong> ${data.className}<br>
+    <strong>Horario:</strong> ${new Date(data.startAt).toLocaleString("es-CL", { timeZone: DEFAULT_TIMEZONE })}<br>
+    <strong>Lugar:</strong> ${data.location}</p>
+    <p><a href="${calendarUrl}" style="${EMAIL_CTA_STYLE}">Añadir a Google Calendar</a></p>`;
+  const html = emailBaseLayout({ body, centerName: SITE_NAME });
   const text = [
     `${greeting},`,
     "Se agendó una clase de prueba:",
@@ -245,19 +224,13 @@ export interface PaymentFailedData {
 
 export function buildPaymentFailedEmail(data: PaymentFailedData): SendEmailDto {
   const greeting = data.userName ? `Hola ${data.userName}` : "Hola";
-  const html = `
-<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"></head>
-<body style="font-family: sans-serif; line-height: 1.5; color: #333;">
-  <p>${greeting},</p>
-  <p>No pudimos procesar el pago de <strong>${data.productName}</strong>.</p>
-  <p>Revisa que tu método de pago sea válido y que tengas saldo disponible.</p>
-  ${data.retryPaymentUrl ? `<p><a href="${data.retryPaymentUrl}" style="color: #2563eb;">Reintentar pago</a></p>` : ""}
-  <p>Si el problema continúa, escríbenos por WhatsApp o responde este correo.</p>
-  <p>— ${SITE_NAME}</p>
-</body>
-</html>`;
+  const body = `
+    <p>${greeting},</p>
+    <p>No pudimos procesar el pago de <strong>${data.productName}</strong>.</p>
+    <p>Revisa que tu método de pago sea válido y que tengas saldo disponible.</p>
+    ${data.retryPaymentUrl ? `<p><a href="${data.retryPaymentUrl}" style="${EMAIL_CTA_STYLE}">Reintentar pago</a></p>` : ""}
+    <p>Si el problema continúa, escríbenos por WhatsApp o responde este correo.</p>`;
+  const html = emailBaseLayout({ body, centerName: SITE_NAME });
   const text = [
     `${greeting},`,
     `No pudimos procesar el pago de ${data.productName}.`,
@@ -290,19 +263,13 @@ export interface WelcomeStaffData {
 export function buildWelcomeStaffEmail(data: WelcomeStaffData): SendEmailDto {
   const greeting = data.name ? `Hola ${data.name}` : "Hola";
   const roleLabel = data.role === "INSTRUCTOR" ? "profesor" : "administración";
-  const html = `
-<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"></head>
-<body style="font-family: sans-serif; line-height: 1.5; color: #333;">
-  <p>${greeting},</p>
-  <p>Te damos la bienvenida a <strong>${data.centerName}</strong>. Fuiste agregado como <strong>${roleLabel}</strong>.</p>
-  <p>Para acceder al panel, crea tu cuenta usando este email (<strong>${data.toEmail}</strong>):</p>
-  <p><a href="${data.loginUrl}" style="display:inline-block;background:#2D3B2A;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:500;">Crear mi cuenta</a></p>
-  <p>Si ya tienes cuenta con este email, simplemente inicia sesión.</p>
-  <p>— ${SITE_NAME}</p>
-</body>
-</html>`;
+  const body = `
+    <p>${greeting},</p>
+    <p>Te damos la bienvenida a <strong>${data.centerName}</strong>. Fuiste agregado como <strong>${roleLabel}</strong>.</p>
+    <p>Para acceder al panel, crea tu cuenta usando este email (<strong>${data.toEmail}</strong>):</p>
+    <p><a href="${data.loginUrl}" style="${EMAIL_CTA_STYLE}">Crear mi cuenta</a></p>
+    <p>Si ya tienes cuenta con este email, simplemente inicia sesión.</p>`;
+  const html = emailBaseLayout({ body, centerName: data.centerName });
   const text = [
     `${greeting},`,
     `Te damos la bienvenida a ${data.centerName}. Fuiste agregado como ${roleLabel}.`,
@@ -321,6 +288,74 @@ export function buildWelcomeStaffEmail(data: WelcomeStaffData): SendEmailDto {
   };
 }
 
+// ─── Bienvenida a estudiante ────────────────────────────────────────────────
+export interface WelcomeStudentData {
+  toEmail: string;
+  userName: string;
+  centerName: string;
+  dashboardUrl: string;
+  profileUrl: string;
+}
+
+export function buildWelcomeStudentEmail(data: WelcomeStudentData): SendEmailDto {
+  const body = `
+    <p>Hola ${data.userName},</p>
+    <p>Te damos la bienvenida a <strong>${data.centerName}</strong>.</p>
+    <p>Desde tu panel puedes reservar clases, ver tu plan y gestionar tu cuenta.</p>
+    <p><a href="${data.dashboardUrl}" style="${EMAIL_CTA_STYLE}">Ir al panel</a></p>
+    <p style="margin-top: 16px;"><a href="${data.profileUrl}" style="color: #2D3B2A;">Completar mi perfil</a></p>`;
+  const html = emailBaseLayout({ body, centerName: data.centerName });
+  const text = `Hola ${data.userName}, bienvenido/a a ${data.centerName}. Ir al panel: ${data.dashboardUrl}`;
+  return { from: DEFAULT_FROM, to: [data.toEmail], subject: `Bienvenido/a a ${data.centerName}`, html, text };
+}
+
+// ─── Plan por vencer ────────────────────────────────────────────────────────
+export interface PlanExpiringData {
+  toEmail: string;
+  userName: string;
+  centerName: string;
+  planName: string;
+  expiryDate: string;
+  tiendaUrl: string;
+  preferencesUrl: string;
+}
+
+export function buildPlanExpiringEmail(data: PlanExpiringData): SendEmailDto {
+  const body = `
+    <p>Hola ${data.userName},</p>
+    <p>Tu plan <strong>${data.planName}</strong> vence el <strong>${data.expiryDate}</strong>.</p>
+    <p>Renueva para seguir disfrutando de tus clases.</p>
+    <p><a href="${data.tiendaUrl}" style="${EMAIL_CTA_STYLE}">Renovar plan</a></p>`;
+  const html = emailBaseLayout({ body, centerName: data.centerName, preferencesUrl: data.preferencesUrl });
+  const text = `Hola ${data.userName}, tu plan ${data.planName} vence el ${data.expiryDate}. Renueva en: ${data.tiendaUrl}`;
+  return { from: DEFAULT_FROM, to: [data.toEmail], subject: `Tu plan ${data.planName} vence pronto`, html, text };
+}
+
+// ─── Confirmación de compra ─────────────────────────────────────────────────
+export interface PurchaseConfirmationData {
+  toEmail: string;
+  userName: string;
+  centerName: string;
+  planName: string;
+  amountFormatted: string;
+  validUntil: string;
+  tiendaUrl: string;
+  preferencesUrl: string;
+}
+
+export function buildPurchaseConfirmationEmail(data: PurchaseConfirmationData): SendEmailDto {
+  const body = `
+    <p>Hola ${data.userName},</p>
+    <p>Tu compra fue confirmada.</p>
+    <p><strong>${data.planName}</strong><br>
+    Monto: ${data.amountFormatted}<br>
+    Vigencia hasta: ${data.validUntil}</p>
+    <p><a href="${data.tiendaUrl}" style="${EMAIL_CTA_STYLE}">Ver mi plan</a></p>`;
+  const html = emailBaseLayout({ body, centerName: data.centerName, preferencesUrl: data.preferencesUrl });
+  const text = `Hola ${data.userName}, tu compra de ${data.planName} (${data.amountFormatted}) fue confirmada. Vigencia hasta ${data.validUntil}.`;
+  return { from: DEFAULT_FROM, to: [data.toEmail], subject: `Compra confirmada: ${data.planName}`, html, text };
+}
+
 // ─── Subscription emails ─────────────────────────────────────────────────────
 
 export interface SubscriptionConfirmedData {
@@ -334,26 +369,18 @@ export interface SubscriptionConfirmedData {
 
 export function buildSubscriptionConfirmedEmail(data: SubscriptionConfirmedData): SendEmailDto {
   const greeting = data.userName ? `Hola ${data.userName}` : "Hola";
-  const subject = `Suscripción activa — ${data.planName}`;
-  const html = `
-<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"></head>
-<body style="font-family: sans-serif; line-height: 1.5; color: #333;">
-  <p>${greeting},</p>
-  <p>Tu suscripción a <strong>${data.planName}</strong> en ${data.centerName} está activa.</p>
-  <p>Se cobrará <strong>${data.amountFormatted}</strong> automáticamente. Próximo cobro: <strong>${data.nextChargeDate}</strong>.</p>
-  <p>Puedes cancelar en cualquier momento desde tu perfil.</p>
-  <p>— ${SITE_NAME}</p>
-</body>
-</html>`;
+  const body = `
+    <p>${greeting},</p>
+    <p>Tu suscripción a <strong>${data.planName}</strong> en ${data.centerName} está activa.</p>
+    <p>Se cobrará <strong>${data.amountFormatted}</strong> automáticamente. Próximo cobro: <strong>${data.nextChargeDate}</strong>.</p>
+    <p>Puedes cancelar en cualquier momento desde tu perfil.</p>`;
+  const html = emailBaseLayout({ body, centerName: data.centerName });
   const text = [
     `${greeting},`,
     `Tu suscripción a ${data.planName} en ${data.centerName} está activa.`,
     `Cobro automático: ${data.amountFormatted}. Próximo cobro: ${data.nextChargeDate}.`,
-    `— ${SITE_NAME}`,
   ].join("\n");
-  return { from: DEFAULT_FROM, to: [data.toEmail], subject, html, text };
+  return { from: DEFAULT_FROM, to: [data.toEmail], subject: `Suscripción activa — ${data.planName}`, html, text };
 }
 
 export interface SubscriptionRenewalData {
@@ -367,25 +394,17 @@ export interface SubscriptionRenewalData {
 
 export function buildSubscriptionRenewalEmail(data: SubscriptionRenewalData): SendEmailDto {
   const greeting = data.userName ? `Hola ${data.userName}` : "Hola";
-  const subject = `Cobro realizado — ${data.planName}`;
-  const html = `
-<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"></head>
-<body style="font-family: sans-serif; line-height: 1.5; color: #333;">
-  <p>${greeting},</p>
-  <p>Se cobró <strong>${data.amountFormatted}</strong> por tu suscripción a <strong>${data.planName}</strong> en ${data.centerName}.</p>
-  <p>Tu plan ha sido renovado. Próximo cobro: <strong>${data.nextChargeDate}</strong>.</p>
-  <p>— ${SITE_NAME}</p>
-</body>
-</html>`;
+  const body = `
+    <p>${greeting},</p>
+    <p>Se cobró <strong>${data.amountFormatted}</strong> por tu suscripción a <strong>${data.planName}</strong> en ${data.centerName}.</p>
+    <p>Tu plan ha sido renovado. Próximo cobro: <strong>${data.nextChargeDate}</strong>.</p>`;
+  const html = emailBaseLayout({ body, centerName: data.centerName });
   const text = [
     `${greeting},`,
     `Se cobró ${data.amountFormatted} por tu suscripción a ${data.planName} en ${data.centerName}.`,
     `Plan renovado. Próximo cobro: ${data.nextChargeDate}.`,
-    `— ${SITE_NAME}`,
   ].join("\n");
-  return { from: DEFAULT_FROM, to: [data.toEmail], subject, html, text };
+  return { from: DEFAULT_FROM, to: [data.toEmail], subject: `Cobro realizado — ${data.planName}`, html, text };
 }
 
 export interface SubscriptionCancelledData {
@@ -398,24 +417,16 @@ export interface SubscriptionCancelledData {
 
 export function buildSubscriptionCancelledEmail(data: SubscriptionCancelledData): SendEmailDto {
   const greeting = data.userName ? `Hola ${data.userName}` : "Hola";
-  const subject = `Suscripción cancelada — ${data.planName}`;
-  const html = `
-<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"></head>
-<body style="font-family: sans-serif; line-height: 1.5; color: #333;">
-  <p>${greeting},</p>
-  <p>Tu suscripción a <strong>${data.planName}</strong> en ${data.centerName} ha sido cancelada.</p>
-  <p>Tienes acceso hasta el <strong>${data.accessUntil}</strong>.</p>
-  <p>Si fue un error, puedes volver a suscribirte desde la tienda.</p>
-  <p>— ${SITE_NAME}</p>
-</body>
-</html>`;
+  const body = `
+    <p>${greeting},</p>
+    <p>Tu suscripción a <strong>${data.planName}</strong> en ${data.centerName} ha sido cancelada.</p>
+    <p>Tienes acceso hasta el <strong>${data.accessUntil}</strong>.</p>
+    <p>Si fue un error, puedes volver a suscribirte desde la tienda.</p>`;
+  const html = emailBaseLayout({ body, centerName: data.centerName });
   const text = [
     `${greeting},`,
     `Tu suscripción a ${data.planName} en ${data.centerName} ha sido cancelada.`,
     `Tienes acceso hasta el ${data.accessUntil}.`,
-    `— ${SITE_NAME}`,
   ].join("\n");
-  return { from: DEFAULT_FROM, to: [data.toEmail], subject, html, text };
+  return { from: DEFAULT_FROM, to: [data.toEmail], subject: `Suscripción cancelada — ${data.planName}`, html, text };
 }

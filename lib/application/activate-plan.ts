@@ -2,9 +2,12 @@
  * Activa un UserPlan al aprobar una orden.
  * Calcula vigencia según el tipo de plan (por días o por período).
  */
-import { planRepository, userPlanRepository } from "@/lib/adapters/db";
+import { planRepository, userPlanRepository, userRepository, centerRepository } from "@/lib/adapters/db";
 import type { Plan, ValidityPeriod } from "@/lib/ports/plan-repository";
 import type { UserPlan } from "@/lib/domain/user-plan";
+import { sendEmailSafe } from "./send-email";
+import { buildPurchaseConfirmationEmail } from "@/lib/email";
+import { shouldSendEmail } from "./check-email-preference";
 
 export function computeValidUntil(
   plan: Plan,
@@ -82,6 +85,30 @@ export async function activatePlanForOrder(
     validFrom: now,
     validUntil,
   });
+
+  // Send purchase confirmation email
+  const canSend = await shouldSendEmail(userId, centerId, "purchaseConfirm");
+  if (canSend) {
+    const [buyer, center] = await Promise.all([
+      userRepository.findById(userId),
+      centerRepository.findById(centerId),
+    ]);
+    if (buyer && center) {
+      const validUntilStr = validUntil
+        ? validUntil.toLocaleDateString("es-CL", { timeZone: "America/Santiago" })
+        : "Sin vencimiento";
+      sendEmailSafe(buildPurchaseConfirmationEmail({
+        toEmail: buyer.email,
+        userName: buyer.name ?? buyer.email.split("@")[0],
+        centerName: center.name,
+        planName: plan.name,
+        amountFormatted: `$${plan.amountCents.toLocaleString("es-CL")}`,
+        validUntil: validUntilStr,
+        tiendaUrl: `${process.env.NEXTAUTH_URL ?? ""}/panel/tienda`,
+        preferencesUrl: `${process.env.NEXTAUTH_URL ?? ""}/panel/mi-perfil?tab=correos`,
+      }));
+    }
+  }
 
   return { success: true, userPlan };
 }
