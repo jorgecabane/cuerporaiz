@@ -20,4 +20,5 @@ export const PANEL_ADMIN_ITEMS = [
   { href: "/panel/plugins", label: "Plugins" },
   { href: "/panel/planes", label: "Planes" },
   { href: "/panel/pagos", label: "Pagos" },
+  { href: "/panel/sitio", label: "Sitio" },
 ] as const;
