@@ -3,6 +3,7 @@ import { Cormorant_Garamond, DM_Sans } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import { LayoutWithPanel } from "@/components/shared/LayoutWithPanel";
+import DynamicTheme from "@/components/shared/DynamicTheme";
 
 const fontDisplay = Cormorant_Garamond({
   variable: "--font-display",
@@ -32,6 +33,7 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className={`${fontDisplay.variable} ${fontSans.variable}`}>
+        <DynamicTheme />
         <AuthProvider>
         <a
           href="#main"
