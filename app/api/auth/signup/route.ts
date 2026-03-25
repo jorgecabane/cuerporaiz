@@ -3,6 +3,8 @@ import { authService } from "@/lib/adapters/auth";
 import { userRepository, centerRepository } from "@/lib/adapters/db";
 import { signupBodySchema } from "@/lib/dto/auth-dto";
 import { isRole, DEFAULT_SIGNUP_ROLE } from "@/lib/domain/role";
+import { sendEmailSafe } from "@/lib/application/send-email";
+import { buildWelcomeStudentEmail } from "@/lib/email";
 
 export async function POST(request: Request) {
   try {
@@ -36,6 +38,15 @@ export async function POST(request: Request) {
     const user = await userRepository.create({ email, passwordHash, name });
     const assignRole = (role && isRole(role)) ? role : DEFAULT_SIGNUP_ROLE;
     await userRepository.addRole(user.id, center.id, assignRole);
+
+    const baseUrl = new URL(request.url).origin;
+    sendEmailSafe(buildWelcomeStudentEmail({
+      toEmail: email,
+      userName: name ?? email.split("@")[0],
+      centerName: center.name,
+      dashboardUrl: `${baseUrl}/panel`,
+      profileUrl: `${baseUrl}/panel/mi-perfil`,
+    }));
 
     return NextResponse.json(
       { id: user.id, email: user.email, name: user.name },
