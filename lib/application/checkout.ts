@@ -15,6 +15,10 @@ import {
 import { mercadoPagoPaymentAdapter } from "@/lib/adapters/payment";
 import { verifyMercadoPagoWebhookSignature } from "./verify-webhook-signature";
 import type { WebhookProcessResultDto } from "@/lib/dto/checkout-dto";
+import {
+  processPreapprovalWebhook,
+  processAuthorizedPaymentWebhook,
+} from "./process-subscription-webhook";
 
 const paymentProvider: IPaymentProvider = mercadoPagoPaymentAdapter;
 
@@ -178,6 +182,22 @@ export async function processWebhookUseCase(
   if (already) {
     return { success: true, alreadyProcessed: true };
   }
+
+  // ── Subscription topic routing ──────────────────────────────────────
+  const type = body.type as string | undefined;
+
+  if (type === "subscription_preapproval") {
+    const result = await processPreapprovalWebhook(input.centerId, String(resourceId));
+    await webhookEventRepository.markProcessed(input.centerId, requestId);
+    return { success: result.success, alreadyProcessed: false, error: result.error };
+  }
+
+  if (type === "subscription_authorized_payment") {
+    const result = await processAuthorizedPaymentWebhook(input.centerId, String(resourceId));
+    await webhookEventRepository.markProcessed(input.centerId, requestId);
+    return { success: result.success, alreadyProcessed: false, error: result.error };
+  }
+  // ── End subscription routing ────────────────────────────────────────
 
   const paymentId = String(body.data?.id ?? resourceId);
   const payment = await paymentProvider.getPayment({

@@ -55,7 +55,7 @@ export async function GET(request: Request) {
     );
   }
 
-  const isTestCredentials = clientSecret.startsWith("TEST-");
+  const useTestToken = clientSecret.startsWith("TEST-") || process.env.MP_TEST_MODE === "true";
   const tokenRes = await fetch("https://api.mercadopago.com/oauth/token", {
     method: "POST",
     headers: { "Content-Type": "application/json", Accept: "application/json" },
@@ -65,7 +65,7 @@ export async function GET(request: Request) {
       code,
       grant_type: "authorization_code" as const,
       redirect_uri: redirectUri,
-      ...(isTestCredentials && { test_token: "true" }),
+      ...(useTestToken && { test_token: "true" }),
     }),
   });
 

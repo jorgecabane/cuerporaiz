@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import type { Plan, ValidityPeriod, PlanType, BillingMode } from "@/lib/ports";
 import { planRepository, userPlanRepository } from "@/lib/adapters/db";
 import { ComprarPlanButton } from "@/app/planes/ComprarPlanButton";
+import SuscribirmeButton from "@/app/planes/SuscribirmeButton";
 import { MisPlansTabs } from "@/app/planes/MisPlansTabs";
 import type { MisPlanItem } from "@/app/planes/MisPlansTabs";
 
@@ -132,9 +133,10 @@ function PlanCard({ plan }: { plan: Plan }) {
           </Suspense>
         )}
         {canRecurring && (
-          <Button variant="secondary" disabled className="cursor-not-allowed" aria-disabled="true">
-            Suscribirme (próximamente)
-          </Button>
+          <SuscribirmeButton
+            planId={plan.id}
+            recurringDiscountPercent={plan.recurringDiscountPercent ?? undefined}
+          />
         )}
       </div>
     </li>

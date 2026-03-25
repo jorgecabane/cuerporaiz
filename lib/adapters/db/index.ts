@@ -17,3 +17,4 @@ export { instructorBankAccountRepository } from "./instructor-bank-account-repos
 export { centerHolidayRepository } from "./center-holiday-repository";
 export { userPlanRepository } from "./user-plan-repository";
 export { emailPreferenceRepository } from "./email-preference-repository";
+export { subscriptionRepository } from "./subscription-repository";

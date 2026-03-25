@@ -7,6 +7,7 @@ export type { IDisciplineRepository, CreateDisciplineInput, UpdateDisciplineInpu
 export type { ILiveClassSeriesRepository, CreateSeriesInput, UpdateSeriesInput } from "./live-class-series-repository";
 export type { IReservationRepository } from "./reservation-repository";
 export type { IPaymentProvider } from "./payment-provider";
+export type { ISubscriptionProvider } from "./subscription-provider";
 export type { IMercadoPagoConfigRepository, MercadoPagoConfig } from "./mercadopago-config-repository";
 export type { IZoomConfigRepository, ZoomConfig } from "./zoom-config-repository";
 export type { IGoogleMeetConfigRepository, GoogleMeetConfig } from "./google-meet-config-repository";
@@ -20,3 +21,4 @@ export type { IInstructorRepository, Instructor, CreateInstructorInput, UpdateIn
 export type { ICenterHolidayRepository, CreateHolidayInput } from "./center-holiday-repository";
 export type { IUserPlanRepository, CreateUserPlanInput } from "./user-plan-repository";
 export type { IEmailPreferenceRepository, UpsertEmailPreferenceInput } from "./email-preference-repository";
+export type { ISubscriptionRepository, CreateSubscriptionInput } from "./subscription-repository";

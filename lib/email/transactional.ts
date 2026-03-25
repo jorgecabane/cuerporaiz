@@ -355,3 +355,78 @@ export function buildPurchaseConfirmationEmail(data: PurchaseConfirmationData): 
   const text = `Hola ${data.userName}, tu compra de ${data.planName} (${data.amountFormatted}) fue confirmada. Vigencia hasta ${data.validUntil}.`;
   return { from: DEFAULT_FROM, to: [data.toEmail], subject: `Compra confirmada: ${data.planName}`, html, text };
 }
+
+// ─── Subscription emails ─────────────────────────────────────────────────────
+
+export interface SubscriptionConfirmedData {
+  toEmail: string;
+  userName: string;
+  planName: string;
+  centerName: string;
+  amountFormatted: string;
+  nextChargeDate: string;
+}
+
+export function buildSubscriptionConfirmedEmail(data: SubscriptionConfirmedData): SendEmailDto {
+  const greeting = data.userName ? `Hola ${data.userName}` : "Hola";
+  const body = `
+    <p>${greeting},</p>
+    <p>Tu suscripción a <strong>${data.planName}</strong> en ${data.centerName} está activa.</p>
+    <p>Se cobrará <strong>${data.amountFormatted}</strong> automáticamente. Próximo cobro: <strong>${data.nextChargeDate}</strong>.</p>
+    <p>Puedes cancelar en cualquier momento desde tu perfil.</p>`;
+  const html = emailBaseLayout({ body, centerName: data.centerName });
+  const text = [
+    `${greeting},`,
+    `Tu suscripción a ${data.planName} en ${data.centerName} está activa.`,
+    `Cobro automático: ${data.amountFormatted}. Próximo cobro: ${data.nextChargeDate}.`,
+  ].join("\n");
+  return { from: DEFAULT_FROM, to: [data.toEmail], subject: `Suscripción activa — ${data.planName}`, html, text };
+}
+
+export interface SubscriptionRenewalData {
+  toEmail: string;
+  userName: string;
+  planName: string;
+  centerName: string;
+  amountFormatted: string;
+  nextChargeDate: string;
+}
+
+export function buildSubscriptionRenewalEmail(data: SubscriptionRenewalData): SendEmailDto {
+  const greeting = data.userName ? `Hola ${data.userName}` : "Hola";
+  const body = `
+    <p>${greeting},</p>
+    <p>Se cobró <strong>${data.amountFormatted}</strong> por tu suscripción a <strong>${data.planName}</strong> en ${data.centerName}.</p>
+    <p>Tu plan ha sido renovado. Próximo cobro: <strong>${data.nextChargeDate}</strong>.</p>`;
+  const html = emailBaseLayout({ body, centerName: data.centerName });
+  const text = [
+    `${greeting},`,
+    `Se cobró ${data.amountFormatted} por tu suscripción a ${data.planName} en ${data.centerName}.`,
+    `Plan renovado. Próximo cobro: ${data.nextChargeDate}.`,
+  ].join("\n");
+  return { from: DEFAULT_FROM, to: [data.toEmail], subject: `Cobro realizado — ${data.planName}`, html, text };
+}
+
+export interface SubscriptionCancelledData {
+  toEmail: string;
+  userName: string;
+  planName: string;
+  centerName: string;
+  accessUntil: string;
+}
+
+export function buildSubscriptionCancelledEmail(data: SubscriptionCancelledData): SendEmailDto {
+  const greeting = data.userName ? `Hola ${data.userName}` : "Hola";
+  const body = `
+    <p>${greeting},</p>
+    <p>Tu suscripción a <strong>${data.planName}</strong> en ${data.centerName} ha sido cancelada.</p>
+    <p>Tienes acceso hasta el <strong>${data.accessUntil}</strong>.</p>
+    <p>Si fue un error, puedes volver a suscribirte desde la tienda.</p>`;
+  const html = emailBaseLayout({ body, centerName: data.centerName });
+  const text = [
+    `${greeting},`,
+    `Tu suscripción a ${data.planName} en ${data.centerName} ha sido cancelada.`,
+    `Tienes acceso hasta el ${data.accessUntil}.`,
+  ].join("\n");
+  return { from: DEFAULT_FROM, to: [data.toEmail], subject: `Suscripción cancelada — ${data.planName}`, html, text };
+}
