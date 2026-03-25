@@ -67,6 +67,13 @@ export async function createSubscriptionCheckoutUseCase(
   const externalRef = `sub_${crypto.randomUUID()}`;
   const base = input.baseUrl.replace(/\/$/, "");
 
+  // In test mode (token starts with TEST-), use a test buyer email
+  // to avoid "real vs test user" mismatch in MercadoPago sandbox.
+  const isTestMode = config.accessToken.startsWith("TEST-");
+  const payerEmail = isTestMode
+    ? (process.env.MP_TEST_BUYER_EMAIL ?? input.payerEmail)
+    : input.payerEmail;
+
   const result = await mercadoPagoSubscriptionAdapter.createPreapproval({
     accessToken: config.accessToken,
     planName: plan.name,
@@ -74,10 +81,10 @@ export async function createSubscriptionCheckoutUseCase(
     currency: plan.currency,
     frequency,
     frequencyType: "months",
-    payerEmail: input.payerEmail,
+    payerEmail,
     externalReference: externalRef,
     notificationUrl: `${base}/api/webhooks/mercadopago/${center.id}`,
-    backUrl: `${base}/panel/tienda?subscription=pending`,
+    backUrl: `${base}/panel/tienda`,
   });
 
   if (!result.success) return { success: false, error: result.error };

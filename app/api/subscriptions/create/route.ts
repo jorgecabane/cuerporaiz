@@ -16,7 +16,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Datos inválidos", details: parsed.error.flatten() }, { status: 400 });
     }
 
-    const baseUrl = new URL(request.url).origin;
+    // Prefer forwarded host (ngrok, reverse proxy) over localhost
+    const forwardedHost = request.headers.get("x-forwarded-host");
+    const forwardedProto = request.headers.get("x-forwarded-proto") ?? "https";
+    const baseUrl = forwardedHost
+      ? `${forwardedProto}://${forwardedHost}`
+      : new URL(request.url).origin;
 
     const result = await createSubscriptionCheckoutUseCase({
       centerId: session.user.centerId,

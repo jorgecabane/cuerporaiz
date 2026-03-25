@@ -26,7 +26,7 @@ function mpHeaders(accessToken: string) {
 export const mercadoPagoSubscriptionAdapter: ISubscriptionProvider = {
   async createPreapproval(dto: CreatePreapprovalDto): Promise<CreatePreapprovalResultDto> {
     try {
-      const body = {
+      const body: Record<string, unknown> = {
         reason: dto.planName,
         auto_recurring: {
           frequency: dto.frequency,
@@ -34,12 +34,14 @@ export const mercadoPagoSubscriptionAdapter: ISubscriptionProvider = {
           transaction_amount: dto.amountCents,
           currency_id: dto.currency,
         },
-        payer_email: dto.payerEmail,
         external_reference: dto.externalReference,
         notification_url: dto.notificationUrl,
         back_url: dto.backUrl,
         status: "pending",
       };
+      if (dto.payerEmail) {
+        body.payer_email = dto.payerEmail;
+      }
 
       const res = await fetch(`${MP_API}/preapproval`, {
         method: "POST",
