@@ -1,7 +1,19 @@
 import { StaggerList, StaggerItem } from "@/components/ui/AnimateIn";
 import { AnimateIn } from "@/components/ui/AnimateIn";
 
-const STEPS = [
+type StepItem = {
+  title?: string;
+  description?: string;
+  linkUrl?: string;
+};
+
+type ComoFuncionaSectionProps = {
+  title?: string;
+  subtitle?: string;
+  items?: StepItem[];
+};
+
+const DEFAULT_STEPS = [
   {
     num: "01",
     label: "Presencial",
@@ -25,7 +37,25 @@ const STEPS = [
   },
 ] as const;
 
-export function ComoFuncionaSection() {
+function parseStepLink(linkUrl?: string): { num: string; label: string } {
+  if (!linkUrl) return { num: "01", label: "" };
+  const [num, label] = linkUrl.split("|");
+  return { num: num ?? "01", label: label ?? "" };
+}
+
+export function ComoFuncionaSection({ title, subtitle, items }: ComoFuncionaSectionProps) {
+  const steps = items
+    ? items.map((item, i) => {
+        const { num, label } = parseStepLink(item.linkUrl);
+        return {
+          num: num || String(i + 1).padStart(2, "0"),
+          label,
+          title: item.title ?? "",
+          description: item.description ?? "",
+        };
+      })
+    : DEFAULT_STEPS;
+
   return (
     <section
       id="como-funciona"
@@ -39,9 +69,17 @@ export function ComoFuncionaSection() {
             id="como-funciona-heading"
             className="text-section font-display font-semibold text-[var(--color-primary)]"
           >
-            Tres formas de<br className="hidden sm:block" /> sumarte
+            {title ?? (<>Tres formas de<br className="hidden sm:block" /> sumarte</>)}
           </h2>
         </AnimateIn>
+
+        {subtitle && (
+          <AnimateIn delay={0.08}>
+            <p className="mt-[var(--space-3)] text-lg text-[var(--color-text-muted)]">
+              {subtitle}
+            </p>
+          </AnimateIn>
+        )}
 
         {/* Pasos */}
         <StaggerList
@@ -49,7 +87,7 @@ export function ComoFuncionaSection() {
           delayChildren={0.15}
           className="mt-[var(--space-16)] divide-y divide-[var(--color-border)]"
         >
-          {STEPS.map((step) => (
+          {steps.map((step) => (
             <StaggerItem key={step.num}>
               <div className="grid grid-cols-1 gap-[var(--space-4)] py-[var(--space-10)] sm:grid-cols-[auto_1fr] sm:gap-[var(--space-8)] md:grid-cols-[auto_auto_1fr] md:items-start md:gap-[var(--space-12)]">
                 {/* Número */}

@@ -22,3 +22,5 @@ export type { ICenterHolidayRepository, CreateHolidayInput } from "./center-holi
 export type { IUserPlanRepository, CreateUserPlanInput } from "./user-plan-repository";
 export type { IEmailPreferenceRepository, UpsertEmailPreferenceInput } from "./email-preference-repository";
 export type { ISubscriptionRepository, CreateSubscriptionInput } from "./subscription-repository";
+export type { ISiteConfigRepository } from "./site-config-repository";
+export type { ISiteSectionRepository } from "./site-section-repository";

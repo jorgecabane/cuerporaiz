@@ -13,6 +13,31 @@ type ClassItem = {
   spotsTotal: number;
 };
 
+type LivePlan = {
+  name: string;
+  amountCents: number;
+  currency: string;
+  validityDays?: number;
+  maxReservations?: number;
+  highlight?: boolean;
+};
+
+type ScheduleClass = {
+  time: string;
+  type: string;
+  duration: string;
+  spotsUsed: number;
+  spotsTotal: number;
+  dayOfWeek: number; // 0=dom, 1=lun...6=sáb
+};
+
+type AgendaSectionProps = {
+  title?: string;
+  subtitle?: string;
+  livePlans?: LivePlan[];
+  classes?: ScheduleClass[];
+};
+
 /* ─── Datos de horario por día de semana (0 = domingo) ───────────────────── */
 const SCHEDULE: Record<number, ClassItem[]> = {
   0: [],
@@ -41,14 +66,14 @@ const SCHEDULE: Record<number, ClassItem[]> = {
   ],
 };
 
-const PLANES = [
-  { name: "Clase suelta", price: "$12.000", note: "30 días de vigencia", highlight: false },
-  { name: "Pack 4 clases", price: "$36.000", note: "31 días", highlight: false },
-  { name: "Pack 6 clases", price: "$48.000", note: "31 días", highlight: false },
-  { name: "Pack 8 clases", price: "$60.000", note: "31 días", highlight: false },
-  { name: "Pack 12 clases", price: "$88.000", note: "31 días", highlight: true },
-  { name: "Ilimitado", price: "$96.000", note: "31 días, clases ilimitadas", highlight: false },
-] as const;
+const DEFAULT_PLANS: LivePlan[] = [
+  { name: "Clase suelta", amountCents: 12000, currency: "CLP", validityDays: 30, highlight: false },
+  { name: "Pack 4 clases", amountCents: 36000, currency: "CLP", validityDays: 31, maxReservations: 4, highlight: false },
+  { name: "Pack 6 clases", amountCents: 48000, currency: "CLP", validityDays: 31, maxReservations: 6, highlight: false },
+  { name: "Pack 8 clases", amountCents: 60000, currency: "CLP", validityDays: 31, maxReservations: 8, highlight: false },
+  { name: "Pack 12 clases", amountCents: 88000, currency: "CLP", validityDays: 31, maxReservations: 12, highlight: true },
+  { name: "Ilimitado", amountCents: 96000, currency: "CLP", validityDays: 31, highlight: false },
+];
 
 const DAY_SHORT = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
 const MONTH_SHORT = [
@@ -81,16 +106,40 @@ function availabilityLabel(used: number, total: number): string {
   return `${total - used} ${total - used === 1 ? "cupo" : "cupos"}`;
 }
 
+function formatPrice(amountCents: number, currency: string): string {
+  if (currency === "CLP") {
+    return `$${amountCents.toLocaleString("es-CL")}`;
+  }
+  return `${amountCents / 100} ${currency}`;
+}
+
+function planNote(plan: LivePlan): string {
+  const parts: string[] = [];
+  if (plan.validityDays) {
+    parts.push(`${plan.validityDays} días`);
+  }
+  if (!plan.maxReservations) {
+    parts.push("clases ilimitadas");
+  }
+  return parts.join(", ");
+}
+
 /* ─── Componente ─────────────────────────────────────────────────────────── */
-export function AgendaSection() {
+export function AgendaSection({ title, subtitle, livePlans, classes: classesProp }: AgendaSectionProps) {
   const days = useMemo(() => getUpcomingDays(7), []);
   const [selectedIdx, setSelectedIdx] = useState(0);
 
   const selectedDay = days[selectedIdx];
   const dayOfWeek = selectedDay.getDay();
-  const classes = SCHEDULE[dayOfWeek] ?? [];
+
+  // Use real classes from DB if provided, otherwise fallback to hardcoded
+  const classes = classesProp
+    ? classesProp.filter((c) => c.dayOfWeek === dayOfWeek)
+    : (SCHEDULE[dayOfWeek] ?? []);
 
   const headingDate = `${DAY_LONG[dayOfWeek]} ${selectedDay.getDate()} de ${MONTH_SHORT[selectedDay.getMonth()]}`;
+
+  const plans = livePlans ?? DEFAULT_PLANS;
 
   return (
     <section
@@ -102,7 +151,7 @@ export function AgendaSection() {
         {/* Encabezado */}
         <AnimateIn>
           <p className="text-xs font-medium uppercase tracking-[0.22em] text-[var(--color-secondary)]">
-            Presencial — Vitacura
+            {subtitle ?? "Presencial — Vitacura"}
           </p>
         </AnimateIn>
         <AnimateIn delay={0.1}>
@@ -110,7 +159,7 @@ export function AgendaSection() {
             id="agenda-heading"
             className="mt-[var(--space-3)] text-section font-display font-semibold text-[var(--color-primary)]"
           >
-            Reserva tu lugar
+            {title ?? "Reserva tu lugar"}
           </h2>
         </AnimateIn>
 
@@ -129,7 +178,9 @@ export function AgendaSection() {
               >
                 {days.map((day, i) => {
                   const isSelected = i === selectedIdx;
-                  const hasClasses = (SCHEDULE[day.getDay()] ?? []).length > 0;
+                  const hasClasses = classesProp
+                    ? classesProp.some((c) => c.dayOfWeek === day.getDay())
+                    : (SCHEDULE[day.getDay()] ?? []).length > 0;
                   return (
                     <button
                       key={i}
@@ -180,11 +231,11 @@ export function AgendaSection() {
                     Sin clases este día. Descansa, el cuerpo también lo necesita.
                   </p>
                 ) : (
-                  classes.map((c) => {
+                  classes.map((c, i) => {
                     const isFull = c.spotsUsed >= c.spotsTotal;
                     return (
                       <div
-                        key={`${c.time}-${c.type}`}
+                        key={`${c.time}-${c.type}-${i}`}
                         className="grid grid-cols-[3.5rem_1fr_auto] items-center gap-[var(--space-4)] py-[var(--space-5)] sm:grid-cols-[3.5rem_1fr_auto_auto]"
                       >
                         {/* Hora */}
@@ -258,7 +309,7 @@ export function AgendaSection() {
               </h3>
 
               <ul className="mt-[var(--space-6)] divide-y divide-[var(--color-border)]">
-                {PLANES.map((plan) => (
+                {plans.map((plan) => (
                   <li
                     key={plan.name}
                     className={`flex items-center justify-between py-[var(--space-4)] ${
@@ -282,14 +333,12 @@ export function AgendaSection() {
                           </span>
                         )}
                       </span>
-                      {plan.note && (
-                        <span className="text-xs text-[var(--color-text-muted)]">
-                          {plan.note}
-                        </span>
-                      )}
+                      <span className="text-xs text-[var(--color-text-muted)]">
+                        {planNote(plan)}
+                      </span>
                     </div>
                     <span className="font-display text-base font-semibold text-[var(--color-primary)]">
-                      {plan.price}
+                      {formatPrice(plan.amountCents, plan.currency)}
                     </span>
                   </li>
                 ))}
