@@ -42,6 +42,8 @@ export async function updatePractice(
   await requireAdminCenterId();
   await onDemandPracticeRepository.update(id, data);
   revalidatePath(`/panel/on-demand/categorias/${categoryId}`);
+  revalidatePath(`/panel/on-demand/categorias/${categoryId}/practicas/${id}`);
+  redirect(`/panel/on-demand/categorias/${categoryId}/practicas/${id}`);
 }
 
 export async function deletePractice(id: string, categoryId: string): Promise<void> {

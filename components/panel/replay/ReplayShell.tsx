@@ -93,6 +93,8 @@ export function ReplayShell({
         ),
       );
     }
+    // Refresh server data to get the videoUrl for the newly unlocked lesson
+    router.refresh();
   }
 
   function getRemaining(categoryId: string): number | null {
