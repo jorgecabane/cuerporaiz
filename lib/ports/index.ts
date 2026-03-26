@@ -22,3 +22,8 @@ export type { ICenterHolidayRepository, CreateHolidayInput } from "./center-holi
 export type { IUserPlanRepository, CreateUserPlanInput } from "./user-plan-repository";
 export type { IEmailPreferenceRepository, UpsertEmailPreferenceInput } from "./email-preference-repository";
 export type { ISubscriptionRepository, CreateSubscriptionInput } from "./subscription-repository";
+export type { IOnDemandCategoryRepository } from "./on-demand-category-repository";
+export type { IOnDemandPracticeRepository } from "./on-demand-practice-repository";
+export type { IOnDemandLessonRepository } from "./on-demand-lesson-repository";
+export type { ILessonUnlockRepository } from "./lesson-unlock-repository";
+export type { IPlanCategoryQuotaRepository } from "./plan-category-quota-repository";
