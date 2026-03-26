@@ -136,6 +136,49 @@ export default async function HomePage() {
       highlight: false,
     }));
 
+  // Build on-demand cards from DB plans + section items for customization
+  const onDemandPlans = plans.filter((p) => p.type === "ON_DEMAND");
+  const membershipPlans = plans.filter((p) => p.type === "MEMBERSHIP_ON_DEMAND");
+  const onDemandSection = sectionMap.get("on-demand");
+  const onDemandItems = onDemandSection?.items ?? [];
+
+  const ofertaCards: {
+    tag: string; title: string; description: string; price: string;
+    href: string; variant: "primary" | "secondary"; image: string; imageAlt: string;
+  }[] = [];
+
+  // On-demand card (only if there are ON_DEMAND plans)
+  if (onDemandPlans.length > 0) {
+    const minPrice = Math.min(...onDemandPlans.map((p) => p.amountCents));
+    const item = onDemandItems.find((i) => i.sortOrder === 0) ?? onDemandItems[0];
+    ofertaCards.push({
+      tag: item?.linkUrl ?? "Packs online",
+      title: item?.title ?? "Practica a tu ritmo",
+      description: item?.description ?? "Clases grabadas por tipo de práctica. Acceso por tiempo definido.",
+      price: `Desde $${minPrice.toLocaleString("es-CL")}`,
+      href: "/catalogo",
+      variant: "primary",
+      image: item?.imageUrl ?? "https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&q=80",
+      imageAlt: item?.title ?? "Práctica de yoga on demand",
+    });
+  }
+
+  // Membership card (only if there are MEMBERSHIP_ON_DEMAND plans)
+  if (membershipPlans.length > 0) {
+    const minPrice = Math.min(...membershipPlans.map((p) => p.amountCents));
+    const item = onDemandItems.find((i) => i.sortOrder === 1) ?? onDemandItems[1];
+    ofertaCards.push({
+      tag: item?.linkUrl ?? "Membresía",
+      title: item?.title ?? "Siempre actualizada",
+      description: item?.description ?? "Acceso a todo el contenido on demand mientras estés activa.",
+      price: `$${minPrice.toLocaleString("es-CL")} / mes`,
+      href: "/membresia",
+      variant: "secondary",
+      image: item?.imageUrl ?? "https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&q=80",
+      imageAlt: item?.title ?? "Membresía on demand",
+    });
+  }
+
   // Serialize disciplines for DisciplinesSection
   const serializedDisciplines = disciplines.map((d) => ({
     name: d.name,
@@ -200,7 +243,7 @@ export default async function HomePage() {
                 key={section.id}
                 title={section.title ?? undefined}
                 subtitle={section.subtitle ?? undefined}
-                visible={section.visible}
+                cards={ofertaCards}
               />
             );
 
