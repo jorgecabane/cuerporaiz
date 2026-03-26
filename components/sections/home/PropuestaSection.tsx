@@ -13,9 +13,9 @@ type PropuestaSectionProps = {
 };
 
 export function PropuestaSection({ title, subtitle, items }: PropuestaSectionProps) {
-  // If items are provided, use first item as quote and second as body paragraph
-  const quote = items?.[0]?.description ?? null;
-  const body = items?.[1]?.description ?? null;
+  // First item: title = quote, description = body paragraph
+  const quote = items?.[0]?.title ?? null;
+  const body = items?.[0]?.description ?? null;
 
   return (
     <section
@@ -35,7 +35,7 @@ export function PropuestaSection({ title, subtitle, items }: PropuestaSectionPro
         <AnimateIn delay={0.12}>
           <blockquote className="mt-[var(--space-6)]">
             <p className="text-quote font-display italic leading-snug text-[var(--color-primary)]">
-              &ldquo;{quote ?? "habitar de sexualidad también es hablar de cuerpo, emociones y bienestar. este espacio nace para abrir conversaciones más conscientes, desde el respeto, la educación, la conexión y el placer."}&rdquo;
+              &ldquo;{quote ?? "hablar de sexualidad también es hablar de cuerpo, emociones y bienestar. este espacio nace para abrir conversaciones más conscientes, desde el respeto, la educación, la conexión y el placer."}&rdquo;
             </p>
           </blockquote>
         </AnimateIn>
