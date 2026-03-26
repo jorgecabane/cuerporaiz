@@ -18,7 +18,7 @@ const SECTION_LABELS: Record<string, string> = {
   contact: "Contacto",
 };
 
-const EDITABLE_SECTIONS = new Set(["team", "testimonials", "about", "how-it-works"]);
+const EDITABLE_SECTIONS = new Set(["team", "testimonials", "about", "how-it-works", "on-demand"]);
 
 type Section = {
   id: string;
