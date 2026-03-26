@@ -144,7 +144,15 @@ async function main() {
       facebookUrl: "https://facebook.com/cuerporaiz",
       youtubeUrl: "https://youtube.com/@cuerporaiz",
     },
-    update: {},
+    update: {
+      heroTitle: "cuerpo,\n*respiración*\ny placer.",
+      heroSubtitle: "el camino de regreso a ti.",
+      heroImageUrl:
+        "https://images.unsplash.com/photo-1545205597-3d9d02c29597?w=1920&q=80",
+      colorPrimary: "#2D3B2A",
+      colorSecondary: "#B85C38",
+      colorAccent: "#D4A574",
+    },
   });
   console.log("CenterSiteConfig creada");
 
@@ -177,7 +185,12 @@ async function main() {
         subtitle: def.subtitle ?? null,
         visible: "visible" in def ? (def as { visible: boolean }).visible : true,
       },
-      update: {},
+      update: {
+        sortOrder: def.sortOrder,
+        title: def.title ?? null,
+        subtitle: def.subtitle ?? null,
+        visible: "visible" in def ? (def as { visible: boolean }).visible : true,
+      },
     });
     sectionRecords[def.sectionKey] = section.id;
   }
