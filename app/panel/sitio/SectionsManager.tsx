@@ -19,7 +19,7 @@ const SECTION_LABELS: Record<string, string> = {
 };
 
 /** Sections that have editable sub-items */
-const HAS_ITEMS_SECTIONS = new Set(["team", "testimonials", "about", "how-it-works", "on-demand"]);
+const HAS_ITEMS_SECTIONS = new Set(["team", "testimonials", "about", "how-it-works", "on-demand", "cta"]);
 
 /** Sections where title/subtitle can be edited inline (most sections) */
 const HAS_TITLE_SECTIONS = new Set([

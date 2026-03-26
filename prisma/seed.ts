@@ -302,26 +302,47 @@ async function main() {
     });
   }
 
-  // testimonials: community quote
-  const testimonialItems = await prisma.centerSiteSectionItem.findFirst({
-    where: { sectionId: sectionRecords["testimonials"] },
+  // testimonials: quote + stats
+  const testimonialQuote = await prisma.centerSiteSectionItem.findFirst({
+    where: { sectionId: sectionRecords["testimonials"], sortOrder: 0 },
   });
-  if (!testimonialItems) {
+  if (!testimonialQuote) {
+    await prisma.centerSiteSectionItem.create({
+      data: {
+        sectionId: sectionRecords["testimonials"],
+        sortOrder: 0,
+        title:
+          "Sabemos que no fue solo un retiro, fue un espacio de verdad, de contención, de pura expansión. cuerpos respirando juntos, corazones vibrando en la misma sintonía.",
+        description: "Comunidad Cuerpo Raíz",
+        linkUrl: "Retiro Rena-ser",
+      },
+    });
+  }
+  // Stats (sortOrder 1+ = stat items, title = value, description = label)
+  const testimonialStats = await prisma.centerSiteSectionItem.findFirst({
+    where: { sectionId: sectionRecords["testimonials"], sortOrder: 1 },
+  });
+  if (!testimonialStats) {
     await prisma.centerSiteSectionItem.createMany({
       data: [
-        {
-          sectionId: sectionRecords["testimonials"],
-          sortOrder: 0,
-          title:
-            "Sabemos que no fue solo un retiro, fue un espacio de verdad, de contención, de pura expansión. cuerpos respirando juntos, corazones vibrando en la misma sintonía.",
-          description: "Comunidad Cuerpo Raíz",
-          linkUrl: "Retiro Rena-ser",
-        },
-        // Stats (sortOrder 1+ = stat items, title = value, description = label)
         { sectionId: sectionRecords["testimonials"], sortOrder: 1, title: "2022", description: "Inicio de comunidad" },
         { sectionId: sectionRecords["testimonials"], sortOrder: 2, title: "4+", description: "Tipos de práctica" },
         { sectionId: sectionRecords["testimonials"], sortOrder: 3, title: "Online y presencial", description: "Clases a tu ritmo" },
       ],
+    });
+  }
+
+  // cta: body text
+  const ctaItems = await prisma.centerSiteSectionItem.findFirst({
+    where: { sectionId: sectionRecords["cta"] },
+  });
+  if (!ctaItems) {
+    await prisma.centerSiteSectionItem.create({
+      data: {
+        sectionId: sectionRecords["cta"],
+        sortOrder: 0,
+        title: "Elige el formato que se adapte a tu ritmo. Comienza cuando quieras, desde donde estés.",
+      },
     });
   }
 

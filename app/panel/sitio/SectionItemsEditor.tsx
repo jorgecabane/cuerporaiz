@@ -153,7 +153,7 @@ export default function SectionItemsEditor({ sectionId, sectionKey }: Props) {
         <div key={item.id} className="border border-[var(--color-border)] rounded-[var(--radius-md)] overflow-hidden">
           {editingId === item.id ? (
             <div className="p-3 space-y-2 bg-[var(--color-surface)]">
-              <ItemForm form={editForm} onChange={setEditForm} sectionKey={sectionKey} />
+              <ItemForm form={editForm} onChange={setEditForm} sectionKey={sectionKey === "testimonials" && index > 0 ? "testimonials-stat" : sectionKey} />
               <div className="flex gap-2 justify-end">
                 <button
                   type="button"
@@ -314,6 +314,15 @@ const FIELD_LABELS: Record<string, {
     title: "Cita / Testimonio",
     description: "Nombre del autor",
     linkUrl: "Detalle (ej: Retiro Rena-ser)",
+  },
+  "testimonials-stat": {
+    title: "Valor (ej: 2022, 4+)",
+    description: "Descripción (ej: Inicio de comunidad)",
+  },
+  cta: {
+    title: "Texto del cuerpo",
+    description: "Texto secundario (opcional)",
+    linkUrl: "URL de WhatsApp o enlace",
   },
   about: {
     title: "Cita principal",

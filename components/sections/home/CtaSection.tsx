@@ -5,14 +5,22 @@ import { CTAS } from "@/lib/constants/copy";
 const DEFAULT_WHATSAPP_URL =
   "https://wa.me/56900000000?text=Hola%20Trini%2C%20me%20interesa%20conocer%20m%C3%A1s%20sobre%20Cuerpo%20Ra%C3%ADz";
 
+type CtaItem = {
+  title?: string | null;
+  description?: string | null;
+  linkUrl?: string | null;
+};
+
 type CtaSectionProps = {
   title?: string;
   subtitle?: string;
   whatsappUrl?: string;
+  items?: CtaItem[];
 };
 
-export function CtaSection({ title, subtitle, whatsappUrl }: CtaSectionProps) {
+export function CtaSection({ title, subtitle, whatsappUrl, items }: CtaSectionProps) {
   const waUrl = whatsappUrl ?? DEFAULT_WHATSAPP_URL;
+  const bodyText = items?.[0]?.title ?? "Elige el formato que se adapte a tu ritmo. Comienza cuando quieras, desde donde estés.";
 
   return (
     <section
@@ -23,7 +31,7 @@ export function CtaSection({ title, subtitle, whatsappUrl }: CtaSectionProps) {
       <div className="mx-auto max-w-3xl text-center">
         <AnimateIn>
           <p className="text-xs font-medium uppercase tracking-[0.22em] text-white/60">
-            El camino empieza aquí
+            {subtitle ?? "El camino empieza aquí"}
           </p>
         </AnimateIn>
 
@@ -38,7 +46,7 @@ export function CtaSection({ title, subtitle, whatsappUrl }: CtaSectionProps) {
 
         <AnimateIn delay={0.18}>
           <p className="mx-auto mt-[var(--space-5)] max-w-md text-base leading-relaxed text-white/75">
-            {subtitle ?? "Elige el formato que se adapte a tu ritmo. Comienza cuando quieras, desde donde estés."}
+            {bodyText}
           </p>
         </AnimateIn>
 
