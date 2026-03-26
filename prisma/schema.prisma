@@ -56,6 +56,8 @@ model Center {
   instructorBankAccounts InstructorBankAccount[]
   subscriptions    Subscription[]
   emailPreferences EmailPreference[]
+  onDemandCategories OnDemandCategory[]
+  lessonUnlocks      LessonUnlock[]
 }
 
 // ─── Usuarios (sin datos de infra; dominio puro en lib/domain) ──────────────
@@ -83,6 +85,7 @@ model User {
   instructorBankAccounts InstructorBankAccount[]
   subscriptions    Subscription[]
   emailPreferences EmailPreference[]
+  lessonUnlocks LessonUnlock[]
 }
 
 // ─── Disciplinas (prácticas: Yoga, Pilates, TRX…) ─────────────────────────
@@ -230,6 +233,7 @@ model UserPlan {
   subscription    Subscription?    @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
   reservations    Reservation[]
   manualPayments  ManualPayment[]
+  lessonUnlocks   LessonUnlock[]
 
   @@index([userId, centerId])
   @@index([centerId])
@@ -433,6 +437,7 @@ model Plan {
   orders Order[]
   userPlans UserPlan[]
   subscriptions Subscription[]
+  categoryQuotas PlanCategoryQuota[]
 
   @@unique([centerId, slug])
   @@index([centerId])
@@ -529,6 +534,9 @@ model EmailPreference {
   planExpiring        Boolean  @default(true)
   reservationConfirm  Boolean  @default(true)
   purchaseConfirm     Boolean  @default(true)
+  lessonUnlocked      Boolean  @default(true)
+  quotaExhausted      Boolean  @default(true)
+  newContent          Boolean  @default(true)
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
@@ -537,5 +545,111 @@ model EmailPreference {
 
   @@unique([userId, centerId])
   @@index([userId])
+  @@index([centerId])
+}
+
+// ─── On Demand ────────────────────────────────────────────────────────────────
+
+enum OnDemandContentStatus {
+  DRAFT
+  PUBLISHED
+}
+
+model OnDemandCategory {
+  id            String                @id @default(cuid())
+  centerId      String
+  name          String
+  description   String?
+  thumbnailUrl  String?
+  sortOrder     Int                   @default(0)
+  status        OnDemandContentStatus @default(DRAFT)
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+
+  center        Center                @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  practices     OnDemandPractice[]
+  quotas        PlanCategoryQuota[]
+
+  @@unique([centerId, name])
+  @@index([centerId])
+  @@index([centerId, status])
+}
+
+model OnDemandPractice {
+  id            String                @id @default(cuid())
+  categoryId    String
+  name          String
+  description   String?
+  thumbnailUrl  String?
+  sortOrder     Int                   @default(0)
+  status        OnDemandContentStatus @default(DRAFT)
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+
+  category      OnDemandCategory      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  lessons       OnDemandLesson[]
+
+  @@unique([categoryId, name])
+  @@index([categoryId])
+}
+
+model OnDemandLesson {
+  id              String                @id @default(cuid())
+  practiceId      String
+  title           String
+  description     String?
+  videoUrl        String
+  promoVideoUrl   String?
+  thumbnailUrl    String?
+  durationMinutes Int?
+  level           String?
+  intensity       String?
+  targetAudience  String?
+  equipment       String?
+  tags            String?
+  sortOrder       Int                   @default(0)
+  status          OnDemandContentStatus @default(DRAFT)
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  practice        OnDemandPractice      @relation(fields: [practiceId], references: [id], onDelete: Cascade)
+  unlocks         LessonUnlock[]
+
+  @@index([practiceId])
+  @@index([practiceId, status])
+}
+
+model PlanCategoryQuota {
+  id          String   @id @default(cuid())
+  planId      String
+  categoryId  String
+  maxLessons  Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  plan        Plan             @relation(fields: [planId], references: [id], onDelete: Cascade)
+  category    OnDemandCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([planId, categoryId])
+  @@index([planId])
+  @@index([categoryId])
+}
+
+model LessonUnlock {
+  id          String   @id @default(cuid())
+  userId      String
+  lessonId    String
+  userPlanId  String
+  centerId    String
+  unlockedAt  DateTime @default(now())
+
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson      OnDemandLesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  userPlan    UserPlan         @relation(fields: [userPlanId], references: [id], onDelete: Cascade)
+  center      Center           @relation(fields: [centerId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, lessonId])
+  @@index([userId])
+  @@index([userPlanId])
   @@index([centerId])
 }
