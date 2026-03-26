@@ -128,7 +128,7 @@ async function main() {
     where: { centerId: center.id },
     create: {
       centerId: center.id,
-      heroTitle: "cuerpo, respiración y placer.",
+      heroTitle: "cuerpo,\n*respiración*\ny placer.",
       heroSubtitle: "el camino de regreso a ti.",
       heroImageUrl:
         "https://images.unsplash.com/photo-1545205597-3d9d02c29597?w=1920&q=80",
@@ -150,7 +150,7 @@ async function main() {
 
   // ─── Site Sections ───────────────────────────────────────────────────────
   const sectionDefs = [
-    { sectionKey: "hero", sortOrder: 0, title: "cuerpo, respiración y placer.", subtitle: "el camino de regreso a ti." },
+    { sectionKey: "hero", sortOrder: 0, title: "cuerpo,\n*respiración*\ny placer.", subtitle: "el camino de regreso a ti." },
     { sectionKey: "about", sortOrder: 1, title: "Yoga con identidad", subtitle: null },
     { sectionKey: "how-it-works", sortOrder: 2, title: "Tres formas de sumarte", subtitle: null },
     { sectionKey: "schedule", sortOrder: 3, title: "Reserva tu lugar", subtitle: "Presencial — Vitacura" },

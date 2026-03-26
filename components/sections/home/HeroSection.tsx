@@ -1,5 +1,6 @@
 "use client";
 
+import type React from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { ChevronDown } from "lucide-react";
@@ -31,6 +32,17 @@ const fadePlain = {
   },
 };
 
+/** Parse *text* into <em> elements, plain text stays as-is */
+function parseLine(line: string): React.ReactNode {
+  const parts = line.split(/(\*[^*]+\*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith("*") && part.endsWith("*")) {
+      return <em key={i}>{part.slice(1, -1)}</em>;
+    }
+    return part;
+  });
+}
+
 type HeroSectionProps = {
   title?: string;
   subtitle?: string;
@@ -48,9 +60,7 @@ export function HeroSection({
   const heroSubtitle = subtitle ?? "el camino de regreso a ti.";
   const heroCta = ctaText ?? CTAS.comenzarPractica;
 
-  // Use default formatted render unless title is explicitly different from the original
-  const DEFAULT_TITLE = "cuerpo, respiración y placer.";
-  const isCustomTitle = title && title !== DEFAULT_TITLE;
+  const heroTitle = title ?? "cuerpo,\n*respiración*\ny placer.";
 
   return (
     <section
@@ -86,27 +96,13 @@ export function HeroSection({
           yoga con identidad
         </motion.span>
 
-        {/* Headline */}
+        {/* Headline — supports \n for line breaks and *text* for italic */}
         <h1 className="text-hero font-display font-bold text-white">
-          {isCustomTitle ? (
-            title.split("\n").map((line, i) => (
-              <motion.span key={i} variants={fadeUp} className="block">
-                {line}
-              </motion.span>
-            ))
-          ) : (
-            <>
-              <motion.span variants={fadeUp} className="block">
-                cuerpo,
-              </motion.span>
-              <motion.span variants={fadeUp} className="block italic">
-                respiración
-              </motion.span>
-              <motion.span variants={fadeUp} className="block">
-                y placer.
-              </motion.span>
-            </>
-          )}
+          {heroTitle.split("\n").map((line, i) => (
+            <motion.span key={i} variants={fadeUp} className="block">
+              {parseLine(line)}
+            </motion.span>
+          ))}
         </h1>
 
         {/* Tagline */}
