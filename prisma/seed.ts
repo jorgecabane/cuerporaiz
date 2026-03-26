@@ -302,13 +302,13 @@ async function main() {
     });
   }
 
-  // testimonials: quote + stats
-  const testimonialQuote = await prisma.centerSiteSectionItem.findFirst({
-    where: { sectionId: sectionRecords["testimonials"], sortOrder: 0 },
+  // testimonials: quote + 3 stats — delete and recreate to ensure correct data
+  await prisma.centerSiteSectionItem.deleteMany({
+    where: { sectionId: sectionRecords["testimonials"] },
   });
-  if (!testimonialQuote) {
-    await prisma.centerSiteSectionItem.create({
-      data: {
+  await prisma.centerSiteSectionItem.createMany({
+    data: [
+      {
         sectionId: sectionRecords["testimonials"],
         sortOrder: 0,
         title:
@@ -316,21 +316,11 @@ async function main() {
         description: "Comunidad Cuerpo Raíz",
         linkUrl: "Retiro Rena-ser",
       },
-    });
-  }
-  // Stats (sortOrder 1+ = stat items, title = value, description = label)
-  const testimonialStats = await prisma.centerSiteSectionItem.findFirst({
-    where: { sectionId: sectionRecords["testimonials"], sortOrder: 1 },
+      { sectionId: sectionRecords["testimonials"], sortOrder: 1, title: "2022", description: "Inicio de comunidad" },
+      { sectionId: sectionRecords["testimonials"], sortOrder: 2, title: "4+", description: "Tipos de práctica" },
+      { sectionId: sectionRecords["testimonials"], sortOrder: 3, title: "Online y presencial", description: "Clases a tu ritmo" },
+    ],
   });
-  if (!testimonialStats) {
-    await prisma.centerSiteSectionItem.createMany({
-      data: [
-        { sectionId: sectionRecords["testimonials"], sortOrder: 1, title: "2022", description: "Inicio de comunidad" },
-        { sectionId: sectionRecords["testimonials"], sortOrder: 2, title: "4+", description: "Tipos de práctica" },
-        { sectionId: sectionRecords["testimonials"], sortOrder: 3, title: "Online y presencial", description: "Clases a tu ritmo" },
-      ],
-    });
-  }
 
   // cta: body text
   const ctaItems = await prisma.centerSiteSectionItem.findFirst({
