@@ -89,6 +89,7 @@ export default async function ReplayPage() {
       return {
         id: cat.id,
         name: cat.name,
+        description: cat.description ?? null,
         practices: practicesWithLessons,
       };
     }),

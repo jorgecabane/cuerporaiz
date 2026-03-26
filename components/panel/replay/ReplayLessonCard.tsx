@@ -8,10 +8,13 @@ interface ReplayLessonCardProps {
   lesson: {
     id: string;
     title: string;
+    description: string | null;
     durationMinutes: number | null;
     level: string | null;
     intensity: string | null;
+    targetAudience: string | null;
     equipment: string | null;
+    tags: string | null;
     thumbnailUrl: string | null;
     promoVideoUrl: string | null;
     videoUrl: string | null;
@@ -33,6 +36,7 @@ export function ReplayLessonCard({
 }: ReplayLessonCardProps) {
   const [showModal, setShowModal] = useState(false);
   const [showPromo, setShowPromo] = useState(false);
+  const [showDetail, setShowDetail] = useState(false);
 
   return (
     <div className="bg-[var(--color-surface)] rounded-[var(--radius-md)] border border-[var(--color-border)] overflow-hidden">
@@ -69,6 +73,37 @@ export function ReplayLessonCard({
             <p className="text-[10px] text-[var(--color-text-muted)] mt-1">Tiene video promocional</p>
           )}
         </div>
+      </div>
+
+      {/* Expandable detail */}
+      <div className="px-3 sm:px-4">
+        <button
+          onClick={() => setShowDetail((v) => !v)}
+          className="text-[10px] text-[var(--color-primary)] hover:underline mb-2"
+        >
+          {showDetail ? "Ver menos" : "Ver más"}
+        </button>
+        {showDetail && (
+          <div className="pb-2 space-y-2">
+            {lesson.description && (
+              <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">{lesson.description}</p>
+            )}
+            <div className="flex flex-wrap gap-1">
+              {lesson.level && (
+                <span className="text-[9px] px-2 py-0.5 rounded-full bg-[var(--color-bg)] text-[var(--color-text-muted)]">{lesson.level}</span>
+              )}
+              {lesson.targetAudience && (
+                <span className="text-[9px] px-2 py-0.5 rounded-full bg-[var(--color-bg)] text-[var(--color-text-muted)]">{lesson.targetAudience}</span>
+              )}
+              {lesson.equipment && (
+                <span className="text-[9px] px-2 py-0.5 rounded-full bg-[var(--color-bg)] text-[var(--color-text-muted)]">{lesson.equipment}</span>
+              )}
+              {lesson.tags?.split(",").map((tag) => (
+                <span key={tag.trim()} className="text-[9px] px-2 py-0.5 rounded-full bg-[var(--color-bg)] text-[var(--color-text-muted)]">{tag.trim()}</span>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Action buttons */}

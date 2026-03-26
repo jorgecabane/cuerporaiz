@@ -35,6 +35,7 @@ interface PracticeData {
 interface CategoryData {
   id: string;
   name: string;
+  description: string | null;
   practices: PracticeData[];
 }
 
@@ -227,12 +228,15 @@ export function ReplayShell({
 
       {categories.map((cat) => (
         <div key={cat.id} className="mb-6">
-          <div className="flex items-baseline gap-2 mb-3">
+          <div className="flex items-baseline gap-2 mb-1">
             <h2 className="text-base sm:text-lg font-bold text-[var(--color-text)]">{cat.name}</h2>
             <span className="text-xs text-[var(--color-text-muted)]">
               {cat.practices.reduce((a, p) => a + p.lessons.length, 0)} clases · {cat.practices.length} prácticas
             </span>
           </div>
+          {cat.description && (
+            <p className="text-xs text-[var(--color-text-muted)] -mt-1 mb-3">{cat.description}</p>
+          )}
 
           {/* Desktop: 3-col grid, Mobile: stack */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -243,6 +247,7 @@ export function ReplayShell({
                   key={practice.id}
                   id={practice.id}
                   name={practice.name}
+                  description={practice.description}
                   lessonCount={practice.lessons.length}
                   unlockedCount={unlockedCount}
                   thumbnailUrl={null}

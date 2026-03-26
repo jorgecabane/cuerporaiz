@@ -1,6 +1,7 @@
 interface PracticeCardProps {
   id: string;
   name: string;
+  description: string | null;
   lessonCount: number;
   unlockedCount: number;
   thumbnailUrl: string | null;
@@ -10,6 +11,7 @@ interface PracticeCardProps {
 export function PracticeCard({
   id,
   name,
+  description,
   lessonCount,
   unlockedCount,
   thumbnailUrl,
@@ -38,6 +40,9 @@ export function PracticeCard({
           <p className="text-xs text-[var(--color-text-muted)] mb-2">
             {lessonCount} {lessonCount === 1 ? "clase" : "clases"}
           </p>
+          {description && (
+            <p className="text-[10px] text-[var(--color-text-muted)] line-clamp-2 mb-2">{description}</p>
+          )}
           <div className="flex items-center gap-2">
             <div className="flex-1 h-1 rounded-full bg-[var(--color-border)]">
               <div
@@ -71,6 +76,9 @@ export function PracticeCard({
           <p className="text-xs text-[var(--color-text-muted)] mb-1">
             {lessonCount} {lessonCount === 1 ? "clase" : "clases"}
           </p>
+          {description && (
+            <p className="text-[10px] text-[var(--color-text-muted)] line-clamp-2 mb-1">{description}</p>
+          )}
           <div className="flex items-center gap-2">
             <div className="flex-1 h-1 rounded-full bg-[var(--color-border)]">
               <div
