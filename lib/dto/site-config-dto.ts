@@ -41,8 +41,8 @@ export type UpdateSiteSectionInput = z.infer<typeof updateSiteSectionSchema>;
 export const createSiteSectionItemSchema = z.object({
   title: z.string().nullable().optional(),
   description: z.string().nullable().optional(),
-  imageUrl: httpsUrlSchema,
-  linkUrl: httpsUrlSchema,
+  imageUrl: z.string().nullable().optional(),
+  linkUrl: z.string().nullable().optional(),
   userId: z.string().nullable().optional(),
 });
 export type CreateSiteSectionItemInput = z.infer<typeof createSiteSectionItemSchema>;

@@ -74,9 +74,9 @@ describe("createSiteSectionItemSchema", () => {
     expect(result.success).toBe(true);
   });
 
-  it("rejects non-https imageUrl", () => {
-    const result = createSiteSectionItemSchema.safeParse({ imageUrl: "http://example.com/img.jpg" });
-    expect(result.success).toBe(false);
+  it("accepts free text in linkUrl (labels, tags, etc.)", () => {
+    const result = createSiteSectionItemSchema.safeParse({ linkUrl: "Packs online" });
+    expect(result.success).toBe(true);
   });
 });
 
