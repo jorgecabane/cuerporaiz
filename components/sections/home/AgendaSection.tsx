@@ -67,12 +67,12 @@ const SCHEDULE: Record<number, ClassItem[]> = {
 };
 
 const DEFAULT_PLANS: LivePlan[] = [
-  { name: "Clase suelta", amountCents: 1200000, currency: "CLP", validityDays: 30, highlight: false },
-  { name: "Pack 4 clases", amountCents: 3600000, currency: "CLP", validityDays: 31, maxReservations: 4, highlight: false },
-  { name: "Pack 6 clases", amountCents: 4800000, currency: "CLP", validityDays: 31, maxReservations: 6, highlight: false },
-  { name: "Pack 8 clases", amountCents: 6000000, currency: "CLP", validityDays: 31, maxReservations: 8, highlight: false },
-  { name: "Pack 12 clases", amountCents: 8800000, currency: "CLP", validityDays: 31, maxReservations: 12, highlight: true },
-  { name: "Ilimitado", amountCents: 9600000, currency: "CLP", validityDays: 31, highlight: false },
+  { name: "Clase suelta", amountCents: 12000, currency: "CLP", validityDays: 30, highlight: false },
+  { name: "Pack 4 clases", amountCents: 36000, currency: "CLP", validityDays: 31, maxReservations: 4, highlight: false },
+  { name: "Pack 6 clases", amountCents: 48000, currency: "CLP", validityDays: 31, maxReservations: 6, highlight: false },
+  { name: "Pack 8 clases", amountCents: 60000, currency: "CLP", validityDays: 31, maxReservations: 8, highlight: false },
+  { name: "Pack 12 clases", amountCents: 88000, currency: "CLP", validityDays: 31, maxReservations: 12, highlight: true },
+  { name: "Ilimitado", amountCents: 96000, currency: "CLP", validityDays: 31, highlight: false },
 ];
 
 const DAY_SHORT = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
@@ -107,11 +107,10 @@ function availabilityLabel(used: number, total: number): string {
 }
 
 function formatPrice(amountCents: number, currency: string): string {
-  const amount = Math.round(amountCents / 100);
   if (currency === "CLP") {
-    return `$${amount.toLocaleString("es-CL")}`;
+    return `$${amountCents.toLocaleString("es-CL")}`;
   }
-  return new Intl.NumberFormat("es-CL", { style: "currency", currency }).format(amount);
+  return `${amountCents / 100} ${currency}`;
 }
 
 function planNote(plan: LivePlan): string {
