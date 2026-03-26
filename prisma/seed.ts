@@ -203,6 +203,76 @@ async function main() {
       console.log("UserPlan ACTIVE creado para student e2e:", student.email);
     }
   }
+
+  // ─── On Demand seed content ────────────────────────────────────────────────
+  const existingOnDemandCategory = await prisma.onDemandCategory.findFirst({
+    where: { centerId: center.id },
+  });
+  if (!existingOnDemandCategory) {
+    const catYoga = await prisma.onDemandCategory.create({
+      data: { centerId: center.id, name: "Yoga", description: "Clases grabadas de diferentes estilos de yoga", sortOrder: 0, status: "PUBLISHED" },
+    });
+    const catMeditacion = await prisma.onDemandCategory.create({
+      data: { centerId: center.id, name: "Meditación", description: "Prácticas de meditación y mindfulness", sortOrder: 1, status: "PUBLISHED" },
+    });
+
+    const pracHatha = await prisma.onDemandPractice.create({ data: { categoryId: catYoga.id, name: "Hatha Yoga", sortOrder: 0, status: "PUBLISHED" } });
+    const pracVinyasa = await prisma.onDemandPractice.create({ data: { categoryId: catYoga.id, name: "Vinyasa Flow", sortOrder: 1, status: "PUBLISHED" } });
+    const pracRestaurativo = await prisma.onDemandPractice.create({ data: { categoryId: catYoga.id, name: "Yoga Restaurativo", sortOrder: 2, status: "PUBLISHED" } });
+    const pracMindfulness = await prisma.onDemandPractice.create({ data: { categoryId: catMeditacion.id, name: "Mindfulness", sortOrder: 0, status: "PUBLISHED" } });
+    const pracGuiada = await prisma.onDemandPractice.create({ data: { categoryId: catMeditacion.id, name: "Meditación Guiada", sortOrder: 1, status: "PUBLISHED" } });
+
+    const lessons = [
+      { practiceId: pracHatha.id, title: "Hatha para principiantes", durationMinutes: 30, level: "Principiante", intensity: "Suave", equipment: "Mat" },
+      { practiceId: pracHatha.id, title: "Hatha intermedio — Fuerza", durationMinutes: 45, level: "Intermedio", intensity: "Moderada", equipment: "Mat, bloque" },
+      { practiceId: pracHatha.id, title: "Hatha avanzado — Inversiones", durationMinutes: 60, level: "Avanzado", intensity: "Intensa", equipment: "Mat, cinta, bloque" },
+      { practiceId: pracVinyasa.id, title: "Vinyasa matinal energizante", durationMinutes: 40, level: "Intermedio", intensity: "Moderada", equipment: "Mat" },
+      { practiceId: pracVinyasa.id, title: "Vinyasa suave para la noche", durationMinutes: 35, level: "Principiante", intensity: "Suave", equipment: "Mat" },
+      { practiceId: pracRestaurativo.id, title: "Restaurativo para estrés", durationMinutes: 50, level: "Principiante", intensity: "Suave", equipment: "Mat, bolster, manta" },
+      { practiceId: pracRestaurativo.id, title: "Restaurativo para espalda", durationMinutes: 40, level: "Principiante", intensity: "Suave", equipment: "Mat, bloque, cinta" },
+      { practiceId: pracMindfulness.id, title: "Mindfulness — Respiración consciente", durationMinutes: 15, level: "Principiante", intensity: "Suave" },
+      { practiceId: pracMindfulness.id, title: "Body scan guiado", durationMinutes: 20, level: "Principiante", intensity: "Suave" },
+      { practiceId: pracGuiada.id, title: "Meditación para dormir", durationMinutes: 25, level: "Principiante", intensity: "Suave" },
+      { practiceId: pracGuiada.id, title: "Visualización creativa", durationMinutes: 20, level: "Intermedio", intensity: "Suave" },
+    ];
+
+    for (let i = 0; i < lessons.length; i++) {
+      await prisma.onDemandLesson.create({
+        data: { ...lessons[i], videoUrl: `https://player.vimeo.com/video/${900000000 + i}`, sortOrder: i % 3, status: "PUBLISHED" },
+      });
+    }
+
+    // ON_DEMAND plan
+    const existingOdPlan = await prisma.plan.findFirst({ where: { centerId: center.id, type: "ON_DEMAND" } });
+    if (!existingOdPlan) {
+      const odPlan = await prisma.plan.create({
+        data: { centerId: center.id, name: "Pack On Demand 6", slug: "on-demand-6", description: "6 clases on demand a desbloquear", amountCents: 12000, currency: "CLP", type: "ON_DEMAND", validityDays: 31, billingMode: "ONE_TIME" },
+      });
+      await prisma.planCategoryQuota.createMany({
+        data: [
+          { planId: odPlan.id, categoryId: catYoga.id, maxLessons: 4 },
+          { planId: odPlan.id, categoryId: catMeditacion.id, maxLessons: 2 },
+        ],
+      });
+    }
+
+    // Activate ON_DEMAND plan for student
+    const odPlan = await prisma.plan.findFirst({ where: { centerId: center.id, type: "ON_DEMAND" } });
+    if (odPlan) {
+      const existing = await prisma.userPlan.findFirst({ where: { userId: student.id, centerId: center.id, planId: odPlan.id, status: "ACTIVE" } });
+      if (!existing) {
+        const validFrom = new Date();
+        const validUntil = new Date();
+        validUntil.setDate(validUntil.getDate() + 31);
+        await prisma.userPlan.create({
+          data: { userId: student.id, centerId: center.id, planId: odPlan.id, status: "ACTIVE", paymentStatus: "PAID", classesTotal: null, classesUsed: 0, validFrom, validUntil },
+        });
+        console.log("UserPlan ON_DEMAND ACTIVE creado para student e2e");
+      }
+    }
+
+    console.log("Contenido on demand creado (2 categorías, 5 prácticas, 11 lecciones)");
+  }
 }
 
 main()
