@@ -3,6 +3,7 @@ import { AnimateIn, StaggerList, StaggerItem } from "@/components/ui/AnimateIn";
 type TestimonialItem = {
   title?: string;
   description?: string;
+  linkUrl?: string;
 };
 
 type StatItem = {
@@ -25,10 +26,12 @@ const DEFAULT_STATS: StatItem[] = [
 export function TestimoniosSection({ title, items, stats }: TestimoniosSectionProps) {
   const displayStats = stats ?? DEFAULT_STATS;
 
-  // Use first item for the testimonial quote, or fall back to hardcoded
+  // Use first item for the testimonial quote
+  // title = quote text, description = citation name, linkUrl = citation detail
   const quote = items?.[0];
-  const quoteText = quote?.description ?? "Sabemos que no fue solo un retiro, fue un espacio de verdad, de contención, de pura expansión. cuerpos respirando juntos, corazones vibrando en la misma sintonía.";
-  const quoteAuthor = quote?.title ?? "Comunidad Cuerpo Raíz";
+  const quoteText = quote?.title ?? "Sabemos que no fue solo un retiro, fue un espacio de verdad, de contención, de pura expansión. cuerpos respirando juntos, corazones vibrando en la misma sintonía.";
+  const quoteAuthor = quote?.description ?? "Comunidad Cuerpo Raíz";
+  const quoteDetail = quote?.linkUrl ?? "Retiro Rena-ser";
 
   return (
     <section
@@ -58,7 +61,7 @@ export function TestimoniosSection({ title, items, stats }: TestimoniosSectionPr
                   {quoteAuthor}
                 </p>
                 <p className="mt-[var(--space-1)] text-sm text-white/50">
-                  Retiro Rena-ser
+                  {quoteDetail}
                 </p>
               </cite>
             </footer>

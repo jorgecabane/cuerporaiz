@@ -5,6 +5,7 @@ type TeamItem = {
   title?: string;
   description?: string;
   imageUrl?: string;
+  linkUrl?: string;
 };
 
 type SobreTriniSectionProps = {
@@ -23,17 +24,24 @@ const DEFAULT_PRACTICES = [
   "Retiros",
 ] as const;
 
+function parseBioAndTags(description: string | undefined) {
+  if (!description) return { bio: null, tags: null };
+  const parts = description.split("\n---\n");
+  const bio = parts[0].trim() || null;
+  const tags = parts[1]
+    ? parts[1].split(",").map((t) => t.trim()).filter(Boolean)
+    : null;
+  return { bio, tags };
+}
+
 export function SobreTriniSection({ title, subtitle, items }: SobreTriniSectionProps) {
   const person = items?.[0];
   const personName = person?.title ?? "Trinidad Cáceres";
-  const personBio = person?.description ?? null;
   const personImage = person?.imageUrl ?? "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800&q=80";
+  const pullQuote = person?.linkUrl ?? "el cuerpo sana cuando se siente seguro.";
 
-  // Additional items as practice tags (items[1+] titles)
-  const practiceItems = items && items.length > 1
-    ? items.slice(1).map((item) => item.title).filter(Boolean) as string[]
-    : null;
-  const practices = practiceItems ?? DEFAULT_PRACTICES;
+  const { bio: personBio, tags: parsedTags } = parseBioAndTags(person?.description);
+  const practices = parsedTags ?? DEFAULT_PRACTICES;
 
   return (
     <section
@@ -73,25 +81,25 @@ export function SobreTriniSection({ title, subtitle, items }: SobreTriniSectionP
               </h2>
             </AnimateIn>
 
-            <AnimateIn delay={0.25}>
-              <p className="text-base leading-relaxed text-[var(--color-text-muted)]">
-                {personBio ?? subtitle ?? "Profesor de yoga y sexólogo. Combina el movimiento, la respiración y la consciencia corporal con una mirada profunda sobre el placer y la sensualidad."}
-              </p>
-            </AnimateIn>
-
-            <AnimateIn delay={0.32}>
-              <p className="text-base leading-relaxed text-[var(--color-text-muted)]">
-                {personBio
-                  ? null
-                  : "Sus clases son un espacio para que el cuerpo se reordene, se reconozca y sane en comunidad — porque hay algo que sucede cuando las mujeres se encuentran desde el corazón."}
-              </p>
-            </AnimateIn>
+            {(personBio
+              ? personBio.split("\n").filter(Boolean)
+              : [
+                  subtitle ?? "Profesor de yoga y sexólogo. Combina el movimiento, la respiración y la consciencia corporal con una mirada profunda sobre el placer y la sensualidad.",
+                  "Sus clases son un espacio para que el cuerpo se reordene, se reconozca y sane en comunidad — porque hay algo que sucede cuando las mujeres se encuentran desde el corazón.",
+                ]
+            ).map((paragraph, i) => (
+              <AnimateIn key={i} delay={0.25 + i * 0.07}>
+                <p className="text-base leading-relaxed text-[var(--color-text-muted)]">
+                  {paragraph}
+                </p>
+              </AnimateIn>
+            ))}
 
             {/* Pull quote */}
             <AnimateIn delay={0.38}>
               <blockquote className="border-l-2 border-[var(--color-secondary)] pl-[var(--space-5)]">
                 <p className="font-display text-xl italic text-[var(--color-secondary)] sm:text-2xl">
-                  &ldquo;el cuerpo sana cuando se siente seguro.&rdquo;
+                  &ldquo;{pullQuote}&rdquo;
                 </p>
               </blockquote>
             </AnimateIn>

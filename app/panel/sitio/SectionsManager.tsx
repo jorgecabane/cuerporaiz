@@ -130,7 +130,14 @@ export default function SectionsManager() {
             </span>
 
             {/* Edit content button */}
-            {EDITABLE_SECTIONS.has(section.sectionKey) && (
+            {section.sectionKey === "hero" ? (
+              <a
+                href="?tab=branding"
+                className="text-xs text-[var(--color-primary)] hover:underline"
+              >
+                Editar en pestaña Marca
+              </a>
+            ) : EDITABLE_SECTIONS.has(section.sectionKey) ? (
               <button
                 type="button"
                 onClick={() => toggleExpand(section.id)}
@@ -138,7 +145,7 @@ export default function SectionsManager() {
               >
                 {expandedId === section.id ? "Cerrar" : "Editar contenido"}
               </button>
-            )}
+            ) : null}
 
             {/* Visible toggle */}
             <button

@@ -248,6 +248,37 @@ async function main() {
     });
   }
 
+  // on-demand: packs + membership items
+  const onDemandItems = await prisma.centerSiteSectionItem.findFirst({
+    where: { sectionId: sectionRecords["on-demand"] },
+  });
+  if (!onDemandItems) {
+    await prisma.centerSiteSectionItem.createMany({
+      data: [
+        {
+          sectionId: sectionRecords["on-demand"],
+          sortOrder: 0,
+          title: "Practica a tu ritmo",
+          description:
+            "Clases grabadas por tipo de práctica — Hatha, Vinyasa, Yin, Somática. Acceso por tiempo definido. La misma dedicación que en una clase presencial.",
+          imageUrl:
+            "https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&q=80",
+          linkUrl: "Packs online",
+        },
+        {
+          sectionId: sectionRecords["on-demand"],
+          sortOrder: 1,
+          title: "Siempre actualizada",
+          description:
+            "Contenido nuevo cada mes. Prácticas, meditaciones, charlas de sexualidad y bienestar. Acceso a todo el historial mientras estés activa.",
+          imageUrl:
+            "https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&q=80",
+          linkUrl: "Membresía",
+        },
+      ],
+    });
+  }
+
   // team: Trinidad Cáceres
   const teamItems = await prisma.centerSiteSectionItem.findFirst({
     where: { sectionId: sectionRecords["team"] },
@@ -261,10 +292,12 @@ async function main() {
         description: [
           "Profesor de yoga y sexólogo. Combina el movimiento, la respiración y la consciencia corporal con una mirada profunda sobre el placer y la sensualidad.",
           "Sus clases son un espacio para que el cuerpo se reordene, se reconozca y sane en comunidad — porque hay algo que sucede cuando las mujeres se encuentran desde el corazón.",
+          "---",
           "Yoga Hatha, Vinyasa, Yin Yoga, Prácticas somáticas, Meditación y respiración, Charlas de sexualidad, Retiros",
-        ].join("\n\n"),
+        ].join("\n"),
         imageUrl:
           "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800&q=80",
+        linkUrl: "el cuerpo sana cuando se siente seguro.",
       },
     });
   }
@@ -280,7 +313,8 @@ async function main() {
         sortOrder: 0,
         title:
           "Sabemos que no fue solo un retiro, fue un espacio de verdad, de contención, de pura expansión. cuerpos respirando juntos, corazones vibrando en la misma sintonía.",
-        description: "Comunidad Cuerpo Raíz — Retiro Rena-ser",
+        description: "Comunidad Cuerpo Raíz",
+        linkUrl: "Retiro Rena-ser",
       },
     });
   }
