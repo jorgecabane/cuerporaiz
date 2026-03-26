@@ -273,8 +273,16 @@ export default async function HomePage() {
                 key={section.id}
                 title={section.title ?? undefined}
                 subtitle={section.subtitle ?? undefined}
-                whatsappUrl={siteConfig?.whatsappUrl ?? undefined}
                 items={section.items.map((i) => ({ title: i.title, description: i.description, linkUrl: i.linkUrl }))}
+                contact={{
+                  email: siteConfig?.contactEmail,
+                  phone: siteConfig?.contactPhone,
+                  address: siteConfig?.contactAddress,
+                  whatsappUrl: siteConfig?.whatsappUrl,
+                  instagramUrl: siteConfig?.instagramUrl,
+                  facebookUrl: siteConfig?.facebookUrl,
+                  youtubeUrl: siteConfig?.youtubeUrl,
+                }}
               />
             );
 
