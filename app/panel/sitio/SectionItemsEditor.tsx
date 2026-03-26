@@ -34,7 +34,7 @@ type Props = {
   sectionKey: string;
 };
 
-export default function SectionItemsEditor({ sectionId }: Props) {
+export default function SectionItemsEditor({ sectionId, sectionKey }: Props) {
   const [items, setItems] = useState<SectionItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -153,7 +153,7 @@ export default function SectionItemsEditor({ sectionId }: Props) {
         <div key={item.id} className="border border-[var(--color-border)] rounded-[var(--radius-md)] overflow-hidden">
           {editingId === item.id ? (
             <div className="p-3 space-y-2 bg-[var(--color-surface)]">
-              <ItemForm form={editForm} onChange={setEditForm} />
+              <ItemForm form={editForm} onChange={setEditForm} sectionKey={sectionKey} />
               <div className="flex gap-2 justify-end">
                 <button
                   type="button"
@@ -264,7 +264,7 @@ export default function SectionItemsEditor({ sectionId }: Props) {
           <p className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide">
             Nuevo elemento
           </p>
-          <ItemForm form={addForm} onChange={setAddForm} />
+          <ItemForm form={addForm} onChange={setAddForm} sectionKey={sectionKey} />
           <div className="flex gap-2 justify-end">
             <button
               type="button"
@@ -298,53 +298,176 @@ export default function SectionItemsEditor({ sectionId }: Props) {
   );
 }
 
+/** Field config per section type */
+const FIELD_LABELS: Record<string, {
+  title?: string; description?: string; imageUrl?: string; linkUrl?: string;
+  extraFields?: { key: string; label: string; type: "text" | "textarea" }[];
+}> = {
+  team: {
+    title: "Nombre",
+    description: "Bio",
+    imageUrl: "Foto (URL)",
+    linkUrl: "Cita / Quote",
+    extraFields: [{ key: "tags", label: "Prácticas (separadas por coma)", type: "text" }],
+  },
+  testimonials: {
+    title: "Cita / Testimonio",
+    description: "Nombre del autor",
+    linkUrl: "Detalle (ej: Retiro Rena-ser)",
+  },
+  about: {
+    title: "Cita principal",
+    description: "Párrafo de cuerpo",
+  },
+  "how-it-works": {
+    title: "Título del paso",
+    description: "Descripción del paso",
+    linkUrl: "Número y etiqueta (ej: 01|Presencial)",
+  },
+  "on-demand": {
+    title: "Título de la tarjeta",
+    description: "Descripción",
+    imageUrl: "Imagen (URL)",
+    linkUrl: "Etiqueta (ej: Packs online)",
+  },
+};
+
+/** For team items, split description on --- to separate bio from tags */
+function unpackTeamForm(form: ItemFormState): ItemFormState & { tags: string } {
+  const parts = form.description.split("\n---\n");
+  return { ...form, description: parts[0] ?? "", tags: parts[1] ?? "" };
+}
+
+function packTeamForm(form: ItemFormState & { tags: string }): ItemFormState {
+  const desc = form.tags
+    ? `${form.description}\n---\n${form.tags}`
+    : form.description;
+  return { ...form, description: desc };
+}
+
 function ItemForm({
   form,
   onChange,
+  sectionKey,
 }: {
   form: ItemFormState;
   onChange: (form: ItemFormState) => void;
+  sectionKey: string;
 }) {
+  const labels = FIELD_LABELS[sectionKey] ?? {};
+  const isTeam = sectionKey === "team";
+  const teamForm = isTeam ? unpackTeamForm(form) : null;
+
+  function handleChange(field: keyof ItemFormState, value: string) {
+    if (isTeam && field === "description") {
+      onChange(packTeamForm({ ...teamForm!, description: value }));
+    } else {
+      onChange({ ...form, [field]: value });
+    }
+  }
+
+  function handleTagsChange(value: string) {
+    if (teamForm) {
+      onChange(packTeamForm({ ...teamForm, tags: value }));
+    }
+  }
+
   return (
     <div className="space-y-2">
-      <div>
-        <label className="block text-xs text-[var(--color-text-muted)] mb-1">Título</label>
-        <input
-          type="text"
-          value={form.title}
-          onChange={(e) => onChange({ ...form, title: e.target.value })}
-          className={INPUT_CLASS}
-        />
-      </div>
-      <div>
-        <label className="block text-xs text-[var(--color-text-muted)] mb-1">Descripción</label>
-        <textarea
-          rows={3}
-          value={form.description}
-          onChange={(e) => onChange({ ...form, description: e.target.value })}
-          className={INPUT_CLASS}
-        />
-      </div>
-      <div>
-        <label className="block text-xs text-[var(--color-text-muted)] mb-1">URL de imagen</label>
-        <input
-          type="text"
-          value={form.imageUrl}
-          onChange={(e) => onChange({ ...form, imageUrl: e.target.value })}
-          className={INPUT_CLASS}
-        />
-      </div>
+      {/* Title field */}
       <div>
         <label className="block text-xs text-[var(--color-text-muted)] mb-1">
-          URL de enlace <span className="text-[var(--color-text-muted)]">(opcional)</span>
+          {labels.title ?? "Título"}
         </label>
-        <input
-          type="text"
-          value={form.linkUrl}
-          onChange={(e) => onChange({ ...form, linkUrl: e.target.value })}
+        {sectionKey === "testimonials" || sectionKey === "about" ? (
+          <textarea
+            rows={3}
+            value={form.title}
+            onChange={(e) => handleChange("title", e.target.value)}
+            className={INPUT_CLASS}
+          />
+        ) : (
+          <input
+            type="text"
+            value={form.title}
+            onChange={(e) => handleChange("title", e.target.value)}
+            className={INPUT_CLASS}
+          />
+        )}
+      </div>
+
+      {/* Description field */}
+      <div>
+        <label className="block text-xs text-[var(--color-text-muted)] mb-1">
+          {labels.description ?? "Descripción"}
+        </label>
+        <textarea
+          rows={isTeam ? 4 : 3}
+          value={isTeam ? (teamForm?.description ?? "") : form.description}
+          onChange={(e) => handleChange("description", e.target.value)}
           className={INPUT_CLASS}
         />
       </div>
+
+      {/* Tags field (team only) */}
+      {isTeam && (
+        <div>
+          <label className="block text-xs text-[var(--color-text-muted)] mb-1">
+            Prácticas (separadas por coma)
+          </label>
+          <input
+            type="text"
+            value={teamForm?.tags ?? ""}
+            onChange={(e) => handleTagsChange(e.target.value)}
+            placeholder="Yoga Hatha, Vinyasa, Yin Yoga, ..."
+            className={INPUT_CLASS}
+          />
+        </div>
+      )}
+
+      {/* Image URL field (hide if no label configured) */}
+      {labels.imageUrl !== undefined && (
+        <div>
+          <label className="block text-xs text-[var(--color-text-muted)] mb-1">
+            {labels.imageUrl ?? "URL de imagen"}
+          </label>
+          <input
+            type="text"
+            value={form.imageUrl}
+            onChange={(e) => handleChange("imageUrl", e.target.value)}
+            className={INPUT_CLASS}
+          />
+        </div>
+      )}
+
+      {/* Link URL field (hide if no label configured) */}
+      {labels.linkUrl !== undefined && (
+        <div>
+          <label className="block text-xs text-[var(--color-text-muted)] mb-1">
+            {labels.linkUrl}
+          </label>
+          <input
+            type="text"
+            value={form.linkUrl}
+            onChange={(e) => handleChange("linkUrl", e.target.value)}
+            className={INPUT_CLASS}
+          />
+        </div>
+      )}
+
+      {/* Fallback: show all fields for unknown section types */}
+      {!labels.title && (
+        <>
+          <div>
+            <label className="block text-xs text-[var(--color-text-muted)] mb-1">URL de imagen</label>
+            <input type="text" value={form.imageUrl} onChange={(e) => handleChange("imageUrl", e.target.value)} className={INPUT_CLASS} />
+          </div>
+          <div>
+            <label className="block text-xs text-[var(--color-text-muted)] mb-1">URL de enlace (opcional)</label>
+            <input type="text" value={form.linkUrl} onChange={(e) => handleChange("linkUrl", e.target.value)} className={INPUT_CLASS} />
+          </div>
+        </>
+      )}
     </div>
   );
 }
