@@ -242,36 +242,47 @@ async function main() {
       });
     }
 
-    // ON_DEMAND plan
-    const existingOdPlan = await prisma.plan.findFirst({ where: { centerId: center.id, type: "ON_DEMAND" } });
-    if (!existingOdPlan) {
-      const odPlan = await prisma.plan.create({
-        data: { centerId: center.id, name: "Pack On Demand 6", slug: "on-demand-6", description: "6 clases on demand a desbloquear", amountCents: 12000, currency: "CLP", type: "ON_DEMAND", validityDays: 31, billingMode: "ONE_TIME" },
-      });
-      await prisma.planCategoryQuota.createMany({
-        data: [
-          { planId: odPlan.id, categoryId: catYoga.id, maxLessons: 4 },
-          { planId: odPlan.id, categoryId: catMeditacion.id, maxLessons: 2 },
-        ],
-      });
-    }
-
-    // Activate ON_DEMAND plan for student
-    const odPlan = await prisma.plan.findFirst({ where: { centerId: center.id, type: "ON_DEMAND" } });
-    if (odPlan) {
-      const existing = await prisma.userPlan.findFirst({ where: { userId: student.id, centerId: center.id, planId: odPlan.id, status: "ACTIVE" } });
-      if (!existing) {
-        const validFrom = new Date();
-        const validUntil = new Date();
-        validUntil.setDate(validUntil.getDate() + 31);
-        await prisma.userPlan.create({
-          data: { userId: student.id, centerId: center.id, planId: odPlan.id, status: "ACTIVE", paymentStatus: "PAID", classesTotal: null, classesUsed: 0, validFrom, validUntil },
-        });
-        console.log("UserPlan ON_DEMAND ACTIVE creado para student e2e");
-      }
-    }
-
     console.log("Contenido on demand creado (2 categorías, 5 prácticas, 11 lecciones)");
+  }
+
+  // ON_DEMAND plan + quotas (independiente de las categorías)
+  const allOdCategories = await prisma.onDemandCategory.findMany({ where: { centerId: center.id } });
+  let odPlan = await prisma.plan.findFirst({ where: { centerId: center.id, type: "ON_DEMAND" } });
+  if (!odPlan && allOdCategories.length > 0) {
+    odPlan = await prisma.plan.create({
+      data: { centerId: center.id, name: "Pack On Demand 6", slug: "on-demand-6", description: "6 clases on demand a desbloquear", amountCents: 12000, currency: "CLP", type: "ON_DEMAND", validityDays: 31, billingMode: "ONE_TIME" },
+    });
+    console.log("Plan ON_DEMAND creado:", odPlan.name);
+  }
+
+  // Ensure quotas exist for every ON_DEMAND plan + category
+  if (odPlan && allOdCategories.length > 0) {
+    const existingQuotas = await prisma.planCategoryQuota.findMany({ where: { planId: odPlan.id } });
+    if (existingQuotas.length === 0) {
+      const defaultQuotas: Record<string, number> = { "Yoga": 4, "Meditación": 2 };
+      await prisma.planCategoryQuota.createMany({
+        data: allOdCategories.map((cat) => ({
+          planId: odPlan!.id,
+          categoryId: cat.id,
+          maxLessons: defaultQuotas[cat.name] ?? 2,
+        })),
+      });
+      console.log("Quotas ON_DEMAND creadas para", allOdCategories.length, "categorías");
+    }
+  }
+
+  // Activate ON_DEMAND plan for student
+  if (odPlan) {
+    const existingUp = await prisma.userPlan.findFirst({ where: { userId: student.id, centerId: center.id, planId: odPlan.id, status: "ACTIVE" } });
+    if (!existingUp) {
+      const validFrom = new Date();
+      const validUntil = new Date();
+      validUntil.setDate(validUntil.getDate() + 31);
+      await prisma.userPlan.create({
+        data: { userId: student.id, centerId: center.id, planId: odPlan.id, status: "ACTIVE", paymentStatus: "PAID", classesTotal: null, classesUsed: 0, validFrom, validUntil },
+      });
+      console.log("UserPlan ON_DEMAND ACTIVE creado para student e2e");
+    }
   }
 }
 
