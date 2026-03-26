@@ -18,3 +18,8 @@ export { centerHolidayRepository } from "./center-holiday-repository";
 export { userPlanRepository } from "./user-plan-repository";
 export { emailPreferenceRepository } from "./email-preference-repository";
 export { subscriptionRepository } from "./subscription-repository";
+export { onDemandCategoryRepository } from "./on-demand-category-repository";
+export { onDemandPracticeRepository } from "./on-demand-practice-repository";
+export { onDemandLessonRepository } from "./on-demand-lesson-repository";
+export { lessonUnlockRepository } from "./lesson-unlock-repository";
+export { planCategoryQuotaRepository } from "./plan-category-quota-repository";
