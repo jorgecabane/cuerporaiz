@@ -2,7 +2,7 @@
 
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import { centerRepository, planRepository } from "@/lib/adapters/db";
+import { centerRepository, planRepository, planCategoryQuotaRepository } from "@/lib/adapters/db";
 import { isAdminRole } from "@/lib/domain/role";
 import type { PlanCreateInput, PlanUpdateInput } from "@/lib/ports";
 
@@ -14,17 +14,23 @@ async function requireAdminCenterId(): Promise<string> {
   return session.user.centerId;
 }
 
-export async function createPlan(data: PlanCreateInput): Promise<void> {
+export async function createPlan(
+  data: PlanCreateInput & { quotas?: { categoryId: string; maxLessons: number }[] }
+): Promise<void> {
   const centerId = await requireAdminCenterId();
   const center = await centerRepository.findById(centerId);
   const existing = await planRepository.findByCenterAndSlug(centerId, data.slug);
   if (existing) {
     redirect(`/panel/planes/nuevo?error=slug`);
   }
-  await planRepository.create(centerId, {
-    ...data,
-    currency: data.currency ?? center?.currency ?? "CLP",
+  const { quotas, ...planData } = data;
+  const plan = await planRepository.create(centerId, {
+    ...planData,
+    currency: planData.currency ?? center?.currency ?? "CLP",
   });
+  if (data.type === "ON_DEMAND" && quotas && quotas.length > 0) {
+    await planCategoryQuotaRepository.upsertMany(plan.id, quotas);
+  }
   redirect("/panel/planes");
 }
 

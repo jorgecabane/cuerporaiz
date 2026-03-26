@@ -3,6 +3,8 @@
 import { useTransition, useState } from "react";
 import { createPlan } from "../actions";
 import { Button } from "@/components/ui/Button";
+import { QuotaEditor } from "@/components/panel/on-demand/QuotaEditor";
+import type { OnDemandCategory } from "@/lib/domain/on-demand";
 
 function slugify(text: string): string {
   return text
@@ -53,7 +55,7 @@ const TYPE_OPTIONS: { value: PlanType; label: string; hint: string }[] = [
   { value: "MEMBERSHIP_ON_DEMAND", label: "Membresía on-demand", hint: "Acceso a la videoteca on-demand." },
 ];
 
-export function PlanFormCreate({ slugError }: { slugError?: boolean }) {
+export function PlanFormCreate({ slugError, categories = [] }: { slugError?: boolean; categories?: OnDemandCategory[] }) {
   const [isPending, startTransition] = useTransition();
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
@@ -92,6 +94,9 @@ export function PlanFormCreate({ slugError }: { slugError?: boolean }) {
           usesLimitVal === "limited" ? parseOptionalInt(formData.get("maxReservationsCount")) : null;
         const maxReservationsPerDay = parseOptionalInt(formData.get("maxReservationsPerDay"));
         const maxReservationsPerWeek = parseOptionalInt(formData.get("maxReservationsPerWeek"));
+        const quotasRaw = (formData.get("quotas") as string) ?? "[]";
+        let quotas: { categoryId: string; maxLessons: number }[] = [];
+        try { quotas = JSON.parse(quotasRaw); } catch { quotas = []; }
         if (!nameVal || !slugVal || Number.isNaN(amountCents) || amountCents < 0) return;
         startTransition(() =>
           createPlan({
@@ -107,6 +112,7 @@ export function PlanFormCreate({ slugError }: { slugError?: boolean }) {
             maxReservations: usesLimitVal === "unlimited" ? null : (maxReservations ?? undefined),
             maxReservationsPerDay: maxReservationsPerDay ?? undefined,
             maxReservationsPerWeek: maxReservationsPerWeek ?? undefined,
+            quotas: type === "ON_DEMAND" ? quotas : undefined,
           })
         );
       }}
@@ -197,6 +203,24 @@ export function PlanFormCreate({ slugError }: { slugError?: boolean }) {
           {TYPE_OPTIONS.find((o) => o.value === planType)?.hint}
         </p>
       </div>
+
+      {planType === "ON_DEMAND" && (
+        <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg)]/50 p-3 space-y-2">
+          <p className="text-sm font-medium text-[var(--color-text)]">Cuotas por categoría</p>
+          <p className="text-xs text-[var(--color-text-muted)]">
+            Define cuántas lecciones puede desbloquear el estudiante por categoría.
+          </p>
+          <QuotaEditor categories={categories} />
+        </div>
+      )}
+
+      {planType === "MEMBERSHIP_ON_DEMAND" && (
+        <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg)]/50 p-3">
+          <p className="text-sm text-[var(--color-text-muted)]">
+            Este plan dará acceso ilimitado a todo el contenido on demand.
+          </p>
+        </div>
+      )}
 
       <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg)]/50 p-3 space-y-3">
         <p className="text-sm font-medium text-[var(--color-text)]">Vigencia</p>
