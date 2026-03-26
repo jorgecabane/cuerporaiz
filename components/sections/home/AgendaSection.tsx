@@ -231,11 +231,11 @@ export function AgendaSection({ title, subtitle, livePlans, classes: classesProp
                     Sin clases este día. Descansa, el cuerpo también lo necesita.
                   </p>
                 ) : (
-                  classes.map((c) => {
+                  classes.map((c, i) => {
                     const isFull = c.spotsUsed >= c.spotsTotal;
                     return (
                       <div
-                        key={`${c.time}-${c.type}`}
+                        key={`${c.time}-${c.type}-${i}`}
                         className="grid grid-cols-[3.5rem_1fr_auto] items-center gap-[var(--space-4)] py-[var(--space-5)] sm:grid-cols-[3.5rem_1fr_auto_auto]"
                       >
                         {/* Hora */}
