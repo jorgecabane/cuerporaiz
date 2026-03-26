@@ -22,10 +22,20 @@ type LivePlan = {
   highlight?: boolean;
 };
 
+type ScheduleClass = {
+  time: string;
+  type: string;
+  duration: string;
+  spotsUsed: number;
+  spotsTotal: number;
+  dayOfWeek: number; // 0=dom, 1=lun...6=sáb
+};
+
 type AgendaSectionProps = {
   title?: string;
   subtitle?: string;
   livePlans?: LivePlan[];
+  classes?: ScheduleClass[];
 };
 
 /* ─── Datos de horario por día de semana (0 = domingo) ───────────────────── */
@@ -116,13 +126,17 @@ function planNote(plan: LivePlan): string {
 }
 
 /* ─── Componente ─────────────────────────────────────────────────────────── */
-export function AgendaSection({ title, subtitle, livePlans }: AgendaSectionProps) {
+export function AgendaSection({ title, subtitle, livePlans, classes: classesProp }: AgendaSectionProps) {
   const days = useMemo(() => getUpcomingDays(7), []);
   const [selectedIdx, setSelectedIdx] = useState(0);
 
   const selectedDay = days[selectedIdx];
   const dayOfWeek = selectedDay.getDay();
-  const classes = SCHEDULE[dayOfWeek] ?? [];
+
+  // Use real classes from DB if provided, otherwise fallback to hardcoded
+  const classes = classesProp
+    ? classesProp.filter((c) => c.dayOfWeek === dayOfWeek)
+    : (SCHEDULE[dayOfWeek] ?? []);
 
   const headingDate = `${DAY_LONG[dayOfWeek]} ${selectedDay.getDate()} de ${MONTH_SHORT[selectedDay.getMonth()]}`;
 
@@ -165,7 +179,9 @@ export function AgendaSection({ title, subtitle, livePlans }: AgendaSectionProps
               >
                 {days.map((day, i) => {
                   const isSelected = i === selectedIdx;
-                  const hasClasses = (SCHEDULE[day.getDay()] ?? []).length > 0;
+                  const hasClasses = classesProp
+                    ? classesProp.some((c) => c.dayOfWeek === day.getDay())
+                    : (SCHEDULE[day.getDay()] ?? []).length > 0;
                   return (
                     <button
                       key={i}

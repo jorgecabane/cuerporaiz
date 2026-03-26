@@ -5,6 +5,7 @@ import {
   siteSectionRepository,
   planRepository,
   disciplineRepository,
+  prisma,
 } from "@/lib/adapters/db";
 import {
   HeroSection,
@@ -103,6 +104,26 @@ export default async function HomePage() {
     .filter((s) => s.visible)
     .sort((a, b) => a.sortOrder - b.sortOrder);
 
+  // Query upcoming live classes for schedule section (next 7 days)
+  const now = new Date();
+  const weekFromNow = new Date(now);
+  weekFromNow.setDate(weekFromNow.getDate() + 7);
+  const upcomingClasses = await prisma.liveClass.findMany({
+    where: { centerId: center.id, startsAt: { gte: now, lte: weekFromNow }, status: "ACTIVE" },
+    include: { discipline: true, reservations: { where: { status: "CONFIRMED" } } },
+    orderBy: { startsAt: "asc" },
+    take: 50,
+  });
+
+  const scheduleClasses = upcomingClasses.map((c) => ({
+    time: c.startsAt.toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "America/Santiago" }),
+    type: c.discipline?.name ?? c.title,
+    duration: `${c.durationMinutes} min`,
+    spotsUsed: c.reservations.length,
+    spotsTotal: c.maxCapacity,
+    dayOfWeek: new Date(c.startsAt.toLocaleString("en-US", { timeZone: "America/Santiago" })).getDay(),
+  }));
+
   // Prepare live plans for AgendaSection
   const livePlans = plans
     .filter((p) => p.type === "LIVE")
@@ -162,8 +183,9 @@ export default async function HomePage() {
               <AgendaSection
                 key={section.id}
                 title={section.title ?? undefined}
-                subtitle={section.subtitle ?? undefined}
+                subtitle={siteConfig?.contactAddress ? `Presencial — ${siteConfig.contactAddress}` : (section.subtitle ?? undefined)}
                 livePlans={livePlans.length > 0 ? livePlans : undefined}
+                classes={scheduleClasses.length > 0 ? scheduleClasses : undefined}
               />
             );
 
