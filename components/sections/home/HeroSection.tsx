@@ -48,8 +48,9 @@ export function HeroSection({
   const heroSubtitle = subtitle ?? "el camino de regreso a ti.";
   const heroCta = ctaText ?? CTAS.comenzarPractica;
 
-  // Split title into lines for staggered animation, or use default
-  const titleLines = title ? title.split("\n") : null;
+  // Use default formatted render unless title is explicitly different from the original
+  const DEFAULT_TITLE = "cuerpo, respiración y placer.";
+  const isCustomTitle = title && title !== DEFAULT_TITLE;
 
   return (
     <section
@@ -87,8 +88,8 @@ export function HeroSection({
 
         {/* Headline */}
         <h1 className="text-hero font-display font-bold text-white">
-          {titleLines ? (
-            titleLines.map((line, i) => (
+          {isCustomTitle ? (
+            title.split("\n").map((line, i) => (
               <motion.span key={i} variants={fadeUp} className="block">
                 {line}
               </motion.span>

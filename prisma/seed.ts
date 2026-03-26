@@ -156,11 +156,11 @@ async function main() {
     { sectionKey: "schedule", sortOrder: 3, title: "Reserva tu lugar", subtitle: "Presencial — Vitacura" },
     { sectionKey: "plans", sortOrder: 4, title: "Elige el tuyo", subtitle: "Planes" },
     { sectionKey: "on-demand", sortOrder: 5, title: "Elige cómo practicar", subtitle: "Packs y membresía", visible: false },
-    { sectionKey: "disciplines", sortOrder: 6, title: null, subtitle: null },
+    { sectionKey: "disciplines", sortOrder: 6, title: null, subtitle: null, visible: false },
     { sectionKey: "team", sortOrder: 7, title: "Trinidad Cáceres", subtitle: "Sobre Trini" },
     { sectionKey: "testimonials", sortOrder: 8, title: null, subtitle: null },
     { sectionKey: "cta", sortOrder: 9, title: "El camino de regreso a ti.", subtitle: "El camino empieza aquí" },
-    { sectionKey: "contact", sortOrder: 10, title: null, subtitle: null },
+    { sectionKey: "contact", sortOrder: 10, title: null, subtitle: null, visible: false },
   ] as const;
 
   const sectionRecords: Record<string, string> = {};
