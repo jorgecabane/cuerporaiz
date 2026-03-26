@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useTransition } from "react";
-import { ChevronUp, ChevronDown } from "lucide-react";
+import { ChevronUp, ChevronDown, Pencil } from "lucide-react";
 import SectionItemsEditor from "./SectionItemsEditor";
 
 const SECTION_LABELS: Record<string, string> = {
@@ -18,7 +18,17 @@ const SECTION_LABELS: Record<string, string> = {
   contact: "Contacto",
 };
 
-const EDITABLE_SECTIONS = new Set(["team", "testimonials", "about", "how-it-works", "on-demand"]);
+/** Sections that have editable sub-items */
+const HAS_ITEMS_SECTIONS = new Set(["team", "testimonials", "about", "how-it-works", "on-demand"]);
+
+/** Sections where title/subtitle can be edited inline (most sections) */
+const HAS_TITLE_SECTIONS = new Set([
+  "about", "how-it-works", "schedule", "plans", "on-demand",
+  "disciplines", "team", "testimonials", "cta",
+]);
+
+const INPUT_CLASS =
+  "w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5 text-sm text-[var(--color-text)]";
 
 type Section = {
   id: string;
@@ -35,6 +45,8 @@ export default function SectionsManager() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [editingTitleId, setEditingTitleId] = useState<string | null>(null);
+  const [titleForm, setTitleForm] = useState({ title: "", subtitle: "" });
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
@@ -72,7 +84,7 @@ export default function SectionsManager() {
     if (swapIndex < 0 || swapIndex >= sections.length) return;
 
     const updated = [...sections];
-    [updated[index], updated[swapIndex]] = [updated[swapIndex], updated[index]];
+    [updated[index], updated[swapIndex]] = [updated[swapIndex]!, updated[index]!];
     setSections(updated);
     setError(null);
 
@@ -89,8 +101,38 @@ export default function SectionsManager() {
     });
   }
 
-  function toggleExpand(id: string) {
-    setExpandedId((prev) => (prev === id ? null : id));
+  function startEditTitle(section: Section) {
+    setEditingTitleId(section.id);
+    setTitleForm({
+      title: section.title ?? "",
+      subtitle: section.subtitle ?? "",
+    });
+  }
+
+  function saveTitle(sectionId: string) {
+    setError(null);
+    startTransition(async () => {
+      const res = await fetch(`/api/panel/site-sections/${sectionId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: titleForm.title || null,
+          subtitle: titleForm.subtitle || null,
+        }),
+      });
+      if (!res.ok) {
+        setError("Error al guardar");
+        return;
+      }
+      setSections((prev) =>
+        prev.map((s) =>
+          s.id === sectionId
+            ? { ...s, title: titleForm.title || null, subtitle: titleForm.subtitle || null }
+            : s
+        )
+      );
+      setEditingTitleId(null);
+    });
   }
 
   if (loading) {
@@ -101,6 +143,7 @@ export default function SectionsManager() {
     <div className="space-y-2">
       {sections.map((section, index) => (
         <div key={section.id} className="border border-[var(--color-border)] rounded-[var(--radius-md)] overflow-hidden">
+          {/* Header row */}
           <div className="flex items-center gap-3 px-4 py-3 bg-[var(--color-surface)]">
             {/* Reorder buttons */}
             <div className="flex flex-col gap-0.5">
@@ -124,28 +167,47 @@ export default function SectionsManager() {
               </button>
             </div>
 
-            {/* Label */}
-            <span className="flex-1 text-sm text-[var(--color-text)]">
-              {SECTION_LABELS[section.sectionKey] ?? section.sectionKey}
-            </span>
+            {/* Label + current title/subtitle preview */}
+            <div className="flex-1 min-w-0">
+              <span className="text-sm font-medium text-[var(--color-text)]">
+                {SECTION_LABELS[section.sectionKey] ?? section.sectionKey}
+              </span>
+              {section.title && (
+                <span className="ml-2 text-xs text-[var(--color-text-muted)] truncate">
+                  — {section.title}
+                </span>
+              )}
+            </div>
 
-            {/* Edit content button */}
+            {/* Edit title button */}
             {section.sectionKey === "hero" ? (
               <a
                 href="?tab=branding"
                 className="text-xs text-[var(--color-primary)] hover:underline"
               >
-                Editar en pestaña Marca
+                Editar en Marca
               </a>
-            ) : EDITABLE_SECTIONS.has(section.sectionKey) ? (
+            ) : HAS_TITLE_SECTIONS.has(section.sectionKey) ? (
               <button
                 type="button"
-                onClick={() => toggleExpand(section.id)}
+                onClick={() => startEditTitle(section)}
+                className="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-primary)]"
+                title="Editar título y subtítulo"
+              >
+                <Pencil size={14} />
+              </button>
+            ) : null}
+
+            {/* Edit items button */}
+            {HAS_ITEMS_SECTIONS.has(section.sectionKey) && (
+              <button
+                type="button"
+                onClick={() => setExpandedId((prev) => (prev === section.id ? null : section.id))}
                 className="text-xs text-[var(--color-primary)] hover:underline"
               >
                 {expandedId === section.id ? "Cerrar" : "Editar contenido"}
               </button>
-            ) : null}
+            )}
 
             {/* Visible toggle */}
             <button
@@ -166,9 +228,52 @@ export default function SectionsManager() {
             </button>
           </div>
 
+          {/* Inline title/subtitle editor */}
+          {editingTitleId === section.id && (
+            <div className="border-t border-[var(--color-border)] px-4 py-3 bg-[var(--color-surface)] space-y-2">
+              <div>
+                <label className="block text-xs text-[var(--color-text-muted)] mb-1">Título de la sección</label>
+                <input
+                  type="text"
+                  value={titleForm.title}
+                  onChange={(e) => setTitleForm((f) => ({ ...f, title: e.target.value }))}
+                  placeholder="Ej: Reserva tu lugar"
+                  className={INPUT_CLASS}
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-[var(--color-text-muted)] mb-1">Subtítulo / overline</label>
+                <input
+                  type="text"
+                  value={titleForm.subtitle}
+                  onChange={(e) => setTitleForm((f) => ({ ...f, subtitle: e.target.value }))}
+                  placeholder="Ej: Presencial — Vitacura"
+                  className={INPUT_CLASS}
+                />
+              </div>
+              <div className="flex gap-2 justify-end">
+                <button
+                  type="button"
+                  onClick={() => setEditingTitleId(null)}
+                  className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  disabled={isPending}
+                  onClick={() => saveTitle(section.id)}
+                  className="text-xs font-medium text-white bg-[var(--color-primary)] px-3 py-1 rounded-[var(--radius-md)] disabled:opacity-50"
+                >
+                  Guardar
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Expanded items editor */}
           {expandedId === section.id && (
-            <div className="border-t border-[var(--color-border)] px-4 py-4 bg-[var(--color-bg)]">
+            <div className="border-t border-[var(--color-border)] px-4 py-4">
               <SectionItemsEditor sectionId={section.id} sectionKey={section.sectionKey} />
             </div>
           )}

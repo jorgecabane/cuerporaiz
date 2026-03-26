@@ -46,6 +46,7 @@ function parseLine(line: string): React.ReactNode {
 type HeroSectionProps = {
   title?: string;
   subtitle?: string;
+  eyebrow?: string;
   imageUrl?: string;
   ctaText?: string;
 };
@@ -53,6 +54,7 @@ type HeroSectionProps = {
 export function HeroSection({
   title,
   subtitle,
+  eyebrow,
   imageUrl,
   ctaText,
 }: HeroSectionProps) {
@@ -93,7 +95,7 @@ export function HeroSection({
           variants={fadePlain}
           className="mb-[var(--space-4)] block text-xs font-medium uppercase tracking-[0.22em] text-white/75"
         >
-          yoga con identidad
+          {eyebrow ?? "yoga con identidad"}
         </motion.span>
 
         {/* Headline — supports \n for line breaks and *text* for italic */}

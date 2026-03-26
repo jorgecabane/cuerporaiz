@@ -197,6 +197,7 @@ export default async function HomePage() {
                 key={section.id}
                 title={siteConfig?.heroTitle ?? undefined}
                 subtitle={siteConfig?.heroSubtitle ?? undefined}
+                eyebrow={section.subtitle ?? undefined}
                 imageUrl={siteConfig?.heroImageUrl ?? undefined}
               />
             );

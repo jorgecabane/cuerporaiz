@@ -24,11 +24,13 @@ const DEFAULT_STATS: StatItem[] = [
 ];
 
 export function TestimoniosSection({ title, items, stats }: TestimoniosSectionProps) {
-  const displayStats = stats ?? DEFAULT_STATS;
-
-  // Use first item for the testimonial quote
-  // title = quote text, description = citation name, linkUrl = citation detail
+  // First item (sortOrder 0) = testimonial quote
+  // Remaining items (sortOrder 1+) = stats (title = value, description = label)
   const quote = items?.[0];
+  const itemStats = items && items.length > 1
+    ? items.slice(1).map((i) => ({ value: i.title ?? "", label: i.description ?? "" }))
+    : null;
+  const displayStats = stats ?? itemStats ?? DEFAULT_STATS;
   const quoteText = quote?.title ?? "Sabemos que no fue solo un retiro, fue un espacio de verdad, de contención, de pura expansión. cuerpos respirando juntos, corazones vibrando en la misma sintonía.";
   const quoteAuthor = quote?.description ?? "Comunidad Cuerpo Raíz";
   const quoteDetail = quote?.linkUrl ?? "Retiro Rena-ser";

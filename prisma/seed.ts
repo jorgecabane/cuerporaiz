@@ -158,7 +158,7 @@ async function main() {
 
   // ─── Site Sections ───────────────────────────────────────────────────────
   const sectionDefs = [
-    { sectionKey: "hero", sortOrder: 0, title: "cuerpo,\n*respiración*\ny placer.", subtitle: "el camino de regreso a ti." },
+    { sectionKey: "hero", sortOrder: 0, title: "cuerpo,\n*respiración*\ny placer.", subtitle: "yoga con identidad" },
     { sectionKey: "about", sortOrder: 1, title: "Yoga con identidad", subtitle: null },
     { sectionKey: "how-it-works", sortOrder: 2, title: "Tres formas de sumarte", subtitle: null },
     { sectionKey: "schedule", sortOrder: 3, title: "Reserva tu lugar", subtitle: "Presencial — Vitacura" },
@@ -307,15 +307,21 @@ async function main() {
     where: { sectionId: sectionRecords["testimonials"] },
   });
   if (!testimonialItems) {
-    await prisma.centerSiteSectionItem.create({
-      data: {
-        sectionId: sectionRecords["testimonials"],
-        sortOrder: 0,
-        title:
-          "Sabemos que no fue solo un retiro, fue un espacio de verdad, de contención, de pura expansión. cuerpos respirando juntos, corazones vibrando en la misma sintonía.",
-        description: "Comunidad Cuerpo Raíz",
-        linkUrl: "Retiro Rena-ser",
-      },
+    await prisma.centerSiteSectionItem.createMany({
+      data: [
+        {
+          sectionId: sectionRecords["testimonials"],
+          sortOrder: 0,
+          title:
+            "Sabemos que no fue solo un retiro, fue un espacio de verdad, de contención, de pura expansión. cuerpos respirando juntos, corazones vibrando en la misma sintonía.",
+          description: "Comunidad Cuerpo Raíz",
+          linkUrl: "Retiro Rena-ser",
+        },
+        // Stats (sortOrder 1+ = stat items, title = value, description = label)
+        { sectionId: sectionRecords["testimonials"], sortOrder: 1, title: "2022", description: "Inicio de comunidad" },
+        { sectionId: sectionRecords["testimonials"], sortOrder: 2, title: "4+", description: "Tipos de práctica" },
+        { sectionId: sectionRecords["testimonials"], sortOrder: 3, title: "Online y presencial", description: "Clases a tu ritmo" },
+      ],
     });
   }
 
