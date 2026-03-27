@@ -2,7 +2,12 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/auth";
 import { isAdminRole } from "@/lib/domain/role";
-import { onDemandLessonRepository, onDemandPracticeRepository, prisma } from "@/lib/adapters/db";
+import {
+  onDemandCategoryRepository,
+  onDemandLessonRepository,
+  onDemandPracticeRepository,
+  prisma,
+} from "@/lib/adapters/db";
 import { sendEmailSafe } from "@/lib/application/send-email";
 import { buildNewContentEmail } from "@/lib/email/on-demand";
 
@@ -38,6 +43,10 @@ export async function POST(request: Request) {
     }
     const practice = await onDemandPracticeRepository.findById(lesson.practiceId);
     if (!practice) {
+      return NextResponse.json({ code: "NOT_FOUND" }, { status: 404 });
+    }
+    const category = await onDemandCategoryRepository.findById(practice.categoryId);
+    if (!category || category.centerId !== centerId) {
       return NextResponse.json({ code: "NOT_FOUND" }, { status: 404 });
     }
 

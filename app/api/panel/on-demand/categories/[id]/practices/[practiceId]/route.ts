@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { isAdminRole } from "@/lib/domain/role";
-import { onDemandPracticeRepository } from "@/lib/adapters/db";
+import { onDemandCategoryRepository, onDemandPracticeRepository } from "@/lib/adapters/db";
 import { updatePracticeSchema } from "@/lib/dto/on-demand-practice-dto";
 
 /**
@@ -19,7 +19,11 @@ export async function PATCH(
     if (!isAdminRole(session.user.role)) {
       return NextResponse.json({ code: "FORBIDDEN" }, { status: 403 });
     }
-    const { practiceId } = await params;
+    const { id: categoryId, practiceId } = await params;
+    const category = await onDemandCategoryRepository.findById(categoryId);
+    if (!category || category.centerId !== session.user.centerId) {
+      return NextResponse.json({ code: "NOT_FOUND" }, { status: 404 });
+    }
     const body = await request.json();
     const parsed = updatePracticeSchema.safeParse(body);
     if (!parsed.success) {
@@ -54,7 +58,11 @@ export async function DELETE(
     if (!isAdminRole(session.user.role)) {
       return NextResponse.json({ code: "FORBIDDEN" }, { status: 403 });
     }
-    const { practiceId } = await params;
+    const { id: categoryId, practiceId } = await params;
+    const category = await onDemandCategoryRepository.findById(categoryId);
+    if (!category || category.centerId !== session.user.centerId) {
+      return NextResponse.json({ code: "NOT_FOUND" }, { status: 404 });
+    }
     const deleted = await onDemandPracticeRepository.delete(practiceId);
     if (!deleted) {
       return NextResponse.json({ code: "NOT_FOUND" }, { status: 404 });
