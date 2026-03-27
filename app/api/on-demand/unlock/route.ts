@@ -3,13 +3,13 @@ import { auth } from "@/auth";
 import { unlockLessonSchema } from "@/lib/dto/lesson-unlock-dto";
 import { unlockLessonUseCase } from "@/lib/application/unlock-lesson";
 import {
-  onDemandLessonRepository,
-  onDemandPracticeRepository,
   onDemandCategoryRepository,
   lessonUnlockRepository,
   userPlanRepository,
   planRepository,
   planCategoryQuotaRepository,
+  onDemandLessonRepository,
+  onDemandPracticeRepository,
 } from "@/lib/adapters/db";
 import { sendEmailSafe } from "@/lib/application/send-email";
 import { buildLessonUnlockedEmail, buildQuotaExhaustedEmail } from "@/lib/email/on-demand";
@@ -53,22 +53,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ code: result.code }, { status: statusMap[result.code] ?? 400 });
     }
 
-    // Send emails asynchronously
+    // Send emails asynchronously — use data from use case result to avoid re-fetching lesson/practice
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-    const lesson = await onDemandLessonRepository.findById(parsed.data.lessonId);
-    const practice = lesson ? await onDemandPracticeRepository.findById(lesson.practiceId) : null;
-    const category = practice ? await onDemandCategoryRepository.findById(practice.categoryId) : null;
+    const category = await onDemandCategoryRepository.findById(result.categoryId!);
 
     const pref = await prisma.emailPreference.findUnique({
       where: { userId_centerId: { userId, centerId } },
     });
 
-    if (lesson && practice && category && (!pref || pref.lessonUnlocked)) {
+    if (category && (!pref || pref.lessonUnlocked)) {
       sendEmailSafe(buildLessonUnlockedEmail({
         toEmail: session.user.email!,
         userName: session.user.name ?? undefined,
-        lessonTitle: lesson.title,
-        practiceName: practice.name,
+        lessonTitle: result.lessonTitle!,
+        practiceName: result.practiceName!,
         categoryName: category.name,
         remainingLessons: result.remainingLessons ?? null,
         onDemandUrl: `${baseUrl}/panel/on-demand`,

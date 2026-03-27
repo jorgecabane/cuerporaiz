@@ -77,7 +77,7 @@ export async function POST(request: Request) {
       const wantsNewContent = prefs?.newContent ?? true;
       if (!wantsNewContent || !user.email) continue;
 
-      await sendEmailSafe(
+      sendEmailSafe(
         buildNewContentEmail({
           toEmail: user.email,
           userName: user.name ?? undefined,

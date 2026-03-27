@@ -19,6 +19,9 @@ export interface UnlockLessonResult {
     | "NO_QUOTA_CONFIGURED";
   unlock?: LessonUnlock;
   remainingLessons?: number | null;
+  lessonTitle?: string;
+  practiceName?: string;
+  categoryId?: string;
 }
 
 interface UnlockLessonDeps {
@@ -106,5 +109,13 @@ export async function unlockLessonUseCase(
     return { success: false, code: "ALREADY_UNLOCKED" };
   }
 
-  return { success: true, code: "UNLOCKED", unlock, remainingLessons };
+  return {
+    success: true,
+    code: "UNLOCKED",
+    unlock,
+    remainingLessons,
+    lessonTitle: lesson.title,
+    practiceName: practice.name,
+    categoryId: practice.categoryId,
+  };
 }

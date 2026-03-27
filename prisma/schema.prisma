@@ -239,6 +239,7 @@ model UserPlan {
   lessonUnlocks   LessonUnlock[]
 
   @@index([userId, centerId])
+  @@index([userId, centerId, status])
   @@index([centerId])
   @@index([status])
   @@index([subscriptionId])
@@ -594,6 +595,7 @@ model OnDemandPractice {
 
   @@unique([categoryId, name])
   @@index([categoryId])
+  @@index([categoryId, status])
 }
 
 model OnDemandLesson {
@@ -653,6 +655,7 @@ model LessonUnlock {
 
   @@unique([userId, lessonId])
   @@index([userId])
+  @@index([userId, centerId])
   @@index([userPlanId])
   @@index([centerId])
 }

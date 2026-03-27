@@ -1,12 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import {
-  lessonUnlockRepository,
-  onDemandLessonRepository,
-  onDemandPracticeRepository,
-  onDemandCategoryRepository,
-  userPlanRepository,
-} from "@/lib/adapters/db";
+import { userPlanRepository } from "@/lib/adapters/db";
+import { prisma } from "@/lib/adapters/db/prisma";
 
 export async function GET() {
   try {
@@ -17,12 +12,26 @@ export async function GET() {
 
     const { id: userId, centerId } = session.user;
 
-    // Batch: get all unlocks for this user+center in one query
-    const unlocks = await lessonUnlockRepository.findByUserIdAndCenterId(userId, centerId);
+    // Single query with all joins — no N+1
+    const unlockData = await prisma.lessonUnlock.findMany({
+      where: { userId, centerId },
+      orderBy: { unlockedAt: "desc" },
+      include: {
+        lesson: {
+          include: {
+            practice: {
+              include: {
+                category: { select: { id: true, name: true } },
+              },
+            },
+          },
+        },
+      },
+    });
 
-    if (unlocks.length === 0) return NextResponse.json([]);
+    if (unlockData.length === 0) return NextResponse.json([]);
 
-    // Check plan validity ONCE for all unlocks
+    // Check plan validity once for all unlocks
     const userPlans = await userPlanRepository.findActiveByUserAndCenter(userId, centerId);
     const activePlanIds = new Set(
       userPlans
@@ -30,38 +39,34 @@ export async function GET() {
         .map((up) => up.id),
     );
 
-    // Batch fetch all lessons in parallel
-    const lessons = await Promise.all(unlocks.map((u) => onDemandLessonRepository.findById(u.lessonId)));
+    const result = unlockData.map((u) => {
+      const { lesson } = u;
+      const hasAccess = activePlanIds.has(u.userPlanId);
 
-    // Batch fetch practices (deduplicated)
-    const practiceIds = [...new Set(lessons.filter(Boolean).map((l) => l!.practiceId))];
-    const practices = await Promise.all(practiceIds.map((id) => onDemandPracticeRepository.findById(id)));
-    const practiceMap = new Map(practices.filter(Boolean).map((p) => [p!.id, p!]));
-
-    // Batch fetch categories (deduplicated)
-    const categoryIds = [...new Set(practices.filter(Boolean).map((p) => p!.categoryId))];
-    const categoryResults = await Promise.all(categoryIds.map((id) => onDemandCategoryRepository.findById(id)));
-    const categoryMap = new Map(categoryResults.filter(Boolean).map((c) => [c!.id, c!]));
-
-    const result = unlocks
-      .map((u, i) => {
-        const lesson = lessons[i];
-        if (!lesson) return null;
-
-        const hasAccess = activePlanIds.has(u.userPlanId);
-        const practice = practiceMap.get(lesson.practiceId);
-        const category = practice ? categoryMap.get(practice.categoryId) : null;
-
-        return {
-          ...lesson,
-          videoUrl: hasAccess ? lesson.videoUrl : null,
-          unlockedAt: u.unlockedAt,
-          hasAccess,
-          practiceName: practice?.name ?? null,
-          categoryName: category?.name ?? null,
-        };
-      })
-      .filter(Boolean);
+      return {
+        id: lesson.id,
+        title: lesson.title,
+        description: lesson.description,
+        durationMinutes: lesson.durationMinutes,
+        level: lesson.level,
+        intensity: lesson.intensity,
+        targetAudience: lesson.targetAudience,
+        equipment: lesson.equipment,
+        tags: lesson.tags,
+        thumbnailUrl: lesson.thumbnailUrl,
+        promoVideoUrl: lesson.promoVideoUrl,
+        videoUrl: hasAccess ? lesson.videoUrl : null,
+        sortOrder: lesson.sortOrder,
+        status: lesson.status,
+        createdAt: lesson.createdAt,
+        updatedAt: lesson.updatedAt,
+        practiceId: lesson.practiceId,
+        unlockedAt: u.unlockedAt,
+        hasAccess,
+        practiceName: lesson.practice?.name ?? null,
+        categoryName: lesson.practice?.category?.name ?? null,
+      };
+    });
 
     return NextResponse.json(result);
   } catch (err) {
