@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { isAdminRole } from "@/lib/domain/role";
-import { onDemandLessonRepository } from "@/lib/adapters/db";
+import {
+  onDemandCategoryRepository,
+  onDemandLessonRepository,
+  onDemandPracticeRepository,
+} from "@/lib/adapters/db";
 import { updateLessonSchema } from "@/lib/dto/on-demand-lesson-dto";
 
 /**
@@ -17,6 +21,14 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       return NextResponse.json({ code: "FORBIDDEN" }, { status: 403 });
     }
     const { id } = await params;
+    const lesson = await onDemandLessonRepository.findById(id);
+    if (!lesson) return NextResponse.json({ code: "NOT_FOUND" }, { status: 404 });
+    const practice = await onDemandPracticeRepository.findById(lesson.practiceId);
+    if (!practice) return NextResponse.json({ code: "NOT_FOUND" }, { status: 404 });
+    const category = await onDemandCategoryRepository.findById(practice.categoryId);
+    if (!category || category.centerId !== session.user.centerId) {
+      return NextResponse.json({ code: "NOT_FOUND" }, { status: 404 });
+    }
     const body = await request.json();
     const parsed = updateLessonSchema.safeParse(body);
     if (!parsed.success) {
@@ -49,6 +61,14 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
       return NextResponse.json({ code: "FORBIDDEN" }, { status: 403 });
     }
     const { id } = await params;
+    const lesson = await onDemandLessonRepository.findById(id);
+    if (!lesson) return NextResponse.json({ code: "NOT_FOUND" }, { status: 404 });
+    const practice = await onDemandPracticeRepository.findById(lesson.practiceId);
+    if (!practice) return NextResponse.json({ code: "NOT_FOUND" }, { status: 404 });
+    const category = await onDemandCategoryRepository.findById(practice.categoryId);
+    if (!category || category.centerId !== session.user.centerId) {
+      return NextResponse.json({ code: "NOT_FOUND" }, { status: 404 });
+    }
     const deleted = await onDemandLessonRepository.delete(id);
     if (!deleted) {
       return NextResponse.json({ code: "NOT_FOUND" }, { status: 404 });

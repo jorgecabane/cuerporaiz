@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { isAdminRole } from "@/lib/domain/role";
-import { onDemandPracticeRepository } from "@/lib/adapters/db";
+import { onDemandCategoryRepository, onDemandPracticeRepository } from "@/lib/adapters/db";
 import { createPracticeSchema } from "@/lib/dto/on-demand-practice-dto";
 
 /**
@@ -17,6 +17,10 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
       return NextResponse.json({ code: "FORBIDDEN" }, { status: 403 });
     }
     const { id } = await params;
+    const category = await onDemandCategoryRepository.findById(id);
+    if (!category || category.centerId !== session.user.centerId) {
+      return NextResponse.json({ code: "NOT_FOUND" }, { status: 404 });
+    }
     const practices = await onDemandPracticeRepository.findByCategoryId(id);
     return NextResponse.json(practices);
   } catch (err) {
@@ -38,6 +42,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       return NextResponse.json({ code: "FORBIDDEN" }, { status: 403 });
     }
     const { id } = await params;
+    const category = await onDemandCategoryRepository.findById(id);
+    if (!category || category.centerId !== session.user.centerId) {
+      return NextResponse.json({ code: "NOT_FOUND" }, { status: 404 });
+    }
     const body = await request.json();
     const parsed = createPracticeSchema.safeParse(body);
     if (!parsed.success) {

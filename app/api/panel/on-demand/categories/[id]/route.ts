@@ -17,6 +17,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       return NextResponse.json({ code: "FORBIDDEN" }, { status: 403 });
     }
     const { id } = await params;
+    const category = await onDemandCategoryRepository.findById(id);
+    if (!category || category.centerId !== session.user.centerId) {
+      return NextResponse.json({ code: "NOT_FOUND" }, { status: 404 });
+    }
     const body = await request.json();
     const parsed = updateCategorySchema.safeParse(body);
     if (!parsed.success) {
@@ -49,6 +53,10 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
       return NextResponse.json({ code: "FORBIDDEN" }, { status: 403 });
     }
     const { id } = await params;
+    const category = await onDemandCategoryRepository.findById(id);
+    if (!category || category.centerId !== session.user.centerId) {
+      return NextResponse.json({ code: "NOT_FOUND" }, { status: 404 });
+    }
     const deleted = await onDemandCategoryRepository.delete(id);
     if (!deleted) {
       return NextResponse.json({ code: "NOT_FOUND" }, { status: 404 });

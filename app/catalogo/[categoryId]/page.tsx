@@ -1,8 +1,4 @@
-import {
-  onDemandCategoryRepository,
-  onDemandPracticeRepository,
-  onDemandLessonRepository,
-} from "@/lib/adapters/db";
+import { onDemandCategoryRepository, onDemandPracticeRepository } from "@/lib/adapters/db";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -15,16 +11,13 @@ interface Props {
 export default async function CatalogoCategoryPage({ params }: Props) {
   const { categoryId } = await params;
 
-  const category = await onDemandCategoryRepository.findById(categoryId);
+  const [category, practicesWithLessons] = await Promise.all([
+    onDemandCategoryRepository.findById(categoryId),
+    onDemandPracticeRepository.findPublishedWithLessonsByCategoryId(categoryId),
+  ]);
   if (!category || category.status !== "PUBLISHED") notFound();
 
-  const practices = await onDemandPracticeRepository.findPublishedByCategoryId(category.id);
-  const practicesWithCounts = await Promise.all(
-    practices.map(async (p) => {
-      const lessons = await onDemandLessonRepository.findPublishedByPracticeId(p.id);
-      return { ...p, lessonCount: lessons.length };
-    }),
-  );
+  const practicesWithCounts = practicesWithLessons.map((p) => ({ ...p, lessonCount: p.lessons.length }));
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-12 space-y-8">
@@ -41,6 +34,7 @@ export default async function CatalogoCategoryPage({ params }: Props) {
           <img
             src={category.thumbnailUrl}
             alt={category.name}
+            loading="lazy"
             className="w-full h-56 object-cover rounded-[var(--radius-lg)] mb-6"
           />
         )}
@@ -64,6 +58,7 @@ export default async function CatalogoCategoryPage({ params }: Props) {
                 <img
                   src={practice.thumbnailUrl}
                   alt={practice.name}
+                  loading="lazy"
                   className="w-full h-40 object-cover"
                 />
               )}

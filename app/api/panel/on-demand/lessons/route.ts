@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { isAdminRole } from "@/lib/domain/role";
-import { onDemandLessonRepository } from "@/lib/adapters/db";
+import {
+  onDemandCategoryRepository,
+  onDemandLessonRepository,
+  onDemandPracticeRepository,
+} from "@/lib/adapters/db";
 import { createLessonSchema } from "@/lib/dto/on-demand-lesson-dto";
 
 /**
@@ -23,6 +27,12 @@ export async function POST(request: Request) {
         { code: "VALIDATION_ERROR", errors: parsed.error.flatten() },
         { status: 400 }
       );
+    }
+    const practice = await onDemandPracticeRepository.findById(parsed.data.practiceId);
+    if (!practice) return NextResponse.json({ code: "NOT_FOUND" }, { status: 404 });
+    const category = await onDemandCategoryRepository.findById(practice.categoryId);
+    if (!category || category.centerId !== session.user.centerId) {
+      return NextResponse.json({ code: "NOT_FOUND" }, { status: 404 });
     }
     const lesson = await onDemandLessonRepository.create(parsed.data);
     return NextResponse.json(lesson, { status: 201 });

@@ -29,6 +29,14 @@ export const lessonUnlockRepository: ILessonUnlockRepository = {
     return list.map(toDomain);
   },
 
+  async findByUserIdAndCenterId(userId: string, centerId: string) {
+    const list = await prisma.lessonUnlock.findMany({
+      where: { userId, centerId },
+      orderBy: { unlockedAt: "desc" },
+    });
+    return list.map(toDomain);
+  },
+
   async findByUserAndLesson(userId: string, lessonId: string) {
     const r = await prisma.lessonUnlock.findUnique({
       where: { userId_lessonId: { userId, lessonId } },

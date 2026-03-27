@@ -31,7 +31,7 @@ export function PracticeCard({
           style={{
             background: thumbnailUrl
               ? `url(${thumbnailUrl}) center/cover`
-              : "linear-gradient(135deg, var(--color-primary), #5a6b54)",
+              : "linear-gradient(135deg, var(--color-primary), var(--color-primary-hover))",
           }}
         >
           <span className="text-white text-sm font-bold drop-shadow-md">{name}</span>
@@ -67,7 +67,7 @@ export function PracticeCard({
           style={{
             background: thumbnailUrl
               ? `url(${thumbnailUrl}) center/cover`
-              : "linear-gradient(135deg, var(--color-primary), #5a6b54)",
+              : "linear-gradient(135deg, var(--color-primary), var(--color-primary-hover))",
           }}
         >
           <span className="text-white text-[11px] font-bold drop-shadow-md leading-tight">{name}</span>

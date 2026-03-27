@@ -48,6 +48,7 @@ export default async function CatalogoPracticePage({ params }: Props) {
           <img
             src={practice.thumbnailUrl}
             alt={practice.name}
+            loading="lazy"
             className="w-full h-56 object-cover rounded-[var(--radius-lg)] mb-6"
           />
         )}
@@ -71,6 +72,7 @@ export default async function CatalogoPracticePage({ params }: Props) {
                   <img
                     src={lesson.thumbnailUrl}
                     alt={lesson.title}
+                    loading="lazy"
                     className="w-24 h-16 object-cover rounded-[var(--radius-md)] flex-shrink-0"
                   />
                 )}

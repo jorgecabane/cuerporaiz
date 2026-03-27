@@ -2,7 +2,12 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/auth";
 import { isAdminRole } from "@/lib/domain/role";
-import { onDemandLessonRepository, onDemandPracticeRepository, prisma } from "@/lib/adapters/db";
+import {
+  onDemandCategoryRepository,
+  onDemandLessonRepository,
+  onDemandPracticeRepository,
+  prisma,
+} from "@/lib/adapters/db";
 import { sendEmailSafe } from "@/lib/application/send-email";
 import { buildNewContentEmail } from "@/lib/email/on-demand";
 
@@ -40,6 +45,10 @@ export async function POST(request: Request) {
     if (!practice) {
       return NextResponse.json({ code: "NOT_FOUND" }, { status: 404 });
     }
+    const category = await onDemandCategoryRepository.findById(practice.categoryId);
+    if (!category || category.centerId !== centerId) {
+      return NextResponse.json({ code: "NOT_FOUND" }, { status: 404 });
+    }
 
     const activePlans = await prisma.userPlan.findMany({
       where: {
@@ -68,7 +77,7 @@ export async function POST(request: Request) {
       const wantsNewContent = prefs?.newContent ?? true;
       if (!wantsNewContent || !user.email) continue;
 
-      await sendEmailSafe(
+      sendEmailSafe(
         buildNewContentEmail({
           toEmail: user.email,
           userName: user.name ?? undefined,

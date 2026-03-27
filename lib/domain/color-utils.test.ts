@@ -55,4 +55,17 @@ describe("lightenHex", () => {
     const result = lightenHex("#fefefe", 99);
     expect(result).toBe("#ffffff");
   });
+  it("handles 3-digit hex shorthand", () => {
+    // #000 expands to #000000, lighten by 10% → same as #000000 test
+    const result = lightenHex("#000", 10);
+    expect(result).toBe("#1a1a1a");
+  });
+});
+
+describe("darkenHex with 3-digit hex", () => {
+  it("handles 3-digit hex shorthand", () => {
+    // #FFF expands to #ffffff, darken by 10%
+    const result = darkenHex("#FFF", 10);
+    expect(result).toBe("#e6e6e6");
+  });
 });

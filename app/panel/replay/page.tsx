@@ -3,8 +3,6 @@ import { redirect } from "next/navigation";
 import { isAdminRole } from "@/lib/domain/role";
 import {
   onDemandCategoryRepository,
-  onDemandPracticeRepository,
-  onDemandLessonRepository,
   lessonUnlockRepository,
   userPlanRepository,
   planRepository,
@@ -23,8 +21,8 @@ export default async function ReplayPage() {
 
   if (isAdminRole(role)) redirect("/panel/on-demand/categorias");
 
-  const [categories, allUserPlans] = await Promise.all([
-    onDemandCategoryRepository.findPublishedByCenterId(centerId),
+  const [categoriesTree, allUserPlans] = await Promise.all([
+    onDemandCategoryRepository.findPublishedTreeByCenterId(centerId),
     userPlanRepository.findActiveByUserAndCenter(userId, centerId),
   ]);
 
@@ -57,46 +55,39 @@ export default async function ReplayPage() {
   const matchedPlan = plans.find((p) => p.id === onDemandUserPlan.planId);
   const unlimited = matchedPlan?.type === "MEMBERSHIP_ON_DEMAND";
 
-  const categoriesWithContent = await Promise.all(
-    categories.map(async (cat) => {
-      const practices = await onDemandPracticeRepository.findPublishedByCategoryId(cat.id);
-      const practicesWithLessons = await Promise.all(
-        practices.map(async (practice) => {
-          const lessons = await onDemandLessonRepository.findPublishedByPracticeId(practice.id);
-          return {
-            id: practice.id,
-            name: practice.name,
-            description: practice.description,
-            categoryId: cat.id,
-            lessons: lessons.map((l) => ({
-              id: l.id,
-              title: l.title,
-              description: l.description,
-              durationMinutes: l.durationMinutes,
-              level: l.level,
-              intensity: l.intensity,
-              targetAudience: l.targetAudience,
-              equipment: l.equipment,
-              tags: l.tags,
-              thumbnailUrl: l.thumbnailUrl,
-              promoVideoUrl: l.promoVideoUrl,
-              videoUrl: null as string | null,
-              practiceId: l.practiceId,
-            })),
-          };
-        }),
-      );
-      return {
-        id: cat.id,
-        name: cat.name,
-        description: cat.description ?? null,
-        practices: practicesWithLessons,
-      };
-    }),
-  );
+  const videoUrlMap = new Map<string, string>();
+  const categoriesWithContent = categoriesTree.map((cat) => ({
+    id: cat.id,
+    name: cat.name,
+    description: cat.description ?? null,
+    practices: cat.practices.map((practice) => ({
+      id: practice.id,
+      name: practice.name,
+      description: practice.description,
+      categoryId: cat.id,
+      lessons: practice.lessons.map((l) => {
+        videoUrlMap.set(l.id, l.videoUrl);
+        return {
+          id: l.id,
+          title: l.title,
+          description: l.description,
+          durationMinutes: l.durationMinutes,
+          level: l.level,
+          intensity: l.intensity,
+          targetAudience: l.targetAudience,
+          equipment: l.equipment,
+          tags: l.tags,
+          thumbnailUrl: l.thumbnailUrl,
+          promoVideoUrl: l.promoVideoUrl,
+          videoUrl: null as string | null,
+          practiceId: l.practiceId,
+        };
+      }),
+    })),
+  }));
 
   const [unlocks, quotaUsage] = await Promise.all([
-    lessonUnlockRepository.findByUserId(userId),
+    lessonUnlockRepository.findByUserIdAndCenterId(userId, centerId),
     unlimited
       ? Promise.resolve([])
       : getCategoryQuotaUsage(onDemandUserPlan.planId, onDemandUserPlan.id, {
@@ -107,13 +98,12 @@ export default async function ReplayPage() {
 
   const unlockedLessonIds = unlocks.map((u) => u.lessonId);
 
-  // Inject videoUrl only for unlocked lessons
+  // Inject videoUrl for unlocked lessons from the map (no re-fetch needed)
   for (const cat of categoriesWithContent) {
     for (const practice of cat.practices) {
       for (const lesson of practice.lessons) {
         if (unlockedLessonIds.includes(lesson.id)) {
-          const fullLesson = await onDemandLessonRepository.findById(lesson.id);
-          if (fullLesson) lesson.videoUrl = fullLesson.videoUrl;
+          lesson.videoUrl = videoUrlMap.get(lesson.id) ?? null;
         }
       }
     }

@@ -1,5 +1,5 @@
 import type { IOnDemandPracticeRepository } from "@/lib/ports/on-demand-practice-repository";
-import type { OnDemandPractice, CreatePracticeInput, UpdatePracticeInput, OnDemandContentStatus } from "@/lib/domain/on-demand";
+import type { OnDemandPractice, OnDemandContentStatus, CreatePracticeInput, UpdatePracticeInput } from "@/lib/domain/on-demand";
 import { prisma } from "./prisma";
 import type { OnDemandContentStatus as PrismaOnDemandContentStatus } from "@prisma/client";
 
@@ -42,6 +42,41 @@ export const onDemandPracticeRepository: IOnDemandPracticeRepository = {
       orderBy: { sortOrder: "asc" },
     });
     return list.map(toDomain);
+  },
+
+  async findPublishedWithLessonsByCategoryId(categoryId: string) {
+    const list = await prisma.onDemandPractice.findMany({
+      where: { categoryId, status: "PUBLISHED" },
+      orderBy: { sortOrder: "asc" },
+      include: {
+        lessons: {
+          where: { status: "PUBLISHED" },
+          orderBy: { sortOrder: "asc" },
+        },
+      },
+    });
+    return list.map((p) => ({
+      ...toDomain(p),
+      lessons: p.lessons.map((l) => ({
+        id: l.id,
+        practiceId: l.practiceId,
+        title: l.title,
+        description: l.description,
+        videoUrl: l.videoUrl,
+        promoVideoUrl: l.promoVideoUrl,
+        thumbnailUrl: l.thumbnailUrl,
+        durationMinutes: l.durationMinutes,
+        level: l.level,
+        intensity: l.intensity,
+        targetAudience: l.targetAudience,
+        equipment: l.equipment,
+        tags: l.tags,
+        sortOrder: l.sortOrder,
+        status: l.status as unknown as OnDemandContentStatus,
+        createdAt: l.createdAt,
+        updatedAt: l.updatedAt,
+      })),
+    }));
   },
 
   async findById(id: string) {

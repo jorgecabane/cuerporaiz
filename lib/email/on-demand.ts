@@ -8,6 +8,14 @@ import { emailBaseLayout, EMAIL_CTA_STYLE } from "./base-layout";
 
 const DEFAULT_FROM = process.env.EMAIL_FROM ?? `Cuerpo Raíz <onboarding@resend.dev>`;
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
 // ─── Lección desbloqueada ────────────────────────────────────────────────────
 export interface LessonUnlockedEmailData {
   toEmail: string;
@@ -21,14 +29,14 @@ export interface LessonUnlockedEmailData {
 }
 
 export function buildLessonUnlockedEmail(data: LessonUnlockedEmailData): SendEmailDto {
-  const greeting = data.userName ? `Hola ${data.userName}` : "Hola";
+  const greeting = data.userName ? `Hola ${escapeHtml(data.userName)}` : "Hola";
   const remainingLine =
     data.remainingLessons !== null
-      ? `<p>Te quedan <strong>${data.remainingLessons}</strong> clases de ${data.categoryName}.</p>`
+      ? `<p>Te quedan <strong>${data.remainingLessons}</strong> clases de ${escapeHtml(data.categoryName)}.</p>`
       : "";
   const body = `
     <p>${greeting},</p>
-    <p>Desbloqueaste <strong>${data.lessonTitle}</strong> de ${data.practiceName}.</p>
+    <p>Desbloqueaste <strong>${escapeHtml(data.lessonTitle)}</strong> de ${escapeHtml(data.practiceName)}.</p>
     ${remainingLine}
     <p><a href="${data.onDemandUrl}" style="${EMAIL_CTA_STYLE}">Ver clase</a></p>`;
   const html = emailBaseLayout({ body, centerName: SITE_NAME, preferencesUrl: data.preferencesUrl });
@@ -65,10 +73,10 @@ export interface QuotaExhaustedEmailData {
 }
 
 export function buildQuotaExhaustedEmail(data: QuotaExhaustedEmailData): SendEmailDto {
-  const greeting = data.userName ? `Hola ${data.userName}` : "Hola";
+  const greeting = data.userName ? `Hola ${escapeHtml(data.userName)}` : "Hola";
   const body = `
     <p>${greeting},</p>
-    <p>Usaste todas tus clases de <strong>${data.categoryName}</strong>.</p>
+    <p>Usaste todas tus clases de <strong>${escapeHtml(data.categoryName)}</strong>.</p>
     <p>Renueva tu plan o compra una membresía para acceso ilimitado.</p>
     <p><a href="${data.storeUrl}" style="${EMAIL_CTA_STYLE}">Ver planes</a></p>`;
   const html = emailBaseLayout({ body, centerName: SITE_NAME, preferencesUrl: data.preferencesUrl });
@@ -100,10 +108,10 @@ export interface NewContentEmailData {
 }
 
 export function buildNewContentEmail(data: NewContentEmailData): SendEmailDto {
-  const greeting = data.userName ? `Hola ${data.userName}` : "Hola";
+  const greeting = data.userName ? `Hola ${escapeHtml(data.userName)}` : "Hola";
   const body = `
     <p>${greeting},</p>
-    <p>Se agregó <strong>${data.lessonTitle}</strong> a ${data.practiceName}.</p>
+    <p>Se agregó <strong>${escapeHtml(data.lessonTitle)}</strong> a ${escapeHtml(data.practiceName)}.</p>
     <p>Explora el catálogo on demand.</p>
     <p><a href="${data.catalogUrl}" style="${EMAIL_CTA_STYLE}">Ver catálogo</a></p>`;
   const html = emailBaseLayout({ body, centerName: SITE_NAME, preferencesUrl: data.preferencesUrl });

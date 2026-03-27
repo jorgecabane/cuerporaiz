@@ -57,7 +57,7 @@ export function ReplayLessonCard({
           style={{
             background: lesson.thumbnailUrl
               ? `url(${lesson.thumbnailUrl}) center/cover`
-              : "linear-gradient(135deg, #a8c0a0, #7da070)",
+              : "linear-gradient(135deg, var(--color-primary-light), var(--color-primary))",
           }}
         >
           <div className="w-6 h-6 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center text-[10px]">
@@ -89,7 +89,7 @@ export function ReplayLessonCard({
               className="hidden sm:flex items-center gap-1 text-xs text-[var(--color-primary)] hover:underline"
             >
               {expanded ? "Cerrar" : "Detalles"}
-              <span className="text-[10px]">{expanded ? "▲" : "▼"}</span>
+              <span className="text-xs">{expanded ? "▲" : "▼"}</span>
             </button>
           )}
           {unlocked && lesson.videoUrl ? (
@@ -116,7 +116,7 @@ export function ReplayLessonCard({
         <div className="px-3 pb-2 sm:hidden">
           <button
             onClick={() => setExpanded(true)}
-            className="text-[10px] text-[var(--color-primary)] hover:underline"
+            className="text-xs text-[var(--color-primary)] hover:underline"
           >
             Ver detalles ▼
           </button>
@@ -141,6 +141,7 @@ export function ReplayLessonCard({
               <img
                 src={lesson.thumbnailUrl}
                 alt={lesson.title}
+                loading="lazy"
                 className="w-full rounded-lg object-cover max-h-52"
               />
             </div>

@@ -34,6 +34,7 @@ export function VimeoEmbed({ url, title }: VimeoEmbedProps) {
         title={title ?? "Video"}
         allow="autoplay; fullscreen; picture-in-picture"
         allowFullScreen
+        loading="lazy"
         className="absolute inset-0 w-full h-full rounded-[var(--radius-md)]"
       />
     </div>
