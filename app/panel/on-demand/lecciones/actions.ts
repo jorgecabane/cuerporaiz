@@ -28,6 +28,12 @@ export async function updateLesson(id: string, data: UpdateLessonInput): Promise
   await onDemandLessonRepository.update(id, data);
   revalidatePath("/panel/on-demand");
   revalidatePath("/catalogo");
+  const lesson = await onDemandLessonRepository.findById(id);
+  if (lesson) {
+    const practice = await onDemandPracticeRepository.findById(lesson.practiceId);
+    if (practice) redirect(`/panel/on-demand/categorias/${practice.categoryId}/practicas/${practice.id}`);
+  }
+  redirect("/panel/on-demand/categorias");
 }
 
 export async function deleteLesson(id: string): Promise<void> {
