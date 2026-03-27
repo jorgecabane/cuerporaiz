@@ -77,6 +77,12 @@ describe("reservation-dto", () => {
       });
       expect(result.success).toBe(false);
     });
+
+    it("statuses con solo comas/espacios devuelve undefined (partes vacías filtradas)", () => {
+      const result = listReservationsQuerySchema.safeParse({ statuses: ",, ," });
+      expect(result.success).toBe(true);
+      if (result.success) expect(result.data.statuses).toBeUndefined();
+    });
   });
 });
 

@@ -6,6 +6,7 @@ import {
   MAX_CANCEL_BEFORE_MINUTES,
   MAX_BOOK_BEFORE_MINUTES,
 } from "./center-policy";
+import type { PolicyTimeUnit } from "./center-policy";
 
 describe("minutesFromPolicyInput", () => {
   it("converts minutes as-is", () => {
@@ -30,6 +31,11 @@ describe("minutesFromPolicyInput", () => {
 
   it("returns 0 for NaN", () => {
     expect(minutesFromPolicyInput(NaN, "hours")).toBe(0);
+  });
+
+  it("returns raw value for unknown unit (default branch)", () => {
+    // Cast to bypass TypeScript to exercise the default switch branch
+    expect(minutesFromPolicyInput(15, "weeks" as PolicyTimeUnit)).toBe(15);
   });
 });
 
