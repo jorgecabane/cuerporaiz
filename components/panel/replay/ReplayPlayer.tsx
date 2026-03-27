@@ -140,7 +140,7 @@ export function ReplayPlayer({
                   style={{
                     background: s.thumbnailUrl
                       ? `url(${s.thumbnailUrl}) center/cover`
-                      : "linear-gradient(135deg, #a8c0a0, #7da070)",
+                      : "linear-gradient(135deg, var(--color-primary-light), var(--color-primary))",
                   }}
                 >
                   <div className="w-5 h-5 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center text-[8px]">

@@ -41,6 +41,7 @@ export async function POST(request: Request) {
     });
 
     if (!result.success) {
+      console.warn("[on-demand unlock] failed:", { userId, lessonId: parsed.data.lessonId, code: result.code });
       const statusMap: Record<string, number> = {
         LESSON_NOT_FOUND: 404,
         PRACTICE_NOT_FOUND: 404,
