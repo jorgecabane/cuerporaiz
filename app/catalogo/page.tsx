@@ -1,8 +1,4 @@
-import {
-  onDemandCategoryRepository,
-  onDemandPracticeRepository,
-  onDemandLessonRepository,
-} from "@/lib/adapters/db";
+import { onDemandCategoryRepository } from "@/lib/adapters/db";
 import { prisma } from "@/lib/adapters/db/prisma";
 import Link from "next/link";
 
@@ -12,18 +8,12 @@ export default async function CatalogoPage() {
   const center = await prisma.center.findFirst();
   if (!center) return <p className="p-8 text-[var(--color-text-muted)]">Centro no configurado.</p>;
 
-  const categories = await onDemandCategoryRepository.findPublishedByCenterId(center.id);
-  const categoriesWithCounts = await Promise.all(
-    categories.map(async (cat) => {
-      const practices = await onDemandPracticeRepository.findPublishedByCategoryId(cat.id);
-      let lessonCount = 0;
-      for (const p of practices) {
-        const lessons = await onDemandLessonRepository.findPublishedByPracticeId(p.id);
-        lessonCount += lessons.length;
-      }
-      return { ...cat, practiceCount: practices.length, lessonCount };
-    }),
-  );
+  const categoriesTree = await onDemandCategoryRepository.findPublishedTreeByCenterId(center.id);
+  const categoriesWithCounts = categoriesTree.map((cat) => ({
+    ...cat,
+    practiceCount: cat.practices.length,
+    lessonCount: cat.practices.reduce((acc, p) => acc + p.lessons.length, 0),
+  }));
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-12 space-y-8">

@@ -1,5 +1,5 @@
 import type { IOnDemandCategoryRepository } from "@/lib/ports/on-demand-category-repository";
-import type { OnDemandCategory, CreateCategoryInput, UpdateCategoryInput, OnDemandContentStatus } from "@/lib/domain/on-demand";
+import type { OnDemandCategory, OnDemandContentStatus, CreateCategoryInput, UpdateCategoryInput } from "@/lib/domain/on-demand";
 import { prisma } from "./prisma";
 import type { OnDemandContentStatus as PrismaOnDemandContentStatus } from "@prisma/client";
 
@@ -42,6 +42,58 @@ export const onDemandCategoryRepository: IOnDemandCategoryRepository = {
       orderBy: { sortOrder: "asc" },
     });
     return list.map(toDomain);
+  },
+
+  async findPublishedTreeByCenterId(centerId: string) {
+    const list = await prisma.onDemandCategory.findMany({
+      where: { centerId, status: "PUBLISHED" },
+      orderBy: { sortOrder: "asc" },
+      include: {
+        practices: {
+          where: { status: "PUBLISHED" },
+          orderBy: { sortOrder: "asc" },
+          include: {
+            lessons: {
+              where: { status: "PUBLISHED" },
+              orderBy: { sortOrder: "asc" },
+            },
+          },
+        },
+      },
+    });
+    return list.map((cat) => ({
+      ...toDomain(cat),
+      practices: cat.practices.map((p) => ({
+        id: p.id,
+        categoryId: p.categoryId,
+        name: p.name,
+        description: p.description,
+        thumbnailUrl: p.thumbnailUrl,
+        sortOrder: p.sortOrder,
+        status: p.status as unknown as OnDemandContentStatus,
+        createdAt: p.createdAt,
+        updatedAt: p.updatedAt,
+        lessons: p.lessons.map((l) => ({
+          id: l.id,
+          practiceId: l.practiceId,
+          title: l.title,
+          description: l.description,
+          videoUrl: l.videoUrl,
+          promoVideoUrl: l.promoVideoUrl,
+          thumbnailUrl: l.thumbnailUrl,
+          durationMinutes: l.durationMinutes,
+          level: l.level,
+          intensity: l.intensity,
+          targetAudience: l.targetAudience,
+          equipment: l.equipment,
+          tags: l.tags,
+          sortOrder: l.sortOrder,
+          status: l.status as unknown as OnDemandContentStatus,
+          createdAt: l.createdAt,
+          updatedAt: l.updatedAt,
+        })),
+      })),
+    }));
   },
 
   async findById(id: string) {

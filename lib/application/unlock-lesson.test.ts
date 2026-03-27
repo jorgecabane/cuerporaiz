@@ -118,6 +118,7 @@ function makeDeps() {
       findById: vi.fn(),
       findByCategoryId: vi.fn(),
       findPublishedByCategoryId: vi.fn(),
+      findPublishedWithLessonsByCategoryId: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
       delete: vi.fn(),

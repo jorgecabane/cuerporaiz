@@ -55,49 +55,36 @@ export default async function ReplayPage() {
   const matchedPlan = plans.find((p) => p.id === onDemandUserPlan.planId);
   const unlimited = matchedPlan?.type === "MEMBERSHIP_ON_DEMAND";
 
-  // Collect videoUrls during initial fetch to avoid re-querying later
   const videoUrlMap = new Map<string, string>();
-
-  const categoriesWithContent = await Promise.all(
-    categories.map(async (cat) => {
-      const practices = await onDemandPracticeRepository.findPublishedByCategoryId(cat.id);
-      const practicesWithLessons = await Promise.all(
-        practices.map(async (practice) => {
-          const lessons = await onDemandLessonRepository.findPublishedByPracticeId(practice.id);
-          return {
-            id: practice.id,
-            name: practice.name,
-            description: practice.description,
-            categoryId: cat.id,
-            lessons: lessons.map((l) => {
-              videoUrlMap.set(l.id, l.videoUrl);
-              return {
-                id: l.id,
-                title: l.title,
-                description: l.description,
-                durationMinutes: l.durationMinutes,
-                level: l.level,
-                intensity: l.intensity,
-                targetAudience: l.targetAudience,
-                equipment: l.equipment,
-                tags: l.tags,
-                thumbnailUrl: l.thumbnailUrl,
-                promoVideoUrl: l.promoVideoUrl,
-                videoUrl: null as string | null,
-                practiceId: l.practiceId,
-              };
-            }),
-          };
-        }),
-      );
-      return {
-        id: cat.id,
-        name: cat.name,
-        description: cat.description ?? null,
-        practices: practicesWithLessons,
-      };
-    }),
-  );
+  const categoriesWithContent = categoriesTree.map((cat) => ({
+    id: cat.id,
+    name: cat.name,
+    description: cat.description ?? null,
+    practices: cat.practices.map((practice) => ({
+      id: practice.id,
+      name: practice.name,
+      description: practice.description,
+      categoryId: cat.id,
+      lessons: practice.lessons.map((l) => {
+        videoUrlMap.set(l.id, l.videoUrl);
+        return {
+          id: l.id,
+          title: l.title,
+          description: l.description,
+          durationMinutes: l.durationMinutes,
+          level: l.level,
+          intensity: l.intensity,
+          targetAudience: l.targetAudience,
+          equipment: l.equipment,
+          tags: l.tags,
+          thumbnailUrl: l.thumbnailUrl,
+          promoVideoUrl: l.promoVideoUrl,
+          videoUrl: null as string | null,
+          practiceId: l.practiceId,
+        };
+      }),
+    })),
+  }));
 
   const [unlocks, quotaUsage] = await Promise.all([
     lessonUnlockRepository.findByUserIdAndCenterId(userId, centerId),

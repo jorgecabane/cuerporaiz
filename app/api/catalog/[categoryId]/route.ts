@@ -1,9 +1,5 @@
 import { NextResponse } from "next/server";
-import {
-  onDemandCategoryRepository,
-  onDemandPracticeRepository,
-  onDemandLessonRepository,
-} from "@/lib/adapters/db";
+import { onDemandCategoryRepository, onDemandPracticeRepository } from "@/lib/adapters/db";
 
 export async function GET(
   _request: Request,
@@ -12,21 +8,18 @@ export async function GET(
   try {
     const { categoryId } = await params;
 
-    const category = await onDemandCategoryRepository.findById(categoryId);
+    const [category, practicesWithLessons] = await Promise.all([
+      onDemandCategoryRepository.findById(categoryId),
+      onDemandPracticeRepository.findPublishedWithLessonsByCategoryId(categoryId),
+    ]);
+
     if (!category || category.status !== "PUBLISHED") {
       return NextResponse.json({ code: "NOT_FOUND" }, { status: 404 });
     }
 
-    const practices = await onDemandPracticeRepository.findPublishedByCategoryId(categoryId);
+    const practices = practicesWithLessons.map((p) => ({ ...p, lessonCount: p.lessons.length, lessons: undefined }));
 
-    const practicesWithCount = await Promise.all(
-      practices.map(async (practice) => {
-        const lessons = await onDemandLessonRepository.findPublishedByPracticeId(practice.id);
-        return { ...practice, lessonCount: lessons.length };
-      }),
-    );
-
-    return NextResponse.json({ ...category, practices: practicesWithCount });
+    return NextResponse.json({ ...category, practices });
   } catch (err) {
     console.error("[catalog categoryId GET]", err);
     return NextResponse.json({ code: "SERVER_ERROR" }, { status: 500 });
