@@ -270,7 +270,7 @@ export function AgendaSection({ title, subtitle, livePlans, classes: classesProp
                           </span>
                         ) : (
                           <a
-                            href="#reservar"
+                            href="/auth/login?callbackUrl=/panel/reservas"
                             className="rounded-[var(--radius-md)] border border-[var(--color-border)] px-[var(--space-4)] py-[var(--space-2)] text-xs font-medium text-[var(--color-text-muted)] transition-all duration-[var(--duration-normal)] hover:border-[var(--color-primary)] hover:bg-[var(--color-primary)] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-primary)]"
                           >
                             Reservar
@@ -291,7 +291,7 @@ export function AgendaSection({ title, subtitle, livePlans, classes: classesProp
                   Agenda una clase de prueba sin costo y conoce el espacio.
                 </p>
                 <a
-                  href="#clase-prueba"
+                  href="/auth/login?callbackUrl=/panel/reservas%3Ftrial%3D1"
                   className="mt-[var(--space-4)] inline-flex items-center gap-[var(--space-2)] text-sm font-medium text-[var(--color-secondary)] underline underline-offset-4 decoration-[var(--color-secondary)]/40 transition-colors hover:decoration-[var(--color-secondary)]"
                 >
                   {CTAS.clasePrueba} →
@@ -345,7 +345,7 @@ export function AgendaSection({ title, subtitle, livePlans, classes: classesProp
               </ul>
 
               <a
-                href="#planes"
+                href="#oferta"
                 className="mt-[var(--space-6)] flex w-full items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-primary)] px-[var(--space-6)] py-[var(--space-4)] text-sm font-medium text-white transition-all duration-[var(--duration-normal)] hover:bg-[var(--color-primary-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]"
               >
                 Ver planes y comprar
