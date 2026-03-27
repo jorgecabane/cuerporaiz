@@ -3,17 +3,32 @@ import { AnimateIn, StaggerList, StaggerItem } from "@/components/ui/AnimateIn";
 import { Button } from "@/components/ui/Button";
 import { CTAS } from "@/lib/constants/copy";
 
+type OfertaCard = {
+  tag: string;
+  title: string;
+  description: string;
+  price: string;
+  href: string;
+  variant: "primary" | "secondary";
+  image: string;
+  imageAlt: string;
+};
 
-const CARDS = [
+type OfertaSectionProps = {
+  title?: string;
+  subtitle?: string;
+  cards?: OfertaCard[];
+};
+
+const DEFAULT_CARDS: OfertaCard[] = [
   {
     tag: "Packs online",
     title: "Practica a tu ritmo",
     description:
       "Clases grabadas por tipo de práctica — Hatha, Vinyasa, Yin, Somática. Acceso por tiempo definido. La misma dedicación que en una clase presencial.",
     price: "Desde $19.990",
-    cta: CTAS.verOpciones,
     href: "/packs",
-    variant: "primary" as const,
+    variant: "primary",
     image:
       "https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&q=80",
     imageAlt: "Práctica de yoga al aire libre en la naturaleza",
@@ -24,16 +39,20 @@ const CARDS = [
     description:
       "Contenido nuevo cada mes. Prácticas, meditaciones, charlas de sexualidad y bienestar. Acceso a todo el historial mientras estés activa.",
     price: "$15.990 / mes",
-    cta: CTAS.verOpciones,
     href: "/membresia",
-    variant: "secondary" as const,
+    variant: "secondary",
     image:
       "https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&q=80",
     imageAlt: "Práctica de yoga y meditación a tu ritmo",
   },
-] as const;
+];
 
-export function OfertaSection() {
+export function OfertaSection({ title, subtitle, cards }: OfertaSectionProps) {
+  const displayCards = cards ?? DEFAULT_CARDS;
+
+  // Don't render if no cards to show
+  if (displayCards.length === 0) return null;
+
   return (
     <section
       id="oferta"
@@ -44,7 +63,7 @@ export function OfertaSection() {
         {/* Encabezado */}
         <AnimateIn>
           <p className="text-xs font-medium uppercase tracking-[0.22em] text-[var(--color-secondary)]">
-            Packs y membresía
+            {subtitle ?? "Packs y membresía"}
           </p>
         </AnimateIn>
         <AnimateIn delay={0.1}>
@@ -52,7 +71,7 @@ export function OfertaSection() {
             id="oferta-heading"
             className="mt-[var(--space-3)] text-section font-display font-semibold text-[var(--color-primary)]"
           >
-            Elige cómo practicar
+            {title ?? "Elige cómo practicar"}
           </h2>
         </AnimateIn>
 
@@ -62,7 +81,7 @@ export function OfertaSection() {
           delayChildren={0.2}
           className="mt-[var(--space-12)] grid gap-[var(--space-6)] sm:grid-cols-2"
         >
-          {CARDS.map((card) => (
+          {displayCards.map((card) => (
             <StaggerItem key={card.tag}>
               <article className="group flex flex-col overflow-hidden rounded-[var(--radius-xl)] bg-[var(--color-tertiary)] shadow-[var(--shadow-md)] transition-shadow duration-[var(--duration-slow)] hover:shadow-[var(--shadow-lg)]">
                 {/* Imagen */}
@@ -95,7 +114,7 @@ export function OfertaSection() {
                       {card.price}
                     </p>
                     <Button href={card.href} variant={card.variant}>
-                      {card.cta}
+                      {CTAS.verOpciones}
                     </Button>
                   </div>
                 </div>

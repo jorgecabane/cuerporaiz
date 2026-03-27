@@ -7,7 +7,7 @@ import { Footer } from "./Footer";
 /** Rutas que usan el cascarón público: contenido a alto completo, footer al final de la página. */
 const PUBLIC_SHELL_PATHS = ["/checkout", "/auth"];
 
-export function LayoutWithPanel({ children }: { children: React.ReactNode }) {
+export function LayoutWithPanel({ children, footer }: { children: React.ReactNode; footer?: React.ReactNode }) {
   const pathname = usePathname();
   const isPanel = pathname?.startsWith("/panel") || pathname === "/planes";
   const usePublicShell = !isPanel && PUBLIC_SHELL_PATHS.some((p) => pathname?.startsWith(p));
@@ -24,7 +24,7 @@ export function LayoutWithPanel({ children }: { children: React.ReactNode }) {
           <main id="main" className="flex-1 flex flex-col">
             {children}
           </main>
-          <Footer />
+          {footer ?? <Footer />}
         </div>
       </>
     );
@@ -34,7 +34,7 @@ export function LayoutWithPanel({ children }: { children: React.ReactNode }) {
     <>
       <Header />
       <main id="main">{children}</main>
-      <Footer />
+      {footer ?? <Footer />}
     </>
   );
 }

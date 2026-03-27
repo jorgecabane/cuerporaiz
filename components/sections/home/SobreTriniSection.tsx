@@ -1,7 +1,20 @@
 import Image from "next/image";
 import { AnimateIn } from "@/components/ui/AnimateIn";
 
-const PRACTICES = [
+type TeamItem = {
+  title?: string;
+  description?: string;
+  imageUrl?: string;
+  linkUrl?: string;
+};
+
+type SobreTriniSectionProps = {
+  title?: string;
+  subtitle?: string;
+  items?: TeamItem[];
+};
+
+const DEFAULT_PRACTICES = [
   "Yoga Hatha",
   "Vinyasa",
   "Yin Yoga",
@@ -11,7 +24,25 @@ const PRACTICES = [
   "Retiros",
 ] as const;
 
-export function SobreTriniSection() {
+function parseBioAndTags(description: string | undefined) {
+  if (!description) return { bio: null, tags: null };
+  const parts = description.split("\n---\n");
+  const bio = parts[0].trim() || null;
+  const tags = parts[1]
+    ? parts[1].split(",").map((t) => t.trim()).filter(Boolean)
+    : null;
+  return { bio, tags };
+}
+
+export function SobreTriniSection({ title, subtitle, items }: SobreTriniSectionProps) {
+  const person = items?.[0];
+  const personName = person?.title ?? "Trinidad Cáceres";
+  const personImage = person?.imageUrl ?? "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800&q=80";
+  const pullQuote = person?.linkUrl ?? "el cuerpo sana cuando se siente seguro.";
+
+  const { bio: personBio, tags: parsedTags } = parseBioAndTags(person?.description);
+  const practices = parsedTags ?? DEFAULT_PRACTICES;
+
   return (
     <section
       id="sobre-trini"
@@ -24,8 +55,8 @@ export function SobreTriniSection() {
           <AnimateIn direction="left">
             <div className="relative aspect-[3/4] overflow-hidden rounded-[var(--radius-xl)] sm:aspect-[4/5]">
               <Image
-                src="https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800&q=80"
-                alt="Trinidad Cáceres — profesor de yoga y sexólogo"
+                src={personImage}
+                alt={`${personName} — profesor de yoga y sexólogo`}
                 fill
                 className="object-cover object-top"
                 sizes="(max-width: 768px) 100vw, 50vw"
@@ -37,7 +68,7 @@ export function SobreTriniSection() {
           <div className="flex flex-col gap-[var(--space-6)]">
             <AnimateIn delay={0.1}>
               <p className="text-xs font-medium uppercase tracking-[0.22em] text-[var(--color-secondary)]">
-                Sobre Trini
+                {title ?? "Sobre Trini"}
               </p>
             </AnimateIn>
 
@@ -46,31 +77,29 @@ export function SobreTriniSection() {
                 id="sobre-trini-heading"
                 className="text-section font-display font-semibold text-[var(--color-primary)]"
               >
-                Trinidad Cáceres
+                {personName}
               </h2>
             </AnimateIn>
 
-            <AnimateIn delay={0.25}>
-              <p className="text-base leading-relaxed text-[var(--color-text-muted)]">
-                Profesor de yoga y sexólogo. Combina el movimiento, la
-                respiración y la consciencia corporal con una mirada profunda
-                sobre el placer y la sensualidad.
-              </p>
-            </AnimateIn>
-
-            <AnimateIn delay={0.32}>
-              <p className="text-base leading-relaxed text-[var(--color-text-muted)]">
-                Sus clases son un espacio para que el cuerpo se reordene, se
-                reconozca y sane en comunidad — porque hay algo que sucede
-                cuando las mujeres se encuentran desde el corazón.
-              </p>
-            </AnimateIn>
+            {(personBio
+              ? personBio.split("\n").filter(Boolean)
+              : [
+                  subtitle ?? "Profesor de yoga y sexólogo. Combina el movimiento, la respiración y la consciencia corporal con una mirada profunda sobre el placer y la sensualidad.",
+                  "Sus clases son un espacio para que el cuerpo se reordene, se reconozca y sane en comunidad — porque hay algo que sucede cuando las mujeres se encuentran desde el corazón.",
+                ]
+            ).map((paragraph, i) => (
+              <AnimateIn key={i} delay={0.25 + i * 0.07}>
+                <p className="text-base leading-relaxed text-[var(--color-text-muted)]">
+                  {paragraph}
+                </p>
+              </AnimateIn>
+            ))}
 
             {/* Pull quote */}
             <AnimateIn delay={0.38}>
               <blockquote className="border-l-2 border-[var(--color-secondary)] pl-[var(--space-5)]">
                 <p className="font-display text-xl italic text-[var(--color-secondary)] sm:text-2xl">
-                  &ldquo;el cuerpo sana cuando se siente seguro.&rdquo;
+                  &ldquo;{pullQuote}&rdquo;
                 </p>
               </blockquote>
             </AnimateIn>
@@ -81,7 +110,7 @@ export function SobreTriniSection() {
                 className="flex flex-wrap gap-[var(--space-2)]"
                 aria-label="Tipos de práctica"
               >
-                {PRACTICES.map((p) => (
+                {practices.map((p) => (
                   <li
                     key={p}
                     className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-[var(--space-3)] py-[var(--space-1)] text-xs text-[var(--color-text-muted)]"

@@ -6,3 +6,5 @@ export { OfertaSection } from "./OfertaSection";
 export { TestimoniosSection } from "./TestimoniosSection";
 export { SobreTriniSection } from "./SobreTriniSection";
 export { CtaSection } from "./CtaSection";
+export { DisciplinesSection } from "./DisciplinesSection";
+export { ContactSection } from "./ContactSection";

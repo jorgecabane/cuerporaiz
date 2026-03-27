@@ -22,4 +22,5 @@ export const PANEL_ADMIN_ITEMS = [
   { href: "/panel/planes", label: "Planes" },
   { href: "/panel/on-demand/categorias", label: "On demand" },
   { href: "/panel/pagos", label: "Pagos" },
+  { href: "/panel/sitio", label: "Sitio" },
 ] as const;

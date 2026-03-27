@@ -1,13 +1,13 @@
 "use client";
 
+import type React from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { CTAS } from "@/lib/constants/copy";
 
-
-const HERO_IMAGE =
+const DEFAULT_IMAGE =
   "https://images.unsplash.com/photo-1545205597-3d9d02c29597?w=1920&q=80";
 
 const container = {
@@ -32,7 +32,38 @@ const fadePlain = {
   },
 };
 
-export function HeroSection() {
+/** Parse *text* into <em> elements, plain text stays as-is */
+function parseLine(line: string): React.ReactNode {
+  const parts = line.split(/(\*[^*]+\*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith("*") && part.endsWith("*")) {
+      return <em key={i}>{part.slice(1, -1)}</em>;
+    }
+    return part;
+  });
+}
+
+type HeroSectionProps = {
+  title?: string;
+  subtitle?: string;
+  eyebrow?: string;
+  imageUrl?: string;
+  ctaText?: string;
+};
+
+export function HeroSection({
+  title,
+  subtitle,
+  eyebrow,
+  imageUrl,
+  ctaText,
+}: HeroSectionProps) {
+  const heroImage = imageUrl ?? DEFAULT_IMAGE;
+  const heroSubtitle = subtitle ?? "el camino de regreso a ti.";
+  const heroCta = ctaText ?? CTAS.comenzarPractica;
+
+  const heroTitle = title ?? "cuerpo,\n*respiración*\ny placer.";
+
   return (
     <section
       className="relative flex min-h-[100dvh] flex-col justify-end"
@@ -41,7 +72,7 @@ export function HeroSection() {
       {/* Imagen de fondo */}
       <div className="absolute inset-0" aria-hidden>
         <Image
-          src={HERO_IMAGE}
+          src={heroImage}
           alt=""
           fill
           className="object-cover object-center"
@@ -64,20 +95,16 @@ export function HeroSection() {
           variants={fadePlain}
           className="mb-[var(--space-4)] block text-xs font-medium uppercase tracking-[0.22em] text-white/75"
         >
-          yoga con identidad
+          {eyebrow ?? "yoga con identidad"}
         </motion.span>
 
-        {/* Headline — cada línea anima independiente */}
+        {/* Headline — supports \n for line breaks and *text* for italic */}
         <h1 className="text-hero font-display font-bold text-white">
-          <motion.span variants={fadeUp} className="block">
-            cuerpo,
-          </motion.span>
-          <motion.span variants={fadeUp} className="block italic">
-            respiración
-          </motion.span>
-          <motion.span variants={fadeUp} className="block">
-            y placer.
-          </motion.span>
+          {heroTitle.split("\n").map((line, i) => (
+            <motion.span key={i} variants={fadeUp} className="block">
+              {parseLine(line)}
+            </motion.span>
+          ))}
         </h1>
 
         {/* Tagline */}
@@ -85,7 +112,7 @@ export function HeroSection() {
           variants={fadeUp}
           className="mt-[var(--space-6)] max-w-xs text-base leading-relaxed text-white/70 sm:max-w-sm sm:text-lg"
         >
-          el camino de regreso a ti.
+          {heroSubtitle}
         </motion.p>
 
         {/* CTA único */}
@@ -94,7 +121,7 @@ export function HeroSection() {
           className="mt-[var(--space-8)]"
         >
           <Button href="#como-funciona" variant="light">
-            {CTAS.comenzarPractica}
+            {heroCta}
           </Button>
         </motion.div>
       </motion.div>

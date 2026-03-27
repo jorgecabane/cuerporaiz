@@ -1,16 +1,44 @@
 import { AnimateIn, StaggerList, StaggerItem } from "@/components/ui/AnimateIn";
 
-const STATS = [
+type TestimonialItem = {
+  title?: string;
+  description?: string;
+  linkUrl?: string;
+};
+
+type StatItem = {
+  value: string;
+  label: string;
+};
+
+type TestimoniosSectionProps = {
+  title?: string;
+  items?: TestimonialItem[];
+  stats?: StatItem[];
+};
+
+const DEFAULT_STATS: StatItem[] = [
   { value: "2022", label: "Inicio de comunidad" },
   { value: "4+", label: "Tipos de práctica" },
   { value: "Online y presencial", label: "Clases a tu ritmo" },
-] as const;
+];
 
-export function TestimoniosSection() {
+export function TestimoniosSection({ title, items, stats }: TestimoniosSectionProps) {
+  // First item (sortOrder 0) = testimonial quote
+  // Remaining items (sortOrder 1+) = stats (title = value, description = label)
+  const quote = items?.[0];
+  const itemStats = items && items.length > 1
+    ? items.slice(1).map((i) => ({ value: i.title ?? "", label: i.description ?? "" }))
+    : null;
+  const displayStats = stats ?? itemStats ?? DEFAULT_STATS;
+  const quoteText = quote?.title ?? "Sabemos que no fue solo un retiro, fue un espacio de verdad, de contención, de pura expansión. cuerpos respirando juntos, corazones vibrando en la misma sintonía.";
+  const quoteAuthor = quote?.description ?? "Comunidad Cuerpo Raíz";
+  const quoteDetail = quote?.linkUrl ?? "Retiro Rena-ser";
+
   return (
     <section
       className="bg-[var(--color-primary)] px-[var(--space-4)] py-[var(--space-24)] md:px-[var(--space-8)] md:py-[var(--space-32)]"
-      aria-label="Comunidad y testimonios"
+      aria-label={title ?? "Comunidad y testimonios"}
     >
       <div className="mx-auto max-w-4xl">
         {/* Cita decorativa */}
@@ -27,17 +55,15 @@ export function TestimoniosSection() {
         <AnimateIn delay={0.1}>
           <blockquote className="-mt-[var(--space-8)] md:-mt-[var(--space-12)]">
             <p className="text-quote font-display italic text-white/90 leading-snug">
-              Sabemos que no fue solo un retiro, fue un espacio de verdad, de
-              contención, de pura expansión. cuerpos respirando juntos,
-              corazones vibrando en la misma sintonía.
+              {quoteText}
             </p>
             <footer className="mt-[var(--space-6)]">
               <cite className="not-italic">
                 <p className="text-sm font-medium text-[var(--color-secondary)]">
-                  Comunidad Cuerpo Raíz
+                  {quoteAuthor}
                 </p>
                 <p className="mt-[var(--space-1)] text-sm text-white/50">
-                  Retiro Rena-ser
+                  {quoteDetail}
                 </p>
               </cite>
             </footer>
@@ -58,11 +84,11 @@ export function TestimoniosSection() {
           delayChildren={0.25}
           className="grid grid-cols-3 gap-[var(--space-4)]"
         >
-          {STATS.map((stat, i) => (
+          {displayStats.map((stat, i) => (
             <StaggerItem key={stat.label}>
               <div
                 className={`flex flex-col items-center text-center ${
-                  i < STATS.length - 1
+                  i < displayStats.length - 1
                     ? "border-r border-white/10 pr-[var(--space-4)]"
                     : ""
                 }`}
