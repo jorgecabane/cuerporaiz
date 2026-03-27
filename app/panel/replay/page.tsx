@@ -3,8 +3,6 @@ import { redirect } from "next/navigation";
 import { isAdminRole } from "@/lib/domain/role";
 import {
   onDemandCategoryRepository,
-  onDemandPracticeRepository,
-  onDemandLessonRepository,
   lessonUnlockRepository,
   userPlanRepository,
   planRepository,
@@ -23,8 +21,8 @@ export default async function ReplayPage() {
 
   if (isAdminRole(role)) redirect("/panel/on-demand/categorias");
 
-  const [categories, allUserPlans] = await Promise.all([
-    onDemandCategoryRepository.findPublishedByCenterId(centerId),
+  const [categoriesTree, allUserPlans] = await Promise.all([
+    onDemandCategoryRepository.findPublishedTreeByCenterId(centerId),
     userPlanRepository.findActiveByUserAndCenter(userId, centerId),
   ]);
 

@@ -41,6 +41,7 @@ export default async function CatalogoCategoryPage({ params }: Props) {
           <img
             src={category.thumbnailUrl}
             alt={category.name}
+            loading="lazy"
             className="w-full h-56 object-cover rounded-[var(--radius-lg)] mb-6"
           />
         )}
@@ -64,6 +65,7 @@ export default async function CatalogoCategoryPage({ params }: Props) {
                 <img
                   src={practice.thumbnailUrl}
                   alt={practice.name}
+                  loading="lazy"
                   className="w-full h-40 object-cover"
                 />
               )}

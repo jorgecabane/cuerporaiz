@@ -43,7 +43,7 @@ export default async function CatalogoPage() {
               className="group rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] overflow-hidden hover:shadow-md transition-shadow"
             >
               {cat.thumbnailUrl && (
-                <img src={cat.thumbnailUrl} alt={cat.name} className="w-full h-48 object-cover" />
+                <img src={cat.thumbnailUrl} alt={cat.name} loading="lazy" className="w-full h-48 object-cover" />
               )}
               <div className="p-4">
                 <h2 className="text-lg font-medium text-[var(--color-text)] group-hover:text-[var(--color-primary)]">

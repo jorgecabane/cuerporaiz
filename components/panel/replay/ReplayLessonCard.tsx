@@ -141,6 +141,7 @@ export function ReplayLessonCard({
               <img
                 src={lesson.thumbnailUrl}
                 alt={lesson.title}
+                loading="lazy"
                 className="w-full rounded-lg object-cover max-h-52"
               />
             </div>
