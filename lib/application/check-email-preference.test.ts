@@ -6,6 +6,7 @@ const basePref: EmailPreference = {
   id: "1", userId: "u1", centerId: "c1",
   classReminder: true, spotFreed: true, planExpiring: true,
   reservationConfirm: true, purchaseConfirm: true,
+  lessonUnlocked: true, quotaExhausted: true, newContent: true,
   createdAt: new Date(), updatedAt: new Date(),
 };
 

@@ -1,0 +1,223 @@
+<h2>Videoteca On Demand — 3 enfoques de navegacion</h2>
+<p class="subtitle">Haz click en el que te llame mas la atencion. Piensa en: cuantos clicks para llegar al video, y que tan facil es explorar.</p>
+
+<div class="cards">
+
+  <!-- OPTION A: Netflix/Coursera Grid -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background:#f8f6f2; border-radius:8px; padding:16px; min-height:320px;">
+        <!-- Header -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+          <div>
+            <div style="font-size:18px; font-weight:600; color:#2D3B2A;">Videoteca on demand</div>
+            <div style="font-size:12px; color:#888; margin-top:2px;">3 de 4 clases disponibles en Yoga</div>
+          </div>
+          <div style="background:#2D3B2A; color:white; font-size:11px; padding:4px 10px; border-radius:12px;">Mis clases (2)</div>
+        </div>
+
+        <!-- Category tabs -->
+        <div style="display:flex; gap:8px; margin-bottom:16px;">
+          <div style="background:#2D3B2A; color:white; font-size:11px; padding:5px 12px; border-radius:16px;">Yoga</div>
+          <div style="background:#e8e4dc; color:#555; font-size:11px; padding:5px 12px; border-radius:16px;">Meditacion</div>
+        </div>
+
+        <!-- Grid of cards -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <div style="background:white; border-radius:8px; overflow:hidden; border:1px solid #e0ddd6;">
+            <div style="background:linear-gradient(135deg,#a8c0a0,#7da070); height:70px; display:flex; align-items:center; justify-content:center; position:relative;">
+              <div style="width:28px; height:28px; background:rgba(255,255,255,0.9); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px;">&#9654;</div>
+              <div style="position:absolute; top:4px; right:4px; background:#2D3B2A; color:white; font-size:9px; padding:2px 6px; border-radius:8px;">30 min</div>
+            </div>
+            <div style="padding:8px;">
+              <div style="font-size:11px; font-weight:600; color:#2D3B2A;">Hatha principiantes</div>
+              <div style="font-size:9px; color:#888;">Hatha Yoga · Suave</div>
+              <div style="margin-top:4px; font-size:9px; color:#4a8c3f;">&#10003; Desbloqueada</div>
+            </div>
+          </div>
+
+          <div style="background:white; border-radius:8px; overflow:hidden; border:1px solid #e0ddd6;">
+            <div style="background:linear-gradient(135deg,#b0a890,#8a7e68); height:70px; display:flex; align-items:center; justify-content:center; position:relative;">
+              <div style="width:28px; height:28px; background:rgba(255,255,255,0.9); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px;">&#9654;</div>
+              <div style="position:absolute; top:4px; right:4px; background:#2D3B2A; color:white; font-size:9px; padding:2px 6px; border-radius:8px;">45 min</div>
+            </div>
+            <div style="padding:8px;">
+              <div style="font-size:11px; font-weight:600; color:#2D3B2A;">Hatha intermedio</div>
+              <div style="font-size:9px; color:#888;">Hatha Yoga · Moderada</div>
+              <div style="margin-top:4px; font-size:9px; color:#B85C38;">&#128274; Desbloquear</div>
+            </div>
+          </div>
+
+          <div style="background:white; border-radius:8px; overflow:hidden; border:1px solid #e0ddd6;">
+            <div style="background:linear-gradient(135deg,#c4b8a8,#a09080); height:70px; display:flex; align-items:center; justify-content:center; position:relative;">
+              <div style="width:28px; height:28px; background:rgba(255,255,255,0.9); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px;">&#9654;</div>
+              <div style="position:absolute; top:4px; right:4px; background:#2D3B2A; color:white; font-size:9px; padding:2px 6px; border-radius:8px;">40 min</div>
+            </div>
+            <div style="padding:8px;">
+              <div style="font-size:11px; font-weight:600; color:#2D3B2A;">Vinyasa matinal</div>
+              <div style="font-size:9px; color:#888;">Vinyasa Flow · Moderada</div>
+              <div style="margin-top:4px; font-size:9px; color:#4a8c3f;">&#10003; Desbloqueada</div>
+            </div>
+          </div>
+
+          <div style="background:white; border-radius:8px; overflow:hidden; border:1px solid #e0ddd6;">
+            <div style="background:linear-gradient(135deg,#d4c8b8,#b0a090); height:70px; display:flex; align-items:center; justify-content:center; position:relative;">
+              <div style="width:28px; height:28px; background:rgba(255,255,255,0.9); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px;">&#9654;</div>
+              <div style="position:absolute; top:4px; right:4px; background:#2D3B2A; color:white; font-size:9px; padding:2px 6px; border-radius:8px;">35 min</div>
+            </div>
+            <div style="padding:8px;">
+              <div style="font-size:11px; font-weight:600; color:#2D3B2A;">Vinyasa para la noche</div>
+              <div style="font-size:9px; color:#888;">Vinyasa Flow · Suave</div>
+              <div style="margin-top:4px; font-size:9px; color:#B85C38;">&#128274; Desbloquear</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:8px; font-size:9px; color:#888; text-align:center;">Click en una card → va directo al video player</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A) Estilo Netflix / Coursera</h3>
+      <p>Grid de thumbnails con tabs de categoria. Click en card → video player. Dos clicks maximo. Visual, descubrible.</p>
+    </div>
+  </div>
+
+  <!-- OPTION B: YouTube Playlist -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background:#f8f6f2; border-radius:8px; padding:16px; min-height:320px;">
+        <!-- Video player area -->
+        <div style="background:#1a1a1a; border-radius:8px; height:120px; display:flex; align-items:center; justify-content:center; margin-bottom:12px; position:relative;">
+          <div style="width:40px; height:40px; background:rgba(255,255,255,0.9); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px;">&#9654;</div>
+          <div style="position:absolute; bottom:8px; left:12px; color:white; font-size:11px;">Hatha para principiantes</div>
+          <div style="position:absolute; bottom:8px; right:12px; color:rgba(255,255,255,0.6); font-size:10px;">30 min</div>
+        </div>
+
+        <!-- Playlist -->
+        <div style="font-size:11px; font-weight:600; color:#2D3B2A; margin-bottom:8px;">Hatha Yoga</div>
+
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <div style="display:flex; align-items:center; gap:8px; padding:6px 8px; background:#2D3B2A; border-radius:6px; color:white;">
+            <span style="font-size:10px;">&#9654;</span>
+            <div style="flex:1;">
+              <div style="font-size:10px; font-weight:500;">Hatha para principiantes</div>
+              <div style="font-size:9px; opacity:0.7;">30 min · Suave</div>
+            </div>
+            <span style="font-size:9px; opacity:0.7;">&#10003;</span>
+          </div>
+
+          <div style="display:flex; align-items:center; gap:8px; padding:6px 8px; background:white; border-radius:6px; border:1px solid #e0ddd6;">
+            <span style="font-size:10px; color:#888;">2</span>
+            <div style="flex:1;">
+              <div style="font-size:10px; font-weight:500; color:#2D3B2A;">Hatha intermedio — Fuerza</div>
+              <div style="font-size:9px; color:#888;">45 min · Moderada</div>
+            </div>
+            <span style="font-size:9px; color:#B85C38;">&#128274;</span>
+          </div>
+
+          <div style="display:flex; align-items:center; gap:8px; padding:6px 8px; background:white; border-radius:6px; border:1px solid #e0ddd6;">
+            <span style="font-size:10px; color:#888;">3</span>
+            <div style="flex:1;">
+              <div style="font-size:10px; font-weight:500; color:#2D3B2A;">Hatha avanzado — Inversiones</div>
+              <div style="font-size:9px; color:#888;">60 min · Intensa</div>
+            </div>
+            <span style="font-size:9px; color:#B85C38;">&#128274;</span>
+          </div>
+        </div>
+
+        <div style="margin-top:10px; font-size:11px; font-weight:600; color:#2D3B2A; margin-bottom:6px;">Vinyasa Flow</div>
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <div style="display:flex; align-items:center; gap:8px; padding:6px 8px; background:white; border-radius:6px; border:1px solid #e0ddd6;">
+            <span style="font-size:10px; color:#888;">1</span>
+            <div style="flex:1;">
+              <div style="font-size:10px; font-weight:500; color:#2D3B2A;">Vinyasa matinal energizante</div>
+              <div style="font-size:9px; color:#888;">40 min · Moderada</div>
+            </div>
+            <span style="font-size:9px; color:#4a8c3f;">&#10003;</span>
+          </div>
+        </div>
+
+        <div style="margin-top:8px; font-size:9px; color:#888; text-align:center;">Click en leccion → video aparece arriba. Un solo click.</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B) Estilo YouTube Playlist</h3>
+      <p>Video arriba, lista de lecciones abajo agrupadas por practica. Click en cualquiera → se reproduce. Un click. Lineal, enfocado.</p>
+    </div>
+  </div>
+
+  <!-- OPTION C: Claude Courses / Notion Sidebar -->
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background:#f8f6f2; border-radius:8px; padding:0; min-height:320px; display:flex; overflow:hidden;">
+        <!-- Sidebar -->
+        <div style="width:38%; background:#2D3B2A; padding:12px; color:white; font-size:10px;">
+          <div style="font-weight:600; font-size:11px; margin-bottom:10px; opacity:0.8;">Videoteca</div>
+
+          <div style="margin-bottom:8px;">
+            <div style="font-weight:600; font-size:10px; margin-bottom:4px; padding:4px 6px; background:rgba(255,255,255,0.1); border-radius:4px;">&#9662; Yoga</div>
+            <div style="padding-left:10px;">
+              <div style="opacity:0.6; font-size:9px; margin-bottom:3px; padding:2px 4px;">Hatha Yoga</div>
+              <div style="padding-left:8px; display:flex; flex-direction:column; gap:2px;">
+                <div style="background:rgba(255,255,255,0.15); padding:3px 6px; border-radius:3px; font-size:9px; display:flex; align-items:center; gap:4px;">
+                  <span style="color:#7dc470;">&#9654;</span> Principiantes
+                </div>
+                <div style="padding:3px 6px; font-size:9px; opacity:0.6; display:flex; align-items:center; gap:4px;">
+                  <span>&#128274;</span> Intermedio
+                </div>
+                <div style="padding:3px 6px; font-size:9px; opacity:0.6; display:flex; align-items:center; gap:4px;">
+                  <span>&#128274;</span> Avanzado
+                </div>
+              </div>
+              <div style="opacity:0.6; font-size:9px; margin-top:4px; margin-bottom:3px; padding:2px 4px;">Vinyasa Flow</div>
+              <div style="padding-left:8px; display:flex; flex-direction:column; gap:2px;">
+                <div style="padding:3px 6px; font-size:9px; opacity:0.6; display:flex; align-items:center; gap:4px;">
+                  <span style="color:#7dc470;">&#10003;</span> Matinal
+                </div>
+                <div style="padding:3px 6px; font-size:9px; opacity:0.6; display:flex; align-items:center; gap:4px;">
+                  <span>&#128274;</span> Noche
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div style="font-weight:600; font-size:10px; padding:4px 6px; opacity:0.7;">&#9656; Meditacion</div>
+          </div>
+
+          <div style="margin-top:12px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.15);">
+            <div style="font-size:9px; opacity:0.5;">3 de 4 disponibles</div>
+            <div style="background:rgba(255,255,255,0.2); border-radius:4px; height:4px; margin-top:4px;">
+              <div style="background:#7dc470; border-radius:4px; height:4px; width:30%;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Main content -->
+        <div style="flex:1; padding:12px;">
+          <div style="font-size:13px; font-weight:600; color:#2D3B2A; margin-bottom:2px;">Hatha para principiantes</div>
+          <div style="font-size:10px; color:#888; margin-bottom:10px;">Hatha Yoga · 30 min · Suave · Mat</div>
+
+          <div style="background:#1a1a1a; border-radius:8px; height:130px; display:flex; align-items:center; justify-content:center;">
+            <div style="width:36px; height:36px; background:rgba(255,255,255,0.9); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:16px;">&#9654;</div>
+          </div>
+
+          <div style="margin-top:10px; font-size:10px; color:#555; line-height:1.5;">
+            Clase introductoria de Hatha Yoga. Posturas basicas, respiracion consciente y relajacion final.
+          </div>
+
+          <div style="margin-top:8px; display:flex; gap:4px;">
+            <span style="font-size:9px; padding:2px 8px; background:#e8e4dc; border-radius:10px; color:#555;">Principiante</span>
+            <span style="font-size:9px; padding:2px 8px; background:#e8e4dc; border-radius:10px; color:#555;">Suave</span>
+            <span style="font-size:9px; padding:2px 8px; background:#e8e4dc; border-radius:10px; color:#555;">Mat</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C) Estilo Claude Courses / Notion</h3>
+      <p>Sidebar con toda la estructura, contenido principal con video + detalle. Navegacion siempre visible, zero scroll para cambiar de leccion.</p>
+    </div>
+  </div>
+
+</div>

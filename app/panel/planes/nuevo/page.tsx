@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { isAdminRole } from "@/lib/domain/role";
+import { onDemandCategoryRepository } from "@/lib/adapters/db";
 import { Button } from "@/components/ui/Button";
 import { PlanFormCreate } from "./PlanFormCreate";
 
@@ -12,7 +13,11 @@ export default async function PanelPlanesNuevoPage({
   const session = await auth();
   if (!session?.user) redirect("/auth/login?callbackUrl=/panel/planes/nuevo");
   if (!isAdminRole(session.user.role)) redirect("/panel");
+
+  const centerId = session.user.centerId!;
   const { error } = await searchParams;
+
+  const categories = await onDemandCategoryRepository.findByCenterId(centerId);
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-12">
@@ -23,7 +28,7 @@ export default async function PanelPlanesNuevoPage({
         Crea un plan de pago (pack o membresía) para este centro.
       </p>
       <div className="rounded-[var(--radius-lg)] bg-[var(--color-surface)] p-6 shadow-[var(--shadow-md)]">
-        <PlanFormCreate slugError={error === "slug"} />
+        <PlanFormCreate slugError={error === "slug"} categories={categories} />
       </div>
       <div className="mt-6">
         <Button href="/panel/planes" variant="secondary">

@@ -7,6 +7,9 @@ export interface EmailPreference {
   planExpiring: boolean;
   reservationConfirm: boolean;
   purchaseConfirm: boolean;
+  lessonUnlocked: boolean;
+  quotaExhausted: boolean;
+  newContent: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -14,7 +17,14 @@ export interface EmailPreference {
 /** Keys that can be toggled by the user */
 export type EmailPreferenceType = keyof Pick<
   EmailPreference,
-  "classReminder" | "spotFreed" | "planExpiring" | "reservationConfirm" | "purchaseConfirm"
+  | "classReminder"
+  | "spotFreed"
+  | "planExpiring"
+  | "reservationConfirm"
+  | "purchaseConfirm"
+  | "lessonUnlocked"
+  | "quotaExhausted"
+  | "newContent"
 >;
 
 export const EMAIL_PREFERENCE_LABELS: Record<EmailPreferenceType, string> = {
@@ -23,4 +33,7 @@ export const EMAIL_PREFERENCE_LABELS: Record<EmailPreferenceType, string> = {
   planExpiring: "Plan por vencer",
   reservationConfirm: "Confirmación de reserva",
   purchaseConfirm: "Confirmación de compra",
+  lessonUnlocked: "Lección desbloqueada",
+  quotaExhausted: "Cuota agotada",
+  newContent: "Nuevo contenido",
 };

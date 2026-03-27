@@ -8,6 +8,7 @@ export const PANEL_NAV_ITEMS = [
   { href: "/panel/reservas", label: "Reservas" },
   { href: "/panel/tienda", label: "Planes y comprar" },
   { href: "/panel/mis-pagos", label: "Mis pagos" },
+  { href: "/panel/replay", label: "Replay" },
 ] as const;
 
 export const PANEL_ADMIN_ITEMS = [
@@ -19,6 +20,7 @@ export const PANEL_ADMIN_ITEMS = [
   { href: "/panel/configuracion", label: "Configuración" },
   { href: "/panel/plugins", label: "Plugins" },
   { href: "/panel/planes", label: "Planes" },
+  { href: "/panel/on-demand/categorias", label: "On demand" },
   { href: "/panel/pagos", label: "Pagos" },
   { href: "/panel/sitio", label: "Sitio" },
 ] as const;

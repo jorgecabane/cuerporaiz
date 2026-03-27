@@ -24,3 +24,8 @@ export type { IEmailPreferenceRepository, UpsertEmailPreferenceInput } from "./e
 export type { ISubscriptionRepository, CreateSubscriptionInput } from "./subscription-repository";
 export type { ISiteConfigRepository } from "./site-config-repository";
 export type { ISiteSectionRepository } from "./site-section-repository";
+export type { IOnDemandCategoryRepository } from "./on-demand-category-repository";
+export type { IOnDemandPracticeRepository } from "./on-demand-practice-repository";
+export type { IOnDemandLessonRepository } from "./on-demand-lesson-repository";
+export type { ILessonUnlockRepository } from "./lesson-unlock-repository";
+export type { IPlanCategoryQuotaRepository } from "./plan-category-quota-repository";
