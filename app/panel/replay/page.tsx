@@ -57,6 +57,9 @@ export default async function ReplayPage() {
   const matchedPlan = plans.find((p) => p.id === onDemandUserPlan.planId);
   const unlimited = matchedPlan?.type === "MEMBERSHIP_ON_DEMAND";
 
+  // Collect videoUrls during initial fetch to avoid re-querying later
+  const videoUrlMap = new Map<string, string>();
+
   const categoriesWithContent = await Promise.all(
     categories.map(async (cat) => {
       const practices = await onDemandPracticeRepository.findPublishedByCategoryId(cat.id);
@@ -68,21 +71,24 @@ export default async function ReplayPage() {
             name: practice.name,
             description: practice.description,
             categoryId: cat.id,
-            lessons: lessons.map((l) => ({
-              id: l.id,
-              title: l.title,
-              description: l.description,
-              durationMinutes: l.durationMinutes,
-              level: l.level,
-              intensity: l.intensity,
-              targetAudience: l.targetAudience,
-              equipment: l.equipment,
-              tags: l.tags,
-              thumbnailUrl: l.thumbnailUrl,
-              promoVideoUrl: l.promoVideoUrl,
-              videoUrl: null as string | null,
-              practiceId: l.practiceId,
-            })),
+            lessons: lessons.map((l) => {
+              videoUrlMap.set(l.id, l.videoUrl);
+              return {
+                id: l.id,
+                title: l.title,
+                description: l.description,
+                durationMinutes: l.durationMinutes,
+                level: l.level,
+                intensity: l.intensity,
+                targetAudience: l.targetAudience,
+                equipment: l.equipment,
+                tags: l.tags,
+                thumbnailUrl: l.thumbnailUrl,
+                promoVideoUrl: l.promoVideoUrl,
+                videoUrl: null as string | null,
+                practiceId: l.practiceId,
+              };
+            }),
           };
         }),
       );
@@ -107,13 +113,12 @@ export default async function ReplayPage() {
 
   const unlockedLessonIds = unlocks.map((u) => u.lessonId);
 
-  // Inject videoUrl only for unlocked lessons
+  // Inject videoUrl for unlocked lessons from the map (no re-fetch needed)
   for (const cat of categoriesWithContent) {
     for (const practice of cat.practices) {
       for (const lesson of practice.lessons) {
         if (unlockedLessonIds.includes(lesson.id)) {
-          const fullLesson = await onDemandLessonRepository.findById(lesson.id);
-          if (fullLesson) lesson.videoUrl = fullLesson.videoUrl;
+          lesson.videoUrl = videoUrlMap.get(lesson.id) ?? null;
         }
       }
     }
