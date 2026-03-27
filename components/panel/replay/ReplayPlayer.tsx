@@ -41,7 +41,6 @@ export function ReplayPlayer({
   const tags = [
     lesson.level,
     lesson.intensity,
-    lesson.equipment,
     lesson.targetAudience,
     ...(lesson.tags?.split(",").map((t) => t.trim()) ?? []),
   ].filter(Boolean);
@@ -53,75 +52,113 @@ export function ReplayPlayer({
       {/* Back button */}
       <button
         onClick={onBack}
-        className="flex items-center gap-2 text-sm font-medium text-[var(--color-text)] mb-3 hover:text-[var(--color-primary)]"
+        className="inline-flex items-center gap-2 text-sm font-medium text-[var(--color-text)] mb-4 hover:text-[var(--color-primary)] transition-colors"
       >
-        <span>←</span> Volver a {practiceName}
+        <span className="text-lg">←</span>
+        <span>Volver a {practiceName}</span>
       </button>
 
-      {/* Video — edge-to-edge on mobile */}
-      <div className="sm:rounded-[var(--radius-lg)] overflow-hidden -mx-4 sm:mx-0 mb-4">
+      {/* Video — edge-to-edge on mobile, rounded on desktop */}
+      <div className="sm:rounded-[var(--radius-lg)] overflow-hidden -mx-4 sm:mx-0 mb-6 shadow-lg">
         <VimeoEmbed url={lesson.videoUrl} title={lesson.title} />
       </div>
 
-      {/* Metadata */}
-      <h1 className="text-lg sm:text-xl font-bold text-[var(--color-text)]">{lesson.title}</h1>
-      <p className="text-xs sm:text-sm text-[var(--color-text-muted)] mt-1">
-        {[practiceName, lesson.durationMinutes ? `${lesson.durationMinutes} min` : null, lesson.intensity]
-          .filter(Boolean)
-          .join(" · ")}
-      </p>
-
-      {/* Tags */}
-      {tags.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 mt-3">
-          {tags.map((tag) => (
-            <span
-              key={tag}
-              className="text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full bg-[var(--color-bg)] text-[var(--color-text-muted)]"
-            >
-              {tag}
-            </span>
-          ))}
+      {/* Lesson info card */}
+      <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 sm:p-6 mb-6">
+        {/* Title + duration row */}
+        <div className="flex items-start justify-between gap-3 mb-3">
+          <div className="min-w-0">
+            <h1 className="text-lg sm:text-xl font-bold text-[var(--color-text)] leading-tight">
+              {lesson.title}
+            </h1>
+            <p className="text-sm text-[var(--color-text-muted)] mt-1">
+              {practiceName}
+            </p>
+          </div>
+          {lesson.durationMinutes && (
+            <div className="flex-shrink-0 rounded-full bg-[var(--color-primary)] px-3 py-1">
+              <span className="text-xs font-semibold text-white">{lesson.durationMinutes} min</span>
+            </div>
+          )}
         </div>
-      )}
 
-      {/* Description */}
-      {lesson.description && (
-        <p className="text-xs sm:text-sm text-[var(--color-text-muted)] leading-relaxed mt-4 pb-4 border-b border-[var(--color-border)]">
-          {lesson.description}
-        </p>
-      )}
+        {/* Tags */}
+        {tags.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mb-4">
+            {tags.map((tag) => (
+              <span
+                key={tag}
+                className="text-xs px-3 py-1 rounded-full bg-[var(--color-bg)] border border-[var(--color-border)] text-[var(--color-text-muted)]"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Description */}
+        {lesson.description && (
+          <p className="text-sm text-[var(--color-text)] leading-relaxed mb-4">
+            {lesson.description}
+          </p>
+        )}
+
+        {/* Equipment & audience detail */}
+        {(lesson.equipment ?? lesson.targetAudience) && (
+          <div className="border-t border-[var(--color-border)] pt-3 space-y-2">
+            {lesson.equipment && (
+              <div className="flex items-start gap-3">
+                <span className="text-xs font-semibold text-[var(--color-text-muted)] w-16 shrink-0">Equipo</span>
+                <span className="text-xs text-[var(--color-text)]">{lesson.equipment}</span>
+              </div>
+            )}
+            {lesson.targetAudience && (
+              <div className="flex items-start gap-3">
+                <span className="text-xs font-semibold text-[var(--color-text-muted)] w-16 shrink-0">Para</span>
+                <span className="text-xs text-[var(--color-text)]">{lesson.targetAudience}</span>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Next in practice */}
       {otherLessons.length > 0 && (
-        <div className="mt-4">
-          <h2 className="text-sm font-semibold text-[var(--color-text)] mb-2">
-            Siguiente en {practiceName}
+        <div>
+          <h2 className="text-sm font-bold text-[var(--color-text)] mb-3">
+            Más en {practiceName}
           </h2>
-          <div className="flex flex-col sm:flex-row gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {otherLessons.map((s) => (
               <button
                 key={s.id}
                 onClick={() => onNavigate(s.id)}
-                className="flex-1 flex items-center gap-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] p-2.5 text-left hover:shadow-sm transition-shadow"
+                className="flex items-center gap-3 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] p-3 text-left hover:shadow-sm transition-shadow group"
               >
                 <div
-                  className="w-9 h-9 rounded flex-shrink-0 flex items-center justify-center"
+                  className="w-12 h-12 rounded-lg flex-shrink-0 flex items-center justify-center"
                   style={{
                     background: s.thumbnailUrl
                       ? `url(${s.thumbnailUrl}) center/cover`
                       : "linear-gradient(135deg, #a8c0a0, #7da070)",
                   }}
                 >
-                  <span className="text-white text-[8px]">{s.unlocked ? "▶" : "🔒"}</span>
+                  <div className="w-5 h-5 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center text-[8px]">
+                    {s.unlocked ? "▶" : "🔒"}
+                  </div>
                 </div>
-                <div className="min-w-0">
-                  <p className="text-[11px] font-semibold text-[var(--color-text)] truncate">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-[var(--color-text)] truncate group-hover:text-[var(--color-primary)] transition-colors">
                     {s.title}
                   </p>
-                  <p className="text-[9px] text-[var(--color-text-muted)]">
-                    {s.durationMinutes ? `${s.durationMinutes} min` : ""}
-                    {s.intensity ? ` · ${s.intensity}` : ""}
+                  <p className="text-xs text-[var(--color-text-muted)]">
+                    {[
+                      s.durationMinutes ? `${s.durationMinutes} min` : null,
+                      s.intensity,
+                      s.unlocked ? "Desbloqueada" : null,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
                   </p>
                 </div>
               </button>
