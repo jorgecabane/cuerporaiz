@@ -92,13 +92,19 @@ export async function unlockLessonUseCase(
     remainingLessons = quota.maxLessons - used - 1;
   }
 
-  // 6. Create unlock record
-  const unlock = await unlockRepo.create({
-    userId,
-    lessonId,
-    userPlanId: selectedPlan.id,
-    centerId,
-  });
+  // 6. Create unlock record — wrap in try/catch to handle concurrent duplicate inserts
+  // (unique constraint on userId_lessonId) that slip through the pre-check.
+  let unlock: LessonUnlock;
+  try {
+    unlock = await unlockRepo.create({
+      userId,
+      lessonId,
+      userPlanId: selectedPlan.id,
+      centerId,
+    });
+  } catch {
+    return { success: false, code: "ALREADY_UNLOCKED" };
+  }
 
   return { success: true, code: "UNLOCKED", unlock, remainingLessons };
 }

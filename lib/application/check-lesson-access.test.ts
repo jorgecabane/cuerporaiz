@@ -41,6 +41,7 @@ const unlock: LessonUnlock = {
 function makeUnlockRepo(overrides: Partial<ILessonUnlockRepository> = {}): ILessonUnlockRepository {
   return {
     findByUserId: vi.fn(),
+    findByUserIdAndCenterId: vi.fn(),
     findByUserAndLesson: vi.fn(),
     countByUserPlanAndCategory: vi.fn(),
     create: vi.fn(),

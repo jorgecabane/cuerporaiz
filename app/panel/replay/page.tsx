@@ -96,7 +96,7 @@ export default async function ReplayPage() {
   );
 
   const [unlocks, quotaUsage] = await Promise.all([
-    lessonUnlockRepository.findByUserId(userId),
+    lessonUnlockRepository.findByUserIdAndCenterId(userId, centerId),
     unlimited
       ? Promise.resolve([])
       : getCategoryQuotaUsage(onDemandUserPlan.planId, onDemandUserPlan.id, {
