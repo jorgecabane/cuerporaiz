@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { SITE_NAME } from "@/lib/constants/copy";
+import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -50,6 +51,15 @@ export default function SignupPage() {
         <h1 className="font-display text-section text-[var(--color-primary)] mb-[var(--space-6)]">
           Crear cuenta en {SITE_NAME}
         </h1>
+
+        <GoogleSignInButton centerId={centerId} />
+
+        <div className="my-[var(--space-5)] flex items-center gap-3">
+          <div className="h-px flex-1 bg-[var(--color-border)]" />
+          <span className="text-xs text-[var(--color-text-muted)]">o</span>
+          <div className="h-px flex-1 bg-[var(--color-border)]" />
+        </div>
+
         <form onSubmit={handleSubmit} className="flex flex-col gap-[var(--space-5)]">
           <label className="flex flex-col gap-1">
             <span className="text-sm font-medium text-[var(--color-text-muted)]">Centro (slug)</span>
