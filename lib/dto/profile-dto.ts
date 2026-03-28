@@ -12,7 +12,7 @@ export const updateProfileSchema = z.object({
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
 
 export const changePasswordSchema = z.object({
-  currentPassword: z.string().min(1, "La contraseña actual es requerida"),
+  currentPassword: z.string().optional(),
   newPassword: z.string().min(8, "La nueva contraseña debe tener al menos 8 caracteres"),
 });
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;

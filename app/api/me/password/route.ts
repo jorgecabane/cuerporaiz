@@ -24,9 +24,15 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 });
   }
 
-  const valid = await authService.verifyPassword(parsed.data.currentPassword, user.passwordHash);
-  if (!valid) {
-    return NextResponse.json({ error: "La contraseña actual es incorrecta" }, { status: 400 });
+  const hasExistingPassword = !!user.passwordHash && user.passwordHash !== "";
+  if (hasExistingPassword) {
+    if (!parsed.data.currentPassword) {
+      return NextResponse.json({ error: "La contraseña actual es requerida" }, { status: 400 });
+    }
+    const valid = await authService.verifyPassword(parsed.data.currentPassword, user.passwordHash);
+    if (!valid) {
+      return NextResponse.json({ error: "La contraseña actual es incorrecta" }, { status: 400 });
+    }
   }
 
   const newHash = await authService.hashPassword(parsed.data.newPassword);

@@ -2,7 +2,9 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { isAdminRole } from "@/lib/domain/role";
 import { centerRepository, userRepository } from "@/lib/adapters/db";
+import { prisma } from "@/lib/adapters/db/prisma";
 import { PanelShell } from "@/components/panel/PanelShell";
+import { EmailVerificationBanner } from "@/components/panel/EmailVerificationBanner";
 
 export default async function PanelLayout({
   children,
@@ -25,13 +27,22 @@ export default async function PanelLayout({
   const isAdmin = isAdminRole(session.user.role);
   const centerName = center.name;
 
+  const userAuth = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { emailVerifiedAt: true },
+  });
+  const needsVerification = !userAuth?.emailVerifiedAt;
+
   return (
-    <PanelShell
-      isAdmin={isAdmin}
-      user={{ name: session.user.name ?? undefined, email: session.user.email ?? "" }}
-      centerName={centerName}
-    >
-      {children}
-    </PanelShell>
+    <>
+      {needsVerification && <EmailVerificationBanner />}
+      <PanelShell
+        isAdmin={isAdmin}
+        user={{ name: session.user.name ?? undefined, email: session.user.email ?? "" }}
+        centerName={centerName}
+      >
+        {children}
+      </PanelShell>
+    </>
   );
 }
