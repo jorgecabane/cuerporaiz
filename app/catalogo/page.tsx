@@ -35,22 +35,17 @@ export default async function CatalogoPage() {
 
   return (
     <>
-      {/* Dark hero header */}
-      <section className="bg-[var(--color-primary)] pt-[calc(var(--header-height)+var(--space-10))] pb-[var(--space-12)] px-[var(--space-4)] md:px-[var(--space-8)]">
+      {/* Page header with top padding for fixed header */}
+      <div className="pt-[calc(var(--header-height)+var(--space-8))] pb-[var(--space-6)] px-[var(--space-4)] md:px-[var(--space-8)]">
         <div className="mx-auto max-w-4xl">
-          <h1 className="text-section font-display font-semibold text-white">
+          <h1 className="text-section font-display font-semibold text-[var(--color-primary)]">
             Catálogo on demand
           </h1>
-          <p className="text-base text-white/70 mt-2 max-w-lg">
+          <p className="text-base text-[var(--color-text-muted)] mt-2 max-w-lg">
             Practica a tu ritmo con clases grabadas
           </p>
-          <div className="mt-6">
-            <Button href="/panel/tienda" variant="light">
-              Ver planes
-            </Button>
-          </div>
         </div>
-      </section>
+      </div>
 
       {/* Netflix rows */}
       <div className="mx-auto max-w-4xl px-[var(--space-4)] md:px-[var(--space-8)] py-[var(--space-10)] space-y-10">

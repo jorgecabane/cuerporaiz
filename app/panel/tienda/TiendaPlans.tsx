@@ -205,14 +205,27 @@ export function TiendaPlans({ plans }: { plans: SerializedPlan[] }) {
     (p) => p.billingMode === "RECURRING" || p.billingMode === "BOTH"
   );
   const maxDiscount = Math.max(0, ...plans.map((p) => p.recurringDiscountPercent ?? 0));
+
+  // Filter plans by billing toggle: hide ONE_TIME-only in mensual, RECURRING-only in pago único
+  const filteredPlans = plans.filter((p) => {
+    if (billing === "monthly" && p.billingMode === "ONE_TIME") return false;
+    if (billing === "one-time" && p.billingMode === "RECURRING") return false;
+    return true;
+  });
+
   const groups = TYPE_ORDER
     .map((type) => ({
       type,
       label: TYPE_LABELS[type],
       description: TYPE_DESCRIPTIONS[type],
-      plans: plans.filter((p) => p.type === type),
+      plans: filteredPlans.filter((p) => p.type === type),
     }))
     .filter((g) => g.plans.length > 0);
+
+  // Default to first available group
+  const [activeType, setActiveType] = useState<SerializedPlan["type"] | null>(null);
+  const effectiveType = activeType ?? groups[0]?.type ?? null;
+  const activeGroup = groups.find((g) => g.type === effectiveType);
 
   const livePlans = plans.filter((p) => p.type === "LIVE");
   const popularPlanId = livePlans.length > 0
@@ -226,23 +239,44 @@ export function TiendaPlans({ plans }: { plans: SerializedPlan[] }) {
       {hasAnyRecurring && (
         <BillingToggle billing={billing} onChange={setBilling} maxDiscount={maxDiscount} />
       )}
-      <div className="space-y-10">
-        {groups.map(({ type, label, description, plans: typePlans }) => (
-          <div key={type}>
-            <div className="mb-4">
-              <h3 className="text-xs font-semibold uppercase tracking-widest text-[var(--color-text-muted)]">
-                {label}
-              </h3>
-              <p className="text-sm text-[var(--color-text-muted)] mt-0.5">{description}</p>
-            </div>
-            <ul className="grid gap-4 sm:grid-cols-2">
-              {typePlans.map((plan) => (
-                <PlanCard key={plan.id} plan={plan} billing={billing} isPopular={plan.id === popularPlanId} />
-              ))}
-            </ul>
-          </div>
-        ))}
-      </div>
+
+      {/* Category selector tabs */}
+      {groups.length > 1 && (
+        <div
+          className="flex gap-1 rounded-[var(--radius-lg)] bg-[var(--color-tertiary)] p-1 mb-6"
+          role="tablist"
+          aria-label="Tipo de plan"
+        >
+          {groups.map(({ type, label }) => (
+            <button
+              key={type}
+              type="button"
+              role="tab"
+              aria-selected={type === effectiveType}
+              onClick={() => setActiveType(type)}
+              className={`flex-1 rounded-[var(--radius-md)] px-3 py-2.5 text-sm font-medium transition-[color,background-color] duration-150 ${
+                type === effectiveType
+                  ? "bg-[var(--color-surface)] text-[var(--color-primary)] shadow-[var(--shadow-sm)]"
+                  : "text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Active group plans */}
+      {activeGroup && (
+        <div>
+          <p className="text-sm text-[var(--color-text-muted)] mb-4">{activeGroup.description}</p>
+          <ul className="grid gap-4 sm:grid-cols-2">
+            {activeGroup.plans.map((plan) => (
+              <PlanCard key={plan.id} plan={plan} billing={billing} isPopular={plan.id === popularPlanId} />
+            ))}
+          </ul>
+        </div>
+      )}
     </>
   );
 }

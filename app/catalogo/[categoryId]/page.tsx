@@ -24,24 +24,24 @@ export default async function CatalogoCategoryPage({ params }: Props) {
 
   return (
     <>
-      {/* Dark hero header with breadcrumb */}
-      <section className="bg-[var(--color-primary)] pt-[calc(var(--header-height)+var(--space-8))] pb-[var(--space-10)] px-[var(--space-4)] md:px-[var(--space-8)]">
+      {/* Page header with breadcrumb */}
+      <div className="pt-[calc(var(--header-height)+var(--space-8))] pb-[var(--space-6)] px-[var(--space-4)] md:px-[var(--space-8)]">
         <div className="mx-auto max-w-4xl">
           <nav className="text-sm flex items-center gap-2 mb-4">
-            <Link href="/catalogo" className="text-white/60 hover:text-white/90 transition-colors">
+            <Link href="/catalogo" className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors">
               Catálogo
             </Link>
-            <span className="text-white/40">/</span>
-            <span className="text-white/90">{category.name}</span>
+            <span className="text-[var(--color-border)]">/</span>
+            <span className="text-[var(--color-text)]">{category.name}</span>
           </nav>
-          <h1 className="text-section font-display font-semibold text-white">
+          <h1 className="text-section font-display font-semibold text-[var(--color-primary)]">
             {category.name}
           </h1>
           {category.description && (
-            <p className="text-base text-white/70 mt-2 max-w-lg">{category.description}</p>
+            <p className="text-base text-[var(--color-text-muted)] mt-2 max-w-lg">{category.description}</p>
           )}
         </div>
-      </section>
+      </div>
 
       {/* Practice cards */}
       <div className="mx-auto max-w-4xl px-[var(--space-4)] md:px-[var(--space-8)] py-[var(--space-10)]">
