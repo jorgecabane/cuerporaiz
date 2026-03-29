@@ -58,8 +58,8 @@ test.describe("On-demand admin CRUD", () => {
     // Toggle the practice form
     await page.getByRole("button", { name: /Nueva práctica/i }).click();
 
-    await page.getByLabel(/^Nombre/i).fill(practiceName);
-    await page.getByLabel(/^Estado/i).selectOption("PUBLISHED");
+    await page.locator("#prac-name").fill(practiceName);
+    await page.locator("#prac-status").selectOption("PUBLISHED");
 
     await page.getByRole("button", { name: /Crear práctica/i }).click();
 

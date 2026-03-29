@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { authService } from "@/lib/adapters/auth";
-import { userRepository, centerRepository } from "@/lib/adapters/db";
+import { userRepository, centerRepository, authTokenRepository } from "@/lib/adapters/db";
 import { signupBodySchema } from "@/lib/dto/auth-dto";
 import { isRole, DEFAULT_SIGNUP_ROLE } from "@/lib/domain/role";
 import { sendEmailSafe } from "@/lib/application/send-email";
 import { buildWelcomeStudentEmail } from "@/lib/email";
+import { requestEmailVerification } from "@/lib/application/request-email-verification";
+import { buildEmailVerificationEmail } from "@/lib/email/auth";
 
 export async function POST(request: Request) {
   try {
@@ -46,6 +48,15 @@ export async function POST(request: Request) {
       centerName: center.name,
       dashboardUrl: `${baseUrl}/panel`,
       profileUrl: `${baseUrl}/panel/mi-perfil`,
+    }));
+
+    const verificationToken = await requestEmailVerification(user.id, authTokenRepository);
+    const verifyUrl = `${baseUrl}/auth/verify-email?token=${verificationToken}`;
+    sendEmailSafe(buildEmailVerificationEmail({
+      toEmail: email,
+      userName: name ?? undefined,
+      centerName: center.name,
+      verifyUrl,
     }));
 
     return NextResponse.json(

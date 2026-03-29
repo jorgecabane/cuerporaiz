@@ -1,25 +1,16 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("Páginas públicas", () => {
-  test("membresía carga correctamente", async ({ page }) => {
+  test("membresía redirige a tienda", async ({ page }) => {
     await page.goto("/membresia");
-    await expect(
-      page.getByRole("heading", { name: /membresía/i })
-    ).toBeVisible();
-    await expect(page.getByText(/próximamente/i)).toBeVisible();
-    await expect(
-      page.getByRole("link", { name: /volver al inicio/i })
-    ).toBeVisible();
+    await expect(page).toHaveURL(/\/panel\/tienda|\/auth\/login/, { timeout: 15000 });
   });
 
-  test("packs carga correctamente", async ({ page }) => {
+  test("packs redirige al catálogo on demand", async ({ page }) => {
     await page.goto("/packs");
+    await page.waitForURL(/\/catalogo/);
     await expect(
-      page.getByRole("heading", { name: /packs de clases/i })
-    ).toBeVisible();
-    await expect(page.getByText(/próximamente/i)).toBeVisible();
-    await expect(
-      page.getByRole("link", { name: /volver al inicio/i })
+      page.getByRole("heading", { name: /catálogo on demand/i })
     ).toBeVisible();
   });
 });

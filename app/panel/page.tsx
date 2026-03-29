@@ -2,6 +2,7 @@ import Link from "next/link";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { centerRepository, userPlanRepository, planRepository } from "@/lib/adapters/db";
+import { prisma } from "@/lib/adapters/db/prisma";
 import { canShowTrialCta, listMyReservationsPaginated } from "@/lib/application/reserve-class";
 import {
   ArrowRight,
@@ -15,6 +16,7 @@ import {
 import { PanelHomeMisReservasTrigger } from "./PanelHomeMisReservasTrigger";
 import { PanelHomeMisClasesTrigger } from "./PanelHomeMisClasesTrigger";
 import { PanelHomeCalendar } from "./PanelHomeCalendar";
+import { EmailVerificationBanner } from "@/components/panel/EmailVerificationBanner";
 import type { ReservationDto } from "@/lib/dto/reservation-dto";
 import type { Role } from "@/lib/domain/role";
 import { isAdminRole, isInstructorRole, isStudentRole } from "@/lib/domain";
@@ -98,6 +100,16 @@ export default async function PanelPage() {
 
   const hasActivePlan = Boolean(planName);
 
+  const requireVerification = process.env.REQUIRE_EMAIL_VERIFICATION !== "false";
+  let needsVerification = false;
+  if (requireVerification) {
+    const userAuth = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { emailVerifiedAt: true },
+    });
+    needsVerification = !userAuth?.emailVerifiedAt;
+  }
+
   return (
     <div className="mx-auto flex min-h-[100dvh] max-w-3xl flex-col px-1 pb-20 sm:px-0">
       {/* Header mínimo */}
@@ -109,6 +121,8 @@ export default async function PanelPage() {
           {user.name ? "Calendario y reservas" : "Calendario de clases"}
         </p>
       </header>
+
+      {needsVerification && <EmailVerificationBanner />}
 
       {/* Planes activos / resumen: antes del calendario, con margen superior */}
       <section
