@@ -345,7 +345,7 @@ export function AgendaSection({ title, subtitle, livePlans, classes: classesProp
               </ul>
 
               <a
-                href="#oferta"
+                href="/panel/tienda"
                 className="mt-[var(--space-6)] flex w-full items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-primary)] px-[var(--space-6)] py-[var(--space-4)] text-sm font-medium text-white transition-[color,background-color,box-shadow,transform] duration-[var(--duration-normal)] hover:bg-[var(--color-primary-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]"
               >
                 Ver planes y comprar
