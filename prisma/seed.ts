@@ -3,9 +3,9 @@ import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import bcrypt from "bcryptjs";
 
-const connectionString = process.env.DATABASE_URL;
+const connectionString = process.env.DIRECT_DATABASE_URL ?? process.env.DATABASE_URL;
 if (!connectionString) {
-  throw new Error("DATABASE_URL is required to run the seed.");
+  throw new Error("DIRECT_DATABASE_URL or DATABASE_URL is required to run the seed.");
 }
 
 const adapter = new PrismaPg({ connectionString });
@@ -120,6 +120,9 @@ async function main() {
     });
     console.log("Clase futura creada para E2E");
   }
+
+  // Limpiar intentos de login para que E2E no sea bloqueado por rate limiting
+  await prisma.loginAttempt.deleteMany({});
 
   console.log("Seed OK: center", center.slug, "user", user.email, "role ADMINISTRATOR");
 

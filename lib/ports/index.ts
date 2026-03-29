@@ -29,3 +29,5 @@ export type { IOnDemandPracticeRepository } from "./on-demand-practice-repositor
 export type { IOnDemandLessonRepository } from "./on-demand-lesson-repository";
 export type { ILessonUnlockRepository } from "./lesson-unlock-repository";
 export type { IPlanCategoryQuotaRepository } from "./plan-category-quota-repository";
+export type { IAuthTokenRepository } from "./auth-token-repository";
+export type { ILoginAttemptRepository } from "./login-attempt-repository";
