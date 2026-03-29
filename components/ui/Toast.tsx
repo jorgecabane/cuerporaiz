@@ -62,8 +62,10 @@ toast.error = (message: string) => toastStore.add({ message, variant: "error" })
 
 /* ─── Hooks ──────────────────────────────────────────────────────────────── */
 
+const SERVER_SNAPSHOT: ToastItem[] = [];
+
 function useToasts() {
-  return useSyncExternalStore(toastStore.subscribe, toastStore.getToasts, () => []);
+  return useSyncExternalStore(toastStore.subscribe, toastStore.getToasts, () => SERVER_SNAPSHOT);
 }
 
 /* ─── Single Toast ───────────────────────────────────────────────────────── */
@@ -194,9 +196,13 @@ function ToastCard({
 
 /* ─── Toaster (mount once in layout) ─────────────────────────────────────── */
 
+const subscribe = () => () => {};
+const getClientSnapshot = () => true;
+const getServerSnapshot = () => false;
+
 export function Toaster() {
   const items = useToasts();
-  const isBrowser = typeof document !== "undefined";
+  const isBrowser = useSyncExternalStore(subscribe, getClientSnapshot, getServerSnapshot);
 
   if (!isBrowser) return null;
 

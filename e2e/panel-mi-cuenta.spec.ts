@@ -13,7 +13,6 @@ test.describe("Panel Mi cuenta", () => {
 
   const email = process.env.E2E_USER_EMAIL ?? "admin@cuerporaiz.cl";
   const password = process.env.E2E_USER_PASSWORD ?? "admin123";
-  const centerSlug = process.env.E2E_CENTER_SLUG ?? "cuerporaiz";
 
   test("panel requiere login", async ({ page }) => {
     await page.goto("/panel");
@@ -24,7 +23,6 @@ test.describe("Panel Mi cuenta", () => {
     page,
   }) => {
     await page.goto("/auth/login");
-    await page.getByLabel(/centro/i).fill(centerSlug);
     await page.getByLabel(/email/i).fill(email);
     await page.getByLabel(/contraseña/i).fill(password);
     await page.getByRole("button", { name: /entrar/i }).click();

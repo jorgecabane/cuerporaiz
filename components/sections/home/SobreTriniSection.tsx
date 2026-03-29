@@ -56,20 +56,19 @@ export function SobreTriniSection({ title, subtitle, items }: SobreTriniSectionP
         <div className="grid grid-cols-1 gap-[var(--space-12)] md:grid-cols-2 md:items-center md:gap-[var(--space-16)]">
           {/* Imagen */}
           <motion.div
+            className="relative aspect-[3/4] overflow-hidden rounded-[var(--radius-xl)] sm:aspect-[4/5]"
             initial={{ opacity: 0, clipPath: "inset(0 0 100% 0)" }}
             whileInView={{ opacity: 1, clipPath: "inset(0 0 0 0)" }}
             viewport={{ once: true, margin: "-60px" }}
             transition={{ duration: 0.8, ease: [0.23, 1, 0.32, 1] }}
           >
-            <div className="relative aspect-[3/4] overflow-hidden rounded-[var(--radius-xl)] sm:aspect-[4/5]">
-              <Image
-                src={personImage}
-                alt={`${personName} — profesor de yoga y sexólogo`}
-                fill
-                className="object-cover object-top"
-                sizes="(max-width: 768px) 100vw, 50vw"
-              />
-            </div>
+            <Image
+              src={personImage}
+              alt={`${personName} — profesor de yoga y sexólogo`}
+              fill
+              className="object-cover object-top"
+              sizes="(max-width: 768px) 100vw, 50vw"
+            />
           </motion.div>
 
           {/* Texto */}

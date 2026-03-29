@@ -77,7 +77,7 @@ export function HeroSection({
   return (
     <section
       ref={sectionRef}
-      className="relative flex min-h-[100dvh] flex-col justify-end"
+      className="relative flex min-h-[100dvh] flex-col justify-end overflow-hidden"
       aria-label="Bienvenida"
     >
       {/* Imagen de fondo */}
