@@ -5,6 +5,7 @@ import { AuthProvider } from "@/components/providers/AuthProvider";
 import { LayoutWithPanel } from "@/components/shared/LayoutWithPanel";
 import DynamicTheme from "@/components/shared/DynamicTheme";
 import { FooterServer } from "@/components/shared/FooterServer";
+import { Toaster } from "@/components/ui/Toast";
 
 const fontDisplay = Cormorant_Garamond({
   variable: "--font-display",
@@ -44,6 +45,7 @@ export default function RootLayout({
         </a>
         <LayoutWithPanel footer={<FooterServer />}>{children}</LayoutWithPanel>
         </AuthProvider>
+        <Toaster />
       </body>
     </html>
   );

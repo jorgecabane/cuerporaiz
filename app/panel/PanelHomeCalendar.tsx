@@ -451,62 +451,64 @@ export function PanelHomeCalendar({
         </div>
       )}
 
-      {classesForSelectedDay.length === 0 ? (
-        <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
-          <p className="text-sm text-[var(--color-text-muted)]">
-            No hay clases este día.
-          </p>
-        </div>
-      ) : isStudent ? (
-        <ul className="space-y-3">
-          {(classesForSelectedDay as LiveClassDto[]).map((c) => (
-            <ClassCard
-              key={c.id}
-              class={c}
-              isPast={new Date(c.startsAt) < new Date()}
-              alreadyReserved={myConfirmedLiveClassIds.has(c.id)}
-              myReservationId={myReservationIdByLiveClassId.get(c.id) ?? null}
-              onReserve={handleReserve}
-              onCancelMyReservation={handleCancelMyReservation}
-              cancelMyReservationLoadingId={cancelMyReservationLoadingId}
-              actionLoadingId={actionLoading}
-            />
-          ))}
-        </ul>
-      ) : (
-        <ul className="space-y-3">
-          {(classesForSelectedDay as Array<{ class: LiveClassDto; attendees: ClassAttendanceDto[] }>).map(
-            ({ class: c, attendees }) => (
+      <div key={weekAnchor.toISOString()} className="animate-fade-in">
+        {classesForSelectedDay.length === 0 ? (
+          <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 animate-fade-in">
+            <p className="text-sm text-[var(--color-text-muted)]">
+              No hay clases este día.
+            </p>
+          </div>
+        ) : isStudent ? (
+          <ul className="space-y-3">
+            {(classesForSelectedDay as LiveClassDto[]).map((c) => (
               <ClassCard
                 key={c.id}
                 class={c}
                 isPast={new Date(c.startsAt) < new Date()}
-                attendees={attendees}
-                onMarkAttendance={handleMarkAttendance}
-                attendanceLoadingId={attendanceLoadingId}
-                isAdmin={isAdminRole(role)}
-                onCancelReservation={
-                  isAdminRole(role) ? handleCancelReservationForUser : undefined
-                }
-                cancelReservationLoadingId={cancelReservationLoadingId}
-                onReserveForStudent={
-                  isAdminRole(role) ? (id) => setReserveForClassId(id) : undefined
-                }
-                reserveForStudentLoading={reserveForStudentLoading}
-                studentsForPicker={isAdminRole(role) ? students : undefined}
-                reserveForClassId={reserveForClassId || null}
-                reserveForUserId={reserveForUserId}
-                setReserveForUserId={setReserveForUserId}
-                onReserveForStudentSubmit={handleReserveForStudent}
-                onCloseReserveForStudent={() => {
-                  setReserveForClassId("");
-                  setReserveForUserId("");
-                }}
+                alreadyReserved={myConfirmedLiveClassIds.has(c.id)}
+                myReservationId={myReservationIdByLiveClassId.get(c.id) ?? null}
+                onReserve={handleReserve}
+                onCancelMyReservation={handleCancelMyReservation}
+                cancelMyReservationLoadingId={cancelMyReservationLoadingId}
+                actionLoadingId={actionLoading}
               />
-            )
-          )}
-        </ul>
-      )}
+            ))}
+          </ul>
+        ) : (
+          <ul className="space-y-3">
+            {(classesForSelectedDay as Array<{ class: LiveClassDto; attendees: ClassAttendanceDto[] }>).map(
+              ({ class: c, attendees }) => (
+                <ClassCard
+                  key={c.id}
+                  class={c}
+                  isPast={new Date(c.startsAt) < new Date()}
+                  attendees={attendees}
+                  onMarkAttendance={handleMarkAttendance}
+                  attendanceLoadingId={attendanceLoadingId}
+                  isAdmin={isAdminRole(role)}
+                  onCancelReservation={
+                    isAdminRole(role) ? handleCancelReservationForUser : undefined
+                  }
+                  cancelReservationLoadingId={cancelReservationLoadingId}
+                  onReserveForStudent={
+                    isAdminRole(role) ? (id) => setReserveForClassId(id) : undefined
+                  }
+                  reserveForStudentLoading={reserveForStudentLoading}
+                  studentsForPicker={isAdminRole(role) ? students : undefined}
+                  reserveForClassId={reserveForClassId || null}
+                  reserveForUserId={reserveForUserId}
+                  setReserveForUserId={setReserveForUserId}
+                  onReserveForStudentSubmit={handleReserveForStudent}
+                  onCloseReserveForStudent={() => {
+                    setReserveForClassId("");
+                    setReserveForUserId("");
+                  }}
+                />
+              )
+            )}
+          </ul>
+        )}
+      </div>
     </div>
   );
 }

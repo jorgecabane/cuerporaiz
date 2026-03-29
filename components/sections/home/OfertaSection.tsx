@@ -90,7 +90,7 @@ export function OfertaSection({ title, subtitle, cards }: OfertaSectionProps) {
                     src={card.image}
                     alt={card.imageAlt}
                     fill
-                    className="object-cover transition-transform duration-[var(--duration-slow)] group-hover:scale-105"
+                    className="object-cover transition-transform duration-[var(--duration-slow)] group-hover:scale-[1.03]"
                     sizes="(max-width: 640px) 100vw, 50vw"
                   />
                   {/* Tag sobre imagen */}

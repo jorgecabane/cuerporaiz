@@ -13,24 +13,31 @@ type AnimateInProps = {
   once?: boolean;
 };
 
+const EASE_OUT: [number, number, number, number] = [0.23, 1, 0.32, 1];
+
 export function AnimateIn({
   children,
   delay = 0,
-  duration = 0.65,
+  duration = 0.45,
   direction = "up",
   className = "",
   once = true,
 }: AnimateInProps) {
+  const initialTransform =
+    direction === "up"
+      ? "translateY(20px)"
+      : direction === "left"
+        ? "translateX(-20px)"
+        : direction === "right"
+          ? "translateX(20px)"
+          : "none";
+
   return (
     <motion.div
-      initial={{
-        opacity: 0,
-        y: direction === "up" ? 28 : 0,
-        x: direction === "left" ? -28 : direction === "right" ? 28 : 0,
-      }}
-      whileInView={{ opacity: 1, y: 0, x: 0 }}
+      initial={{ opacity: 0, transform: initialTransform }}
+      whileInView={{ opacity: 1, transform: "translate(0)" }}
       viewport={{ once, margin: "-60px" }}
-      transition={{ duration, delay, ease: [0.25, 0.1, 0.25, 1] }}
+      transition={{ duration, delay, ease: EASE_OUT }}
       className={className}
     >
       {children}
@@ -74,11 +81,11 @@ export function StaggerItem({ children, className = "" }: { children: React.Reac
   return (
     <motion.div
       variants={{
-        hidden: { opacity: 0, y: 24 },
+        hidden: { opacity: 0, transform: "translateY(20px)" },
         visible: {
           opacity: 1,
-          y: 0,
-          transition: { duration: 0.55, ease: [0.25, 0.1, 0.25, 1] },
+          transform: "translateY(0)",
+          transition: { duration: 0.4, ease: EASE_OUT },
         },
       }}
       className={className}

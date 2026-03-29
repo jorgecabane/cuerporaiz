@@ -60,7 +60,7 @@ export function CtaSection({ title, subtitle, items, whatsappUrl }: CtaSectionPr
               {CTAS.hablemos}
             </Button>
             <Button
-              href="/#oferta"
+              href="/panel/tienda"
               variant="primary"
               className="!bg-white !text-[var(--color-secondary)] hover:!bg-white/90"
             >

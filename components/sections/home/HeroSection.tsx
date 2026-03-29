@@ -2,7 +2,8 @@
 
 import type React from "react";
 import Image from "next/image";
-import { motion } from "framer-motion";
+import { useRef } from "react";
+import { motion, useScroll, useTransform } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { CTAS } from "@/lib/constants/copy";
@@ -15,12 +16,14 @@ const container = {
   visible: { transition: { staggerChildren: 0.16, delayChildren: 0.4 } },
 };
 
+const EASE_OUT: readonly [number, number, number, number] = [0.23, 1, 0.32, 1];
+
 const fadeUp = {
-  hidden: { opacity: 0, y: 24 },
+  hidden: { opacity: 0, transform: "translateY(24px)" },
   visible: {
     opacity: 1,
-    y: 0,
-    transition: { duration: 0.75, ease: [0.25, 0.1, 0.25, 1] as const },
+    transform: "translateY(0)",
+    transition: { duration: 0.5, ease: EASE_OUT },
   },
 };
 
@@ -28,7 +31,7 @@ const fadePlain = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: { duration: 0.7, ease: [0.25, 0.1, 0.25, 1] as const },
+    transition: { duration: 0.45, ease: EASE_OUT },
   },
 };
 
@@ -64,13 +67,21 @@ export function HeroSection({
 
   const heroTitle = title ?? "cuerpo,\n*respiración*\ny placer.";
 
+  const sectionRef = useRef<HTMLElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start start", "end start"],
+  });
+  const bgY = useTransform(scrollYProgress, [0, 1], ["0%", "15%"]);
+
   return (
     <section
-      className="relative flex min-h-[100dvh] flex-col justify-end"
+      ref={sectionRef}
+      className="relative flex min-h-[100dvh] flex-col justify-end overflow-hidden"
       aria-label="Bienvenida"
     >
       {/* Imagen de fondo */}
-      <div className="absolute inset-0" aria-hidden>
+      <motion.div className="absolute inset-0" aria-hidden style={{ y: bgY }}>
         <Image
           src={heroImage}
           alt=""
@@ -81,7 +92,7 @@ export function HeroSection({
           quality={90}
         />
         <div className="hero-overlay absolute inset-0" />
-      </div>
+      </motion.div>
 
       {/* Contenido */}
       <motion.div

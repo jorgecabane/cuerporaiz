@@ -10,8 +10,9 @@ export default defineConfig({
     seed: "tsx prisma/seed.ts",
   },
   datasource: {
-    // Migraciones y seed usan conexión directa (sin pooler) para evitar límites de PgBouncer.
-    // Falls back a DATABASE_URL para entornos donde no se define DIRECT_DATABASE_URL.
+    // Prisma CLI (migrate, generate) needs direct connection — PgBouncer
+    // (transaction mode) doesn't support prepared statements.
+    // Runtime queries use DATABASE_URL (pooled) via PrismaPg adapter in lib/adapters/db/prisma.ts.
     url: process.env["DIRECT_DATABASE_URL"] ?? process.env["DATABASE_URL"],
   },
 });

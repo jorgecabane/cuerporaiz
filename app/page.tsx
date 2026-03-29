@@ -26,7 +26,7 @@ export const revalidate = 60;
 /* ─── Metadata ──────────────────────────────────────────────────────────── */
 
 export async function generateMetadata(): Promise<Metadata> {
-  const slug = process.env.DEFAULT_CENTER_SLUG;
+  const slug = process.env.NEXT_PUBLIC_DEFAULT_CENTER_SLUG;
   if (!slug) return { title: "Cuerpo Raíz" };
 
   const center = await centerRepository.findBySlug(slug);
@@ -80,7 +80,7 @@ function serializeItems(items: SiteSectionWithItems["items"]) {
 /* ─── Page ──────────────────────────────────────────────────────────────── */
 
 export default async function HomePage() {
-  const slug = process.env.DEFAULT_CENTER_SLUG;
+  const slug = process.env.NEXT_PUBLIC_DEFAULT_CENTER_SLUG;
   if (!slug) return <FallbackHome />;
 
   const center = await centerRepository.findBySlug(slug);

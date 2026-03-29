@@ -2,7 +2,7 @@ import { centerRepository, siteConfigRepository } from "@/lib/adapters/db";
 import { Footer } from "./Footer";
 
 export async function FooterServer() {
-  const slug = process.env.DEFAULT_CENTER_SLUG;
+  const slug = process.env.NEXT_PUBLIC_DEFAULT_CENTER_SLUG;
   if (!slug) return <Footer />;
 
   const center = await centerRepository.findBySlug(slug);

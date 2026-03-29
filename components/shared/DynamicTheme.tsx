@@ -4,7 +4,7 @@ import { sanitizeHexColor, hexToRgb, darkenHex } from "@/lib/domain/color-utils"
 const DEFAULTS = { primary: "#2D3B2A", secondary: "#B85C38", accent: "#D4A574" };
 
 export default async function DynamicTheme() {
-  const slug = process.env.DEFAULT_CENTER_SLUG;
+  const slug = process.env.NEXT_PUBLIC_DEFAULT_CENTER_SLUG;
   if (!slug) return null;
 
   const center = await centerRepository.findBySlug(slug);

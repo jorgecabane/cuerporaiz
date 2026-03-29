@@ -6,7 +6,6 @@ test.describe("Auth", () => {
   test("login page loads with correct fields", async ({ page }) => {
     await page.goto("/auth/login");
     await expect(page.getByRole("heading", { level: 1 })).toContainText("Entrar");
-    await expect(page.getByLabel(/centro/i)).toBeVisible();
     await expect(page.getByLabel(/email/i)).toBeVisible();
     await expect(page.getByLabel(/contraseña/i)).toBeVisible();
     await expect(page.getByRole("button", { name: /entrar/i })).toBeVisible();
@@ -15,7 +14,6 @@ test.describe("Auth", () => {
   test("signup page loads with correct fields", async ({ page }) => {
     await page.goto("/auth/signup");
     await expect(page.getByRole("heading", { level: 1 })).toContainText("Crear cuenta");
-    await expect(page.getByLabel(/centro/i)).toBeVisible();
     await expect(page.getByLabel(/email/i)).toBeVisible();
     await expect(page.getByLabel(/contraseña/i)).toBeVisible();
     await expect(page.getByRole("button", { name: /crear cuenta/i })).toBeVisible();

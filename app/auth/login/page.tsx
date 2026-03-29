@@ -14,7 +14,7 @@ function LoginForm() {
   const isReset = searchParams.get("reset") === "1";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [centerId, setCenterId] = useState("cuerporaiz");
+  const centerId = process.env.NEXT_PUBLIC_DEFAULT_CENTER_SLUG ?? "cuerporaiz";
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -68,17 +68,6 @@ function LoginForm() {
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-[var(--space-5)]">
-          <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-[var(--color-text-muted)]">Centro (slug)</span>
-            <input
-              type="text"
-              value={centerId}
-              onChange={(e) => setCenterId(e.target.value)}
-              placeholder="cuerporaiz"
-              className="rounded-[var(--radius-md)] border border-[var(--color-border)] px-3 py-2 text-[var(--color-text)]"
-              required
-            />
-          </label>
           <label className="flex flex-col gap-1">
             <span className="text-sm font-medium text-[var(--color-text-muted)]">Email</span>
             <input

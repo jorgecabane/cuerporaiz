@@ -26,7 +26,7 @@ type ButtonProps = BaseProps &
   );
 
 const base =
-  "inline-flex items-center justify-center gap-2 rounded-[var(--radius-md)] px-[var(--space-6)] py-[var(--space-3)] text-sm font-medium tracking-wide transition-all duration-[var(--duration-normal)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50 disabled:pointer-events-none";
+  "inline-flex cursor-pointer items-center justify-center gap-2 rounded-[var(--radius-md)] px-[var(--space-6)] py-[var(--space-3)] text-sm font-medium tracking-wide transition-[color,background-color,border-color,box-shadow,transform] duration-[var(--duration-fast)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50 disabled:pointer-events-none";
 
 export function Button({ variant = "primary", children, className = "", ...props }: ButtonProps) {
   const classes = `${base} ${variantStyles[variant]} ${className}`;
