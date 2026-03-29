@@ -25,3 +25,5 @@ export { onDemandPracticeRepository } from "./on-demand-practice-repository";
 export { onDemandLessonRepository } from "./on-demand-lesson-repository";
 export { lessonUnlockRepository } from "./lesson-unlock-repository";
 export { planCategoryQuotaRepository } from "./plan-category-quota-repository";
+export { authTokenRepository } from "./auth-token-repository";
+export { loginAttemptRepository } from "./login-attempt-repository";

@@ -33,4 +33,9 @@ test.describe("On-demand admin redirects", () => {
     await page.goto("/panel/on-demand");
     await expect(page).toHaveURL(/\/panel\/on-demand\/categorias/, { timeout: 15000 });
   });
+
+  test("admin en /panel/replay redirige a categorías", async ({ page }) => {
+    await page.goto("/panel/replay");
+    await expect(page).toHaveURL(/\/panel\/on-demand\/categorias/, { timeout: 15000 });
+  });
 });

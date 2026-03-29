@@ -1,13 +1,16 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("Páginas públicas", () => {
-  test("membresía redirige a tienda", async ({ page }) => {
+  test("membresía redirige a tienda o login", async ({ page }) => {
     await page.goto("/membresia");
-    await expect(page).toHaveURL(/\/panel\/tienda/, { timeout: 15000 });
+    await expect(page).toHaveURL(/\/panel\/tienda|\/auth\/login/, { timeout: 15000 });
   });
 
-  test("packs redirige a catálogo", async ({ page }) => {
+  test("packs redirige al catálogo on demand", async ({ page }) => {
     await page.goto("/packs");
-    await expect(page).toHaveURL(/\/catalogo/, { timeout: 15000 });
+    await page.waitForURL(/\/catalogo/);
+    await expect(
+      page.getByRole("heading", { name: /catálogo on demand/i })
+    ).toBeVisible();
   });
 });

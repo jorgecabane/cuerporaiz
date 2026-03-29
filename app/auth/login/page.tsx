@@ -5,11 +5,13 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { SITE_NAME } from "@/lib/constants/copy";
+import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") ?? "/panel";
+  const isReset = searchParams.get("reset") === "1";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const centerId = process.env.NEXT_PUBLIC_DEFAULT_CENTER_SLUG ?? "cuerporaiz";
@@ -28,7 +30,11 @@ function LoginForm() {
         redirect: false,
       });
       if (result?.error) {
-        setError("Email o contraseña incorrectos. Revisa el centro si aplica.");
+        if (result.error === "RATE_LIMITED" || result.error.includes("RATE_LIMITED")) {
+          setError("Demasiados intentos. Espera 15 minutos e intenta de nuevo.");
+        } else {
+          setError("Email o contraseña incorrectos. Revisa el centro si aplica.");
+        }
         setLoading(false);
         return;
       }
@@ -46,6 +52,21 @@ function LoginForm() {
         <h1 className="font-display text-section text-[var(--color-primary)] mb-[var(--space-6)]">
           Entrar a {SITE_NAME}
         </h1>
+
+        {isReset && (
+          <p className="mb-[var(--space-4)] rounded-[var(--radius-md)] bg-green-50 px-3 py-2 text-sm text-green-700" role="status">
+            Contraseña actualizada. Inicia sesión.
+          </p>
+        )}
+
+        <GoogleSignInButton centerId={centerId} />
+
+        <div className="my-[var(--space-5)] flex items-center gap-3">
+          <div className="h-px flex-1 bg-[var(--color-border)]" />
+          <span className="text-xs text-[var(--color-text-muted)]">o</span>
+          <div className="h-px flex-1 bg-[var(--color-border)]" />
+        </div>
+
         <form onSubmit={handleSubmit} className="flex flex-col gap-[var(--space-5)]">
           <label className="flex flex-col gap-1">
             <span className="text-sm font-medium text-[var(--color-text-muted)]">Email</span>
@@ -59,7 +80,15 @@ function LoginForm() {
             />
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-[var(--color-text-muted)]">Contraseña</span>
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-[var(--color-text-muted)]">Contraseña</span>
+              <Link
+                href="/auth/forgot-password"
+                className="text-xs text-[var(--color-secondary)] hover:underline"
+              >
+                ¿Olvidaste tu contraseña?
+              </Link>
+            </div>
             <input
               type="password"
               value={password}

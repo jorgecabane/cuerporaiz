@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { userRepository } from "@/lib/adapters/db";
+import { prisma } from "@/lib/adapters/db/prisma";
 import Link from "next/link";
 import ProfileForm from "./ProfileForm";
 import PasswordForm from "./PasswordForm";
@@ -23,6 +24,13 @@ export default async function MiPerfilPage({ searchParams }: { searchParams: Pro
   const activeTab: TabKey = (TABS.some((t) => t.key === tab) ? tab : "perfil") as TabKey;
   const user = await userRepository.findById(session.user.id);
   if (!user) redirect("/auth/login");
+
+  const userAuth = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { passwordHash: true, googleId: true },
+  });
+  const hasPassword = !!userAuth?.passwordHash && userAuth.passwordHash !== "";
+  const hasGoogle = !!userAuth?.googleId;
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -58,7 +66,10 @@ export default async function MiPerfilPage({ searchParams }: { searchParams: Pro
               sex: user.sex,
             }}
           />
-          <PasswordForm />
+          {hasGoogle && (
+            <p className="text-xs text-green-700 mb-4">✓ Cuenta vinculada con Google</p>
+          )}
+          <PasswordForm hasPassword={hasPassword} />
         </>
       )}
 

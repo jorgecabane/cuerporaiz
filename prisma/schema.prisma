@@ -76,6 +76,9 @@ model User {
   birthday     DateTime?
   sex          String?   // M, F, X, null
   notes        String?   // observaciones internas del centro
+  googleId        String?   @unique
+  emailVerifiedAt DateTime?
+  tokenVersion    Int       @default(0)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
@@ -89,6 +92,8 @@ model User {
   emailPreferences EmailPreference[]
   siteItems       CenterSiteSectionItem[]
   lessonUnlocks LessonUnlock[]
+  passwordResetTokens     PasswordResetToken[]
+  emailVerificationTokens EmailVerificationToken[]
 }
 
 // ─── Disciplinas (prácticas: Yoga, Pilates, TRX…) ─────────────────────────
@@ -550,6 +555,47 @@ model EmailPreference {
   @@unique([userId, centerId])
   @@index([userId])
   @@index([centerId])
+}
+
+// ─── Auth Tokens ────────────────────────────────────────────────────────────
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  token     String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+}
+
+model EmailVerificationToken {
+  id        String    @id @default(cuid())
+  userId    String
+  token     String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+}
+
+model LoginAttempt {
+  id        String   @id @default(cuid())
+  email     String
+  centerId  String
+  ip        String
+  success   Boolean
+  createdAt DateTime @default(now())
+
+  @@index([email, centerId, createdAt])
+  @@index([ip, createdAt])
 }
 
 // ─── On Demand ────────────────────────────────────────────────────────────────
