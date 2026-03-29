@@ -187,7 +187,7 @@ export function AgendaSection({ title, subtitle, livePlans, classes: classesProp
                       role="tab"
                       aria-selected={isSelected}
                       onClick={() => setSelectedIdx(i)}
-                      className={`flex min-w-[3.5rem] flex-col items-center rounded-[var(--radius-lg)] px-[var(--space-3)] py-[var(--space-3)] text-center transition-all duration-[var(--duration-normal)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)] ${
+                      className={`flex min-w-[3.5rem] cursor-pointer flex-col items-center rounded-[var(--radius-lg)] px-[var(--space-3)] py-[var(--space-3)] text-center transition-[color,background-color,border-color,box-shadow,transform] duration-[var(--duration-normal)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)] ${
                         isSelected
                           ? "bg-[var(--color-primary)] text-white shadow-[var(--shadow-md)]"
                           : "bg-[var(--color-tertiary)] text-[var(--color-text-muted)] hover:bg-[var(--color-primary-light)] hover:text-[var(--color-primary)]"
@@ -271,7 +271,7 @@ export function AgendaSection({ title, subtitle, livePlans, classes: classesProp
                         ) : (
                           <a
                             href="/auth/login?callbackUrl=/panel/reservas"
-                            className="rounded-[var(--radius-md)] border border-[var(--color-border)] px-[var(--space-4)] py-[var(--space-2)] text-xs font-medium text-[var(--color-text-muted)] transition-all duration-[var(--duration-normal)] hover:border-[var(--color-primary)] hover:bg-[var(--color-primary)] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-primary)]"
+                            className="rounded-[var(--radius-md)] border border-[var(--color-border)] px-[var(--space-4)] py-[var(--space-2)] text-xs font-medium text-[var(--color-text-muted)] transition-[color,background-color,border-color,transform] duration-[var(--duration-normal)] hover:border-[var(--color-primary)] hover:bg-[var(--color-primary)] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-primary)]"
                           >
                             Reservar
                           </a>
@@ -346,7 +346,7 @@ export function AgendaSection({ title, subtitle, livePlans, classes: classesProp
 
               <a
                 href="#oferta"
-                className="mt-[var(--space-6)] flex w-full items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-primary)] px-[var(--space-6)] py-[var(--space-4)] text-sm font-medium text-white transition-all duration-[var(--duration-normal)] hover:bg-[var(--color-primary-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]"
+                className="mt-[var(--space-6)] flex w-full items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-primary)] px-[var(--space-6)] py-[var(--space-4)] text-sm font-medium text-white transition-[color,background-color,box-shadow,transform] duration-[var(--duration-normal)] hover:bg-[var(--color-primary-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]"
               >
                 Ver planes y comprar
               </a>

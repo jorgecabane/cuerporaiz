@@ -52,7 +52,7 @@ export function Header() {
   return (
     <>
       <header
-        className={`fixed top-0 z-50 w-full transition-all duration-[var(--duration-slow)] ${
+        className={`fixed top-0 z-50 w-full transition-[background-color,box-shadow,backdrop-filter] duration-[var(--duration-slow)] ${
           solid
             ? "bg-[var(--color-surface)]/96 shadow-[var(--shadow-sm)] backdrop-blur-md"
             : "bg-transparent"
@@ -115,9 +115,8 @@ export function Header() {
           <motion.div
             key="mobile-menu"
             initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.22, ease: [0.25, 0.1, 0.25, 1] }}
+            animate={{ opacity: 1, transition: { duration: 0.22, ease: [0.23, 1, 0.32, 1] } }}
+            exit={{ opacity: 0, transition: { duration: 0.15, ease: [0.23, 1, 0.32, 1] } }}
             className="fixed inset-0 z-40 flex flex-col bg-[var(--color-primary)] lg:hidden"
           >
             <nav

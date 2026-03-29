@@ -1,4 +1,7 @@
+"use client";
+
 import Image from "next/image";
+import { motion } from "framer-motion";
 import { AnimateIn } from "@/components/ui/AnimateIn";
 
 type TeamItem = {
@@ -52,7 +55,12 @@ export function SobreTriniSection({ title, subtitle, items }: SobreTriniSectionP
       <div className="mx-auto max-w-6xl">
         <div className="grid grid-cols-1 gap-[var(--space-12)] md:grid-cols-2 md:items-center md:gap-[var(--space-16)]">
           {/* Imagen */}
-          <AnimateIn direction="left">
+          <motion.div
+            initial={{ opacity: 0, clipPath: "inset(0 0 100% 0)" }}
+            whileInView={{ opacity: 1, clipPath: "inset(0 0 0 0)" }}
+            viewport={{ once: true, margin: "-60px" }}
+            transition={{ duration: 0.8, ease: [0.23, 1, 0.32, 1] }}
+          >
             <div className="relative aspect-[3/4] overflow-hidden rounded-[var(--radius-xl)] sm:aspect-[4/5]">
               <Image
                 src={personImage}
@@ -62,7 +70,7 @@ export function SobreTriniSection({ title, subtitle, items }: SobreTriniSectionP
                 sizes="(max-width: 768px) 100vw, 50vw"
               />
             </div>
-          </AnimateIn>
+          </motion.div>
 
           {/* Texto */}
           <div className="flex flex-col gap-[var(--space-6)]">

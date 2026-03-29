@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useId, useCallback } from "react";
+import { useEffect, useRef, useId, useCallback, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
@@ -50,6 +50,8 @@ export function AdaptiveSheet({
   const titleId = useId();
   const contentRef = useRef<HTMLDivElement>(null);
   const previousActiveElement = useRef<HTMLElement | null>(null);
+  const dragStartRef = useRef<{ y: number; time: number } | null>(null);
+  const [dragY, setDragY] = useState(0);
 
   const effectiveVariant: "sheet" | "dialog" =
     variant === "auto" ? (isMobile ? "sheet" : "dialog") : variant;
@@ -61,11 +63,37 @@ export function AdaptiveSheet({
   const sheetHeight = maxHeight ?? "85vh";
   const dialogMaxHeight = maxHeight ?? "80vh";
 
-  const duration = prefersReducedMotion ? 0 : 0.25;
+  const enterDuration = prefersReducedMotion ? 0 : 0.25;
+  const exitDuration = prefersReducedMotion ? 0 : 0.15;
 
   const handleBackdropClick = useCallback(() => {
     if (dismissible) onOpenChange(false);
   }, [dismissible, onOpenChange]);
+
+  const onDragStart = useCallback((e: React.PointerEvent) => {
+    if (!isSheet || !dismissible) return;
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    dragStartRef.current = { y: e.clientY, time: Date.now() };
+  }, [isSheet, dismissible]);
+
+  const onDragMove = useCallback((e: React.PointerEvent) => {
+    if (!dragStartRef.current) return;
+    const dy = Math.max(0, e.clientY - dragStartRef.current.y);
+    setDragY(dy);
+  }, []);
+
+  const onDragEnd = useCallback((e: React.PointerEvent) => {
+    if (!dragStartRef.current) return;
+    const distance = Math.max(0, e.clientY - dragStartRef.current.y);
+    const elapsed = Date.now() - dragStartRef.current.time;
+    const velocity = distance / elapsed;
+
+    if (distance > 80 || velocity > 0.11) {
+      onOpenChange(false);
+    }
+    setDragY(0);
+    dragStartRef.current = null;
+  }, [onOpenChange]);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -137,7 +165,7 @@ export function AdaptiveSheet({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration }}
+            transition={{ duration: enterDuration }}
             onClick={handleBackdropClick}
             aria-hidden="true"
           />
@@ -162,7 +190,7 @@ export function AdaptiveSheet({
             }
             animate={
               isSheet
-                ? { y: 0 }
+                ? { y: dragY }
                 : { opacity: 1, scale: 1 }
             }
             exit={
@@ -170,13 +198,16 @@ export function AdaptiveSheet({
                 ? { y: "100%" }
                 : { opacity: 0, scale: 0.96 }
             }
-            transition={{ duration, ease: [0.25, 0.1, 0.25, 1] }}
+            transition={{ duration: enterDuration, ease: isSheet ? [0.32, 0.72, 0, 1] : [0.23, 1, 0.32, 1] }}
             onClick={(e) => e.stopPropagation()}
           >
             {showHandle && (
               <div
-                className="flex justify-center pt-3 pb-1 sm:hidden"
+                className="flex justify-center pt-3 pb-1 sm:hidden cursor-grab active:cursor-grabbing"
                 aria-hidden="true"
+                onPointerDown={onDragStart}
+                onPointerMove={onDragMove}
+                onPointerUp={onDragEnd}
               >
                 <div
                   className="h-1 w-12 rounded-full bg-[var(--color-border)]"

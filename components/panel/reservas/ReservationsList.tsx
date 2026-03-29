@@ -49,7 +49,7 @@ export function ReservationsList({
 }: ReservationsListProps) {
   if (reservations.length === 0) {
     return (
-      <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
+      <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 animate-fade-in">
         <p className="text-sm text-[var(--color-text-muted)]">{emptyMessage}</p>
       </div>
     );

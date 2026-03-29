@@ -11,10 +11,9 @@ test.describe("Home dinámico", () => {
   test("muestra múltiples secciones del home", async ({ page }) => {
     await page.goto("/");
     // Should have at least the hero and some other sections visible
-    // Check for section headings or content
-    await expect(page.locator("section, [id]").first()).toBeVisible({ timeout: 15000 });
+    await expect(page.locator("section").first()).toBeVisible({ timeout: 15000 });
     // Check there are multiple sections rendered
-    const sections = page.locator("main > *");
+    const sections = page.locator("section");
     const count = await sections.count();
     expect(count).toBeGreaterThanOrEqual(3);
   });

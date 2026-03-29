@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ReservationDto } from "@/lib/dto/reservation-dto";
 import { AdaptiveSheet } from "@/components/ui/AdaptiveSheet";
 import { Button } from "@/components/ui/Button";
+import { toast } from "@/components/ui/Toast";
 import { TabsRoot, TabsList, TabsTrigger, TabsContent } from "./Tabs";
 import { ReservationsList } from "./ReservationsList";
 import {
@@ -102,7 +103,6 @@ export function MisReservasSheet({
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [reservationToCancel, setReservationToCancel] = useState<ReservationDto | null>(null);
   const [cancelLoadingId, setCancelLoadingId] = useState<string | null>(null);
-  const [toast, setToast] = useState<{ message: string } | null>(null);
 
   const fetchReservations = useCallback(async () => {
     setLoading(true);
@@ -144,31 +144,24 @@ export function MisReservasSheet({
       });
       const data = await res.json();
       if (!res.ok) {
-        setToast({ message: data?.message ?? "Error al cancelar" });
+        toast.error(data?.message ?? "Error al cancelar");
         return;
       }
       const newStatus = data?.status;
       const wasLate = newStatus === "LATE_CANCELLED";
-      setToast({
-        message: wasLate
-          ? "Reserva cancelada. Se descontó 1 clase."
-          : "Reserva cancelada. No se descontó ninguna clase.",
-      });
+      toast(wasLate
+        ? "Reserva cancelada. Se descontó 1 clase."
+        : "Reserva cancelada correctamente."
+      );
       setCancelModalOpen(false);
       setReservationToCancel(null);
       await fetchReservations();
     } catch {
-      setToast({ message: "Error al cancelar la reserva" });
+      toast.error("Error al cancelar la reserva");
     } finally {
       setCancelLoadingId(null);
     }
   }, [reservationToCancel, fetchReservations]);
-
-  useEffect(() => {
-    if (!toast) return;
-    const t = setTimeout(() => setToast(null), 4000);
-    return () => clearTimeout(t);
-  }, [toast]);
 
   const isLateCancel = reservationToCancel
     ? willConsumeClassIfCancelNow(reservationToCancel, cancelBeforeMinutes)
@@ -187,14 +180,6 @@ export function MisReservasSheet({
             <p className="mb-4 px-1 text-sm text-[var(--color-text-muted)] leading-relaxed">
               Recuerda que puedes cancelar con hasta {formatMinutesAsShortSpanish(cancelBeforeMinutes)} de anticipación sin que se consuma tu clase. Si cancelas más tarde, se descontará 1 clase de tu plan, pero se libera tu cupo para que otra persona pueda reservar.
             </p>
-          )}
-          {toast && (
-            <div
-              className="mb-3 rounded-[var(--radius-md)] bg-[var(--color-primary-light)] px-3 py-2 text-sm text-[var(--color-primary)]"
-              role="status"
-            >
-              {toast.message}
-            </div>
           )}
           {loading ? (
             <p className="py-8 text-center text-sm text-[var(--color-text-muted)]">

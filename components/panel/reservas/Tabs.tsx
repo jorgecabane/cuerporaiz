@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from "react";
 
 type TabsContextValue = {
   value: string;
@@ -64,12 +64,36 @@ export function TabsRoot({
 }
 
 export function TabsList({ children, className = "" }: { children: ReactNode; className?: string }) {
+  const { value } = useTabs();
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [underlineStyle, setUnderlineStyle] = useState<{ left: number; width: number }>({ left: 0, width: 0 });
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const activeTab = containerRef.current.querySelector<HTMLElement>('[aria-selected="true"]');
+    if (activeTab) {
+      setUnderlineStyle({
+        left: activeTab.offsetLeft,
+        width: activeTab.offsetWidth,
+      });
+    }
+  }, [value]);
+
   return (
     <div
-      className={`flex flex-nowrap gap-0 border-b border-[var(--color-border)] overflow-x-auto ${className}`}
+      ref={containerRef}
+      className={`relative flex flex-nowrap gap-0 border-b border-[var(--color-border)] overflow-x-auto ${className}`}
       style={{ scrollbarWidth: "thin" }}
     >
       {children}
+      <span
+        className="absolute bottom-0 h-0.5 bg-[var(--color-primary)]"
+        style={{
+          left: underlineStyle.left,
+          width: underlineStyle.width,
+          transition: "left 200ms cubic-bezier(0.23, 1, 0.32, 1), width 200ms cubic-bezier(0.23, 1, 0.32, 1)",
+        }}
+      />
     </div>
   );
 }
@@ -91,7 +115,6 @@ export function TabsTrigger({
 
   const isSelected = selected === value;
   const triggerStyle = {
-    borderBottomColor: isSelected ? "var(--color-primary)" : "transparent",
     color: isSelected ? "var(--color-primary)" : "var(--color-text-muted)",
   };
 
@@ -104,7 +127,7 @@ export function TabsTrigger({
       aria-controls={"panel-" + value}
       tabIndex={isSelected ? 0 : -1}
       onClick={() => onChange(value)}
-      className="min-w-0 shrink-0 rounded-t-[var(--radius-md)] border-b-2 px-4 py-3 text-sm font-medium transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 cursor-pointer"
+      className="min-w-0 shrink-0 rounded-t-[var(--radius-md)] px-4 py-3 text-sm font-medium transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 cursor-pointer"
       style={triggerStyle}
     >
       {children}

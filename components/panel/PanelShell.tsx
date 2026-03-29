@@ -80,10 +80,10 @@ function NavLink({
     <Link
       href={href}
       onClick={onClick}
-      className={`flex cursor-pointer items-center gap-3 rounded-[var(--radius-md)] px-3 py-2.5 text-sm font-medium transition-colors duration-200 ${
+      className={`flex cursor-pointer items-center gap-3 rounded-[var(--radius-md)] px-3 py-2.5 text-sm font-medium transition-[color,background-color,transform] duration-200 ${
         isActive
           ? "bg-[var(--color-primary)] text-[var(--color-text-inverse)]"
-          : "text-[var(--color-text)] hover:bg-[var(--color-primary-light)]"
+          : "text-[var(--color-text)] hover:bg-[var(--color-primary-light)] hover:translate-x-0.5"
       }`}
       aria-current={isActive ? "page" : undefined}
     >
