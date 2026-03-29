@@ -10,6 +10,9 @@ export default defineConfig({
     seed: "tsx prisma/seed.ts",
   },
   datasource: {
-    url: process.env["DATABASE_URL"],
+    // Prisma CLI (migrate, generate) needs direct connection — PgBouncer
+    // (transaction mode) doesn't support prepared statements.
+    // Runtime queries use DATABASE_URL (pooled) via PrismaPg adapter in lib/adapters/db/prisma.ts.
+    url: process.env["DIRECT_DATABASE_URL"] ?? process.env["DATABASE_URL"],
   },
 });

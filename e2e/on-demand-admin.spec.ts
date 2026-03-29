@@ -58,10 +58,13 @@ test.describe("On-demand admin CRUD", () => {
     // Toggle the practice form
     await page.getByRole("button", { name: /Nueva práctica/i }).click();
 
-    await page.getByLabel(/^Nombre/i).fill(practiceName);
-    await page.getByLabel(/^Estado/i).selectOption("PUBLISHED");
+    // Scope selectors to the practice form section to avoid matching
+    // the category edit form which also has "Nombre" and "Estado" fields.
+    const practiceForm = page.getByRole("heading", { name: /Nueva práctica/i }).locator("..");
+    await practiceForm.getByLabel(/^Nombre/i).fill(practiceName);
+    await practiceForm.getByLabel(/^Estado/i).selectOption("PUBLISHED");
 
-    await page.getByRole("button", { name: /Crear práctica/i }).click();
+    await practiceForm.getByRole("button", { name: /Crear práctica/i }).click();
 
     // Practice should appear as a link in the list
     await expect(
