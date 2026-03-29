@@ -54,6 +54,15 @@
   --duration-slow:   400ms;
   --ease-default:    cubic-bezier(0.25, 0.1, 0.25, 1);
 
+  /* Easing curves (Emil Kowalski — stronger than defaults) */
+  --ease-out:    cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+
+  /* Press feedback */
+  --duration-press: 120ms;
+  --scale-press:    0.97;
+
   /* Gradiente de overlay de hero */
   --hero-overlay-bottom: rgba(29, 47, 25, 0.96);
   --hero-overlay-mid:    rgba(29, 47, 25, 0.55);
@@ -136,3 +145,14 @@ body {
   outline-offset: 3px;
   border-radius:  var(--radius-sm);
 }
+
+/* ─── Press feedback (botones responsivos) ──────────────────────────────── */
+button:not(:disabled):active,
+[data-pressable]:active {
+  transform: scale(var(--scale-press));
+  transition: transform var(--duration-press) var(--ease-out);
+}
+
+/* ─── Hover gating: usar dentro de componentes ─────────────────────────── */
+/* @media (hover: hover) and (pointer: fine) { ... }                        */
+/* Wrap hover animations in this query to prevent false positives on touch. */
