@@ -28,6 +28,10 @@
 .DS_Store
 *.pem
 
+# iCloud duplicates (Finder creates "file 2.ext" copies)
+*\ 2.*
+*\ 2/**
+
 # debug
 npm-debug.log*
 yarn-debug.log*
