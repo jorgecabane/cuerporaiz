@@ -8,7 +8,7 @@ import { Menu, X } from "lucide-react";
 import { SITE_NAME, NAV_LINKS, CTAS } from "@/lib/constants/copy";
 
 /** Rutas que usan cascarón público: header siempre sólido (buen contraste en fondo claro). */
-const PUBLIC_SHELL_PATHS = ["/checkout", "/auth"];
+const PUBLIC_SHELL_PATHS = ["/checkout", "/auth", "/catalogo"];
 
 export function Header() {
   const pathname = usePathname();
