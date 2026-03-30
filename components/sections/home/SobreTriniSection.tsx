@@ -59,7 +59,7 @@ export function SobreTriniSection({ title, subtitle, items }: SobreTriniSectionP
             className="relative aspect-[3/4] overflow-hidden rounded-[var(--radius-xl)] sm:aspect-[4/5]"
             initial={{ opacity: 0, clipPath: "inset(0 0 100% 0)" }}
             whileInView={{ opacity: 1, clipPath: "inset(0 0 0 0)" }}
-            viewport={{ once: true, margin: "-60px" }}
+            viewport={{ once: true, margin: "0px" }}
             transition={{ duration: 0.8, ease: [0.23, 1, 0.32, 1] }}
           >
             <Image

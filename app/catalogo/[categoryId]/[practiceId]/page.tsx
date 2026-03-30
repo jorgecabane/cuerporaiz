@@ -32,14 +32,14 @@ export default async function CatalogoPracticePage({ params }: Props) {
   return (
     <div className="max-w-4xl mx-auto px-4 py-12 space-y-8">
       <nav className="text-sm text-[var(--color-text-muted)] flex items-center gap-2">
-        <Link href="/catalogo" className="hover:text-[var(--color-text)]">
+        <Link href="/catalogo" className="hover:text-[var(--color-text)] transition-colors">
           Catálogo
         </Link>
-        <span>/</span>
-        <Link href={`/catalogo/${category.id}`} className="hover:text-[var(--color-text)]">
+        <span className="text-[var(--color-border)]">/</span>
+        <Link href={`/catalogo/${category.id}`} className="hover:text-[var(--color-text)] transition-colors">
           {category.name}
         </Link>
-        <span>/</span>
+        <span className="text-[var(--color-border)]">/</span>
         <span className="text-[var(--color-text)]">{practice.name}</span>
       </nav>
 

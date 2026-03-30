@@ -1,6 +1,7 @@
 import { onDemandCategoryRepository } from "@/lib/adapters/db";
 import { prisma } from "@/lib/adapters/db/prisma";
 import Link from "next/link";
+import { Button } from "@/components/ui/Button";
 
 export const revalidate = 300; // 5 min ISR
 
@@ -9,56 +10,117 @@ export default async function CatalogoPage() {
   if (!center) return <p className="p-8 text-[var(--color-text-muted)]">Centro no configurado.</p>;
 
   const categoriesTree = await onDemandCategoryRepository.findPublishedTreeByCenterId(center.id);
-  const categoriesWithCounts = categoriesTree.map((cat) => ({
-    ...cat,
-    practiceCount: cat.practices.length,
-    lessonCount: cat.practices.reduce((acc, p) => acc + p.lessons.length, 0),
+  const categories = categoriesTree.map((cat) => ({
+    id: cat.id,
+    name: cat.name,
+    description: cat.description,
+    practices: cat.practices.map((p) => ({
+      id: p.id,
+      name: p.name,
+      thumbnailUrl: p.thumbnailUrl ?? null,
+      lessonCount: p.lessons.length,
+      durationRange: p.lessons.length > 0
+        ? (() => {
+            const durations = p.lessons.map((l) => l.durationMinutes).filter(Boolean) as number[];
+            if (durations.length === 0) return null;
+            const min = Math.min(...durations);
+            const max = Math.max(...durations);
+            return min === max ? `${min} min` : `${min}–${max} min`;
+          })()
+        : null,
+    })),
   }));
 
-  return (
-    <div className="max-w-4xl mx-auto px-4 py-12 space-y-8">
-      <h1 className="text-3xl font-semibold text-[var(--color-text)]">Catálogo on demand</h1>
-      <p className="text-[var(--color-text-muted)]">
-        Explora nuestras clases grabadas. Compra un plan para desbloquear y ver las clases.
-      </p>
+  const hasContent = categories.length > 0;
 
-      {categoriesWithCounts.length === 0 ? (
-        <p className="text-[var(--color-text-muted)]">Aún no hay contenido disponible.</p>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          {categoriesWithCounts.map((cat) => (
-            <Link
-              key={cat.id}
-              href={`/catalogo/${cat.id}`}
-              className="group rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] overflow-hidden hover:shadow-md transition-shadow"
-            >
-              {cat.thumbnailUrl && (
-                <img src={cat.thumbnailUrl} alt={cat.name} loading="lazy" className="w-full h-48 object-cover" />
-              )}
-              <div className="p-4">
-                <h2 className="text-lg font-medium text-[var(--color-text)] group-hover:text-[var(--color-primary)]">
+  return (
+    <>
+      {/* Page header with top padding for fixed header */}
+      <div className="pt-[calc(var(--header-height)+var(--space-8))] pb-[var(--space-6)] px-[var(--space-4)] md:px-[var(--space-8)]">
+        <div className="mx-auto max-w-4xl">
+          <h1 className="text-section font-display font-semibold text-[var(--color-primary)]">
+            Catálogo on demand
+          </h1>
+          <p className="text-base text-[var(--color-text-muted)] mt-2 max-w-lg">
+            Practica a tu ritmo con clases grabadas
+          </p>
+        </div>
+      </div>
+
+      {/* Netflix rows */}
+      <div className="mx-auto max-w-4xl px-[var(--space-4)] md:px-[var(--space-8)] py-[var(--space-10)] space-y-10">
+        {!hasContent ? (
+          <div className="rounded-[var(--radius-lg)] bg-[var(--color-surface)] p-8 border border-[var(--color-border)] text-center animate-fade-in">
+            <p className="text-[var(--color-text-muted)] mb-4">
+              Aún no hay contenido disponible.
+            </p>
+            <Button href="/panel/tienda" variant="primary">
+              Ver planes
+            </Button>
+          </div>
+        ) : (
+          categories.map((cat) => (
+            <section key={cat.id} aria-labelledby={`cat-${cat.id}`}>
+              {/* Row header */}
+              <div className="flex items-center justify-between mb-4">
+                <h2
+                  id={`cat-${cat.id}`}
+                  className="text-lg font-semibold text-[var(--color-primary)]"
+                >
                   {cat.name}
                 </h2>
-                {cat.description && (
-                  <p className="text-sm text-[var(--color-text-muted)] mt-1">{cat.description}</p>
-                )}
-                <p className="text-xs text-[var(--color-text-muted)] mt-2">
-                  {cat.practiceCount} prácticas · {cat.lessonCount} clases
-                </p>
+                <Link
+                  href={`/catalogo/${cat.id}`}
+                  className="text-sm font-medium text-[var(--color-secondary)] hover:underline"
+                >
+                  Ver todo →
+                </Link>
               </div>
-            </Link>
-          ))}
-        </div>
-      )}
 
-      <div className="text-center pt-8">
-        <Link
-          href="/panel/tienda"
-          className="inline-flex items-center gap-2 rounded-[var(--radius-md)] bg-[var(--color-primary)] px-6 py-3 text-sm font-medium text-white hover:bg-[var(--color-primary-hover)]"
-        >
-          Compra un plan para acceder
-        </Link>
+              {/* Horizontal scroll */}
+              <div
+                className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory"
+                style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}
+              >
+                {cat.practices.map((practice) => (
+                  <Link
+                    key={practice.id}
+                    href={`/catalogo/${cat.id}/${practice.id}`}
+                    className="min-w-[160px] sm:min-w-[200px] max-w-[200px] sm:max-w-[240px] shrink-0 snap-start rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] overflow-hidden hover:shadow-[var(--shadow-md)] transition-shadow group"
+                  >
+                    <div className="aspect-[16/10] overflow-hidden">
+                      {practice.thumbnailUrl ? (
+                        <img
+                          src={practice.thumbnailUrl}
+                          alt={practice.name}
+                          loading="lazy"
+                          className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
+                        />
+                      ) : (
+                        <div
+                          className="w-full h-full"
+                          style={{
+                            background: `linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%)`,
+                          }}
+                        />
+                      )}
+                    </div>
+                    <div className="p-3">
+                      <h3 className="text-sm font-semibold text-[var(--color-text)] line-clamp-1">
+                        {practice.name}
+                      </h3>
+                      <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
+                        {practice.lessonCount} {practice.lessonCount === 1 ? "clase" : "clases"}
+                        {practice.durationRange && ` · ${practice.durationRange}`}
+                      </p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          ))
+        )}
       </div>
-    </div>
+    </>
   );
 }

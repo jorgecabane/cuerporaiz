@@ -5,7 +5,7 @@ import { Header } from "./Header";
 import { Footer } from "./Footer";
 
 /** Rutas que usan el cascarón público: contenido a alto completo, footer al final de la página. */
-const PUBLIC_SHELL_PATHS = ["/checkout", "/auth"];
+const PUBLIC_SHELL_PATHS = ["/checkout", "/auth", "/catalogo"];
 
 export function LayoutWithPanel({ children, footer }: { children: React.ReactNode; footer?: React.ReactNode }) {
   const pathname = usePathname();
