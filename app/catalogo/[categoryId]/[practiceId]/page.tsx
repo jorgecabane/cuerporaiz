@@ -30,7 +30,7 @@ export default async function CatalogoPracticePage({ params }: Props) {
   const publicLessons = lessons.map(({ videoUrl: _videoUrl, ...rest }) => rest);
 
   return (
-    <div className="max-w-4xl mx-auto px-4 pt-[calc(var(--header-height)+var(--space-8))] pb-12 space-y-8 min-h-[100dvh]">
+    <div className="max-w-4xl mx-auto px-4 py-12 space-y-8">
       <nav className="text-sm text-[var(--color-text-muted)] flex items-center gap-2">
         <Link href="/catalogo" className="hover:text-[var(--color-text)] transition-colors">
           Catálogo

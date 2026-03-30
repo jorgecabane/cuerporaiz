@@ -44,7 +44,7 @@ export default async function CatalogoCategoryPage({ params }: Props) {
       </div>
 
       {/* Practice cards */}
-      <div className="mx-auto max-w-4xl px-[var(--space-4)] md:px-[var(--space-8)] py-[var(--space-10)] min-h-[60dvh]">
+      <div className="mx-auto max-w-4xl px-[var(--space-4)] md:px-[var(--space-8)] py-[var(--space-10)]">
         {practicesWithCounts.length === 0 ? (
           <p className="text-[var(--color-text-muted)] animate-fade-in">
             Aún no hay prácticas disponibles.

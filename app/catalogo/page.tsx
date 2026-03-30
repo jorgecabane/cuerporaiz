@@ -48,7 +48,7 @@ export default async function CatalogoPage() {
       </div>
 
       {/* Netflix rows */}
-      <div className="mx-auto max-w-4xl px-[var(--space-4)] md:px-[var(--space-8)] py-[var(--space-10)] space-y-10 min-h-[60dvh]">
+      <div className="mx-auto max-w-4xl px-[var(--space-4)] md:px-[var(--space-8)] py-[var(--space-10)] space-y-10">
         {!hasContent ? (
           <div className="rounded-[var(--radius-lg)] bg-[var(--color-surface)] p-8 border border-[var(--color-border)] text-center animate-fade-in">
             <p className="text-[var(--color-text-muted)] mb-4">
