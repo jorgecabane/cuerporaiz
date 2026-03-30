@@ -4,6 +4,8 @@ import { useState } from "react";
 import { ComprarPlanButton } from "@/app/planes/ComprarPlanButton";
 import SuscribirmeButton from "@/app/planes/SuscribirmeButton";
 
+/* ─── Types ──────────────────────────────────────────────────────────────── */
+
 export type SerializedPlan = {
   id: string;
   name: string;
@@ -20,19 +22,17 @@ export type SerializedPlan = {
   maxReservationsPerWeek: number | null;
 };
 
-const TYPE_LABELS: Record<SerializedPlan["type"], string> = {
-  LIVE: "EN VIVO",
-  ON_DEMAND: "ON DEMAND",
-  MEMBERSHIP_ON_DEMAND: "MEMBRESÍA",
-};
+/* ─── Constants ──────────────────────────────────────────────────────────── */
 
-const TYPE_DESCRIPTIONS: Record<SerializedPlan["type"], string> = {
-  LIVE: "Clases presenciales y online en vivo",
-  ON_DEMAND: "Clases grabadas a tu ritmo",
-  MEMBERSHIP_ON_DEMAND: "Acceso a todo el contenido grabado",
+const TYPE_LABELS: Record<SerializedPlan["type"], string> = {
+  LIVE: "En vivo",
+  ON_DEMAND: "On demand",
+  MEMBERSHIP_ON_DEMAND: "Membresía",
 };
 
 const TYPE_ORDER: SerializedPlan["type"][] = ["LIVE", "ON_DEMAND", "MEMBERSHIP_ON_DEMAND"];
+
+/* ─── Helpers ────────────────────────────────────────────────────────────── */
 
 function formatPrice(cents: number, currency: string): string {
   if (currency === "CLP") return `$${cents.toLocaleString("es-CL")}`;
@@ -45,84 +45,66 @@ function recurringPrice(plan: SerializedPlan): number {
   return Math.round(plan.amountCents * (1 - discount / 100));
 }
 
-function BillingToggle({
-  billing,
-  onChange,
-  maxDiscount,
+/* ─── Filter Chips ───────────────────────────────────────────────────────── */
+
+function FilterChips({
+  types,
+  activeTypes,
+  onToggle,
 }: {
-  billing: "one-time" | "monthly";
-  onChange: (b: "one-time" | "monthly") => void;
-  maxDiscount: number;
+  types: SerializedPlan["type"][];
+  activeTypes: Set<SerializedPlan["type"]>;
+  onToggle: (type: SerializedPlan["type"]) => void;
 }) {
   return (
-    <div className="flex justify-center mb-8">
-      <div
-        className="inline-flex rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] p-1"
-        role="radiogroup"
-        aria-label="Tipo de pago"
-      >
-        <button
-          type="button"
-          role="radio"
-          aria-checked={billing === "one-time"}
-          onClick={() => onChange("one-time")}
-          className={`rounded-full px-5 py-2 text-sm font-medium transition-[color,background-color] duration-150 ${
-            billing === "one-time"
-              ? "bg-[var(--color-primary)] text-white"
-              : "text-[var(--color-text-muted)]"
-          }`}
-        >
-          Pago único
-        </button>
-        <button
-          type="button"
-          role="radio"
-          aria-checked={billing === "monthly"}
-          onClick={() => onChange("monthly")}
-          className={`rounded-full px-5 py-2 text-sm font-medium transition-[color,background-color] duration-150 flex items-center gap-2 ${
-            billing === "monthly"
-              ? "bg-[var(--color-primary)] text-white"
-              : "text-[var(--color-text-muted)]"
-          }`}
-        >
-          Mensual
-          {maxDiscount > 0 && (
-            <span
-              className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
-                billing === "monthly"
-                  ? "bg-[var(--color-secondary)] text-white"
-                  : "bg-[var(--color-secondary-light)] text-[var(--color-secondary)]"
-              }`}
-            >
-              -{maxDiscount}%
-            </span>
-          )}
-        </button>
-      </div>
+    <div className="flex flex-wrap gap-2 mb-6" role="group" aria-label="Filtrar por tipo">
+      {types.map((type) => {
+        const isActive = activeTypes.has(type);
+        return (
+          <button
+            key={type}
+            type="button"
+            aria-pressed={isActive}
+            onClick={() => onToggle(type)}
+            className={`rounded-full px-4 py-1.5 text-sm font-medium transition-[color,background-color,border-color] duration-150 ${
+              isActive
+                ? "bg-[var(--color-primary)] text-white"
+                : "bg-[var(--color-surface)] text-[var(--color-text-muted)] border border-[var(--color-border)] hover:border-[var(--color-primary)] hover:text-[var(--color-text)]"
+            }`}
+          >
+            {TYPE_LABELS[type]}
+          </button>
+        );
+      })}
     </div>
   );
 }
 
+/* ─── Plan Card ──────────────────────────────────────────────────────────── */
+
 function PlanCard({
   plan,
-  billing,
   isPopular,
 }: {
   plan: SerializedPlan;
-  billing: "one-time" | "monthly";
   isPopular: boolean;
 }) {
-  const canOneTime = plan.billingMode === "ONE_TIME" || plan.billingMode === "BOTH";
-  const canRecurring = plan.billingMode === "RECURRING" || plan.billingMode === "BOTH";
+  const canBoth = plan.billingMode === "BOTH";
+  const canOneTime = plan.billingMode === "ONE_TIME" || canBoth;
+  const canRecurring = plan.billingMode === "RECURRING" || canBoth;
   const hasDiscount = (plan.recurringDiscountPercent ?? 0) > 0;
-  const showMonthly = billing === "monthly" && canRecurring;
-  const activePrice = showMonthly ? recurringPrice(plan) : plan.amountCents;
-  const priceSuffix = showMonthly ? "/mes" : "pago único";
-  const showStrikethrough = showMonthly && hasDiscount;
+  const recPrice = recurringPrice(plan);
 
+  // Per-card billing state (only for BOTH plans)
+  const [cardBilling, setCardBilling] = useState<"one-time" | "monthly">("one-time");
+  const showMonthly = canBoth ? cardBilling === "monthly" : canRecurring;
+  const activePrice = showMonthly ? recPrice : plan.amountCents;
+  const priceSuffix = showMonthly ? "/mes" : "pago único";
+
+  // Features
   const features: string[] = [];
   if (plan.maxReservations != null) {
-    features.push(`Máx. ${plan.maxReservations} clases en total`);
+    features.push(`Máx. ${plan.maxReservations} clases`);
   } else {
     features.push("Clases ilimitadas");
   }
@@ -146,6 +128,7 @@ function PlanCard({
           : "border border-[var(--color-border)]"
       }`}
     >
+      {/* Badges */}
       <div className="flex flex-wrap items-center gap-2">
         <span className="rounded-full bg-[var(--color-primary)] px-2.5 py-0.5 text-[11px] font-medium text-white uppercase tracking-wide">
           {TYPE_LABELS[plan.type]}
@@ -156,25 +139,61 @@ function PlanCard({
           </span>
         )}
       </div>
+
+      {/* Name + description */}
       <div>
         <h3 className="text-xl font-semibold text-[var(--color-primary)]">{plan.name}</h3>
         {plan.description && (
           <p className="text-sm text-[var(--color-text-muted)] mt-1">{plan.description}</p>
         )}
       </div>
-      <div>
-        <div className="flex items-baseline gap-1.5">
-          <span className="text-3xl font-bold text-[var(--color-primary)]">
-            {formatPrice(activePrice, plan.currency)}
-          </span>
-          <span className="text-sm text-[var(--color-text-muted)]">{priceSuffix}</span>
+
+      {/* Per-card billing toggle (only for BOTH plans) */}
+      {canBoth && (
+        <div className="inline-flex rounded-[var(--radius-md)] bg-[var(--color-tertiary)] p-1 self-start">
+          <button
+            type="button"
+            onClick={() => setCardBilling("one-time")}
+            className={`rounded-[var(--radius-sm)] px-3 py-1.5 text-xs font-medium transition-[color,background-color] duration-150 ${
+              cardBilling === "one-time"
+                ? "bg-[var(--color-surface)] text-[var(--color-primary)] shadow-[var(--shadow-sm)]"
+                : "text-[var(--color-text-muted)]"
+            }`}
+          >
+            {formatPrice(plan.amountCents, plan.currency)}
+          </button>
+          <button
+            type="button"
+            onClick={() => setCardBilling("monthly")}
+            className={`rounded-[var(--radius-sm)] px-3 py-1.5 text-xs font-medium transition-[color,background-color] duration-150 flex items-center gap-1 ${
+              cardBilling === "monthly"
+                ? "bg-[var(--color-surface)] text-[var(--color-primary)] shadow-[var(--shadow-sm)]"
+                : "text-[var(--color-text-muted)]"
+            }`}
+          >
+            {formatPrice(recPrice, plan.currency)}/m
+            {hasDiscount && (
+              <span className="text-[var(--color-secondary)] text-[10px] font-semibold">
+                -{plan.recurringDiscountPercent}%
+              </span>
+            )}
+          </button>
         </div>
-        {showStrikethrough && (
-          <p className="text-sm text-[var(--color-text-muted)] line-through mt-0.5">
-            {formatPrice(plan.amountCents, plan.currency)} pago único
-          </p>
-        )}
-      </div>
+      )}
+
+      {/* Price (for non-BOTH plans, or as active display) */}
+      {!canBoth && (
+        <div>
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-3xl font-bold text-[var(--color-primary)]">
+              {formatPrice(activePrice, plan.currency)}
+            </span>
+            <span className="text-sm text-[var(--color-text-muted)]">{priceSuffix}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Features */}
       {features.length > 0 && (
         <div className="rounded-[var(--radius-md)] bg-[var(--color-tertiary)] px-4 py-3 space-y-1.5">
           {features.map((f) => (
@@ -185,6 +204,8 @@ function PlanCard({
           ))}
         </div>
       )}
+
+      {/* CTA */}
       <div className="mt-auto pt-2">
         {showMonthly ? (
           <SuscribirmeButton
@@ -199,34 +220,37 @@ function PlanCard({
   );
 }
 
+/* ─── Main Component ─────────────────────────────────────────────────────── */
+
 export function TiendaPlans({ plans }: { plans: SerializedPlan[] }) {
-  const [billing, setBilling] = useState<"one-time" | "monthly">("one-time");
-  const hasAnyRecurring = plans.some(
-    (p) => p.billingMode === "RECURRING" || p.billingMode === "BOTH"
+  // Determine which types exist
+  const availableTypes = TYPE_ORDER.filter((type) =>
+    plans.some((p) => p.type === type)
   );
-  const maxDiscount = Math.max(0, ...plans.map((p) => p.recurringDiscountPercent ?? 0));
 
-  // Filter plans by billing toggle: hide ONE_TIME-only in mensual, RECURRING-only in pago único
-  const filteredPlans = plans.filter((p) => {
-    if (billing === "monthly" && p.billingMode === "ONE_TIME") return false;
-    if (billing === "one-time" && p.billingMode === "RECURRING") return false;
-    return true;
-  });
+  // All types active by default
+  const [activeTypes, setActiveTypes] = useState<Set<SerializedPlan["type"]>>(
+    () => new Set(availableTypes)
+  );
 
-  const groups = TYPE_ORDER
-    .map((type) => ({
-      type,
-      label: TYPE_LABELS[type],
-      description: TYPE_DESCRIPTIONS[type],
-      plans: filteredPlans.filter((p) => p.type === type),
-    }))
-    .filter((g) => g.plans.length > 0);
+  const toggleType = (type: SerializedPlan["type"]) => {
+    setActiveTypes((prev) => {
+      const next = new Set(prev);
+      if (next.has(type)) {
+        // Don't allow deselecting all
+        if (next.size <= 1) return prev;
+        next.delete(type);
+      } else {
+        next.add(type);
+      }
+      return next;
+    });
+  };
 
-  // Default to first available group
-  const [activeType, setActiveType] = useState<SerializedPlan["type"] | null>(null);
-  const effectiveType = activeType ?? groups[0]?.type ?? null;
-  const activeGroup = groups.find((g) => g.type === effectiveType);
+  // Filter plans by active types
+  const filteredPlans = plans.filter((p) => activeTypes.has(p.type));
 
+  // Popular plan (most generous LIVE plan)
   const livePlans = plans.filter((p) => p.type === "LIVE");
   const popularPlanId = livePlans.length > 0
     ? livePlans.reduce((best, p) =>
@@ -236,47 +260,25 @@ export function TiendaPlans({ plans }: { plans: SerializedPlan[] }) {
 
   return (
     <>
-      {hasAnyRecurring && (
-        <BillingToggle billing={billing} onChange={setBilling} maxDiscount={maxDiscount} />
+      {/* Filter chips (only show if more than 1 type) */}
+      {availableTypes.length > 1 && (
+        <FilterChips
+          types={availableTypes}
+          activeTypes={activeTypes}
+          onToggle={toggleType}
+        />
       )}
 
-      {/* Category selector tabs */}
-      {groups.length > 1 && (
-        <div
-          className="flex gap-1 rounded-[var(--radius-lg)] bg-[var(--color-tertiary)] p-1 mb-6"
-          role="tablist"
-          aria-label="Tipo de plan"
-        >
-          {groups.map(({ type, label }) => (
-            <button
-              key={type}
-              type="button"
-              role="tab"
-              aria-selected={type === effectiveType}
-              onClick={() => setActiveType(type)}
-              className={`flex-1 rounded-[var(--radius-md)] px-3 py-2.5 text-sm font-medium transition-[color,background-color] duration-150 ${
-                type === effectiveType
-                  ? "bg-[var(--color-surface)] text-[var(--color-primary)] shadow-[var(--shadow-sm)]"
-                  : "text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Active group plans */}
-      {activeGroup && (
-        <div>
-          <p className="text-sm text-[var(--color-text-muted)] mb-4">{activeGroup.description}</p>
-          <ul className="grid gap-4 sm:grid-cols-2">
-            {activeGroup.plans.map((plan) => (
-              <PlanCard key={plan.id} plan={plan} billing={billing} isPopular={plan.id === popularPlanId} />
-            ))}
-          </ul>
-        </div>
-      )}
+      {/* Plan cards grid */}
+      <ul className="grid gap-4 sm:grid-cols-2">
+        {filteredPlans.map((plan) => (
+          <PlanCard
+            key={plan.id}
+            plan={plan}
+            isPopular={plan.id === popularPlanId}
+          />
+        ))}
+      </ul>
     </>
   );
 }
