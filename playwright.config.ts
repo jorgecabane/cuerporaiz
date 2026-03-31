@@ -44,7 +44,21 @@ export default defineConfig({
             storageState: ".auth/admin.json",
           },
           dependencies: ["setup"],
-          testIgnore: /auth\.student\.setup\.ts|.*student.*\.spec\.ts/,
+          testIgnore: /auth\.(student|instructor)\.setup\.ts|.*student.*\.spec\.ts|.*instructor.*\.spec\.ts/,
+        },
+        {
+          name: "setup-instructor",
+          testMatch: /auth\.instructor\.setup\.ts/,
+        },
+        {
+          name: "chromium-instructor",
+          use: {
+            ...devices["Desktop Chrome"],
+            storageState: ".auth/instructor.json",
+          },
+          dependencies: ["setup-instructor"],
+          testMatch: /.*instructor.*\.spec\.ts/,
+          testIgnore: /auth\.instructor\.setup\.ts/,
         },
         {
           name: "setup-student",
@@ -64,7 +78,7 @@ export default defineConfig({
       ];
     }
 
-    // Default: ignorar archivos de setup student.
+    // Default: ignorar archivos de setup student, incluir instructor.
     return [
       ...base,
       {
@@ -74,13 +88,27 @@ export default defineConfig({
           storageState: ".auth/admin.json",
         },
         dependencies: ["setup"],
-        testIgnore: /auth\.student\.setup\.ts|.*student.*\.spec\.ts/,
+        testIgnore: /auth\.(student|instructor)\.setup\.ts|.*student.*\.spec\.ts|.*instructor.*\.spec\.ts/,
+      },
+      {
+        name: "setup-instructor",
+        testMatch: /auth\.instructor\.setup\.ts/,
+      },
+      {
+        name: "chromium-instructor",
+        use: {
+          ...devices["Desktop Chrome"],
+          storageState: ".auth/instructor.json",
+        },
+        dependencies: ["setup-instructor"],
+        testMatch: /.*instructor.*\.spec\.ts/,
+        testIgnore: /auth\.instructor\.setup\.ts/,
       },
     ];
   })(),
   webServer: {
     // Asegura schema + datos base para E2E (en local/CI). Si no hay DB, E2E no puede correr igual.
-    command: `rm -rf .next && npx prisma migrate deploy && npm run db:seed && npm run build && PORT=${port} npm run start`,
+    command: `${process.env.CI ? "rm -rf .next && " : ""}npx prisma migrate deploy && npm run db:seed && npm run build && PORT=${port} npm run start`,
     url: `http://localhost:${port}`,
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,

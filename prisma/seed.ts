@@ -69,6 +69,32 @@ async function main() {
     update: { role: "STUDENT" },
   });
 
+  // Usuario Instructor fijo para E2E
+  const instructorEmail = process.env.SEED_INSTRUCTOR_EMAIL ?? "instructor@cuerporaiz.cl";
+  const instructorPassword = process.env.SEED_INSTRUCTOR_PASSWORD ?? "instructor123";
+  const instructorHash = await bcrypt.hash(instructorPassword, 12);
+  const instructor = await prisma.user.upsert({
+    where: { email: instructorEmail },
+    create: {
+      email: instructorEmail,
+      passwordHash: instructorHash,
+      name: "Instructor E2E",
+    },
+    update: {},
+  });
+  await prisma.userCenterRole.upsert({
+    where: {
+      userId_centerId: { userId: instructor.id, centerId: center.id },
+    },
+    create: {
+      userId: instructor.id,
+      centerId: center.id,
+      role: "INSTRUCTOR",
+    },
+    update: { role: "INSTRUCTOR" },
+  });
+  console.log("Seed OK: instructor", instructor.email, "role INSTRUCTOR");
+
   // Clases live de ejemplo para reservas (solo si no hay ninguna)
   const existingClass = await prisma.liveClass.findFirst({ where: { centerId: center.id } });
   if (!existingClass) {
@@ -86,6 +112,7 @@ async function main() {
           startsAt: inTwoDays,
           durationMinutes: 60,
           maxCapacity: 10,
+          instructorId: instructor.id,
         },
         {
           centerId: center.id,
@@ -93,6 +120,7 @@ async function main() {
           startsAt: inThreeDays,
           durationMinutes: 75,
           maxCapacity: 8,
+          instructorId: instructor.id,
         },
       ],
     });
@@ -116,6 +144,7 @@ async function main() {
         startsAt,
         durationMinutes: 60,
         maxCapacity: 10,
+        instructorId: instructor.id,
       },
     });
     console.log("Clase futura creada para E2E");
