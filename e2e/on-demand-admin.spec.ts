@@ -110,9 +110,9 @@ test.describe("On-demand admin CRUD", () => {
       page.getByRole("heading", { name: new RegExp(categoryName, "i") })
     ).toBeVisible({ timeout: 10000 });
 
-    // The delete button triggers window.confirm — accept it automatically
-    page.once("dialog", (dialog) => dialog.accept());
+    // Click delete button to open ConfirmDialog, then confirm
     await page.getByRole("button", { name: /Eliminar categoría/i }).click();
+    await page.getByRole("alertdialog").getByRole("button", { name: /Eliminar/i }).click();
 
     // After deletion, should redirect back to the categories list
     await expect(page).toHaveURL(/\/panel\/on-demand\/categorias$/, { timeout: 15000 });

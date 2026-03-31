@@ -1,22 +1,26 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import Image from "next/image";
 import { deactivateInstructor } from "./actions";
 import { Button } from "@/components/ui/Button";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import type { Instructor } from "@/lib/ports";
 
 export function InstructorList({ instructors }: { instructors: Instructor[] }) {
   const [isPending, startTransition] = useTransition();
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string | null } | null>(null);
 
-  function handleDeactivate(id: string, name: string | null) {
-    if (!window.confirm(`¿Desactivar al profesor "${name ?? "sin nombre"}"?`)) return;
+  function handleDeactivate() {
+    if (!deleteTarget) return;
     const fd = new FormData();
-    fd.set("id", id);
+    fd.set("id", deleteTarget.id);
+    setDeleteTarget(null);
     startTransition(() => deactivateInstructor(fd));
   }
 
   return (
+    <>
     <ul className="space-y-3">
       {instructors.map((i) => (
         <li
@@ -58,7 +62,7 @@ export function InstructorList({ instructors }: { instructors: Instructor[] }) {
             <button
               type="button"
               disabled={isPending}
-              onClick={() => handleDeactivate(i.id, i.name)}
+              onClick={() => setDeleteTarget({ id: i.id, name: i.name })}
               className="inline-flex items-center justify-center gap-2 rounded-[var(--radius-md)] border-2 border-[var(--color-error)] bg-transparent px-4 py-2 text-sm font-medium text-[var(--color-error)] hover:bg-[var(--color-error-bg)] disabled:opacity-50"
             >
               {isPending ? "..." : "Desactivar"}
@@ -67,5 +71,15 @@ export function InstructorList({ instructors }: { instructors: Instructor[] }) {
         </li>
       ))}
     </ul>
+    <ConfirmDialog
+      open={deleteTarget !== null}
+      title={`¿Desactivar a "${deleteTarget?.name ?? "sin nombre"}"?`}
+      description="Este profesor será desactivado y no aparecerá en la lista."
+      confirmLabel="Desactivar"
+      variant="warning"
+      onConfirm={handleDeactivate}
+      onCancel={() => setDeleteTarget(null)}
+    />
+    </>
   );
 }

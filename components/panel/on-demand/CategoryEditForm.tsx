@@ -4,6 +4,7 @@ import { useTransition, useState } from "react";
 import { updateCategory, deleteCategory } from "@/app/panel/on-demand/categorias/actions";
 import type { OnDemandCategory, OnDemandContentStatus } from "@/lib/domain/on-demand";
 import { CONTENT_STATUS_LABELS } from "@/lib/domain/on-demand";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 const STATUS_OPTIONS: OnDemandContentStatus[] = ["DRAFT", "PUBLISHED"];
 
@@ -20,12 +21,24 @@ export function CategoryEditForm({ category }: { category: OnDemandCategory }) {
     startTransition(() => updateCategory(category.id, { name, description, thumbnailUrl, status }));
   }
 
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
   function handleDelete() {
-    if (!confirm(`¿Eliminar la categoría "${category.name}"? Esta acción no se puede deshacer.`)) return;
+    setShowDeleteConfirm(false);
     startDeleteTransition(() => deleteCategory(category.id));
   }
 
   return (
+    <>
+    <ConfirmDialog
+      open={showDeleteConfirm}
+      onConfirm={handleDelete}
+      onCancel={() => setShowDeleteConfirm(false)}
+      title={`¿Eliminar "${category.name}"?`}
+      description="Se eliminarán todas las prácticas y lecciones de esta categoría. Esta acción no se puede deshacer."
+      confirmLabel="Eliminar categoría"
+      loading={isDeleting}
+    />
     <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
       <h2 className="text-sm font-semibold text-[var(--color-text)] mb-3">Editar categoría</h2>
       <form action={handleUpdate} className="space-y-3">
@@ -91,7 +104,7 @@ export function CategoryEditForm({ category }: { category: OnDemandCategory }) {
           </button>
           <button
             type="button"
-            onClick={handleDelete}
+            onClick={() => setShowDeleteConfirm(true)}
             disabled={isDeleting}
             className="rounded-[var(--radius-md)] border border-[var(--color-error)] px-4 py-2 text-sm font-medium text-[var(--color-error)] hover:bg-red-50 disabled:opacity-50"
           >
@@ -100,5 +113,6 @@ export function CategoryEditForm({ category }: { category: OnDemandCategory }) {
         </div>
       </form>
     </div>
+    </>
   );
 }
