@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import type { Role } from "@/lib/domain/role";
 import { isAdminRole, isStudentRole } from "@/lib/domain";
+import { toast } from "@/components/ui/Toast";
 import type { LiveClassDto, ReservationDto, UserPlanOptionDto } from "@/lib/dto/reservation-dto";
 import {
   WeekNav,
@@ -234,8 +235,11 @@ export function PanelHomeCalendar({
         method: "PATCH",
       });
       if (res.ok) {
+        toast("Reserva cancelada");
         await loadReservations();
         await loadClassesForWeek(weekAnchor);
+      } else {
+        toast.error("Error al cancelar la reserva");
       }
     } finally {
       setCancelMyReservationLoadingId(null);
@@ -262,8 +266,10 @@ export function PanelHomeCalendar({
           setPlanSelectionFor({ liveClassId, plans: data.plans });
           return;
         }
+        toast.error(data.message ?? "Error al reservar");
         return;
       }
+      toast.success("Reserva confirmada");
       await loadReservations();
       await loadClassesForWeek(weekAnchor);
     } finally {
@@ -296,9 +302,11 @@ export function PanelHomeCalendar({
           setReserveForStudentLoading(false);
           return;
         }
+        toast.error(data.message ?? "Error al reservar estudiante");
         setReserveForStudentLoading(false);
         return;
       }
+      toast.success("Estudiante reservado");
       setReserveForUserId("");
       setReserveForClassId("");
       await loadStaffClassesForWeek(weekAnchor);
@@ -313,7 +321,12 @@ export function PanelHomeCalendar({
       const res = await fetch(`/api/admin/reservations/${reservationId}/cancel`, {
         method: "PATCH",
       });
-      if (res.ok) await loadStaffClassesForWeek(weekAnchor);
+      if (res.ok) {
+        toast("Reserva cancelada");
+        await loadStaffClassesForWeek(weekAnchor);
+      } else {
+        toast.error("Error al cancelar");
+      }
     } finally {
       setCancelReservationLoadingId(null);
     }
@@ -330,7 +343,12 @@ export function PanelHomeCalendar({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ reservationId, status }),
       });
-      if (res.ok) await loadStaffClassesForWeek(weekAnchor);
+      if (res.ok) {
+        toast.success(status === "ATTENDED" ? "Asistencia marcada" : "Inasistencia registrada");
+        await loadStaffClassesForWeek(weekAnchor);
+      } else {
+        toast.error("Error al marcar asistencia");
+      }
     } finally {
       setAttendanceLoadingId(null);
     }

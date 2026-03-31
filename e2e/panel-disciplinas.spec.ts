@@ -34,8 +34,8 @@ test.describe("Panel admin - Disciplinas CRUD", () => {
       .getByRole("listitem")
       .filter({ has: page.getByRole("heading", { name: e2eDisciplineName }) });
     if (!(await listItem.isVisible())) return;
-    page.once("dialog", (dialog) => dialog.accept());
     await listItem.getByRole("button", { name: /Eliminar/i }).click();
+    await page.getByRole("alertdialog").getByRole("button", { name: /Eliminar/i }).click();
     await expect(page.getByText(e2eDisciplineName)).not.toBeVisible({ timeout: 5000 });
   });
 });

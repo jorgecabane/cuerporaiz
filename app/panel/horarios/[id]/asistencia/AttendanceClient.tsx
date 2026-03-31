@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { ReservationStatus } from "@/lib/domain";
+import { toast } from "@/components/ui/Toast";
 
 export interface Attendee {
   reservationId: string;
@@ -51,11 +52,16 @@ export function AttendanceClient({
   async function markStatus(reservationId: string, status: "ATTENDED" | "NO_SHOW") {
     setUpdating(reservationId);
     try {
-      await fetch("/api/admin/attendance", {
+      const res = await fetch("/api/admin/attendance", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ reservationId, status }),
       });
+      if (res.ok) {
+        toast.success(status === "ATTENDED" ? "Asistencia marcada" : "Inasistencia registrada");
+      } else {
+        toast.error("Error al marcar asistencia");
+      }
       await reload();
     } finally {
       setUpdating(null);

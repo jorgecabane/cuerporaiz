@@ -95,8 +95,8 @@ test.describe("Panel admin - Planes", () => {
       const deleteBtn = listItem.getByRole("button", { name: /eliminar/i });
       if (!(await deleteBtn.isVisible())) break;
 
-      page.once("dialog", (dialog) => dialog.accept());
       await deleteBtn.click();
+      await page.getByRole("alertdialog").getByRole("button", { name: /Eliminar/i }).click();
       await expect(page).toHaveURL(/\/panel\/planes$/, { timeout: 10000 });
       // Esperar a que el ítem desaparezca de la lista (sin waitForTimeout)
       await expect(listItem).not.toBeVisible({ timeout: 5000 });

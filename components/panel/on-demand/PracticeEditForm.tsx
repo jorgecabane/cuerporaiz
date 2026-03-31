@@ -1,15 +1,17 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { updatePractice, deletePractice } from "@/app/panel/on-demand/categorias/[id]/actions";
 import type { OnDemandPractice, OnDemandContentStatus } from "@/lib/domain/on-demand";
 import { CONTENT_STATUS_LABELS } from "@/lib/domain/on-demand";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 const STATUS_OPTIONS: OnDemandContentStatus[] = ["DRAFT", "PUBLISHED"];
 
 export function PracticeEditForm({ practice }: { practice: OnDemandPractice }) {
   const [isPending, startTransition] = useTransition();
   const [isDeleting, startDeleteTransition] = useTransition();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   function handleUpdate(formData: FormData) {
     const name = (formData.get("name") as string)?.trim();
@@ -23,7 +25,7 @@ export function PracticeEditForm({ practice }: { practice: OnDemandPractice }) {
   }
 
   function handleDelete() {
-    if (!confirm(`¿Eliminar la práctica "${practice.name}"? Esta acción no se puede deshacer.`)) return;
+    setShowDeleteConfirm(false);
     startDeleteTransition(() => deletePractice(practice.id, practice.categoryId));
   }
 
@@ -93,7 +95,7 @@ export function PracticeEditForm({ practice }: { practice: OnDemandPractice }) {
           </button>
           <button
             type="button"
-            onClick={handleDelete}
+            onClick={() => setShowDeleteConfirm(true)}
             disabled={isDeleting}
             className="rounded-[var(--radius-md)] border border-[var(--color-error)] px-4 py-2 text-sm font-medium text-[var(--color-error)] hover:bg-red-50 disabled:opacity-50"
           >
@@ -101,6 +103,14 @@ export function PracticeEditForm({ practice }: { practice: OnDemandPractice }) {
           </button>
         </div>
       </form>
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        title={`¿Eliminar "${practice.name}"?`}
+        description="Se eliminarán todas las lecciones de esta práctica. Esta acción no se puede deshacer."
+        confirmLabel="Eliminar práctica"
+        onConfirm={handleDelete}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
     </div>
   );
 }
