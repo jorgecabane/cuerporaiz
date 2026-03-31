@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { CenterHoliday } from "@/lib/domain";
 import { createHoliday, deleteHoliday } from "./actions";
 import { formatHolidayDateDisplay, holidayCalendarKey } from "@/lib/domain/holiday-date";
+import { toast } from "@/components/ui/Toast";
 
 function localTodayKey(): string {
   const n = new Date();
@@ -34,7 +35,9 @@ export function HolidayList({ holidays }: Props) {
       const result = await createHoliday(dateValue, labelValue);
       if (!result.ok) {
         setError(result.error ?? "Error desconocido.");
+        toast.error(result.error ?? "Error al crear feriado");
       } else {
+        toast.success("Feriado agregado");
         setDateValue("");
         setLabelValue("");
         setShowForm(false);
