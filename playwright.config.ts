@@ -108,7 +108,7 @@ export default defineConfig({
   })(),
   webServer: {
     // Asegura schema + datos base para E2E (en local/CI). Si no hay DB, E2E no puede correr igual.
-    command: `rm -rf .next && npx prisma migrate deploy && npm run db:seed && npm run build && PORT=${port} npm run start`,
+    command: `${process.env.CI ? "rm -rf .next && " : ""}npx prisma migrate deploy && npm run db:seed && npm run build && PORT=${port} npm run start`,
     url: `http://localhost:${port}`,
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,
