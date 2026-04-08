@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { cleanupPlans } from "./helpers/cleanup";
 
 test.describe("Panel admin - Planes", () => {
   test.describe.configure({ mode: "serial" });
@@ -8,6 +9,11 @@ test.describe("Panel admin - Planes", () => {
 
   test.beforeAll(() => {
     e2ePlanRunId = Date.now().toString(36);
+  });
+
+  // Safety net: clean up even if UI cleanup test fails
+  test.afterAll(async () => {
+    await cleanupPlans(`Plan E2E`);
   });
 
   test.describe("sin sesión", () => {

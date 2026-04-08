@@ -1,7 +1,13 @@
 import { test, expect } from "@playwright/test";
+import { cleanupLiveClasses } from "./helpers/cleanup";
 
 test.describe("Panel admin - Horarios flow", () => {
   test.describe.configure({ mode: "serial" });
+
+  // Safety net: clean up even if UI cleanup test fails
+  test.afterAll(async () => {
+    await cleanupLiveClasses("E2E Test Class");
+  });
 
   test.describe("requires login", () => {
     test.use({ storageState: { cookies: [], origins: [] } });
