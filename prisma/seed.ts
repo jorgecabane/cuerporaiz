@@ -531,6 +531,33 @@ async function main() {
       console.log("UserPlan ON_DEMAND ACTIVE creado para student e2e");
     }
   }
+  // ─── Evento de ejemplo ─────────────────────────────────────────────────────
+  const existingEvent = await prisma.event.findFirst({ where: { centerId: center.id } });
+  if (!existingEvent) {
+    const eventStart = new Date();
+    eventStart.setDate(eventStart.getDate() + 7);
+    eventStart.setHours(10, 0, 0, 0);
+    const eventEnd = new Date(eventStart);
+    eventEnd.setDate(eventEnd.getDate() + 1);
+    eventEnd.setHours(18, 0, 0, 0);
+
+    await prisma.event.create({
+      data: {
+        centerId: center.id,
+        title: "Retiro Rena-ser",
+        description: "Un fin de semana de reconexión con el cuerpo y la naturaleza. Yoga, meditación, charlas y más.",
+        location: "Cajón del Maipo, Santiago",
+        startsAt: eventStart,
+        endsAt: eventEnd,
+        amountCents: 120000,
+        currency: "CLP",
+        maxCapacity: 20,
+        status: "PUBLISHED",
+        color: "#B85C38",
+      },
+    });
+    console.log("Evento de ejemplo creado: Retiro Rena-ser");
+  }
 }
 
 main()
