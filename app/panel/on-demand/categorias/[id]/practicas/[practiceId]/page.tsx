@@ -8,7 +8,7 @@ import {
   onDemandLessonRepository,
 } from "@/lib/adapters/db";
 import { CONTENT_STATUS_LABELS } from "@/lib/domain/on-demand";
-import { PracticeEditForm } from "@/components/panel/on-demand/PracticeEditForm";
+import { PracticeForm } from "@/components/panel/on-demand/PracticeForm";
 
 export default async function PracticeDetailPage({
   params,
@@ -67,7 +67,7 @@ export default async function PracticeDetailPage({
       </div>
 
       <div className="mb-8">
-        <PracticeEditForm practice={practice} />
+        <PracticeForm mode="edit" practice={practice} />
       </div>
 
       <div className="mb-4 flex items-center justify-between gap-4">

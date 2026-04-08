@@ -8,7 +8,7 @@ import {
   onDemandLessonRepository,
 } from "@/lib/adapters/db";
 import { CONTENT_STATUS_LABELS } from "@/lib/domain/on-demand";
-import { CategoryEditForm } from "@/components/panel/on-demand/CategoryEditForm";
+import { CategoryForm } from "@/components/panel/on-demand/CategoryForm";
 import { PracticeForm } from "@/components/panel/on-demand/PracticeForm";
 
 export default async function CategoryDetailPage({
@@ -60,12 +60,12 @@ export default async function CategoryDetailPage({
       </div>
 
       <div className="mb-8">
-        <CategoryEditForm category={category} />
+        <CategoryForm mode="edit" category={category} />
       </div>
 
       <div className="mb-4 flex items-center justify-between gap-4">
         <h2 className="text-lg font-semibold text-[var(--color-text)]">Prácticas</h2>
-        <PracticeForm categoryId={id} />
+        <PracticeForm mode="create" categoryId={id} />
       </div>
 
       {practices.length === 0 ? (

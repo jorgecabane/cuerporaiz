@@ -2,7 +2,7 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { isAdminRole } from "@/lib/domain";
 import { Button } from "@/components/ui/Button";
-import { InstructorForm } from "../InstructorForm";
+import { InstructorForm } from "@/components/panel/InstructorForm";
 
 export default async function NuevoProfesorPage() {
   const session = await auth();
@@ -18,7 +18,7 @@ export default async function NuevoProfesorPage() {
         Agrega un profesor a tu centro. Si ya tiene cuenta, se le asignará el rol.
       </p>
       <div className="rounded-[var(--radius-lg)] bg-[var(--color-surface)] p-6 shadow-[var(--shadow-md)]">
-        <InstructorForm />
+        <InstructorForm variant="profesores" />
       </div>
       <div className="mt-6">
         <Button href="/panel/profesores" variant="secondary">

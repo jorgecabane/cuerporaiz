@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { isAdminRole } from "@/lib/domain";
 import { instructorRepository } from "@/lib/adapters/db";
 import { Button } from "@/components/ui/Button";
-import { InstructorList } from "./InstructorList";
+import { InstructorList } from "@/components/panel/InstructorList";
 
 export default async function PanelProfesoresPage() {
   const session = await auth();
@@ -33,7 +33,7 @@ export default async function PanelProfesoresPage() {
           </p>
         </div>
       ) : (
-        <InstructorList instructors={instructors} />
+        <InstructorList variant="profesores" instructors={instructors} />
       )}
 
       <div className="mt-8">

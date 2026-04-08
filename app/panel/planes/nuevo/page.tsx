@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { isAdminRole } from "@/lib/domain/role";
 import { onDemandCategoryRepository } from "@/lib/adapters/db";
 import { Button } from "@/components/ui/Button";
-import { PlanFormCreate } from "./PlanFormCreate";
+import { PlanForm } from "../PlanForm";
 
 export default async function PanelPlanesNuevoPage({
   searchParams,
@@ -28,7 +28,7 @@ export default async function PanelPlanesNuevoPage({
         Crea un plan de pago (pack o membresía) para este centro.
       </p>
       <div className="rounded-[var(--radius-lg)] bg-[var(--color-surface)] p-6 shadow-[var(--shadow-md)]">
-        <PlanFormCreate slugError={error === "slug"} categories={categories} />
+        <PlanForm mode="create" slugError={error === "slug"} categories={categories} />
       </div>
       <div className="mt-6">
         <Button href="/panel/planes" variant="secondary">

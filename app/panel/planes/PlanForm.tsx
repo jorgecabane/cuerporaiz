@@ -1,10 +1,17 @@
 "use client";
 
 import { useTransition, useState } from "react";
-import { createPlan } from "../actions";
+import { createPlan, updatePlan } from "./actions";
 import { Button } from "@/components/ui/Button";
 import { QuotaEditor } from "@/components/panel/on-demand/QuotaEditor";
 import type { OnDemandCategory } from "@/lib/domain/on-demand";
+import type { Plan } from "@/lib/ports";
+
+type PlanType = "LIVE" | "ON_DEMAND" | "MEMBERSHIP_ON_DEMAND";
+type BillingMode = "ONE_TIME" | "RECURRING" | "BOTH";
+type ValidityPeriod = "MONTHLY" | "QUARTERLY" | "QUADRIMESTRAL" | "SEMESTER" | "ANNUAL";
+type ValidityKind = "days" | "period";
+type UsesLimit = "unlimited" | "limited";
 
 function slugify(text: string): string {
   return text
@@ -15,12 +22,6 @@ function slugify(text: string): string {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
 }
-
-type PlanType = "LIVE" | "ON_DEMAND" | "MEMBERSHIP_ON_DEMAND";
-type BillingMode = "ONE_TIME" | "RECURRING" | "BOTH";
-type ValidityPeriod = "MONTHLY" | "QUARTERLY" | "QUADRIMESTRAL" | "SEMESTER" | "ANNUAL";
-type ValidityKind = "days" | "period";
-type UsesLimit = "unlimited" | "limited";
 
 function parseOptionalInt(v: FormDataEntryValue | null): number | null {
   if (v == null || v === "") return null;
@@ -55,105 +56,179 @@ const TYPE_OPTIONS: { value: PlanType; label: string; hint: string }[] = [
   { value: "MEMBERSHIP_ON_DEMAND", label: "Membresía on-demand", hint: "Acceso a la videoteca on-demand." },
 ];
 
-export function PlanFormCreate({ slugError, categories = [] }: { slugError?: boolean; categories?: OnDemandCategory[] }) {
+type PlanFormProps =
+  | {
+      mode: "create";
+      slugError?: boolean;
+      categories?: OnDemandCategory[];
+      initialQuotas?: never;
+      plan?: never;
+    }
+  | {
+      mode: "edit";
+      plan: Plan;
+      slugError?: boolean;
+      categories?: OnDemandCategory[];
+      initialQuotas?: { categoryId: string; maxLessons: number }[];
+    };
+
+export function PlanForm({ mode, plan, slugError, categories = [], initialQuotas = [] }: PlanFormProps) {
   const [isPending, startTransition] = useTransition();
+
+  // Create-only state for auto-slug
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
-  const [validityKind, setValidityKind] = useState<ValidityKind | "">("");
-  const [validityDaysInput, setValidityDaysInput] = useState("");
-  const [validityPeriodInput, setValidityPeriodInput] = useState<ValidityPeriod | "">("");
-  const [planType, setPlanType] = useState<PlanType>("LIVE");
-  const [usesLimit, setUsesLimit] = useState<UsesLimit>("unlimited");
-  const [billingMode, setBillingMode] = useState<BillingMode | "">("");
 
-  const displaySlug = slugManuallyEdited ? slug : slugify(name);
+  // Shared state (initialized from plan in edit mode)
+  const [validityKind, setValidityKind] = useState<ValidityKind | "">(
+    mode === "edit"
+      ? plan.validityDays != null ? "days" : plan.validityPeriod != null ? "period" : ""
+      : ""
+  );
+  const [validityDaysInput, setValidityDaysInput] = useState(
+    mode === "edit" ? String(plan.validityDays ?? "") : ""
+  );
+  const [validityPeriodInput, setValidityPeriodInput] = useState<ValidityPeriod | "">(
+    mode === "edit" ? (plan.validityPeriod as ValidityPeriod) ?? "" : ""
+  );
+  const [planType, setPlanType] = useState<PlanType>(
+    mode === "edit" ? (plan.type as PlanType) : "LIVE"
+  );
+  const [usesLimit, setUsesLimit] = useState<UsesLimit>(
+    mode === "edit" ? (plan.maxReservations == null ? "unlimited" : "limited") : "unlimited"
+  );
+  const [billingMode, setBillingMode] = useState<BillingMode | "">(
+    mode === "edit" ? (plan.billingMode as BillingMode) ?? "" : ""
+  );
+
+  const displaySlug = mode === "create"
+    ? (slugManuallyEdited ? slug : slugify(name))
+    : undefined;
+
   const showRecurringDiscount = billingMode === "RECURRING" || billingMode === "BOTH";
-
   const showDistribution = planType === "LIVE" || planType === "ON_DEMAND";
 
+  const inputClass = "w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-[var(--color-text)]";
+
+  function handleSubmit(formData: FormData) {
+    const nameVal = (formData.get("name") as string)?.trim();
+    const slugVal = (formData.get("slug") as string)?.trim();
+    const description = (formData.get("description") as string)?.trim() || null;
+    const amountCents = Number(formData.get("amountCents"));
+    const type = (formData.get("type") as PlanType) || "LIVE";
+    const kind = (formData.get("validityKind") as ValidityKind) || "";
+    const validityDays = kind === "days" ? parseOptionalInt(formData.get("validityDays")) : null;
+    const validityPeriod = kind === "period"
+      ? parseOptionalEnum(formData.get("validityPeriod"), ["MONTHLY", "QUARTERLY", "QUADRIMESTRAL", "SEMESTER", "ANNUAL"]) as ValidityPeriod | null
+      : null;
+    const billingModeVal = parseOptionalEnum(formData.get("billingMode"), ["ONE_TIME", "RECURRING", "BOTH"]) as BillingMode | null;
+    const recurringDiscountRaw = parseOptionalInt(formData.get("recurringDiscountPercent"));
+    const recurringDiscountPercent =
+      (billingModeVal === "RECURRING" || billingModeVal === "BOTH") && recurringDiscountRaw != null
+        ? Math.min(100, Math.max(0, recurringDiscountRaw))
+        : undefined;
+    const usesLimitVal = formData.get("usesLimit") as UsesLimit | null;
+    const maxReservations = usesLimitVal === "limited" ? parseOptionalInt(formData.get("maxReservationsCount")) : null;
+    const maxReservationsPerDay = parseOptionalInt(formData.get("maxReservationsPerDay"));
+    const maxReservationsPerWeek = parseOptionalInt(formData.get("maxReservationsPerWeek"));
+    const quotasRaw = (formData.get("quotas") as string) ?? "[]";
+    let quotas: { categoryId: string; maxLessons: number }[] = [];
+    try { quotas = JSON.parse(quotasRaw); } catch { quotas = []; }
+
+    if (!nameVal || !slugVal || Number.isNaN(amountCents) || amountCents < 0) return;
+
+    const payload = {
+      name: nameVal,
+      slug: slugVal,
+      description,
+      amountCents,
+      type,
+      validityDays: validityDays ?? undefined,
+      validityPeriod: validityPeriod ?? undefined,
+      billingMode: billingModeVal ?? undefined,
+      recurringDiscountPercent,
+      maxReservations: usesLimitVal === "unlimited" ? null : (maxReservations ?? undefined),
+      maxReservationsPerDay: maxReservationsPerDay ?? undefined,
+      maxReservationsPerWeek: maxReservationsPerWeek ?? undefined,
+      quotas: type === "ON_DEMAND" ? quotas : undefined,
+    };
+
+    if (mode === "create") {
+      startTransition(() => createPlan(payload));
+    } else {
+      startTransition(() => updatePlan(plan.id, payload));
+    }
+  }
+
   return (
-    <form
-      action={(formData: FormData) => {
-        const nameVal = (formData.get("name") as string)?.trim();
-        const slugVal = (formData.get("slug") as string)?.trim();
-        const description = (formData.get("description") as string)?.trim() || null;
-        const amountCents = Number(formData.get("amountCents"));
-        const type = (formData.get("type") as PlanType) || "LIVE";
-        const kind = (formData.get("validityKind") as ValidityKind) || "";
-        const validityDays = kind === "days" ? parseOptionalInt(formData.get("validityDays")) : null;
-        const validityPeriod = kind === "period" ? parseOptionalEnum(formData.get("validityPeriod"), ["MONTHLY", "QUARTERLY", "QUADRIMESTRAL", "SEMESTER", "ANNUAL"]) as ValidityPeriod | null : null;
-        const billingModeVal = parseOptionalEnum(formData.get("billingMode"), ["ONE_TIME", "RECURRING", "BOTH"]) as BillingMode | null;
-        const recurringDiscountRaw = parseOptionalInt(formData.get("recurringDiscountPercent"));
-        const recurringDiscountPercent =
-          (billingModeVal === "RECURRING" || billingModeVal === "BOTH") && recurringDiscountRaw != null
-            ? Math.min(100, Math.max(0, recurringDiscountRaw))
-            : undefined;
-        const usesLimitVal = formData.get("usesLimit") as UsesLimit | null;
-        const maxReservations =
-          usesLimitVal === "limited" ? parseOptionalInt(formData.get("maxReservationsCount")) : null;
-        const maxReservationsPerDay = parseOptionalInt(formData.get("maxReservationsPerDay"));
-        const maxReservationsPerWeek = parseOptionalInt(formData.get("maxReservationsPerWeek"));
-        const quotasRaw = (formData.get("quotas") as string) ?? "[]";
-        let quotas: { categoryId: string; maxLessons: number }[] = [];
-        try { quotas = JSON.parse(quotasRaw); } catch { quotas = []; }
-        if (!nameVal || !slugVal || Number.isNaN(amountCents) || amountCents < 0) return;
-        startTransition(() =>
-          createPlan({
-            name: nameVal,
-            slug: slugVal,
-            description,
-            amountCents,
-            type,
-            validityDays: validityDays ?? undefined,
-            validityPeriod: validityPeriod ?? undefined,
-            billingMode: billingModeVal ?? undefined,
-            recurringDiscountPercent,
-            maxReservations: usesLimitVal === "unlimited" ? null : (maxReservations ?? undefined),
-            maxReservationsPerDay: maxReservationsPerDay ?? undefined,
-            maxReservationsPerWeek: maxReservationsPerWeek ?? undefined,
-            quotas: type === "ON_DEMAND" ? quotas : undefined,
-          })
-        );
-      }}
-      className="space-y-4"
-    >
-      <input type="hidden" name="name" value={name} />
-      <input type="hidden" name="slug" value={displaySlug} />
+    <form action={handleSubmit} className="space-y-4">
+      {/* Hidden fields for create mode (controlled slug) */}
+      {mode === "create" && (
+        <>
+          <input type="hidden" name="name" value={name} />
+          <input type="hidden" name="slug" value={displaySlug} />
+        </>
+      )}
+
       <div>
         <label htmlFor="name" className="block text-sm font-medium text-[var(--color-text)] mb-1">
           Nombre
         </label>
-        <input
-          id="name"
-          required
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-[var(--color-text)]"
-        />
-        <p className="mt-1 text-xs text-[var(--color-text-muted)]">
-          El nombre lo define el admin del centro (ej. &quot;Pack 6 clases&quot;, &quot;Membresía mensual&quot;).
-        </p>
+        {mode === "create" ? (
+          <>
+            <input
+              id="name"
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className={inputClass}
+            />
+            <p className="mt-1 text-xs text-[var(--color-text-muted)]">
+              El nombre lo define el admin del centro (ej. &quot;Pack 6 clases&quot;, &quot;Membresía mensual&quot;).
+            </p>
+          </>
+        ) : (
+          <input
+            id="name"
+            name="name"
+            required
+            defaultValue={plan.name}
+            className={inputClass}
+          />
+        )}
       </div>
+
       <div>
         <label htmlFor="slug" className="block text-sm font-medium text-[var(--color-text)] mb-1">
           Identificador del plan (slug)
         </label>
-        <input
-          id="slug"
-          required
-          value={displaySlug}
-          onChange={(e) => {
-            setSlugManuallyEdited(true);
-            setSlug(e.target.value);
-          }}
-          placeholder="pack-6-clases"
-          className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-[var(--color-text)]"
-        />
+        {mode === "create" ? (
+          <input
+            id="slug"
+            required
+            value={displaySlug}
+            onChange={(e) => {
+              setSlugManuallyEdited(true);
+              setSlug(e.target.value);
+            }}
+            placeholder="pack-6-clases"
+            className={inputClass}
+          />
+        ) : (
+          <input
+            id="slug"
+            name="slug"
+            required
+            defaultValue={plan.slug}
+            className={inputClass}
+          />
+        )}
         <p className="mt-1 text-xs text-[var(--color-text-muted)]">
           Se usará en el enlace único del plan (puedes editarlo).
         </p>
       </div>
+
       <div>
         <label htmlFor="description" className="block text-sm font-medium text-[var(--color-text)] mb-1">
           Descripción (opcional)
@@ -162,9 +237,11 @@ export function PlanFormCreate({ slugError, categories = [] }: { slugError?: boo
           id="description"
           name="description"
           rows={2}
-          className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-[var(--color-text)]"
+          defaultValue={mode === "edit" ? (plan.description ?? "") : undefined}
+          className={inputClass}
         />
       </div>
+
       <div>
         <label htmlFor="amountCents" className="block text-sm font-medium text-[var(--color-text)] mb-1">
           Valor del plan
@@ -175,7 +252,8 @@ export function PlanFormCreate({ slugError, categories = [] }: { slugError?: boo
           type="number"
           min={0}
           required
-          className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-[var(--color-text)]"
+          defaultValue={mode === "edit" ? plan.amountCents : undefined}
+          className={inputClass}
         />
         <p className="mt-1 text-xs text-[var(--color-text-muted)]">
           La moneda se toma de la configuración del centro.
@@ -191,7 +269,7 @@ export function PlanFormCreate({ slugError, categories = [] }: { slugError?: boo
           name="type"
           value={planType}
           onChange={(e) => setPlanType(e.target.value as PlanType)}
-          className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-[var(--color-text)]"
+          className={inputClass}
         >
           {TYPE_OPTIONS.map((opt) => (
             <option key={opt.value} value={opt.value}>
@@ -210,7 +288,7 @@ export function PlanFormCreate({ slugError, categories = [] }: { slugError?: boo
           <p className="text-xs text-[var(--color-text-muted)]">
             Define cuántas lecciones puede desbloquear el estudiante por categoría.
           </p>
-          <QuotaEditor categories={categories} />
+          <QuotaEditor categories={categories} initialQuotas={initialQuotas} />
         </div>
       )}
 
@@ -224,9 +302,11 @@ export function PlanFormCreate({ slugError, categories = [] }: { slugError?: boo
 
       <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg)]/50 p-3 space-y-3">
         <p className="text-sm font-medium text-[var(--color-text)]">Vigencia</p>
-        <p className="text-xs text-[var(--color-text-muted)] mb-2">
-          ¿Cómo es la vigencia del plan?
-        </p>
+        {mode === "create" && (
+          <p className="text-xs text-[var(--color-text-muted)] mb-2">
+            ¿Cómo es la vigencia del plan?
+          </p>
+        )}
         <div className="flex flex-wrap gap-4">
           <label className="inline-flex items-center gap-2 cursor-pointer">
             <input
@@ -261,7 +341,7 @@ export function PlanFormCreate({ slugError, categories = [] }: { slugError?: boo
               name="validityDays"
               type="number"
               min={1}
-              required
+              required={mode === "create"}
               placeholder="ej. 15"
               value={validityDaysInput}
               onChange={(e) => setValidityDaysInput(e.target.value)}
@@ -272,12 +352,12 @@ export function PlanFormCreate({ slugError, categories = [] }: { slugError?: boo
         {validityKind === "period" && (
           <div className="mt-3">
             <label htmlFor="validityPeriod" className="block text-xs text-[var(--color-text-muted)] mb-0.5">
-              Período (1 por ese período)
+              {mode === "create" ? "Período (1 por ese período)" : "Período"}
             </label>
             <select
               id="validityPeriod"
               name="validityPeriod"
-              required
+              required={mode === "create"}
               value={validityPeriodInput}
               onChange={(e) => setValidityPeriodInput(e.target.value as ValidityPeriod | "")}
               className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)]"
@@ -330,6 +410,7 @@ export function PlanFormCreate({ slugError, categories = [] }: { slugError?: boo
                 type="number"
                 min={1}
                 placeholder="ej. 5 u 8"
+                defaultValue={mode === "edit" ? (plan.maxReservations ?? "") : undefined}
                 className="w-24 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)]"
               />
               <span className="text-sm text-[var(--color-text-muted)]">
@@ -341,9 +422,11 @@ export function PlanFormCreate({ slugError, categories = [] }: { slugError?: boo
               </span>
             </div>
           )}
-          <p className="text-xs text-[var(--color-text-muted)]">
-            Ej. ilimitado mensual, 5 veces en 15 días, 8 veces al mes con máx 4 por semana.
-          </p>
+          {mode === "create" && (
+            <p className="text-xs text-[var(--color-text-muted)]">
+              Ej. ilimitado mensual, 5 veces en 15 días, 8 veces al mes con máx 4 por semana.
+            </p>
+          )}
         </div>
       )}
 
@@ -352,9 +435,11 @@ export function PlanFormCreate({ slugError, categories = [] }: { slugError?: boo
           <p className="text-sm font-medium text-[var(--color-text)]">
             Distribución dentro del período (opcional)
           </p>
-          <p className="text-xs text-[var(--color-text-muted)]">
-            Límites para que no consuman todo de una. Ej. 8 veces al mes, máx 4 por semana.
-          </p>
+          {mode === "create" && (
+            <p className="text-xs text-[var(--color-text-muted)]">
+              Límites para que no consuman todo de una. Ej. 8 veces al mes, máx 4 por semana.
+            </p>
+          )}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label htmlFor="maxReservationsPerDay" className="block text-xs text-[var(--color-text-muted)] mb-0.5">
@@ -366,6 +451,7 @@ export function PlanFormCreate({ slugError, categories = [] }: { slugError?: boo
                 type="number"
                 min={1}
                 placeholder="—"
+                defaultValue={mode === "edit" ? (plan.maxReservationsPerDay ?? "") : undefined}
                 className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)]"
               />
             </div>
@@ -379,6 +465,7 @@ export function PlanFormCreate({ slugError, categories = [] }: { slugError?: boo
                 type="number"
                 min={1}
                 placeholder="ej. 4"
+                defaultValue={mode === "edit" ? (plan.maxReservationsPerWeek ?? "") : undefined}
                 className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)]"
               />
             </div>
@@ -395,7 +482,7 @@ export function PlanFormCreate({ slugError, categories = [] }: { slugError?: boo
           name="billingMode"
           value={billingMode}
           onChange={(e) => setBillingMode((e.target.value || "") as BillingMode | "")}
-          className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-[var(--color-text)]"
+          className={inputClass}
         >
           <option value="">—</option>
           <option value="ONE_TIME">Solo pago único</option>
@@ -416,7 +503,8 @@ export function PlanFormCreate({ slugError, categories = [] }: { slugError?: boo
             min={0}
             max={100}
             placeholder="0"
-            className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-[var(--color-text)]"
+            defaultValue={mode === "edit" ? (plan.recurringDiscountPercent ?? "") : undefined}
+            className={inputClass}
           />
           <p className="mt-1 text-xs text-[var(--color-text-muted)]">
             Por ejemplo 10 = 10% de descuento sobre el precio al elegir suscripción recurrente.
@@ -427,13 +515,14 @@ export function PlanFormCreate({ slugError, categories = [] }: { slugError?: boo
       {slugError && (
         <p className="text-sm text-[var(--color-error)]">Ese slug ya existe en este centro.</p>
       )}
+
       <div className="flex gap-3 pt-2">
         <button
           type="submit"
           disabled={isPending}
           className="inline-flex items-center justify-center gap-2 rounded-[var(--radius-md)] bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-primary-hover)] disabled:opacity-50"
         >
-          {isPending ? "Guardando…" : "Crear plan"}
+          {isPending ? "Guardando…" : mode === "create" ? "Crear plan" : "Guardar cambios"}
         </button>
         <Button href="/panel/planes" variant="secondary">
           Cancelar

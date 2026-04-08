@@ -36,7 +36,7 @@ export default async function CategoriasPage() {
       </p>
 
       <div className="mb-6">
-        <CategoryForm />
+        <CategoryForm mode="create" />
       </div>
 
       {categories.length === 0 ? (
