@@ -182,7 +182,7 @@ export function WeekCalendar({
         {/* All-day events zone — spanning bars (Gmail-style) */}
         {hasAnyEvent && (
           <div className="grid grid-cols-[3.5rem_repeat(7,1fr)] border-b border-[var(--color-border)] auto-rows-[1.5rem] gap-y-0.5 py-1">
-            <div className="px-1 text-[0.6rem] text-[var(--color-text-muted)] text-right leading-tight pt-0.5 row-span-2">
+            <div className="px-1 text-[0.6rem] text-[var(--color-text-muted)] text-right leading-tight pt-0.5" style={{ gridRow: `1 / span ${Math.max(1, Math.min(spanningEvents.length, 4))}` }}>
               Todo<br />el día
             </div>
             {spanningEvents.slice(0, 4).map((ev) => (
