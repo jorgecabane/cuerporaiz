@@ -459,7 +459,23 @@ export function PanelHomeCalendar({
       )}
 
       <div key={weekAnchor.toISOString()} className="animate-fade-in">
-        {classesForSelectedDay.length === 0 ? (
+        {loading ? (
+          <div className="space-y-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="h-5 w-32 rounded bg-[var(--color-border)]/40 animate-pulse" />
+                  <div className="h-5 w-16 rounded-full bg-[var(--color-border)]/40 animate-pulse" />
+                </div>
+                <div className="h-4 w-48 rounded bg-[var(--color-border)]/40 animate-pulse" />
+                <div className="flex items-center gap-3">
+                  <div className="h-4 w-20 rounded bg-[var(--color-border)]/40 animate-pulse" />
+                  <div className="h-4 w-24 rounded bg-[var(--color-border)]/40 animate-pulse" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : classesForSelectedDay.length === 0 ? (
           <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 animate-fade-in">
             <p className="text-sm text-[var(--color-text-muted)]">
               No hay clases este día.

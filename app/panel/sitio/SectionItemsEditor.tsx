@@ -143,7 +143,16 @@ export default function SectionItemsEditor({ sectionId, sectionKey }: Props) {
   }
 
   if (loading) {
-    return <p className="text-sm text-[var(--color-text-muted)]">Cargando elementos...</p>;
+    return (
+      <div className="space-y-3 animate-pulse">
+        {[...Array(2)].map((_, i) => (
+          <div key={i} className="border border-[var(--color-border)] rounded-[var(--radius-md)] p-3 space-y-2">
+            <div className="h-8 w-full rounded bg-[var(--color-border)]/40" />
+            <div className="h-8 w-full rounded bg-[var(--color-border)]/40" />
+          </div>
+        ))}
+      </div>
+    );
   }
 
   return (
