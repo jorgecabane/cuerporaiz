@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { ClientListSkeleton } from "@/components/ui/PanelSkeletons";
 
 type ClientItem = { id: string; name: string | null; email: string };
 
@@ -77,7 +78,9 @@ export function ClientsListInfinite({ pageSize = 25 }: { pageSize?: number }) {
     <div>
       <p className="text-[var(--color-text-muted)] mb-6">{subtitle}</p>
 
-      {items.length === 0 && !loading ? (
+      {items.length === 0 && loading ? (
+        <ClientListSkeleton />
+      ) : items.length === 0 && !loading ? (
         <div className="rounded-[var(--radius-lg)] bg-[var(--color-surface)] p-6">
           <p className="text-[var(--color-text-muted)]">
             No hay estudiantes registrados en este centro.

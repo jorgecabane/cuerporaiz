@@ -16,6 +16,7 @@ import {
   canCancelReservation,
 } from "./segment-reservations";
 import { formatMinutesAsShortSpanish } from "@/lib/domain/center-policy";
+import { ReservationListSkeleton } from "@/components/ui/PanelSkeletons";
 
 function willConsumeClassIfCancelNow(r: ReservationDto, cancelBeforeMinutes: number): boolean {
   const startsAt = r.liveClass?.startsAt;
@@ -182,9 +183,7 @@ export function MisReservasSheet({
             </p>
           )}
           {loading ? (
-            <p className="py-8 text-center text-sm text-[var(--color-text-muted)]">
-              Cargando reservas…
-            </p>
+            <ReservationListSkeleton />
           ) : (
             <TabsRoot defaultValue={TAB_HOY} aria-label="Tabs de reservas">
               <TabsList className="mb-2">

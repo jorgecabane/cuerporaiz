@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { LiveClassDto } from "@/lib/dto/reservation-dto";
 import { AdaptiveSheet } from "@/components/ui/AdaptiveSheet";
 import { TabsRoot, TabsList, TabsTrigger, TabsContent } from "./Tabs";
+import { ReservationListSkeleton } from "@/components/ui/PanelSkeletons";
 
 const TAB_HOY = "hoy";
 const TAB_PROXIMAS = "proximas";
@@ -104,9 +105,7 @@ export function MisClasesSheet({ open, onOpenChange }: MisClasesSheetProps) {
     >
       <div className="px-4 py-5 pb-6">
         {loading ? (
-          <p className="py-8 text-center text-sm text-[var(--color-text-muted)]">
-            Cargando clases…
-          </p>
+          <ReservationListSkeleton />
         ) : (
           <TabsRoot defaultValue={TAB_HOY} aria-label="Tabs de mis clases">
             <TabsList className="mb-2">

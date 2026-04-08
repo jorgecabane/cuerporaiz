@@ -136,7 +136,19 @@ export default function SectionsManager() {
   }
 
   if (loading) {
-    return <p className="text-sm text-[var(--color-text-muted)]">Cargando secciones...</p>;
+    return (
+      <div className="space-y-2 animate-pulse">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="border border-[var(--color-border)] rounded-[var(--radius-md)] overflow-hidden">
+            <div className="flex items-center gap-3 px-4 py-3 bg-[var(--color-surface)]">
+              <div className="h-5 w-9 rounded-full bg-[var(--color-border)]/40 shrink-0" />
+              <div className="h-3.5 flex-1 max-w-[160px] rounded bg-[var(--color-border)]/40" />
+              <div className="ml-auto h-4 w-4 rounded bg-[var(--color-border)]/30" />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
   }
 
   return (

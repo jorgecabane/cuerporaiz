@@ -45,7 +45,16 @@ export default function EmailPreferencesForm() {
   }
 
   if (!prefs) {
-    return <p className="text-sm text-[var(--color-text-muted)]">Cargando preferencias...</p>;
+    return (
+      <div className="space-y-3 animate-pulse">
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="flex items-center justify-between py-2 border-b border-[var(--color-border)] last:border-0">
+            <div className="h-3.5 w-40 rounded bg-[var(--color-border)]/40" />
+            <div className="h-5 w-9 rounded-full bg-[var(--color-border)]/40" />
+          </div>
+        ))}
+      </div>
+    );
   }
 
   return (

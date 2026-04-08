@@ -157,8 +157,8 @@ export function MonthCalendar({
       </div>
 
       {loading && (
-        <div className="mt-2 text-center">
-          <p className="text-sm text-[var(--color-text-muted)]">Cargando…</p>
+        <div className="mt-2 flex justify-center">
+          <div className="h-1.5 w-12 rounded-full bg-[var(--color-primary)]/30 animate-pulse" />
         </div>
       )}
     </div>

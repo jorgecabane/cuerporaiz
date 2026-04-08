@@ -37,8 +37,25 @@ export function ListCalendar({ classes, loading }: ListCalendarProps) {
 
   if (loading) {
     return (
-      <div className="rounded-[var(--radius-lg)] bg-[var(--color-surface)] p-6 text-center shadow-[var(--shadow-md)]">
-        <p className="text-sm text-[var(--color-text-muted)]">Cargando…</p>
+      <div className="space-y-4 animate-pulse">
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="rounded-[var(--radius-lg)] bg-[var(--color-surface)] shadow-[var(--shadow-md)] overflow-hidden">
+            <div className="px-4 py-2 border-b border-[var(--color-border)] bg-[var(--color-bg)]/30">
+              <div className="h-3.5 w-28 rounded bg-[var(--color-border)]/40" />
+            </div>
+            <ul className="divide-y divide-[var(--color-border)]">
+              {[...Array(2)].map((_, j) => (
+                <li key={j} className="flex items-center gap-3 px-4 py-3">
+                  <div className="h-3 w-3 rounded-full shrink-0 bg-[var(--color-border)]/40" />
+                  <div className="flex-1 space-y-1.5">
+                    <div className="h-3.5 w-36 rounded bg-[var(--color-border)]/40" />
+                    <div className="h-3 w-48 rounded bg-[var(--color-border)]/30" />
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
       </div>
     );
   }

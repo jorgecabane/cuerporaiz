@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import type { ReservationStatus } from "@/lib/domain";
 import { toast } from "@/components/ui/Toast";
+import { AttendanceListSkeleton } from "@/components/ui/PanelSkeletons";
 
 export interface Attendee {
   reservationId: string;
@@ -83,7 +84,7 @@ export function AttendanceClient({
       </div>
 
       {loading ? (
-        <p className="text-[var(--color-text-muted)]">Cargando...</p>
+        <AttendanceListSkeleton />
       ) : attendees.length === 0 ? (
         <div className="rounded-[var(--radius-lg)] bg-[var(--color-surface)] p-6 text-center">
           <p className="text-[var(--color-text-muted)]">

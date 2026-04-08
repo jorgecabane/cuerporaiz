@@ -119,7 +119,7 @@ export function DayCalendar({
 
         {loading && (
           <div className="absolute inset-0 flex items-center justify-center bg-[var(--color-surface)]/60">
-            <p className="text-sm text-[var(--color-text-muted)]">Cargando…</p>
+            <div className="h-1.5 w-12 rounded-full bg-[var(--color-primary)]/30 animate-pulse" />
           </div>
         )}
       </div>
