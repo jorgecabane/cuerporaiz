@@ -499,7 +499,9 @@ export function PanelHomeCalendar({
                 <p className="text-xs text-[var(--color-text-muted)]">
                   {ev.amountCents === 0
                     ? "Gratis"
-                    : `${(ev.amountCents / 100).toLocaleString("es-CL", { style: "currency", currency: ev.currency })}`}
+                    : ev.currency === "CLP"
+                      ? `$${ev.amountCents.toLocaleString("es-CL")}`
+                      : `${(ev.amountCents / 100).toFixed(2)} ${ev.currency}`}
                 </p>
               </div>
               {ev.hasTicket && (

@@ -107,43 +107,77 @@ export function WeekCalendar({
     return holidayDates.has(formatDateParam(dayDate));
   }
 
-  const classesByDay = groupByDay(classes, weekStartDay);
+  const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
+  // Split events: multi-day → all-day bar, same-day → hourly grid (like classes)
+  type SpanningEvent = CalendarEvent & { colStart: number; colSpan: number };
+  const spanningEvents: SpanningEvent[] = [];
+  const intraDayEventClasses: LiveClass[] = []; // Same-day events rendered as class blocks
+
+  for (const ev of events) {
+    const evStart = new Date(ev.startsAt);
+    const evEnd = new Date(ev.endsAt);
+    const sameDay =
+      evStart.getFullYear() === evEnd.getFullYear() &&
+      evStart.getMonth() === evEnd.getMonth() &&
+      evStart.getDate() === evEnd.getDate();
+
+    if (sameDay) {
+      // Render in the hourly grid like a class
+      const durationMinutes = Math.round((evEnd.getTime() - evStart.getTime()) / 60000);
+      intraDayEventClasses.push({
+        id: `event-${ev.id}`,
+        centerId: "",
+        title: `🎪 ${ev.title}`,
+        startsAt: evStart,
+        durationMinutes: Math.max(durationMinutes, 30),
+        maxCapacity: 0,
+        disciplineId: null,
+        instructorId: null,
+        isOnline: false,
+        meetingUrl: null,
+        isTrialClass: false,
+        trialCapacity: null,
+        color: ev.color ?? "var(--color-secondary)",
+        classPassEnabled: false,
+        classPassCapacity: null,
+        seriesId: null,
+        status: "ACTIVE" as const,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+    } else {
+      // Multi-day: compute spanning across week columns
+      let firstDay = -1;
+      let lastDay = -1;
+      for (let i = 0; i < 7; i++) {
+        const dayStart = new Date(days[i]);
+        dayStart.setHours(0, 0, 0, 0);
+        const dayEnd = new Date(days[i]);
+        dayEnd.setHours(23, 59, 59, 999);
+        if (evStart <= dayEnd && evEnd >= dayStart) {
+          if (firstDay === -1) firstDay = i;
+          lastDay = i;
+        }
+      }
+      if (firstDay >= 0) {
+        spanningEvents.push({
+          ...ev,
+          colStart: firstDay + 2,
+          colSpan: lastDay - firstDay + 1,
+        });
+      }
+    }
+  }
+  const hasAnyEvent = spanningEvents.length > 0;
+
+  // Merge intra-day events with classes for layout
+  const allClasses = [...classes, ...intraDayEventClasses];
+  const classesByDay = groupByDay(allClasses, weekStartDay);
   const layoutByDay = new Map<number, LayoutBlock[]>();
   for (const [dayIdx, dayClasses] of classesByDay) {
     layoutByDay.set(dayIdx, layoutBlocks(dayClasses, calendarStartHour, totalHours));
   }
-
-  const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
-
-  // Compute spanning layout for all-day events (Gmail-style)
-  type SpanningEvent = CalendarEvent & { colStart: number; colSpan: number };
-  const spanningEvents: SpanningEvent[] = [];
-  for (const ev of events) {
-    const evStart = new Date(ev.startsAt);
-    const evEnd = new Date(ev.endsAt);
-    // Find first and last day index in this week that the event overlaps
-    let firstDay = -1;
-    let lastDay = -1;
-    for (let i = 0; i < 7; i++) {
-      const dayStart = new Date(days[i]);
-      dayStart.setHours(0, 0, 0, 0);
-      const dayEnd = new Date(days[i]);
-      dayEnd.setHours(23, 59, 59, 999);
-      if (evStart <= dayEnd && evEnd >= dayStart) {
-        if (firstDay === -1) firstDay = i;
-        lastDay = i;
-      }
-    }
-    if (firstDay >= 0) {
-      spanningEvents.push({
-        ...ev,
-        colStart: firstDay + 2, // +2 because grid col 1 is the label column (1-indexed)
-        colSpan: lastDay - firstDay + 1,
-      });
-    }
-  }
-  const hasAnyEvent = spanningEvents.length > 0;
   const isToday = (d: Date) => {
     const today = new Date();
     return d.getDate() === today.getDate() && d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
@@ -248,7 +282,7 @@ export function WeekCalendar({
                   return (
                     <Link
                       key={b.liveClass.id}
-                      href={`/panel/horarios/${b.liveClass.id}`}
+                      href={b.liveClass.id.startsWith("event-") ? `/panel/eventos/${b.liveClass.id.replace("event-", "")}` : `/panel/horarios/${b.liveClass.id}`}
                       className="absolute rounded-[var(--radius-sm)] px-1 py-0.5 text-[0.65rem] leading-tight text-white overflow-hidden hover:opacity-90 transition-opacity z-[1] border-r border-[var(--color-surface)]/30"
                       style={{
                         top: `${b.topPercent}%`,
