@@ -116,22 +116,34 @@ export function WeekCalendar({
 
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
-  // Compute events that fall on each day of this week (capped at 2 rows per day)
-  const eventsByDayIndex: CalendarEvent[][] = Array.from({ length: 7 }, () => []);
+  // Compute spanning layout for all-day events (Gmail-style)
+  type SpanningEvent = CalendarEvent & { colStart: number; colSpan: number };
+  const spanningEvents: SpanningEvent[] = [];
   for (const ev of events) {
-    const start = new Date(ev.startsAt);
-    const end = new Date(ev.endsAt);
+    const evStart = new Date(ev.startsAt);
+    const evEnd = new Date(ev.endsAt);
+    // Find first and last day index in this week that the event overlaps
+    let firstDay = -1;
+    let lastDay = -1;
     for (let i = 0; i < 7; i++) {
       const dayStart = new Date(days[i]);
       dayStart.setHours(0, 0, 0, 0);
       const dayEnd = new Date(days[i]);
       dayEnd.setHours(23, 59, 59, 999);
-      if (start <= dayEnd && end >= dayStart) {
-        eventsByDayIndex[i].push(ev);
+      if (evStart <= dayEnd && evEnd >= dayStart) {
+        if (firstDay === -1) firstDay = i;
+        lastDay = i;
       }
     }
+    if (firstDay >= 0) {
+      spanningEvents.push({
+        ...ev,
+        colStart: firstDay + 2, // +2 because grid col 1 is the label column (1-indexed)
+        colSpan: lastDay - firstDay + 1,
+      });
+    }
   }
-  const hasAnyEvent = eventsByDayIndex.some((arr) => arr.length > 0);
+  const hasAnyEvent = spanningEvents.length > 0;
   const isToday = (d: Date) => {
     const today = new Date();
     return d.getDate() === today.getDate() && d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
@@ -167,26 +179,25 @@ export function WeekCalendar({
           })}
         </div>
 
-        {/* All-day events zone */}
+        {/* All-day events zone — spanning bars (Gmail-style) */}
         {hasAnyEvent && (
-          <div className="grid grid-cols-[3.5rem_repeat(7,1fr)] border-b border-[var(--color-border)]">
-            <div className="px-1 py-1 text-[0.6rem] text-[var(--color-text-muted)] text-right leading-tight pt-1.5">
+          <div className="grid grid-cols-[3.5rem_repeat(7,1fr)] border-b border-[var(--color-border)] auto-rows-[1.5rem] gap-y-0.5 py-1">
+            <div className="px-1 text-[0.6rem] text-[var(--color-text-muted)] text-right leading-tight pt-0.5 row-span-2">
               Todo<br />el día
             </div>
-            {eventsByDayIndex.map((dayEvents, i) => (
-              <div key={i} className="border-l border-[var(--color-border)] px-0.5 py-0.5 space-y-0.5 overflow-hidden" style={{ maxHeight: "3.5rem" }}>
-                {dayEvents.slice(0, 2).map((ev) => (
-                  <Link
-                    key={ev.id}
-                    href={`/panel/eventos/${ev.id}`}
-                    className="block rounded-full px-2 py-0.5 text-xs font-medium truncate cursor-pointer text-white hover:opacity-90 transition-opacity"
-                    style={{ backgroundColor: ev.color ?? "var(--color-secondary)" }}
-                    title={ev.title}
-                  >
-                    {ev.title}
-                  </Link>
-                ))}
-              </div>
+            {spanningEvents.slice(0, 4).map((ev) => (
+              <Link
+                key={ev.id}
+                href={`/panel/eventos/${ev.id}`}
+                className="rounded-[var(--radius-sm)] px-2 py-0.5 text-xs font-medium truncate cursor-pointer text-white hover:opacity-90 transition-opacity mx-0.5"
+                style={{
+                  gridColumn: `${ev.colStart} / span ${ev.colSpan}`,
+                  backgroundColor: ev.color ?? "var(--color-secondary)",
+                }}
+                title={ev.title}
+              >
+                {ev.title}
+              </Link>
             ))}
           </div>
         )}
