@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { isAdminRole } from "@/lib/domain";
 import { instructorBankAccountRepository, instructorRepository } from "@/lib/adapters/db";
 import { Button } from "@/components/ui/Button";
-import { InstructorForm } from "../../InstructorForm";
+import { InstructorForm } from "@/components/panel/InstructorForm";
 import { InstructorBankAccountForm } from "../../InstructorBankAccountForm";
 
 export default async function EditarProfesorPage({
@@ -33,7 +33,7 @@ export default async function EditarProfesorPage({
 
       <div className="space-y-6">
         <div className="rounded-[var(--radius-lg)] bg-[var(--color-surface)] p-6 shadow-[var(--shadow-md)]">
-          <InstructorForm instructor={instructor} />
+          <InstructorForm variant="profesores" instructor={instructor} />
         </div>
 
         <div className="rounded-[var(--radius-lg)] bg-[var(--color-surface)] p-6 shadow-[var(--shadow-md)]">

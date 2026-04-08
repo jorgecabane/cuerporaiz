@@ -3,7 +3,8 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { isAdminRole } from "@/lib/domain/role";
 import { zoomConfigRepository } from "@/lib/adapters/db";
-import { ToggleZoomForm } from "../toggle-zoom-form";
+import { TogglePluginForm } from "../TogglePluginForm";
+import { toggleZoom } from "../actions";
 
 export default async function ZoomPluginPage({
   searchParams,
@@ -81,7 +82,7 @@ export default async function ZoomPluginPage({
             <div>
               <h2 className="text-sm font-medium text-[var(--color-text)] mb-2">Estado</h2>
               <div className="flex items-center gap-4 flex-wrap">
-                <ToggleZoomForm centerId={centerId} enabled={zoomStatus.enabled} />
+                <TogglePluginForm centerId={centerId} enabled={zoomStatus.enabled} label="Zoom" action={toggleZoom} />
                 <span className="text-sm text-[var(--color-text-muted)]">
                   {zoomStatus.enabled ? "Activo" : "Desactivado"}
                   {!zoomStatus.hasCredentials && " (sin credenciales)"}

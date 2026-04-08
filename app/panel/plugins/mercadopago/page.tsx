@@ -3,7 +3,8 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { isAdminRole } from "@/lib/domain/role";
 import { mercadopagoConfigRepository } from "@/lib/adapters/db";
-import { ToggleMercadoPagoForm } from "../toggle-mercadopago-form";
+import { TogglePluginForm } from "../TogglePluginForm";
+import { toggleMercadoPago } from "../actions";
 
 export default async function MercadoPagoPluginPage() {
   const session = await auth();
@@ -59,7 +60,7 @@ export default async function MercadoPagoPluginPage() {
             <div>
               <h2 className="text-sm font-medium text-[var(--color-text)] mb-2">Estado</h2>
               <div className="flex items-center gap-4 flex-wrap">
-                <ToggleMercadoPagoForm centerId={centerId} enabled={mpStatus.enabled} />
+                <TogglePluginForm centerId={centerId} enabled={mpStatus.enabled} label="MercadoPago" action={toggleMercadoPago} />
                 <span className="text-sm text-[var(--color-text-muted)]">
                   {mpStatus.enabled ? "Activo" : "Desactivado"}
                   {!mpStatus.hasCredentials && " (sin credenciales)"}

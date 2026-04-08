@@ -1,9 +1,31 @@
 "use client";
 
 import { useFormStatus } from "react-dom";
-import { createInstructor, updateInstructor } from "./actions";
+import Image from "next/image";
+import { createInstructor, updateInstructor } from "@/app/panel/profesores/actions";
+import { createInstructor as createInstructorFem, updateInstructor as updateInstructorFem } from "@/app/panel/profesoras/actions";
 import { Button } from "@/components/ui/Button";
 import type { Instructor } from "@/lib/ports";
+
+type Variant = "profesores" | "profesoras";
+
+type Props = {
+  variant: Variant;
+  instructor?: Instructor;
+};
+
+const LABELS: Record<Variant, { add: string; cancel: string; backHref: string }> = {
+  profesores: {
+    add: "Agregar profesor",
+    cancel: "Cancelar",
+    backHref: "/panel/profesores",
+  },
+  profesoras: {
+    add: "Agregar profesora",
+    cancel: "Cancelar",
+    backHref: "/panel/profesoras",
+  },
+};
 
 function SubmitButton({ label }: { label: string }) {
   const { pending } = useFormStatus();
@@ -18,9 +40,12 @@ function SubmitButton({ label }: { label: string }) {
   );
 }
 
-export function InstructorForm({ instructor }: { instructor?: Instructor }) {
-  const action = instructor ? updateInstructor : createInstructor;
+export function InstructorForm({ variant, instructor }: Props) {
+  const labels = LABELS[variant];
   const isEditing = !!instructor;
+  const action = isEditing
+    ? variant === "profesores" ? updateInstructor : updateInstructorFem
+    : variant === "profesores" ? createInstructor : createInstructorFem;
 
   return (
     <form action={action} className="space-y-4">
@@ -64,12 +89,13 @@ export function InstructorForm({ instructor }: { instructor?: Instructor }) {
         </label>
         <div className="flex flex-wrap items-start gap-3">
           {isEditing && instructor?.imageUrl && (
-            <img
+            <Image
               src={instructor.imageUrl}
               alt=""
               className="h-14 w-14 rounded-full object-cover border border-[var(--color-border)]"
               width={56}
               height={56}
+              unoptimized
             />
           )}
           <input
@@ -86,9 +112,9 @@ export function InstructorForm({ instructor }: { instructor?: Instructor }) {
         </p>
       </div>
       <div className="flex gap-3 pt-2">
-        <SubmitButton label={isEditing ? "Guardar cambios" : "Agregar profesora"} />
-        <Button href="/panel/profesoras" variant="secondary">
-          Cancelar
+        <SubmitButton label={isEditing ? "Guardar cambios" : labels.add} />
+        <Button href={labels.backHref} variant="secondary">
+          {labels.cancel}
         </Button>
       </div>
     </form>
