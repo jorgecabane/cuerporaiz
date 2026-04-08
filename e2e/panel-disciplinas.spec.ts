@@ -1,9 +1,15 @@
 import { test, expect } from "@playwright/test";
+import { cleanupDisciplines } from "./helpers/cleanup";
 
 test.describe("Panel admin - Disciplinas CRUD", () => {
   test.describe.configure({ mode: "serial" });
 
   let e2eDisciplineName: string | null = null;
+
+  // Safety net: clean up even if UI cleanup test fails
+  test.afterAll(async () => {
+    if (e2eDisciplineName) await cleanupDisciplines(e2eDisciplineName);
+  });
 
   test("nueva disciplina form has correct fields", async ({ page }) => {
     await page.goto("/panel/disciplinas/nueva");

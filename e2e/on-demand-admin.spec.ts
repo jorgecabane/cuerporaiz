@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { cleanupCategories } from "./helpers/cleanup";
 
 test.describe("On-demand admin CRUD", () => {
   test.describe.configure({ mode: "serial" });
@@ -14,6 +15,11 @@ test.describe("On-demand admin CRUD", () => {
     categoryName = `E2E Yoga ${runId}`;
     practiceName = `E2E Hatha ${runId}`;
     lessonTitle = `E2E Clase ${runId}`;
+  });
+
+  // Safety net: clean up even if UI cleanup test fails
+  test.afterAll(async () => {
+    await cleanupCategories(`E2E Yoga ${runId}`);
   });
 
   // ─── Test 1: Admin creates a category ───────────────────────────────────────
