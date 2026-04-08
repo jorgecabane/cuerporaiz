@@ -1,9 +1,12 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { isAdminRole } from "@/lib/domain/role";
-import { onDemandCategoryRepository, onDemandPracticeRepository } from "@/lib/adapters/db";
+import {
+  onDemandCategoryRepository,
+  onDemandPracticeRepository,
+} from "@/lib/adapters/db";
 import { LessonForm } from "@/components/panel/on-demand/LessonForm";
-import { Button } from "@/components/ui/Button";
+import { OnDemandBreadcrumb } from "@/components/panel/on-demand/OnDemandBreadcrumb";
 
 export default async function NuevaLeccionPage({
   searchParams,
@@ -23,8 +26,32 @@ export default async function NuevaLeccionPage({
   );
   const practices = practicesPerCategory.flat();
 
+  // Resolve breadcrumb labels from the default practiceId if provided
+  const defaultPractice = practiceId ? practices.find((p) => p.id === practiceId) : null;
+  const defaultCategory = defaultPractice
+    ? categories.find((c) => c.id === defaultPractice.categoryId)
+    : null;
+
+  const breadcrumbSegments = [
+    { label: "Categorías", href: "/panel/on-demand/categorias" },
+    ...(defaultCategory
+      ? [{ label: defaultCategory.name, href: `/panel/on-demand/categorias/${defaultCategory.id}` }]
+      : []),
+    ...(defaultPractice && defaultCategory
+      ? [
+          {
+            label: defaultPractice.name,
+            href: `/panel/on-demand/categorias/${defaultCategory.id}/practicas/${defaultPractice.id}`,
+          },
+        ]
+      : []),
+    { label: "Nueva lección" },
+  ];
+
   return (
     <div className="mx-auto max-w-2xl px-4 py-12">
+      <OnDemandBreadcrumb segments={breadcrumbSegments} />
+
       <h1 className="font-display text-section text-[var(--color-primary)] mb-2">
         Nueva lección
       </h1>
@@ -37,11 +64,6 @@ export default async function NuevaLeccionPage({
           practices={practices}
           defaultPracticeId={practiceId}
         />
-      </div>
-      <div className="mt-6">
-        <Button href="/panel/on-demand/categorias" variant="secondary">
-          Volver a categorías
-        </Button>
       </div>
     </div>
   );

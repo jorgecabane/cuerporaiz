@@ -1,9 +1,13 @@
 import { auth } from "@/auth";
 import { redirect, notFound } from "next/navigation";
 import { isAdminRole } from "@/lib/domain/role";
-import { onDemandCategoryRepository, onDemandLessonRepository, onDemandPracticeRepository } from "@/lib/adapters/db";
+import {
+  onDemandCategoryRepository,
+  onDemandLessonRepository,
+  onDemandPracticeRepository,
+} from "@/lib/adapters/db";
 import { LessonForm } from "@/components/panel/on-demand/LessonForm";
-import { Button } from "@/components/ui/Button";
+import { OnDemandBreadcrumb } from "@/components/panel/on-demand/OnDemandBreadcrumb";
 
 export default async function EditarLeccionPage({
   params,
@@ -26,8 +30,30 @@ export default async function EditarLeccionPage({
   );
   const practices = practicesPerCategory.flat();
 
+  // Resolve hierarchy for breadcrumb
+  const practice = practices.find((p) => p.id === lesson.practiceId) ?? null;
+  const category = practice ? categories.find((c) => c.id === practice.categoryId) ?? null : null;
+
   return (
     <div className="mx-auto max-w-2xl px-4 py-12">
+      <OnDemandBreadcrumb
+        segments={[
+          { label: "Categorías", href: "/panel/on-demand/categorias" },
+          ...(category
+            ? [{ label: category.name, href: `/panel/on-demand/categorias/${category.id}` }]
+            : []),
+          ...(practice && category
+            ? [
+                {
+                  label: practice.name,
+                  href: `/panel/on-demand/categorias/${category.id}/practicas/${practice.id}`,
+                },
+              ]
+            : []),
+          { label: lesson.title },
+        ]}
+      />
+
       <h1 className="font-display text-section text-[var(--color-primary)] mb-2">
         Editar lección
       </h1>
@@ -40,11 +66,6 @@ export default async function EditarLeccionPage({
           practices={practices}
           lesson={lesson}
         />
-      </div>
-      <div className="mt-6">
-        <Button href="/panel/on-demand/categorias" variant="secondary">
-          Volver a categorías
-        </Button>
       </div>
     </div>
   );

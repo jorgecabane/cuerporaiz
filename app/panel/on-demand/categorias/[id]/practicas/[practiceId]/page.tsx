@@ -7,8 +7,10 @@ import {
   onDemandPracticeRepository,
   onDemandLessonRepository,
 } from "@/lib/adapters/db";
-import { CONTENT_STATUS_LABELS } from "@/lib/domain/on-demand";
 import { PracticeForm } from "@/components/panel/on-demand/PracticeForm";
+import { OnDemandBreadcrumb } from "@/components/panel/on-demand/OnDemandBreadcrumb";
+import { StatusBadge } from "@/components/panel/on-demand/StatusBadge";
+import { InlineEditToggle } from "@/components/panel/on-demand/InlineEditToggle";
 
 export default async function PracticeDetailPage({
   params,
@@ -36,38 +38,34 @@ export default async function PracticeDetailPage({
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-12">
-      <div className="mb-4 flex items-center gap-2 text-sm text-[var(--color-text-muted)]">
-        <Link href="/panel/on-demand/categorias" className="hover:text-[var(--color-text)]">
-          Categorías
-        </Link>
-        <span>/</span>
-        <Link
-          href={`/panel/on-demand/categorias/${categoryId}`}
-          className="hover:text-[var(--color-text)]"
-        >
-          {category.name}
-        </Link>
-        <span>/</span>
-        <span className="text-[var(--color-text)]">{practice.name}</span>
-      </div>
+      <OnDemandBreadcrumb
+        segments={[
+          { label: "Categorías", href: "/panel/on-demand/categorias" },
+          { label: category.name, href: `/panel/on-demand/categorias/${categoryId}` },
+          { label: practice.name },
+        ]}
+      />
 
-      <div className="flex items-center gap-3 mb-6">
-        <h1 className="font-display text-2xl font-bold text-[var(--color-primary)]">
-          {practice.name}
-        </h1>
-        <span
-          className={`text-xs px-2 py-0.5 rounded-full ${
-            practice.status === "PUBLISHED"
-              ? "bg-green-100 text-green-800"
-              : "bg-gray-100 text-gray-600"
-          }`}
-        >
-          {CONTENT_STATUS_LABELS[practice.status]}
-        </span>
-      </div>
+      <h1 className="font-display text-2xl font-bold text-[var(--color-primary)] mb-6">
+        {practice.name}
+      </h1>
 
       <div className="mb-8">
-        <PracticeForm mode="edit" practice={practice} />
+        <InlineEditToggle
+          editLabel="Editar"
+          viewContent={
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-[var(--color-text)]">{practice.name}</span>
+                <StatusBadge status={practice.status} />
+              </div>
+              {practice.description && (
+                <p className="text-sm text-[var(--color-text-muted)]">{practice.description}</p>
+              )}
+            </div>
+          }
+          editContent={<PracticeForm mode="edit" practice={practice} />}
+        />
       </div>
 
       <div className="mb-4 flex items-center justify-between gap-4">
@@ -101,15 +99,7 @@ export default async function PracticeDetailPage({
                     {lesson.level ? ` · ${lesson.level}` : ""}
                   </p>
                 </div>
-                <span
-                  className={`text-xs px-2 py-0.5 rounded-full ${
-                    lesson.status === "PUBLISHED"
-                      ? "bg-green-100 text-green-800"
-                      : "bg-gray-100 text-gray-600"
-                  }`}
-                >
-                  {CONTENT_STATUS_LABELS[lesson.status]}
-                </span>
+                <StatusBadge status={lesson.status} />
               </Link>
             </li>
           ))}

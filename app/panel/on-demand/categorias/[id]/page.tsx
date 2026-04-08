@@ -7,9 +7,11 @@ import {
   onDemandPracticeRepository,
   onDemandLessonRepository,
 } from "@/lib/adapters/db";
-import { CONTENT_STATUS_LABELS } from "@/lib/domain/on-demand";
 import { CategoryForm } from "@/components/panel/on-demand/CategoryForm";
 import { PracticeForm } from "@/components/panel/on-demand/PracticeForm";
+import { OnDemandBreadcrumb } from "@/components/panel/on-demand/OnDemandBreadcrumb";
+import { StatusBadge } from "@/components/panel/on-demand/StatusBadge";
+import { InlineEditToggle } from "@/components/panel/on-demand/InlineEditToggle";
 
 export default async function CategoryDetailPage({
   params,
@@ -35,32 +37,33 @@ export default async function CategoryDetailPage({
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-12">
-      <div className="mb-4">
-        <Link
-          href="/panel/on-demand/categorias"
-          className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
-        >
-          ← Categorías
-        </Link>
-      </div>
+      <OnDemandBreadcrumb
+        segments={[
+          { label: "Categorías", href: "/panel/on-demand/categorias" },
+          { label: category.name },
+        ]}
+      />
 
-      <div className="flex items-center gap-3 mb-6">
-        <h1 className="font-display text-2xl font-bold text-[var(--color-primary)]">
-          {category.name}
-        </h1>
-        <span
-          className={`text-xs px-2 py-0.5 rounded-full ${
-            category.status === "PUBLISHED"
-              ? "bg-green-100 text-green-800"
-              : "bg-gray-100 text-gray-600"
-          }`}
-        >
-          {CONTENT_STATUS_LABELS[category.status]}
-        </span>
-      </div>
+      <h1 className="font-display text-2xl font-bold text-[var(--color-primary)] mb-6">
+        {category.name}
+      </h1>
 
       <div className="mb-8">
-        <CategoryForm mode="edit" category={category} />
+        <InlineEditToggle
+          editLabel="Editar"
+          viewContent={
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-[var(--color-text)]">{category.name}</span>
+                <StatusBadge status={category.status} />
+              </div>
+              {category.description && (
+                <p className="text-sm text-[var(--color-text-muted)]">{category.description}</p>
+              )}
+            </div>
+          }
+          editContent={<CategoryForm mode="edit" category={category} />}
+        />
       </div>
 
       <div className="mb-4 flex items-center justify-between gap-4">
@@ -88,15 +91,7 @@ export default async function CategoryDetailPage({
                     {countMap[practice.id] ?? 0} lecciones
                   </p>
                 </div>
-                <span
-                  className={`text-xs px-2 py-0.5 rounded-full ${
-                    practice.status === "PUBLISHED"
-                      ? "bg-green-100 text-green-800"
-                      : "bg-gray-100 text-gray-600"
-                  }`}
-                >
-                  {CONTENT_STATUS_LABELS[practice.status]}
-                </span>
+                <StatusBadge status={practice.status} />
               </Link>
             </li>
           ))}
