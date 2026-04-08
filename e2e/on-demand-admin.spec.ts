@@ -110,7 +110,8 @@ test.describe("On-demand admin CRUD", () => {
       page.getByRole("heading", { name: new RegExp(categoryName, "i") })
     ).toBeVisible({ timeout: 10000 });
 
-    // Click delete button to open ConfirmDialog, then confirm
+    // Open edit mode to reveal the delete button, then click delete
+    await page.getByRole("button", { name: /Editar/i }).click();
     await page.getByRole("button", { name: /Eliminar categoría/i }).click();
     await page.getByRole("alertdialog").getByRole("button", { name: /Eliminar/i }).click();
 
