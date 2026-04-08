@@ -18,6 +18,7 @@ import {
   TAB_CANCELADAS,
   TAB_HISTORICAS,
 } from "@/components/panel/reservas";
+import { ReservationListSkeleton } from "@/components/ui/PanelSkeletons";
 
 const RESERVATIONS_PAGE_SIZE = 50;
 
@@ -164,21 +165,7 @@ export function ReservasPanel({
   }
 
   if (loading && reservations.length === 0) {
-    return (
-      <div className="mx-auto max-w-2xl px-4 py-12">
-        <div className="mb-6 h-4 w-24 rounded bg-[var(--color-border)]/60 animate-pulse" />
-        <div className="mb-6 h-8 w-64 rounded bg-[var(--color-border)]/60 animate-pulse" />
-        <div className="h-10 w-full rounded bg-[var(--color-border)]/40 animate-pulse mb-4" />
-        <div className="space-y-3">
-          {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="h-24 rounded-[var(--radius-lg)] bg-[var(--color-surface)] border border-[var(--color-border)] animate-pulse"
-            />
-          ))}
-        </div>
-      </div>
-    );
+    return <ReservationListSkeleton />;
   }
 
   return (

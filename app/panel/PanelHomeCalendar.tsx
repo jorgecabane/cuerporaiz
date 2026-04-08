@@ -13,6 +13,7 @@ import {
   ClassCard,
 } from "@/components/panel/reservas";
 import { localYmdFromDate } from "@/lib/datetime/local-ymd";
+import { CalendarHomeSkeleton } from "@/components/ui/PanelSkeletons";
 
 const RESERVATIONS_PAGE_SIZE = 50;
 
@@ -357,19 +358,7 @@ export function PanelHomeCalendar({
   const isStudent = isStudentRole(role);
 
   if (loading && liveClasses.length === 0 && staffClassesOnly.length === 0) {
-    return (
-      <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
-        <div className="h-10 w-full rounded bg-[var(--color-border)]/40 animate-pulse mb-4" />
-        <div className="space-y-3">
-          {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="h-20 rounded-[var(--radius-md)] bg-[var(--color-border)]/30 animate-pulse"
-            />
-          ))}
-        </div>
-      </div>
-    );
+    return <CalendarHomeSkeleton />;
   }
 
   return (
