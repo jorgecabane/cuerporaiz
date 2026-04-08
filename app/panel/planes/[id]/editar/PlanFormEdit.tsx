@@ -4,6 +4,8 @@ import { useTransition, useState } from "react";
 import { updatePlan } from "../../actions";
 import { Button } from "@/components/ui/Button";
 import type { Plan } from "@/lib/ports";
+import type { OnDemandCategory } from "@/lib/domain/on-demand";
+import { QuotaEditor } from "@/components/panel/on-demand/QuotaEditor";
 
 type PlanType = "LIVE" | "ON_DEMAND" | "MEMBERSHIP_ON_DEMAND";
 type BillingMode = "ONE_TIME" | "RECURRING" | "BOTH";
@@ -57,9 +59,13 @@ function getInitialUsesLimit(plan: Plan): UsesLimit {
 export function PlanFormEdit({
   plan,
   slugError,
+  categories = [],
+  initialQuotas = [],
 }: {
   plan: Plan;
   slugError?: boolean;
+  categories?: OnDemandCategory[];
+  initialQuotas?: { categoryId: string; maxLessons: number }[];
 }) {
   const [isPending, startTransition] = useTransition();
   const [validityKind, setValidityKind] = useState<ValidityKind | "">(getInitialValidityKind(plan));
@@ -93,6 +99,9 @@ export function PlanFormEdit({
         const maxReservations = usesLimitVal === "limited" ? parseOptionalInt(formData.get("maxReservationsCount")) : null;
         const maxReservationsPerDay = parseOptionalInt(formData.get("maxReservationsPerDay"));
         const maxReservationsPerWeek = parseOptionalInt(formData.get("maxReservationsPerWeek"));
+        const quotasRaw = (formData.get("quotas") as string) ?? "[]";
+        let quotas: { categoryId: string; maxLessons: number }[] = [];
+        try { quotas = JSON.parse(quotasRaw); } catch { quotas = []; }
         if (!name || !slug || Number.isNaN(amountCents) || amountCents < 0) return;
         startTransition(() =>
           updatePlan(plan.id, {
@@ -108,6 +117,7 @@ export function PlanFormEdit({
             maxReservations: usesLimitVal === "unlimited" ? null : (maxReservations ?? undefined),
             maxReservationsPerDay: maxReservationsPerDay ?? undefined,
             maxReservationsPerWeek: maxReservationsPerWeek ?? undefined,
+            quotas: type === "ON_DEMAND" ? quotas : undefined,
           })
         );
       }}
@@ -341,6 +351,16 @@ export function PlanFormEdit({
               />
             </div>
           </div>
+        </div>
+      )}
+
+      {planType === "ON_DEMAND" && (
+        <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg)]/50 p-3 space-y-2">
+          <p className="text-sm font-medium text-[var(--color-text)]">Cuotas por categoría</p>
+          <p className="text-xs text-[var(--color-text-muted)]">
+            Define cuántas lecciones puede desbloquear el estudiante por categoría.
+          </p>
+          <QuotaEditor categories={categories} initialQuotas={initialQuotas} />
         </div>
       )}
 

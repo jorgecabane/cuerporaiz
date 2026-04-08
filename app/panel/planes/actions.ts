@@ -36,15 +36,19 @@ export async function createPlan(
 
 export async function updatePlan(
   planId: string,
-  data: PlanUpdateInput
+  data: PlanUpdateInput & { quotas?: { categoryId: string; maxLessons: number }[] }
 ): Promise<void> {
   const centerId = await requireAdminCenterId();
   if (data.slug != null) {
     const conflict = await planRepository.findByCenterAndSlug(centerId, data.slug);
     if (conflict && conflict.id !== planId) redirect(`/panel/planes/${planId}/editar?error=slug`);
   }
-  const updated = await planRepository.update(planId, centerId, data);
+  const { quotas, ...planData } = data;
+  const updated = await planRepository.update(planId, centerId, planData);
   if (!updated) redirect("/panel/planes");
+  if (data.type === "ON_DEMAND" && quotas) {
+    await planCategoryQuotaRepository.upsertMany(planId, quotas);
+  }
   redirect("/panel/planes");
 }
 
