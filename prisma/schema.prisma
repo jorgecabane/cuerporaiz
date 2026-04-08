@@ -60,6 +60,7 @@ model Center {
   siteSections    CenterSiteSection[]
   onDemandCategories OnDemandCategory[]
   lessonUnlocks      LessonUnlock[]
+  events             Event[]
 }
 
 // ─── Usuarios (sin datos de infra; dominio puro en lib/domain) ──────────────
@@ -92,6 +93,7 @@ model User {
   emailPreferences EmailPreference[]
   siteItems       CenterSiteSectionItem[]
   lessonUnlocks LessonUnlock[]
+  eventTickets  EventTicket[]
   passwordResetTokens     PasswordResetToken[]
   emailVerificationTokens EmailVerificationToken[]
 }
@@ -596,6 +598,65 @@ model LoginAttempt {
 
   @@index([email, centerId, createdAt])
   @@index([ip, createdAt])
+}
+
+// ─── Eventos (retiros, talleres, workshops) ──────────────────────────────────
+
+enum EventStatus {
+  DRAFT
+  PUBLISHED
+  CANCELLED
+}
+
+enum EventTicketStatus {
+  PENDING
+  PAID
+  CANCELLED
+  REFUNDED
+}
+
+model Event {
+  id          String      @id @default(cuid())
+  centerId    String
+  title       String
+  description String?     @db.Text
+  location    String?
+  imageUrl    String?
+  startsAt    DateTime
+  endsAt      DateTime
+  amountCents Int         @default(0)
+  currency    String      @default("CLP")
+  maxCapacity Int?
+  status      EventStatus @default(PUBLISHED)
+  color       String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  center  Center        @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  tickets EventTicket[]
+
+  @@index([centerId])
+  @@index([centerId, startsAt])
+}
+
+model EventTicket {
+  id          String            @id @default(cuid())
+  eventId     String
+  userId      String
+  amountCents Int
+  currency    String            @default("CLP")
+  status      EventTicketStatus @default(PENDING)
+  mpPaymentId String?
+  orderId     String?
+  paidAt      DateTime?
+  createdAt   DateTime          @default(now())
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@index([eventId])
+  @@index([userId])
 }
 
 // ─── On Demand ────────────────────────────────────────────────────────────────

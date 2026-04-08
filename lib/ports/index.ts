@@ -31,3 +31,5 @@ export type { ILessonUnlockRepository } from "./lesson-unlock-repository";
 export type { IPlanCategoryQuotaRepository } from "./plan-category-quota-repository";
 export type { IAuthTokenRepository } from "./auth-token-repository";
 export type { ILoginAttemptRepository } from "./login-attempt-repository";
+export type { IEventRepository, EventCreateInput, EventUpdateInput } from "./event-repository";
+export type { IEventTicketRepository } from "./event-ticket-repository";
