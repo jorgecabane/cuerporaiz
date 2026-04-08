@@ -3,6 +3,7 @@
 import Link from "next/link";
 import type { LiveClass } from "@/lib/domain";
 import { layoutBlocks } from "./calendar-layout";
+import type { CalendarEvent } from "./WeekCalendar";
 
 function formatTime(d: Date): string {
   return d.toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" });
@@ -17,6 +18,7 @@ function formatDateParam(d: Date): string {
 
 interface DayCalendarProps {
   classes: LiveClass[];
+  events?: CalendarEvent[];
   holidayDates: Set<string>;
   calendarStartHour: number;
   calendarEndHour: number;
@@ -27,6 +29,7 @@ interface DayCalendarProps {
 
 export function DayCalendar({
   classes,
+  events = [],
   holidayDates,
   calendarStartHour,
   calendarEndHour,
@@ -47,6 +50,16 @@ export function DayCalendar({
 
   const blocks = layoutBlocks(classes, calendarStartHour, totalHours);
 
+  const dayStart = new Date(currentDate);
+  dayStart.setHours(0, 0, 0, 0);
+  const dayEnd = new Date(currentDate);
+  dayEnd.setHours(23, 59, 59, 999);
+  const dayEvents = events.filter((ev) => {
+    const s = new Date(ev.startsAt);
+    const e = new Date(ev.endsAt);
+    return s <= dayEnd && e >= dayStart;
+  });
+
   return (
     <div>
       {isHoliday && (
@@ -56,6 +69,28 @@ export function DayCalendar({
       )}
 
       <div className="rounded-[var(--radius-lg)] bg-[var(--color-surface)] border border-[var(--color-border)] shadow-[var(--shadow-md)] overflow-hidden">
+        {/* All-day events zone */}
+        {dayEvents.length > 0 && (
+          <div className="grid grid-cols-[3.5rem_1fr] border-b border-[var(--color-border)]">
+            <div className="px-1 py-1 text-[0.6rem] text-[var(--color-text-muted)] text-right leading-tight pt-1.5">
+              Todo<br />el día
+            </div>
+            <div className="border-l border-[var(--color-border)] px-1 py-1 space-y-0.5 overflow-hidden" style={{ maxHeight: "3.5rem" }}>
+              {dayEvents.slice(0, 2).map((ev) => (
+                <Link
+                  key={ev.id}
+                  href={`/panel/eventos/${ev.id}`}
+                  className="block rounded-full px-2 py-0.5 text-xs font-medium truncate cursor-pointer text-white hover:opacity-90 transition-opacity"
+                  style={{ backgroundColor: ev.color ?? "var(--color-secondary)" }}
+                  title={ev.title}
+                >
+                  {ev.title}
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-[3.5rem_1fr] relative" style={{ minHeight: `${HOURS.length * 3.5}rem` }}>
           {/* Hour labels */}
           <div className="relative">

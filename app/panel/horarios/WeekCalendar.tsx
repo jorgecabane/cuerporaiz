@@ -4,6 +4,15 @@ import Link from "next/link";
 import type { LiveClass } from "@/lib/domain";
 import { layoutBlocks, type LayoutBlock } from "./calendar-layout";
 
+export interface CalendarEvent {
+  id: string;
+  title: string;
+  startsAt: Date | string;
+  endsAt: Date | string;
+  color: string | null;
+  status: string;
+}
+
 function startOfWeek(d: Date, weekStartDay: number): Date {
   const copy = new Date(d);
   const day = copy.getDay();
@@ -55,6 +64,7 @@ function groupByDay(
 
 interface WeekCalendarProps {
   classes: LiveClass[];
+  events?: CalendarEvent[];
   holidayDates: Set<string>;
   calendarStartHour: number;
   calendarEndHour: number;
@@ -66,6 +76,7 @@ interface WeekCalendarProps {
 
 export function WeekCalendar({
   classes,
+  events = [],
   holidayDates,
   calendarStartHour,
   calendarEndHour,
@@ -104,6 +115,23 @@ export function WeekCalendar({
   }
 
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+
+  // Compute events that fall on each day of this week (capped at 2 rows per day)
+  const eventsByDayIndex: CalendarEvent[][] = Array.from({ length: 7 }, () => []);
+  for (const ev of events) {
+    const start = new Date(ev.startsAt);
+    const end = new Date(ev.endsAt);
+    for (let i = 0; i < 7; i++) {
+      const dayStart = new Date(days[i]);
+      dayStart.setHours(0, 0, 0, 0);
+      const dayEnd = new Date(days[i]);
+      dayEnd.setHours(23, 59, 59, 999);
+      if (start <= dayEnd && end >= dayStart) {
+        eventsByDayIndex[i].push(ev);
+      }
+    }
+  }
+  const hasAnyEvent = eventsByDayIndex.some((arr) => arr.length > 0);
   const isToday = (d: Date) => {
     const today = new Date();
     return d.getDate() === today.getDate() && d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
@@ -138,6 +166,30 @@ export function WeekCalendar({
             );
           })}
         </div>
+
+        {/* All-day events zone */}
+        {hasAnyEvent && (
+          <div className="grid grid-cols-[3.5rem_repeat(7,1fr)] border-b border-[var(--color-border)]">
+            <div className="px-1 py-1 text-[0.6rem] text-[var(--color-text-muted)] text-right leading-tight pt-1.5">
+              Todo<br />el día
+            </div>
+            {eventsByDayIndex.map((dayEvents, i) => (
+              <div key={i} className="border-l border-[var(--color-border)] px-0.5 py-0.5 space-y-0.5 overflow-hidden" style={{ maxHeight: "3.5rem" }}>
+                {dayEvents.slice(0, 2).map((ev) => (
+                  <Link
+                    key={ev.id}
+                    href={`/panel/eventos/${ev.id}`}
+                    className="block rounded-full px-2 py-0.5 text-xs font-medium truncate cursor-pointer text-white hover:opacity-90 transition-opacity"
+                    style={{ backgroundColor: ev.color ?? "var(--color-secondary)" }}
+                    title={ev.title}
+                  >
+                    {ev.title}
+                  </Link>
+                ))}
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Body */}
         <div className="grid grid-cols-[3.5rem_repeat(7,1fr)] relative" style={{ minHeight: `${HOURS.length * 3.5}rem` }}>

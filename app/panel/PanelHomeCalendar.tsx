@@ -40,6 +40,7 @@ export function PanelHomeCalendar({
   const [staffClassesOnly, setStaffClassesOnly] = useState<LiveClassDto[]>([]);
   const [staffAttendeesByClass, setStaffAttendeesByClass] = useState<Record<string, ClassAttendanceDto[]>>({});
   const [reservations, setReservations] = useState<ReservationDto[]>([]);
+  const [weekEvents, setWeekEvents] = useState<Array<{ id: string; title: string; startsAt: string; endsAt: string; color: string | null; amountCents: number; currency: string; hasTicket: boolean }>>([]);
   const [weekAnchor, setWeekAnchor] = useState<Date>(() => new Date());
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -67,6 +68,14 @@ export function PanelHomeCalendar({
     const data = await res.json();
     setReservations(Array.isArray(data.items) ? data.items : []);
   }, []);
+
+  const loadEventsForWeek = useCallback(async (anchor: Date) => {
+    const { start, end } = getWeekBounds(anchor, weekStartDay);
+    const res = await fetch(`/api/events?from=${start.toISOString()}&to=${end.toISOString()}`);
+    if (!res.ok) return;
+    const data = await res.json();
+    setWeekEvents(Array.isArray(data) ? data : []);
+  }, [weekStartDay]);
 
   const loadClassesForWeek = useCallback(
     async (anchor: Date) => {
@@ -122,16 +131,16 @@ export function PanelHomeCalendar({
     setLoading(true);
     try {
       if (isStudentRole(role)) {
-        await Promise.all([loadReservations(), loadClassesForWeek(weekAnchor)]);
+        await Promise.all([loadReservations(), loadClassesForWeek(weekAnchor), loadEventsForWeek(weekAnchor)]);
       } else {
-        await loadStaffClassesForWeek(weekAnchor);
+        await Promise.all([loadStaffClassesForWeek(weekAnchor), loadEventsForWeek(weekAnchor)]);
       }
     } catch {
       // ignore
     } finally {
       setLoading(false);
     }
-  }, [role, loadReservations, loadClassesForWeek, loadStaffClassesForWeek, weekAnchor]);
+  }, [role, loadReservations, loadClassesForWeek, loadStaffClassesForWeek, loadEventsForWeek, weekAnchor]);
 
   useEffect(() => {
     load();
@@ -149,13 +158,14 @@ export function PanelHomeCalendar({
   const handleWeekChange = useCallback(
     (start: Date) => {
       setWeekAnchor(start);
+      loadEventsForWeek(start);
       if (isStudentRole(role)) {
         loadClassesForWeek(start);
       } else {
         loadStaffClassesForWeek(start);
       }
     },
-    [role, loadClassesForWeek, loadStaffClassesForWeek]
+    [role, loadClassesForWeek, loadStaffClassesForWeek, loadEventsForWeek]
   );
 
   const { start: weekStart } = useMemo(
@@ -357,6 +367,17 @@ export function PanelHomeCalendar({
 
   const isStudent = isStudentRole(role);
 
+  const eventsForSelectedDay = useMemo(() => {
+    if (!effectiveSelectedDay) return [];
+    return weekEvents.filter((ev) => {
+      const dayStart = new Date(effectiveSelectedDay + "T00:00:00");
+      const dayEnd = new Date(effectiveSelectedDay + "T23:59:59");
+      const s = new Date(ev.startsAt);
+      const e = new Date(ev.endsAt);
+      return s <= dayEnd && e >= dayStart;
+    });
+  }, [weekEvents, effectiveSelectedDay]);
+
   if (loading && liveClasses.length === 0 && staffClassesOnly.length === 0) {
     return <CalendarHomeSkeleton />;
   }
@@ -455,6 +476,39 @@ export function PanelHomeCalendar({
           >
             Cancelar
           </button>
+        </div>
+      )}
+
+      {/* Events for selected day */}
+      {eventsForSelectedDay.length > 0 && (
+        <div className="space-y-2">
+          {eventsForSelectedDay.map((ev) => (
+            <a
+              key={ev.id}
+              href={`/panel/eventos/${ev.id}`}
+              className="flex items-start gap-3 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 hover:bg-[var(--color-primary-light)]/20 transition-colors"
+            >
+              <div
+                className="mt-0.5 h-3 w-3 rounded-full shrink-0"
+                style={{ backgroundColor: ev.color ?? "var(--color-secondary)" }}
+              />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-[var(--color-text)] truncate">
+                  {ev.title}
+                </p>
+                <p className="text-xs text-[var(--color-text-muted)]">
+                  {ev.amountCents === 0
+                    ? "Gratis"
+                    : `${(ev.amountCents / 100).toLocaleString("es-CL", { style: "currency", currency: ev.currency })}`}
+                </p>
+              </div>
+              {ev.hasTicket && (
+                <span className="shrink-0 rounded-full bg-[var(--color-primary-light)] px-2 py-0.5 text-xs font-medium text-[var(--color-primary)]">
+                  Ya inscrito
+                </span>
+              )}
+            </a>
+          ))}
         </div>
       )}
 

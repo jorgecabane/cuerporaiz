@@ -9,6 +9,7 @@ export const PANEL_NAV_ITEMS = [
   { href: "/panel/tienda", label: "Planes y comprar" },
   { href: "/panel/mis-pagos", label: "Mis pagos" },
   { href: "/panel/replay", label: "Replay" },
+  { href: "/panel/eventos", label: "Eventos" },
 ] as const;
 
 export const PANEL_ADMIN_ITEMS = [
