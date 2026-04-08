@@ -20,7 +20,8 @@ export function CategoryForm(props: Props) {
 
   const isEdit = props.mode === "edit";
   const category = isEdit ? props.category : null;
-  const [status, setStatus] = useState<OnDemandContentStatus>(category?.status ?? "DRAFT");
+  // Key to force React to remount the form when server data changes after save
+  const formKey = category ? `${category.id}-${category.status}-${category.name}` : "create";
 
   function handleSubmit(formData: FormData) {
     const name = (formData.get("name") as string)?.trim();
@@ -71,7 +72,7 @@ export function CategoryForm(props: Props) {
         <h2 className="text-sm font-semibold text-[var(--color-text)] mb-3">
           {isEdit ? "Editar categoría" : "Nueva categoría"}
         </h2>
-        <form action={handleSubmit} className="space-y-3">
+        <form key={formKey} action={handleSubmit} className="space-y-3">
           <div>
             <label htmlFor={`${idPrefix}-name`} className="block text-sm font-medium text-[var(--color-text)] mb-1">
               Nombre <span className="text-[var(--color-error)]">*</span>
@@ -117,8 +118,7 @@ export function CategoryForm(props: Props) {
             <select
               id={`${idPrefix}-status`}
               name="status"
-              value={status}
-              onChange={(e) => setStatus(e.target.value as OnDemandContentStatus)}
+              defaultValue={category?.status ?? "DRAFT"}
               className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)]"
             >
               {STATUS_OPTIONS.map((s) => (

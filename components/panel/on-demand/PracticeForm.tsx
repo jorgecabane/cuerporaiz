@@ -20,7 +20,7 @@ export function PracticeForm(props: Props) {
 
   const isEdit = props.mode === "edit";
   const practice = isEdit ? props.practice : null;
-  const [status, setStatus] = useState<OnDemandContentStatus>(practice?.status ?? "DRAFT");
+  const formKey = practice ? `${practice.id}-${practice.status}-${practice.name}` : "create";
 
   function handleSubmit(formData: FormData) {
     const name = (formData.get("name") as string)?.trim();
@@ -74,7 +74,7 @@ export function PracticeForm(props: Props) {
         <h2 className="text-sm font-semibold text-[var(--color-text)] mb-3">
           {isEdit ? "Editar práctica" : "Nueva práctica"}
         </h2>
-        <form action={handleSubmit} className="space-y-3">
+        <form key={formKey} action={handleSubmit} className="space-y-3">
           <div>
             <label htmlFor={`${idPrefix}-name`} className="block text-sm font-medium text-[var(--color-text)] mb-1">
               Nombre <span className="text-[var(--color-error)]">*</span>
@@ -120,8 +120,7 @@ export function PracticeForm(props: Props) {
             <select
               id={`${idPrefix}-status`}
               name="status"
-              value={status}
-              onChange={(e) => setStatus(e.target.value as OnDemandContentStatus)}
+              defaultValue={practice?.status ?? "DRAFT"}
               className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)]"
             >
               {STATUS_OPTIONS.map((s) => (
