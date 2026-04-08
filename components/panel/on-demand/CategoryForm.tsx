@@ -20,6 +20,7 @@ export function CategoryForm(props: Props) {
 
   const isEdit = props.mode === "edit";
   const category = isEdit ? props.category : null;
+  const [status, setStatus] = useState<OnDemandContentStatus>(category?.status ?? "DRAFT");
 
   function handleSubmit(formData: FormData) {
     const name = (formData.get("name") as string)?.trim();
@@ -116,7 +117,8 @@ export function CategoryForm(props: Props) {
             <select
               id={`${idPrefix}-status`}
               name="status"
-              defaultValue={category?.status ?? "DRAFT"}
+              value={status}
+              onChange={(e) => setStatus(e.target.value as OnDemandContentStatus)}
               className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)]"
             >
               {STATUS_OPTIONS.map((s) => (
