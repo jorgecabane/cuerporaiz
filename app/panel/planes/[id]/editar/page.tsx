@@ -3,7 +3,7 @@ import { redirect, notFound } from "next/navigation";
 import { planRepository, onDemandCategoryRepository, planCategoryQuotaRepository } from "@/lib/adapters/db";
 import { isAdminRole } from "@/lib/domain/role";
 import { Button } from "@/components/ui/Button";
-import { PlanFormEdit } from "./PlanFormEdit";
+import { PlanForm } from "../../PlanForm";
 
 export default async function PanelPlanesEditarPage({
   params,
@@ -40,7 +40,8 @@ export default async function PanelPlanesEditarPage({
         Modifica los datos del plan.
       </p>
       <div className="rounded-[var(--radius-lg)] bg-[var(--color-surface)] p-6 shadow-[var(--shadow-md)]">
-        <PlanFormEdit
+        <PlanForm
+          mode="edit"
           plan={plan}
           slugError={error === "slug"}
           categories={categories}
