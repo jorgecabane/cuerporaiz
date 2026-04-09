@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import type { LiveClass, Discipline } from "@/lib/domain";
 import type { Instructor } from "@/lib/ports/instructor-repository";
 import { CalendarSkeleton, ListSkeleton } from "@/components/ui/Skeleton";
-import { WeekCalendar } from "./WeekCalendar";
+import { WeekCalendar, type CalendarEvent } from "./WeekCalendar";
 import { DayCalendar } from "./DayCalendar";
 import { MonthCalendar } from "./MonthCalendar";
 import { ListCalendar } from "./ListCalendar";
@@ -73,6 +73,7 @@ export function CalendarShell({
   const [view, setView] = useState<ViewMode>("week");
   const [currentDate, setCurrentDate] = useState(new Date());
   const [classes, setClasses] = useState<LiveClass[]>([]);
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [holidayDates, setHolidayDates] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<Filters>({
@@ -103,9 +104,10 @@ export function CalendarShell({
     setLoading(true);
     const { from, to } = dateRange();
     try {
-      const [classRes, holidayRes] = await Promise.all([
+      const [classRes, holidayRes, eventRes] = await Promise.all([
         fetch(`/api/admin/live-classes?from=${from.toISOString()}&to=${to.toISOString()}`),
         fetch("/api/admin/holidays"),
+        fetch(`/api/events?from=${from.toISOString()}&to=${to.toISOString()}`),
       ]);
       if (classRes.ok) {
         const data = await classRes.json();
@@ -119,6 +121,10 @@ export function CalendarShell({
           )
         );
         setHolidayDates(dates);
+      }
+      if (eventRes.ok) {
+        const edata = await eventRes.json();
+        setEvents(Array.isArray(edata) ? edata : []);
       }
     } catch {
       // silently fail
@@ -292,6 +298,7 @@ export function CalendarShell({
           {view === "week" && (
             <WeekCalendar
               classes={filteredClasses}
+              events={events}
               holidayDates={holidayDates}
               calendarStartHour={calendarStartHour}
               calendarEndHour={calendarEndHour}
@@ -304,6 +311,7 @@ export function CalendarShell({
           {view === "day" && (
             <DayCalendar
               classes={filteredClasses}
+              events={events}
               holidayDates={holidayDates}
               calendarStartHour={calendarStartHour}
               calendarEndHour={calendarEndHour}
@@ -315,6 +323,7 @@ export function CalendarShell({
           {view === "month" && (
             <MonthCalendar
               classes={filteredClasses}
+              events={events}
               holidayDates={holidayDates}
               currentDate={currentDate}
               weekStartDay={weekStartDay}
@@ -325,6 +334,7 @@ export function CalendarShell({
           {view === "list" && (
             <ListCalendar
               classes={filteredClasses}
+              events={events}
               loading={loading}
             />
           )}

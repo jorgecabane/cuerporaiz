@@ -27,11 +27,12 @@ import {
   Settings,
   Play,
   Globe,
+  Ticket,
 } from "lucide-react";
 import { SITE_NAME } from "@/lib/constants/copy";
 import { PANEL_NAV_ITEMS, PANEL_ADMIN_ITEMS } from "@/lib/panel-nav";
 
-const NAV_ICONS = [Home, Calendar, CreditCard, Banknote, Play] as const;
+const NAV_ICONS = [Home, Calendar, CreditCard, Banknote, Play, Ticket] as const;
 const ADMIN_ICONS = [Clock, Sparkles, UserCheck, CalendarOff, Users, Settings, Plug, LayoutDashboard, Wallet, Globe, Play] as const;
 const NAV_ITEMS = PANEL_NAV_ITEMS.map((item, i) => ({
   ...item,

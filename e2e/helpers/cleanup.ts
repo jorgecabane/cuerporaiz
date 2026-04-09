@@ -62,3 +62,16 @@ export async function cleanupLiveClasses(titlePattern: string) {
     await prisma.liveClass.delete({ where: { id: cls.id } }).catch(() => {});
   }
 }
+
+/** Delete events (cascades to tickets) matching a title pattern */
+export async function cleanupEvents(titlePattern: string) {
+  const prisma = await getPrisma();
+  if (!prisma) return;
+  const events = await prisma.event.findMany({
+    where: { title: { contains: titlePattern } },
+  });
+  for (const evt of events) {
+    await prisma.eventTicket.deleteMany({ where: { eventId: evt.id } });
+    await prisma.event.delete({ where: { id: evt.id } }).catch(() => {});
+  }
+}

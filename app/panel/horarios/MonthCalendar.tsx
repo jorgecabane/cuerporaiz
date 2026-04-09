@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import type { LiveClass } from "@/lib/domain";
+import type { CalendarEvent } from "./WeekCalendar";
 
 const ALL_DAY_LABELS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
 
@@ -46,6 +47,7 @@ function getMonthGrid(year: number, month: number, weekStartDay: number): (Date 
 
 interface MonthCalendarProps {
   classes: LiveClass[];
+  events?: CalendarEvent[];
   holidayDates: Set<string>;
   currentDate: Date;
   weekStartDay: number;
@@ -55,6 +57,7 @@ interface MonthCalendarProps {
 
 export function MonthCalendar({
   classes,
+  events = [],
   holidayDates,
   currentDate,
   weekStartDay,
@@ -73,6 +76,21 @@ export function MonthCalendar({
     const key = formatDateKey(new Date(c.startsAt));
     if (!classesByDay.has(key)) classesByDay.set(key, []);
     classesByDay.get(key)!.push(c);
+  }
+
+  // Build a map of date -> events that overlap that day
+  const eventsByDay = new Map<string, CalendarEvent[]>();
+  for (const ev of events) {
+    const start = new Date(ev.startsAt);
+    const end = new Date(ev.endsAt);
+    const cursor = new Date(start);
+    cursor.setHours(0, 0, 0, 0);
+    while (cursor <= end) {
+      const key = formatDateKey(cursor);
+      if (!eventsByDay.has(key)) eventsByDay.set(key, []);
+      eventsByDay.get(key)!.push(ev);
+      cursor.setDate(cursor.getDate() + 1);
+    }
   }
 
   return (
@@ -101,6 +119,7 @@ export function MonthCalendar({
               const dayClasses = classesByDay.get(dateKey) || [];
 
               const clickable = !isPast && !isHoliday;
+              const dayEvents = eventsByDay.get(dateKey) ?? [];
 
               return (
                 <div
@@ -132,7 +151,18 @@ export function MonthCalendar({
                     <div className="text-[0.55rem] text-[var(--color-error)] leading-tight mb-0.5">Feriado</div>
                   )}
                   <div className="space-y-0.5">
-                    {dayClasses.slice(0, 3).map((c) => (
+                    {dayEvents.slice(0, 1).map((ev) => (
+                      <Link
+                        key={ev.id}
+                        href={`/panel/eventos/${ev.id}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="block rounded-full px-1 py-0.5 text-[0.6rem] leading-tight text-white truncate hover:opacity-90"
+                        style={{ backgroundColor: ev.color ?? "var(--color-secondary)" }}
+                      >
+                        {ev.title}
+                      </Link>
+                    ))}
+                    {dayClasses.slice(0, 2).map((c) => (
                       <Link
                         key={c.id}
                         href={`/panel/horarios/${c.id}`}
@@ -143,9 +173,9 @@ export function MonthCalendar({
                         {formatTime(new Date(c.startsAt))} {c.title}
                       </Link>
                     ))}
-                    {dayClasses.length > 3 && (
+                    {dayClasses.length + dayEvents.length > 3 && (
                       <p className="text-[0.55rem] text-[var(--color-text-muted)] px-1">
-                        +{dayClasses.length - 3} más
+                        +{dayClasses.length + dayEvents.length - 3} más
                       </p>
                     )}
                   </div>
