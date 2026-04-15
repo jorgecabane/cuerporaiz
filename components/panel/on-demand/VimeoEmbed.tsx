@@ -1,8 +1,10 @@
 function toEmbedUrl(url: string): string {
-  // Vimeo: https://vimeo.com/471549782 → https://player.vimeo.com/video/471549782
-  const vimeoMatch = url.match(/vimeo\.com\/(\d+)/);
+  // Vimeo: https://vimeo.com/471549782/03c6c6280f → https://player.vimeo.com/video/471549782?h=03c6c6280f
+  // Also handles public (no hash) and already-embed URLs
+  const vimeoMatch = url.match(/vimeo\.com\/(\d+)(?:\/([a-f0-9]+))?/);
   if (vimeoMatch && !url.includes("player.vimeo.com")) {
-    return `https://player.vimeo.com/video/${vimeoMatch[1]}`;
+    const hash = vimeoMatch[2] ? `?h=${vimeoMatch[2]}` : "";
+    return `https://player.vimeo.com/video/${vimeoMatch[1]}${hash}`;
   }
 
   // YouTube: https://www.youtube.com/watch?v=ID → https://www.youtube.com/embed/ID
