@@ -2,7 +2,11 @@
 
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import { liveClassRepository, liveClassSeriesRepository } from "@/lib/adapters/db";
+import {
+  liveClassRepository,
+  liveClassSeriesRepository,
+  centerHolidayRepository,
+} from "@/lib/adapters/db";
 import { isAdminRole } from "@/lib/domain/role";
 import { generateSeriesInstances } from "@/lib/application/generate-series-instances";
 import { createZoomMeeting } from "@/lib/application/create-zoom-meeting";
@@ -116,7 +120,12 @@ export async function createLiveClass(data: CreateClassFormData): Promise<void> 
       monthlyMode: data.repeat === "MONTHLY" ? (data.monthlyMode ?? "dayOfMonth") : null,
     });
 
-    const instances = generateSeriesInstances(series);
+    const holidays = await centerHolidayRepository.findByCenterId(centerId);
+    const holidayDates = new Set(
+      holidays.map((h) => h.date.toISOString().slice(0, 10))
+    );
+
+    const instances = generateSeriesInstances(series, holidayDates);
     if (instances.length > 0) {
       await liveClassRepository.createMany(centerId, instances);
     }

@@ -291,8 +291,12 @@ export function CalendarShell({
       )}
 
       {/* View content */}
-      {loading && classes.length === 0 ? (
-        view === "list" ? <ListSkeleton /> : <CalendarSkeleton />
+      {loading ? (
+        view === "list" ? (
+          <ListSkeleton />
+        ) : (
+          <CalendarSkeleton view={view} />
+        )
       ) : (
         <>
           {view === "week" && (

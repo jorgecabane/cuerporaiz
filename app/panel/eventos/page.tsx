@@ -21,6 +21,11 @@ function formatPrice(cents: number, currency: string): string {
   return `${(cents / 100).toFixed(2)} ${currency}`;
 }
 
+function hasEventEnded(event: Pick<Event, "startsAt" | "endsAt">): boolean {
+  const endRef = event.endsAt ?? event.startsAt;
+  return endRef.getTime() < Date.now();
+}
+
 function EventStatusBadge({ status }: { status: string }) {
   const colors: Record<string, string> = {
     PUBLISHED: "bg-green-100 text-green-800",
@@ -35,7 +40,7 @@ function EventStatusBadge({ status }: { status: string }) {
 }
 
 /* ── Admin list card ── */
-async function AdminEventCard({ event }: { event: Event }) {
+async function AdminEventCard({ event, hasEnded }: { event: Event; hasEnded: boolean }) {
   const paidCount = await eventTicketRepository.countPaidByEventId(event.id);
 
   return (
@@ -46,8 +51,13 @@ async function AdminEventCard({ event }: { event: Event }) {
       >
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2 mb-1">
-            <p className="font-semibold text-[var(--color-text)]">{event.title}</p>
+            <p className={`font-semibold ${hasEnded ? "text-[var(--color-text-muted)]" : "text-[var(--color-text)]"}`}>{event.title}</p>
             <EventStatusBadge status={event.status} />
+            {hasEnded && (
+              <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 font-medium">
+                Finalizado
+              </span>
+            )}
           </div>
           <p className="text-xs text-[var(--color-text-muted)]">
             {formatDateShort(event.startsAt)}
@@ -116,10 +126,10 @@ export default async function EventosPage() {
 
   const allEvents = await eventRepository.findByCenterId(centerId);
 
-  // Students only see PUBLISHED events
+  // Students only see PUBLISHED events that have not finished yet.
   const events = isAdmin
     ? allEvents
-    : allEvents.filter((e) => e.status === "PUBLISHED");
+    : allEvents.filter((e) => e.status === "PUBLISHED" && !hasEventEnded(e));
 
   /* ── Admin layout ── */
   if (isAdmin) {
@@ -149,7 +159,7 @@ export default async function EventosPage() {
         ) : (
           <ul className="space-y-3">
             {events.map((event) => (
-              <AdminEventCard key={event.id} event={event} />
+              <AdminEventCard key={event.id} event={event} hasEnded={hasEventEnded(event)} />
             ))}
           </ul>
         )}

@@ -188,6 +188,36 @@ describe("createEventCheckout", () => {
     }
   });
 
+  it("evento ya finalizado (endsAt pasado) → EVENT_ENDED", async () => {
+    mocks.eventRepository.findById.mockResolvedValue(
+      makeEvent({
+        startsAt: new Date("2020-01-01T10:00:00Z"),
+        endsAt: new Date("2020-01-01T12:00:00Z"),
+      })
+    );
+
+    const result = await createEventCheckout(BASE_INPUT);
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.code).toBe("EVENT_ENDED");
+    }
+    expect(mocks.eventTicketRepository.create).not.toHaveBeenCalled();
+  });
+
+  it("evento en curso (startsAt pasado pero endsAt futuro) → permite checkout", async () => {
+    mocks.eventRepository.findById.mockResolvedValue(
+      makeEvent({
+        startsAt: new Date(Date.now() - 60 * 60 * 1000),
+        endsAt: new Date(Date.now() + 60 * 60 * 1000),
+      })
+    );
+
+    const result = await createEventCheckout(BASE_INPUT);
+
+    expect(result.success).toBe(true);
+  });
+
   it("evento no encontrado → EVENT_NOT_FOUND", async () => {
     mocks.eventRepository.findById.mockResolvedValue(null);
 

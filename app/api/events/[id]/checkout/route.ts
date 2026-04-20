@@ -50,6 +50,7 @@ export async function POST(
       const statusByCode: Record<string, number> = {
         EVENT_NOT_FOUND: 404,
         EVENT_NOT_PUBLISHED: 404,
+        EVENT_ENDED: 409,
         ALREADY_PURCHASED: 409,
         EVENT_FULL: 409,
         MP_NOT_CONFIGURED: 400,

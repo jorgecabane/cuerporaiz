@@ -25,6 +25,11 @@ function formatPrice(cents: number, currency: string): string {
   return `${(cents / 100).toFixed(2)} ${currency}`;
 }
 
+function hasEventEnded(startsAt: Date, endsAt: Date | null): boolean {
+  const endRef = endsAt ?? startsAt;
+  return endRef.getTime() < Date.now();
+}
+
 function EventStatusBadge({ status }: { status: string }) {
   const colors: Record<string, string> = {
     PUBLISHED: "bg-green-100 text-green-800",
@@ -65,6 +70,7 @@ export default async function EventDetailPage({
   const isFree = event.amountCents === 0;
   const isFull = event.maxCapacity !== null && paidCount >= event.maxCapacity;
   const userHasTicket = userTicket?.status === "PAID";
+  const hasEnded = hasEventEnded(event.startsAt, event.endsAt);
 
   /* ── Admin: fetch attendees with user info ── */
   type Attendee = { id: string; name: string | null; email: string; paidAt: Date | null };
@@ -272,6 +278,10 @@ export default async function EventDetailPage({
           <div className="inline-flex items-center gap-2 rounded-[var(--radius-md)] bg-green-100 px-4 py-2.5 text-sm font-medium text-green-800">
             <span>✓</span>
             Ya tienes tu entrada
+          </div>
+        ) : hasEnded ? (
+          <div className="inline-flex items-center rounded-[var(--radius-md)] bg-[var(--color-tertiary)] px-4 py-2.5 text-sm font-medium text-[var(--color-text-muted)]">
+            Este evento ya finalizó
           </div>
         ) : isFull ? (
           <div className="inline-flex items-center rounded-[var(--radius-md)] bg-[var(--color-tertiary)] px-4 py-2.5 text-sm font-medium text-[var(--color-text-muted)]">

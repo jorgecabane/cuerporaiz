@@ -13,6 +13,7 @@ import type { EventTicket } from "@/lib/domain/event";
 export type EventCheckoutErrorCode =
   | "EVENT_NOT_FOUND"
   | "EVENT_NOT_PUBLISHED"
+  | "EVENT_ENDED"
   | "ALREADY_PURCHASED"
   | "EVENT_FULL"
   | "MP_NOT_CONFIGURED"
@@ -45,6 +46,11 @@ export async function createEventCheckout(
 
   if (event.status !== "PUBLISHED") {
     return { success: false, code: "EVENT_NOT_PUBLISHED", message: "El evento no está disponible" };
+  }
+
+  const endReference = event.endsAt ?? event.startsAt;
+  if (endReference.getTime() < Date.now()) {
+    return { success: false, code: "EVENT_ENDED", message: "Este evento ya finalizó" };
   }
 
   const existing = await eventTicketRepository.findByEventAndUser(event.id, input.userId);

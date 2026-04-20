@@ -14,7 +14,42 @@ export function SkeletonLine({ className = "" }: SkeletonProps) {
   return <Skeleton className={`h-4 ${className}`} />;
 }
 
-export function CalendarSkeleton() {
+type CalendarSkeletonView = "day" | "week" | "month";
+
+export function CalendarSkeleton({ view = "week" }: { view?: CalendarSkeletonView } = {}) {
+  if (view === "day") {
+    return (
+      <div className="rounded-[var(--radius-lg)] bg-[var(--color-surface)] border border-[var(--color-border)] shadow-[var(--shadow-md)] p-4 space-y-3">
+        <Skeleton className="h-10 w-full" />
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div key={i} className="grid grid-cols-[4rem_1fr] gap-2">
+            <Skeleton className="h-10" />
+            <Skeleton className="h-10" />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (view === "month") {
+    return (
+      <div className="rounded-[var(--radius-lg)] bg-[var(--color-surface)] border border-[var(--color-border)] shadow-[var(--shadow-md)] p-4 space-y-3">
+        <div className="grid grid-cols-7 gap-2">
+          {Array.from({ length: 7 }).map((_, i) => (
+            <Skeleton key={i} className="h-6" />
+          ))}
+        </div>
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="grid grid-cols-7 gap-2">
+            {Array.from({ length: 7 }).map((_, j) => (
+              <Skeleton key={j} className="h-20" />
+            ))}
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="rounded-[var(--radius-lg)] bg-[var(--color-surface)] border border-[var(--color-border)] shadow-[var(--shadow-md)] p-4 space-y-3">
       <div className="grid grid-cols-8 gap-2">
@@ -23,7 +58,7 @@ export function CalendarSkeleton() {
           <Skeleton key={i} className="h-10" />
         ))}
       </div>
-      {Array.from({ length: 6 }).map((_, i) => (
+      {Array.from({ length: 8 }).map((_, i) => (
         <div key={i} className="grid grid-cols-8 gap-2">
           <Skeleton className="h-8" />
           {Array.from({ length: 7 }).map((_, j) => (
