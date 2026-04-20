@@ -195,12 +195,13 @@ async function main() {
     { sectionKey: "how-it-works", sortOrder: 2, title: "Tres formas de sumarte", subtitle: null },
     { sectionKey: "schedule", sortOrder: 3, title: "Reserva tu lugar", subtitle: "Presencial — Vitacura" },
     { sectionKey: "plans", sortOrder: 4, title: "Elige el tuyo", subtitle: "Planes" },
-    { sectionKey: "on-demand", sortOrder: 5, title: "Elige cómo practicar", subtitle: "Packs y membresía", visible: false },
-    { sectionKey: "disciplines", sortOrder: 6, title: null, subtitle: null, visible: false },
-    { sectionKey: "team", sortOrder: 7, title: "Trinidad Cáceres", subtitle: "Sobre Trini" },
-    { sectionKey: "testimonials", sortOrder: 8, title: null, subtitle: null },
-    { sectionKey: "cta", sortOrder: 9, title: "El camino de regreso a ti.", subtitle: "El camino empieza aquí" },
-    { sectionKey: "contact", sortOrder: 10, title: null, subtitle: null, visible: false },
+    { sectionKey: "on-demand", sortOrder: 5, title: "Practica a tu ritmo, donde quieras", subtitle: "Biblioteca virtual", visible: false },
+    { sectionKey: "events", sortOrder: 6, title: "Para vernos en persona", subtitle: "Próximos eventos", visible: true },
+    { sectionKey: "disciplines", sortOrder: 7, title: null, subtitle: null, visible: false },
+    { sectionKey: "team", sortOrder: 8, title: "Trinidad Cáceres", subtitle: "Sobre Trini" },
+    { sectionKey: "testimonials", sortOrder: 9, title: null, subtitle: null },
+    { sectionKey: "cta", sortOrder: 10, title: "El camino de regreso a ti.", subtitle: "El camino empieza aquí" },
+    { sectionKey: "contact", sortOrder: 11, title: null, subtitle: null, visible: false },
   ] as const;
 
   const sectionRecords: Record<string, string> = {};

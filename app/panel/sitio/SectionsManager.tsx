@@ -11,6 +11,7 @@ const SECTION_LABELS: Record<string, string> = {
   schedule: "Agenda / Horarios",
   plans: "Planes",
   "on-demand": "Biblioteca virtual",
+  events: "Próximos eventos",
   disciplines: "Disciplinas",
   team: "Equipo",
   testimonials: "Testimonios",
@@ -19,11 +20,11 @@ const SECTION_LABELS: Record<string, string> = {
 };
 
 /** Sections that have editable sub-items */
-const HAS_ITEMS_SECTIONS = new Set(["team", "testimonials", "about", "how-it-works", "on-demand", "cta"]);
+const HAS_ITEMS_SECTIONS = new Set(["team", "testimonials", "about", "how-it-works", "cta"]);
 
 /** Sections where title/subtitle can be edited inline (most sections) */
 const HAS_TITLE_SECTIONS = new Set([
-  "about", "how-it-works", "schedule", "plans", "on-demand",
+  "about", "how-it-works", "schedule", "plans", "on-demand", "events",
   "disciplines", "team", "testimonials", "cta",
 ]);
 

@@ -5,6 +5,7 @@ import {
   siteSectionRepository,
   planRepository,
   disciplineRepository,
+  onDemandCategoryRepository,
   prisma,
 } from "@/lib/adapters/db";
 import {
@@ -12,12 +13,14 @@ import {
   PropuestaSection,
   ComoFuncionaSection,
   AgendaSection,
-  OfertaSection,
+  LibrarySection,
   TestimoniosSection,
   SobreTriniSection,
   CtaSection,
   DisciplinesSection,
   ContactSection,
+  EventsSection,
+  type UpcomingEvent,
 } from "@/components/sections/home";
 import type { SiteSectionWithItems } from "@/lib/domain/site-config";
 
@@ -50,7 +53,7 @@ function FallbackHome() {
       <PropuestaSection />
       <ComoFuncionaSection />
       <AgendaSection />
-      <OfertaSection />
+      <LibrarySection />
       <TestimoniosSection />
       <SobreTriniSection />
       <CtaSection />
@@ -136,48 +139,50 @@ export default async function HomePage() {
       highlight: false,
     }));
 
-  // Build on-demand cards from DB plans + section items for customization
-  const onDemandPlans = plans.filter((p) => p.type === "ON_DEMAND");
-  const membershipPlans = plans.filter((p) => p.type === "MEMBERSHIP_ON_DEMAND");
-  const onDemandSection = sectionMap.get("on-demand");
-  const onDemandItems = onDemandSection?.items ?? [];
+  // Biblioteca virtual: datos para el bento (hero + categorías)
+  const libraryPlans = plans.filter(
+    (p) => p.type === "ON_DEMAND" || p.type === "MEMBERSHIP_ON_DEMAND"
+  );
+  const minLibraryPrice = libraryPlans.length
+    ? Math.min(...libraryPlans.map((p) => p.amountCents))
+    : null;
+  const libraryPriceLabel =
+    minLibraryPrice != null ? `Desde $${minLibraryPrice.toLocaleString("es-CL")}` : undefined;
 
-  const ofertaCards: {
-    tag: string; title: string; description: string; price: string;
-    href: string; variant: "primary" | "secondary"; image: string; imageAlt: string;
-  }[] = [];
+  const publishedCategories = await onDemandCategoryRepository.findPublishedByCenterId(center.id);
+  const libraryCategories = publishedCategories.slice(0, 3).map((c) => ({
+    name: c.name,
+    description: c.description ?? undefined,
+    image: c.thumbnailUrl ?? undefined,
+  }));
 
-  // On-demand card (only if there are ON_DEMAND plans)
-  if (onDemandPlans.length > 0) {
-    const minPrice = Math.min(...onDemandPlans.map((p) => p.amountCents));
-    const item = onDemandItems.find((i) => i.sortOrder === 0) ?? onDemandItems[0];
-    ofertaCards.push({
-      tag: item?.linkUrl ?? "Packs online",
-      title: item?.title ?? "Practica a tu ritmo",
-      description: item?.description ?? "Clases grabadas por tipo de práctica. Acceso por tiempo definido.",
-      price: `Desde $${minPrice.toLocaleString("es-CL")}`,
-      href: "/catalogo",
-      variant: "primary",
-      image: item?.imageUrl ?? "https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&q=80",
-      imageAlt: item?.title ?? "Práctica de yoga biblioteca virtual",
-    });
-  }
-
-  // Membership card (only if there are MEMBERSHIP_ON_DEMAND plans)
-  if (membershipPlans.length > 0) {
-    const minPrice = Math.min(...membershipPlans.map((p) => p.amountCents));
-    const item = onDemandItems.find((i) => i.sortOrder === 1) ?? onDemandItems[1];
-    ofertaCards.push({
-      tag: item?.linkUrl ?? "Membresía",
-      title: item?.title ?? "Siempre actualizada",
-      description: item?.description ?? "Acceso a toda la biblioteca virtual mientras estés activa.",
-      price: `$${minPrice.toLocaleString("es-CL")} / mes`,
-      href: "/membresia",
-      variant: "secondary",
-      image: item?.imageUrl ?? "https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&q=80",
-      imageAlt: item?.title ?? "Membresía biblioteca virtual",
-    });
-  }
+  // Próximos eventos (ventana de 60 días, máx 4)
+  const sixtyDaysFromNow = new Date(now);
+  sixtyDaysFromNow.setDate(sixtyDaysFromNow.getDate() + 60);
+  const upcomingEventRows = await prisma.event.findMany({
+    where: {
+      centerId: center.id,
+      status: "PUBLISHED",
+      startsAt: { gte: now, lte: sixtyDaysFromNow },
+    },
+    orderBy: { startsAt: "asc" },
+    take: 4,
+  });
+  const upcomingEvents: UpcomingEvent[] = upcomingEventRows.map((e) => ({
+    id: e.id,
+    title: e.title,
+    description: e.description,
+    startsAt: e.startsAt.toISOString(),
+    location: e.location,
+    imageUrl: e.imageUrl,
+    tag: null,
+    priceLabel:
+      e.amountCents === 0
+        ? "Gratis"
+        : e.currency === "CLP"
+          ? `$${e.amountCents.toLocaleString("es-CL")}`
+          : `${(e.amountCents / 100).toFixed(2)} ${e.currency}`,
+  }));
 
   // Serialize disciplines for DisciplinesSection
   const serializedDisciplines = disciplines.map((d) => ({
@@ -240,11 +245,22 @@ export default async function HomePage() {
 
           case "on-demand":
             return (
-              <OfertaSection
+              <LibrarySection
                 key={section.id}
                 title={section.title ?? undefined}
                 subtitle={section.subtitle ?? undefined}
-                cards={ofertaCards}
+                categories={libraryCategories.length > 0 ? libraryCategories : undefined}
+                ctaPriceLabel={libraryPriceLabel}
+              />
+            );
+
+          case "events":
+            return (
+              <EventsSection
+                key={section.id}
+                title={section.title ?? undefined}
+                subtitle={section.subtitle ?? undefined}
+                events={upcomingEvents}
               />
             );
 
