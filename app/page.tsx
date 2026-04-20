@@ -159,7 +159,7 @@ export default async function HomePage() {
       href: "/catalogo",
       variant: "primary",
       image: item?.imageUrl ?? "https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&q=80",
-      imageAlt: item?.title ?? "Práctica de yoga on demand",
+      imageAlt: item?.title ?? "Práctica de yoga biblioteca virtual",
     });
   }
 
@@ -170,12 +170,12 @@ export default async function HomePage() {
     ofertaCards.push({
       tag: item?.linkUrl ?? "Membresía",
       title: item?.title ?? "Siempre actualizada",
-      description: item?.description ?? "Acceso a todo el contenido on demand mientras estés activa.",
+      description: item?.description ?? "Acceso a toda la biblioteca virtual mientras estés activa.",
       price: `$${minPrice.toLocaleString("es-CL")} / mes`,
       href: "/membresia",
       variant: "secondary",
       image: item?.imageUrl ?? "https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&q=80",
-      imageAlt: item?.title ?? "Membresía on demand",
+      imageAlt: item?.title ?? "Membresía biblioteca virtual",
     });
   }
 

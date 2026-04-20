@@ -10,7 +10,7 @@ const SECTION_LABELS: Record<string, string> = {
   "how-it-works": "Cómo funciona",
   schedule: "Agenda / Horarios",
   plans: "Planes",
-  "on-demand": "On Demand",
+  "on-demand": "Biblioteca virtual",
   disciplines: "Disciplinas",
   team: "Equipo",
   testimonials: "Testimonios",

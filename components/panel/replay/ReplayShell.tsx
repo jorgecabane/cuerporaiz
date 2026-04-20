@@ -212,7 +212,7 @@ export function ReplayShell({
   return (
     <div className="max-w-3xl mx-auto">
       <div className="mb-4">
-        <h1 className="text-xl sm:text-2xl font-bold text-[var(--color-text)]">Replay</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-[var(--color-text)]">Biblioteca virtual</h1>
         <p className="text-xs sm:text-sm text-[var(--color-text-muted)] mt-1">
           Clases grabadas para practicar cuando quieras
         </p>

@@ -39,7 +39,7 @@ export default async function CatalogoPage() {
       <div className="pt-[calc(var(--header-height)+var(--space-8))] pb-[var(--space-6)] px-[var(--space-4)] md:px-[var(--space-8)]">
         <div className="mx-auto max-w-4xl">
           <h1 className="text-section font-display font-semibold text-[var(--color-primary)]">
-            Catálogo on demand
+            Biblioteca virtual
           </h1>
           <p className="text-base text-[var(--color-text-muted)] mt-2 max-w-lg">
             Practica a tu ritmo con clases grabadas

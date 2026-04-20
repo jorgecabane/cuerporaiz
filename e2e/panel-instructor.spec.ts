@@ -45,7 +45,7 @@ test.describe("Panel instructor flows", () => {
 
     // Should NOT see Admin section or admin-only items
     await expect(page.getByRole("button", { name: "Admin" })).not.toBeVisible();
-    await expect(page.getByRole("link", { name: "On demand" })).not.toBeVisible();
+    await expect(page.getByRole("link", { name: "Configuración" })).not.toBeVisible();
   });
 
   test("instructor puede acceder a la tienda", async ({ page }) => {

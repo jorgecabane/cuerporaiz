@@ -5,9 +5,9 @@ test.describe("On-demand / Replay", () => {
   test.describe("Catálogo público", () => {
     test.use({ storageState: { cookies: [], origins: [] } });
 
-    test("muestra heading Catálogo on demand", async ({ page }) => {
+    test("muestra heading Biblioteca virtual", async ({ page }) => {
       await page.goto("/catalogo");
-      await expect(page.getByRole("heading", { name: /Catálogo on demand/i })).toBeVisible({
+      await expect(page.getByRole("heading", { name: /Biblioteca virtual/i })).toBeVisible({
         timeout: 15000,
       });
     });
@@ -16,7 +16,7 @@ test.describe("On-demand / Replay", () => {
       await page.route("**/catalogo**", async (route) => route.fallback());
 
       await page.goto("/catalogo");
-      await expect(page.getByRole("heading", { name: /Catálogo on demand/i })).toBeVisible({
+      await expect(page.getByRole("heading", { name: /Biblioteca virtual/i })).toBeVisible({
         timeout: 15000,
       });
 

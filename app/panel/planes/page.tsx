@@ -11,9 +11,9 @@ function formatPrice(cents: number, currency: string): string {
 }
 
 const TYPE_LABELS: Record<string, string> = {
-  LIVE: "Live",
-  ON_DEMAND: "On-demand",
-  MEMBERSHIP_ON_DEMAND: "Membresía on-demand",
+  LIVE: "En vivo",
+  ON_DEMAND: "Biblioteca virtual",
+  MEMBERSHIP_ON_DEMAND: "Membresía biblioteca virtual",
 };
 
 export default async function PanelPlanesPage() {

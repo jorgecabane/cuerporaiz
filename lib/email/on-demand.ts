@@ -112,13 +112,13 @@ export function buildNewContentEmail(data: NewContentEmailData): SendEmailDto {
   const body = `
     <p>${greeting},</p>
     <p>Se agregó <strong>${escapeHtml(data.lessonTitle)}</strong> a ${escapeHtml(data.practiceName)}.</p>
-    <p>Explora el catálogo on demand.</p>
+    <p>Explora la biblioteca virtual.</p>
     <p><a href="${data.catalogUrl}" style="${EMAIL_CTA_STYLE}">Ver catálogo</a></p>`;
   const html = emailBaseLayout({ body, centerName: SITE_NAME, preferencesUrl: data.preferencesUrl });
   const text = [
     `${greeting},`,
     `Se agregó ${data.lessonTitle} a ${data.practiceName}.`,
-    "Explora el catálogo on demand.",
+    "Explora la biblioteca virtual.",
     `Ver catálogo: ${data.catalogUrl}`,
     `— ${SITE_NAME}`,
   ].join("\n");

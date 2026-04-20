@@ -9,7 +9,7 @@ test.describe("On-demand / Replay (student)", () => {
     await page.goto("/panel/replay");
     await expect(page).toHaveURL(/\/panel\/replay/, { timeout: 15000 });
 
-    const replayHeading = page.getByRole("heading", { name: /Replay/i });
+    const replayHeading = page.getByRole("heading", { name: /Biblioteca virtual/i });
     const noPlanMsg = page.getByText(/No tienes un plan activo/i);
     await expect(replayHeading.or(noPlanMsg)).toBeVisible({ timeout: 15000 });
   });
@@ -18,7 +18,7 @@ test.describe("On-demand / Replay (student)", () => {
     await page.goto("/panel/replay");
     await expect(page).toHaveURL(/\/panel\/replay/, { timeout: 15000 });
 
-    const replayHeading = page.getByRole("heading", { name: /Replay/i });
+    const replayHeading = page.getByRole("heading", { name: /Biblioteca virtual/i });
     const noPlanMsg = page.getByText(/No tienes un plan activo/i);
 
     const hasPlan = await replayHeading.isVisible({ timeout: 10000 }).catch(() => false);
@@ -46,7 +46,7 @@ test.describe("On-demand / Replay (student)", () => {
     await page.goto("/panel/replay");
     await expect(page).toHaveURL(/\/panel\/replay/, { timeout: 15000 });
 
-    const replayHeading = page.getByRole("heading", { name: /Replay/i });
+    const replayHeading = page.getByRole("heading", { name: /Biblioteca virtual/i });
     const hasPlan = await replayHeading.isVisible({ timeout: 10000 }).catch(() => false);
     if (!hasPlan) return;
 
@@ -78,7 +78,7 @@ test.describe("On-demand / Replay (student)", () => {
     await page.goto("/panel/replay");
     await expect(page).toHaveURL(/\/panel\/replay/, { timeout: 15000 });
 
-    const replayHeading = page.getByRole("heading", { name: /Replay/i });
+    const replayHeading = page.getByRole("heading", { name: /Biblioteca virtual/i });
     const hasPlan = await replayHeading.isVisible({ timeout: 10000 }).catch(() => false);
     if (!hasPlan) return;
 

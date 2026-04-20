@@ -36,7 +36,7 @@ export default async function ReplayPage() {
   if (!onDemandUserPlan) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-12">
-        <h1 className="text-xl sm:text-2xl font-bold text-[var(--color-text)] mb-2">Replay</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-[var(--color-text)] mb-2">Biblioteca virtual</h1>
         <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] p-8 text-center">
           <p className="text-[var(--color-text-muted)] mb-4">
             No tienes un plan activo. Adquiere uno para acceder a las clases grabadas.

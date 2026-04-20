@@ -26,7 +26,7 @@ export type SerializedPlan = {
 
 const TYPE_LABELS: Record<SerializedPlan["type"], string> = {
   LIVE: "En vivo",
-  ON_DEMAND: "On demand",
+  ON_DEMAND: "Biblioteca virtual",
   MEMBERSHIP_ON_DEMAND: "Membresía",
 };
 

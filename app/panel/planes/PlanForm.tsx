@@ -51,9 +51,9 @@ const PERIOD_LABEL_SINGULAR: Record<ValidityPeriod, string> = {
 };
 
 const TYPE_OPTIONS: { value: PlanType; label: string; hint: string }[] = [
-  { value: "LIVE", label: "Live", hint: "Con profe en vivo (presencial o por Zoom/Meet)." },
-  { value: "ON_DEMAND", label: "On-demand", hint: "Clases grabadas a desbloquear." },
-  { value: "MEMBERSHIP_ON_DEMAND", label: "Membresía on-demand", hint: "Acceso a la videoteca on-demand." },
+  { value: "LIVE", label: "En vivo", hint: "Con profe en vivo (presencial o por Zoom/Meet)." },
+  { value: "ON_DEMAND", label: "Biblioteca virtual", hint: "Clases grabadas a desbloquear." },
+  { value: "MEMBERSHIP_ON_DEMAND", label: "Membresía biblioteca virtual", hint: "Acceso a la biblioteca virtual." },
 ];
 
 type PlanFormProps =
@@ -295,7 +295,7 @@ export function PlanForm({ mode, plan, slugError, categories = [], initialQuotas
       {planType === "MEMBERSHIP_ON_DEMAND" && (
         <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg)]/50 p-3">
           <p className="text-sm text-[var(--color-text-muted)]">
-            Este plan dará acceso ilimitado a todo el contenido on demand.
+            Este plan dará acceso ilimitado a toda la biblioteca virtual.
           </p>
         </div>
       )}
