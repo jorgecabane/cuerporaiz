@@ -11,7 +11,7 @@ export type { ISubscriptionProvider } from "./subscription-provider";
 export type { IMercadoPagoConfigRepository, MercadoPagoConfig } from "./mercadopago-config-repository";
 export type { IZoomConfigRepository, ZoomConfig } from "./zoom-config-repository";
 export type { IGoogleMeetConfigRepository, GoogleMeetConfig } from "./google-meet-config-repository";
-export type { IPlanRepository, Plan, PlanType, BillingMode, ValidityPeriod, PlanCreateInput, PlanUpdateInput } from "./plan-repository";
+export type { IPlanRepository, Plan, PlanType, BillingMode, ValidityPeriod, PlanCreateInput, PlanUpdateInput, FindPlansOptions } from "./plan-repository";
 export type { IOrderRepository, Order, OrderStatus, CreateOrderInput, OrderListFilters, OrderPageFilters, OrderPageResult } from "./order-repository";
 export { ORDER_STATUS_LABELS } from "./order-repository";
 export type { IManualPaymentRepository, ManualPaymentListItem, ManualPaymentPageFilters, ManualPaymentPageResult } from "./manual-payment-repository";

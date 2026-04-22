@@ -1,4 +1,4 @@
-import type { IPlanRepository, Plan, PlanCreateInput, PlanUpdateInput } from "@/lib/ports";
+import type { FindPlansOptions, IPlanRepository, Plan, PlanCreateInput, PlanUpdateInput } from "@/lib/ports";
 import type { PlanType, BillingMode, ValidityPeriod } from "@/lib/ports/plan-repository";
 import { prisma } from "./prisma";
 import type { PlanType as PrismaPlanType, BillingMode as PrismaBillingMode, ValidityPeriod as PrismaValidityPeriod } from "@prisma/client";
@@ -19,6 +19,9 @@ function toDomain(p: {
   maxReservations: number | null;
   maxReservationsPerDay: number | null;
   maxReservationsPerWeek: number | null;
+  archivedAt: Date | null;
+  sortOrder: number;
+  isPopular: boolean;
 }): Plan {
   return {
     id: p.id,
@@ -36,6 +39,9 @@ function toDomain(p: {
     maxReservations: p.maxReservations,
     maxReservationsPerDay: p.maxReservationsPerDay,
     maxReservationsPerWeek: p.maxReservationsPerWeek,
+    archivedAt: p.archivedAt,
+    sortOrder: p.sortOrder,
+    isPopular: p.isPopular,
   };
 }
 
@@ -60,10 +66,13 @@ export const planRepository: IPlanRepository = {
     return p ? toDomain(p) : null;
   },
 
-  async findManyByCenterId(centerId: string) {
+  async findManyByCenterId(centerId: string, options?: FindPlansOptions) {
     const list = await prisma.plan.findMany({
-      where: { centerId },
-      orderBy: { name: "asc" },
+      where: {
+        centerId,
+        ...(options?.includeArchived ? {} : { archivedAt: null }),
+      },
+      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
     });
     return list.map(toDomain);
   },
@@ -85,6 +94,8 @@ export const planRepository: IPlanRepository = {
         maxReservations: data.maxReservations ?? null,
         maxReservationsPerDay: data.maxReservationsPerDay ?? null,
         maxReservationsPerWeek: data.maxReservationsPerWeek ?? null,
+        ...(data.sortOrder !== undefined && { sortOrder: data.sortOrder }),
+        ...(data.isPopular !== undefined && { isPopular: data.isPopular }),
       },
     });
     return toDomain(p);
@@ -109,6 +120,8 @@ export const planRepository: IPlanRepository = {
         ...(data.maxReservations !== undefined && { maxReservations: data.maxReservations }),
         ...(data.maxReservationsPerDay !== undefined && { maxReservationsPerDay: data.maxReservationsPerDay }),
         ...(data.maxReservationsPerWeek !== undefined && { maxReservationsPerWeek: data.maxReservationsPerWeek }),
+        ...(data.sortOrder !== undefined && { sortOrder: data.sortOrder }),
+        ...(data.isPopular !== undefined && { isPopular: data.isPopular }),
       },
     });
     return toDomain(updated);
@@ -119,5 +132,69 @@ export const planRepository: IPlanRepository = {
     if (!p) return false;
     await prisma.plan.delete({ where: { id } });
     return true;
+  },
+
+  async countDependents(id: string, centerId: string) {
+    const [userPlans, orders, subs] = await Promise.all([
+      prisma.userPlan.count({ where: { planId: id, centerId } }),
+      prisma.order.count({ where: { planId: id, centerId } }),
+      prisma.subscription.count({ where: { planId: id, centerId } }),
+    ]);
+    return userPlans + orders + subs;
+  },
+
+  async archive(id: string, centerId: string) {
+    const p = await prisma.plan.findFirst({ where: { id, centerId } });
+    if (!p) return null;
+    const updated = await prisma.plan.update({
+      where: { id },
+      data: { archivedAt: new Date() },
+    });
+    return toDomain(updated);
+  },
+
+  async unarchive(id: string, centerId: string) {
+    const p = await prisma.plan.findFirst({ where: { id, centerId } });
+    if (!p) return null;
+    const updated = await prisma.plan.update({
+      where: { id },
+      data: { archivedAt: null },
+    });
+    return toDomain(updated);
+  },
+
+  async reorder(centerId: string, orderedIds: string[]) {
+    if (orderedIds.length === 0) return;
+    await prisma.$transaction(
+      orderedIds.map((id, index) =>
+        prisma.plan.updateMany({
+          where: { id, centerId },
+          data: { sortOrder: index },
+        })
+      )
+    );
+  },
+
+  async setPopular(id: string, centerId: string) {
+    const p = await prisma.plan.findFirst({ where: { id, centerId } });
+    if (!p) return null;
+    const [, updated] = await prisma.$transaction([
+      prisma.plan.updateMany({
+        where: { centerId, id: { not: id }, isPopular: true },
+        data: { isPopular: false },
+      }),
+      prisma.plan.update({ where: { id }, data: { isPopular: true } }),
+    ]);
+    return toDomain(updated);
+  },
+
+  async clearPopular(id: string, centerId: string) {
+    const p = await prisma.plan.findFirst({ where: { id, centerId } });
+    if (!p) return null;
+    const updated = await prisma.plan.update({
+      where: { id },
+      data: { isPopular: false },
+    });
+    return toDomain(updated);
   },
 };

@@ -101,6 +101,9 @@ export function PlanForm({ mode, plan, slugError, categories = [], initialQuotas
   const [billingMode, setBillingMode] = useState<BillingMode | "">(
     mode === "edit" ? (plan.billingMode as BillingMode) ?? "" : ""
   );
+  const [isPopular, setIsPopular] = useState<boolean>(
+    mode === "edit" ? plan.isPopular : false
+  );
 
   const displaySlug = mode === "create"
     ? (slugManuallyEdited ? slug : slugify(name))
@@ -151,6 +154,7 @@ export function PlanForm({ mode, plan, slugError, categories = [], initialQuotas
       maxReservations: usesLimitVal === "unlimited" ? null : (maxReservations ?? undefined),
       maxReservationsPerDay: maxReservationsPerDay ?? undefined,
       maxReservationsPerWeek: maxReservationsPerWeek ?? undefined,
+      isPopular,
       quotas: type === "ON_DEMAND" ? quotas : undefined,
     };
 
@@ -511,6 +515,26 @@ export function PlanForm({ mode, plan, slugError, categories = [], initialQuotas
           </p>
         </div>
       )}
+
+      <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg)]/50 p-3">
+        <label className="inline-flex items-start gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={isPopular}
+            onChange={(e) => setIsPopular(e.target.checked)}
+            className="mt-0.5 rounded border-[var(--color-border)]"
+          />
+          <span>
+            <span className="block text-sm font-medium text-[var(--color-text)]">
+              Destacar como &ldquo;Popular&rdquo; en la tienda
+            </span>
+            <span className="block text-xs text-[var(--color-text-muted)]">
+              Solo un plan puede estar marcado como popular a la vez. Si marcas este, se
+              desmarcará cualquier otro del mismo centro.
+            </span>
+          </span>
+        </label>
+      </div>
 
       {slugError && (
         <p className="text-sm text-[var(--color-error)]">Ese slug ya existe en este centro.</p>

@@ -17,7 +17,7 @@ export const NAV_LINKS = [
 ] as const;
 
 export const CTAS = {
-  comenzarPractica: "Comenzar práctica",
+  comenzarPractica: "Comenzar a practicar",
   verOpciones: "Ver opciones",
   sumarmeMembresia: "Sumarme",
   accederContenido: "Acceder al contenido",

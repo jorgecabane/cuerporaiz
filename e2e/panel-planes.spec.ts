@@ -1,5 +1,5 @@
-import { test, expect } from "@playwright/test";
-import { cleanupPlans } from "./helpers/cleanup";
+import { test, expect, type Page } from "@playwright/test";
+import { cleanupPlans, seedUserPlanForPlan } from "./helpers/cleanup";
 
 test.describe("Panel admin - Planes", () => {
   test.describe.configure({ mode: "serial" });
@@ -109,5 +109,113 @@ test.describe("Panel admin - Planes", () => {
     }
 
     await expect(page.getByRole("heading", { name: planNameEdited })).not.toBeVisible();
+  });
+});
+
+// ───────────────────────────────────────────────────────────────────────────
+// §3: plan con dependents (UserPlan activo) → no se puede eliminar, se ofrece
+// Deshabilitar. Luego la reactivación restaura el plan a la lista activa.
+// §6: solo un plan puede estar marcado como Popular por centro a la vez.
+// ───────────────────────────────────────────────────────────────────────────
+
+test.describe("Panel admin - Delete plan con alumnos (§3)", () => {
+  test.describe.configure({ mode: "serial" });
+
+  const RUN_ID = Date.now().toString(36);
+  const PLAN_NAME = `Plan E2E deps ${RUN_ID}`;
+
+  test.afterAll(async () => {
+    await cleanupPlans(`Plan E2E deps`);
+  });
+
+  test("click Eliminar en plan con UserPlan muestra modal de Deshabilitar", async ({ page }) => {
+    // Crear plan via UI
+    await page.goto("/panel/planes/nuevo");
+    await page.getByLabel(/nombre/i).fill(PLAN_NAME);
+    await page.getByLabel(/identificador del plan|slug/i).fill(`plan-e2e-deps-${RUN_ID}`);
+    await page.getByLabel(/valor del plan/i).fill("20000");
+    await page.getByRole("button", { name: /crear plan/i }).click();
+    await expect(page).toHaveURL(/\/panel\/planes$/, { timeout: 15000 });
+
+    // Seedear un UserPlan activo directamente en DB para simular "plan comprado"
+    await page.goto("/panel/planes");
+    const listItem = page
+      .getByRole("listitem")
+      .filter({ has: page.getByRole("heading", { name: PLAN_NAME }) })
+      .first();
+    const editLink = listItem.getByRole("link", { name: /editar/i });
+    const editHref = await editLink.getAttribute("href");
+    const planId = editHref?.match(/\/panel\/planes\/(.+)\/editar/)?.[1];
+    expect(planId).toBeTruthy();
+    await seedUserPlanForPlan(planId!);
+
+    // Click Eliminar → debe aparecer diálogo de Deshabilitar (no de eliminar)
+    await listItem.getByRole("button", { name: /eliminar/i }).click();
+
+    const dialog = page.getByRole("alertdialog");
+    await expect(dialog).toBeVisible({ timeout: 10000 });
+    await expect(dialog).toContainText(/No se puede eliminar/i);
+    await expect(dialog.getByRole("button", { name: /Deshabilitar plan/i })).toBeVisible();
+
+    // Confirmar deshabilitar → el plan debe moverse a la sección de archivados
+    await dialog.getByRole("button", { name: /Deshabilitar plan/i }).click();
+
+    await expect(listItem).not.toBeVisible({ timeout: 10000 });
+
+    // Abrir sección de archivados y verificar
+    const archivedToggle = page.getByRole("button", { name: /Planes deshabilitados/i });
+    await expect(archivedToggle).toBeVisible({ timeout: 10000 });
+    await archivedToggle.click();
+    await expect(page.getByText(PLAN_NAME)).toBeVisible();
+    await expect(page.getByRole("button", { name: /Reactivar/i }).first()).toBeVisible();
+  });
+});
+
+test.describe("Panel admin - Popular único por centro (§6)", () => {
+  test.describe.configure({ mode: "serial" });
+
+  const RUN_ID = Date.now().toString(36);
+  const PLAN_A = `Plan E2E pop-a ${RUN_ID}`;
+  const PLAN_B = `Plan E2E pop-b ${RUN_ID}`;
+
+  test.afterAll(async () => {
+    await cleanupPlans(`Plan E2E pop-`);
+  });
+
+  async function createPlanWithPopular(
+    page: Page,
+    name: string,
+    slug: string,
+    popular: boolean
+  ) {
+    await page.goto("/panel/planes/nuevo");
+    await page.getByLabel(/nombre/i).fill(name);
+    await page.getByLabel(/identificador del plan|slug/i).fill(slug);
+    await page.getByLabel(/valor del plan/i).fill("10000");
+    if (popular) {
+      await page.getByLabel(/Destacar como .Popular./i).check();
+    }
+    await page.getByRole("button", { name: /crear plan/i }).click();
+    await expect(page).toHaveURL(/\/panel\/planes$/, { timeout: 15000 });
+  }
+
+  test("marcar Popular en Plan B desmarca el Popular de Plan A", async ({ page }) => {
+    await createPlanWithPopular(page, PLAN_A, `plan-e2e-pop-a-${RUN_ID}`, true);
+    await createPlanWithPopular(page, PLAN_B, `plan-e2e-pop-b-${RUN_ID}`, true);
+
+    await page.goto("/panel/planes");
+
+    const itemA = page
+      .getByRole("listitem")
+      .filter({ has: page.getByRole("heading", { name: PLAN_A }) })
+      .first();
+    const itemB = page
+      .getByRole("listitem")
+      .filter({ has: page.getByRole("heading", { name: PLAN_B }) })
+      .first();
+
+    // Solo el B debería mostrar el badge "Popular"
+    await expect(itemB.getByText("Popular", { exact: true })).toBeVisible({ timeout: 10000 });
+    await expect(itemA.getByText("Popular", { exact: true })).toHaveCount(0);
   });
 });

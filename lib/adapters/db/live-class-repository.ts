@@ -205,6 +205,27 @@ export const liveClassRepository: ILiveClassRepository = {
     return result.count;
   },
 
+  async updateManyByIds(ids, centerId, data) {
+    if (ids.length === 0) return 0;
+    const result = await prisma.liveClass.updateMany({
+      where: { id: { in: ids }, centerId },
+      data: {
+        ...(data.title !== undefined && { title: data.title }),
+        ...(data.durationMinutes !== undefined && { durationMinutes: data.durationMinutes }),
+        ...(data.maxCapacity !== undefined && { maxCapacity: data.maxCapacity }),
+        ...(data.disciplineId !== undefined && { disciplineId: data.disciplineId }),
+        ...(data.instructorId !== undefined && { instructorId: data.instructorId }),
+        ...(data.isOnline !== undefined && { isOnline: data.isOnline }),
+        ...(data.meetingUrl !== undefined && { meetingUrl: data.meetingUrl }),
+        ...(data.isTrialClass !== undefined && { isTrialClass: data.isTrialClass }),
+        ...(data.trialCapacity !== undefined && { trialCapacity: data.trialCapacity }),
+        ...(data.color !== undefined && { color: data.color }),
+        ...(data.status !== undefined && { status: data.status }),
+      },
+    });
+    return result.count;
+  },
+
   async deleteBySeriesIdFromDate(seriesId, centerId, fromDate) {
     const result = await prisma.liveClass.deleteMany({
       where: {

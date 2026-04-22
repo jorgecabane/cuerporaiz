@@ -37,6 +37,8 @@ model Center {
   bankAccountHolder String?
   bankAccountRut    String?
   bankAccountEmail  String?
+  // Fragmento opcional que el admin añade al correo de bienvenida del alumno
+  welcomeEmailCustomBody String? @default("")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -441,6 +443,10 @@ model Plan {
   maxReservations       Int?
   maxReservationsPerDay Int?  // distribución: máx por día
   maxReservationsPerWeek Int? // distribución: máx por semana (ej. 8/mes, máx 4/semana)
+  // Ciclo de vida
+  archivedAt  DateTime?        // si no null, el plan está deshabilitado (no se muestra en tienda)
+  sortOrder   Int      @default(0) // menor primero; orden manual del admin
+  isPopular   Boolean  @default(false) // destaca con badge "Popular" en la tienda
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -452,6 +458,7 @@ model Plan {
 
   @@unique([centerId, slug])
   @@index([centerId])
+  @@index([centerId, archivedAt])
 }
 
 enum OrderStatus {

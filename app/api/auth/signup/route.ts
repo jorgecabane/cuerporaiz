@@ -48,6 +48,7 @@ export async function POST(request: Request) {
       centerName: center.name,
       dashboardUrl: `${baseUrl}/panel`,
       profileUrl: `${baseUrl}/panel/mi-perfil`,
+      customBodyFragment: center.welcomeEmailCustomBody?.trim() || undefined,
     }));
 
     const verificationToken = await requestEmailVerification(user.id, authTokenRepository);

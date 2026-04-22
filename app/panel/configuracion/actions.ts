@@ -30,7 +30,8 @@ export async function updateCenterPolicies(
       (data.bookBeforeMinutes < 0 || data.bookBeforeMinutes > MAX_BOOK_BEFORE_MINUTES)) ||
     (data.calendarStartHour !== undefined && (data.calendarStartHour < 0 || data.calendarStartHour > 12)) ||
     (data.calendarEndHour !== undefined && (data.calendarEndHour < 12 || data.calendarEndHour > 24)) ||
-    (data.defaultClassDurationMinutes !== undefined && (data.defaultClassDurationMinutes < 15 || data.defaultClassDurationMinutes > 240))
+    (data.defaultClassDurationMinutes !== undefined && (data.defaultClassDurationMinutes < 15 || data.defaultClassDurationMinutes > 240)) ||
+    (data.welcomeEmailCustomBody !== undefined && data.welcomeEmailCustomBody.length > 1000)
   ) {
     return { error: "Valores fuera de rango" };
   }

@@ -4,16 +4,9 @@
 
 import type { SendEmailDto } from "@/lib/dto/email-dto";
 import { emailBaseLayout, EMAIL_CTA_STYLE } from "./base-layout";
+import { escapeHtml } from "./utils";
 
 const DEFAULT_FROM = process.env.EMAIL_FROM ?? `Cuerpo Raíz <onboarding@resend.dev>`;
-
-function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
 
 // ─── Recuperar contraseña ─────────────────────────────────────────────────────
 export interface ForgotPasswordEmailData {
