@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 import { isAdminRole } from "@/lib/domain/role";
 import { prisma } from "@/lib/adapters/db";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(request: Request) {
   const session = await auth();
   if (!session?.user?.centerId || !isAdminRole(session.user.role)) {

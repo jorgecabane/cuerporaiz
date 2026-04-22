@@ -2,11 +2,21 @@
 
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import { liveClassRepository, liveClassSeriesRepository } from "@/lib/adapters/db";
+import { revalidatePath } from "next/cache";
+import {
+  liveClassRepository,
+  liveClassSeriesRepository,
+  centerHolidayRepository,
+  reservationRepository,
+  userRepository,
+  centerRepository,
+} from "@/lib/adapters/db";
 import { isAdminRole } from "@/lib/domain/role";
 import { generateSeriesInstances } from "@/lib/application/generate-series-instances";
 import { createZoomMeeting } from "@/lib/application/create-zoom-meeting";
 import { createGoogleMeetMeeting } from "@/lib/application/create-google-meet-meeting";
+import { sendEmailSafe } from "@/lib/application/send-email";
+import { buildClassCancelledEmail } from "@/lib/email";
 import type { RepeatFrequency } from "@/lib/domain";
 import type { UpdateSeriesInput } from "@/lib/ports";
 
@@ -116,7 +126,12 @@ export async function createLiveClass(data: CreateClassFormData): Promise<void> 
       monthlyMode: data.repeat === "MONTHLY" ? (data.monthlyMode ?? "dayOfMonth") : null,
     });
 
-    const instances = generateSeriesInstances(series);
+    const holidays = await centerHolidayRepository.findByCenterId(centerId);
+    const holidayDates = new Set(
+      holidays.map((h) => h.date.toISOString().slice(0, 10))
+    );
+
+    const instances = generateSeriesInstances(series, holidayDates);
     if (instances.length > 0) {
       await liveClassRepository.createMany(centerId, instances);
     }
@@ -176,7 +191,68 @@ export async function cancelLiveClass(id: string): Promise<void> {
   }
 
   await liveClassRepository.update(id, centerId, { status: "CANCELLED" });
+  revalidatePath("/panel/horarios");
   redirect("/panel/horarios");
+}
+
+export interface BatchCancelResult {
+  cancelledCount: number;
+  notifiedCount: number;
+}
+
+/**
+ * Marca varias clases como CANCELLED (soft) y notifica a los alumnos con reserva activa.
+ * Solo afecta las clases que pertenecen al centro del admin — las demás se ignoran silenciosamente.
+ * Si una clase es instancia de serie, solo se cancela esa instancia, no la serie.
+ */
+export async function batchCancelLiveClasses(ids: string[]): Promise<BatchCancelResult> {
+  const centerId = await requireAdminCenterId();
+  if (!Array.isArray(ids) || ids.length === 0) {
+    return { cancelledCount: 0, notifiedCount: 0 };
+  }
+
+  const [cancelledCount, affectedReservations, center] = await Promise.all([
+    liveClassRepository.updateManyByIds(ids, centerId, { status: "CANCELLED" }),
+    reservationRepository.findActiveByLiveClassIds(ids),
+    centerRepository.findById(centerId),
+  ]);
+
+  if (affectedReservations.length === 0) {
+    revalidatePath("/panel/horarios");
+    return { cancelledCount, notifiedCount: 0 };
+  }
+
+  await reservationRepository.cancelActiveByLiveClassIds(ids);
+
+  const userIds = [...new Set(affectedReservations.map((r) => r.userId))];
+  const classIds = [...new Set(affectedReservations.map((r) => r.liveClassId))];
+  const [users, classes] = await Promise.all([
+    userRepository.findManyByIds(userIds),
+    Promise.all(classIds.map((id) => liveClassRepository.findById(id))),
+  ]);
+  const userMap = new Map(users.map((u) => [u.id, u]));
+  const classMap = new Map(classes.filter((c) => c != null).map((c) => [c!.id, c!]));
+  const centerName = center?.name ?? "el centro";
+
+  let notifiedCount = 0;
+  for (const reservation of affectedReservations) {
+    const user = userMap.get(reservation.userId);
+    const cls = classMap.get(reservation.liveClassId);
+    if (!user || !cls) continue;
+    sendEmailSafe(
+      buildClassCancelledEmail({
+        toEmail: user.email,
+        userName: user.name ?? undefined,
+        className: cls.title,
+        startAt: cls.startsAt.toISOString(),
+        centerName,
+      })
+    );
+    notifiedCount++;
+  }
+
+  revalidatePath("/panel/horarios");
+  return { cancelledCount, notifiedCount };
 }
 
 export type EditScope = "this" | "thisAndFollowing" | "all";

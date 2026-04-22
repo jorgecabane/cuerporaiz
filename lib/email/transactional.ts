@@ -7,6 +7,7 @@ import type { SendEmailDto } from "@/lib/dto/email-dto";
 import { buildGoogleCalendarUrl, getAddToCalendarInstruction } from "@/lib/email/calendar";
 import { SITE_NAME } from "@/lib/constants/copy";
 import { emailBaseLayout, EMAIL_CTA_STYLE } from "./base-layout";
+import { plainTextToHtmlParagraphs } from "./utils";
 
 const DEFAULT_FROM = process.env.EMAIL_FROM ?? `Cuerpo Raíz <onboarding@resend.dev>`;
 const DEFAULT_TIMEZONE = "America/Santiago";
@@ -295,18 +296,59 @@ export interface WelcomeStudentData {
   centerName: string;
   dashboardUrl: string;
   profileUrl: string;
+  /** Fragmento libre configurado por el admin del centro (texto plano). */
+  customBodyFragment?: string;
 }
 
 export function buildWelcomeStudentEmail(data: WelcomeStudentData): SendEmailDto {
+  const customBlock = data.customBodyFragment
+    ? plainTextToHtmlParagraphs(data.customBodyFragment)
+    : "";
   const body = `
     <p>Hola ${data.userName},</p>
     <p>Te damos la bienvenida a <strong>${data.centerName}</strong>.</p>
     <p>Desde tu panel puedes reservar clases, ver tu plan y gestionar tu cuenta.</p>
+    ${customBlock}
     <p><a href="${data.dashboardUrl}" style="${EMAIL_CTA_STYLE}">Ir al panel</a></p>
     <p style="margin-top: 16px;"><a href="${data.profileUrl}" style="color: #2D3B2A;">Completar mi perfil</a></p>`;
   const html = emailBaseLayout({ body, centerName: data.centerName });
-  const text = `Hola ${data.userName}, bienvenido/a a ${data.centerName}. Ir al panel: ${data.dashboardUrl}`;
+  const textTail = data.customBodyFragment ? `\n\n${data.customBodyFragment.trim()}` : "";
+  const text = `Hola ${data.userName}, bienvenido/a a ${data.centerName}.${textTail}\n\nIr al panel: ${data.dashboardUrl}`;
   return { from: DEFAULT_FROM, to: [data.toEmail], subject: `Bienvenido/a a ${data.centerName}`, html, text };
+}
+
+// ─── Clase cancelada por el centro ──────────────────────────────────────────
+export interface ClassCancelledData {
+  toEmail: string;
+  userName?: string;
+  className: string;
+  startAt: string; // ISO
+  centerName: string;
+  /** URL a la tienda / agenda para reagendar. */
+  tiendaUrl?: string;
+}
+
+export function buildClassCancelledEmail(data: ClassCancelledData): SendEmailDto {
+  const when = new Date(data.startAt).toLocaleString("es-CL", { timeZone: DEFAULT_TIMEZONE });
+  const greeting = data.userName ? `Hola ${data.userName}` : "Hola";
+  const ctaLink = data.tiendaUrl
+    ? `<p><a href="${data.tiendaUrl}" style="${EMAIL_CTA_STYLE}">Ver agenda y reagendar</a></p>`
+    : "";
+  const body = `
+    <p>${greeting},</p>
+    <p>Queríamos avisarte que la clase <strong>${data.className}</strong> del
+    ${when} fue cancelada por <strong>${data.centerName}</strong>.</p>
+    <p>Tu reserva fue cancelada sin consumo de clase. Lamentamos la molestia.</p>
+    ${ctaLink}`;
+  const html = emailBaseLayout({ body, centerName: data.centerName });
+  const text = `${greeting}, la clase "${data.className}" del ${when} fue cancelada por ${data.centerName}. Tu reserva fue cancelada sin consumo de clase.`;
+  return {
+    from: DEFAULT_FROM,
+    to: [data.toEmail],
+    subject: `Clase cancelada — ${data.className}`,
+    html,
+    text,
+  };
 }
 
 // ─── Plan por vencer ────────────────────────────────────────────────────────

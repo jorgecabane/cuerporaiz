@@ -47,6 +47,9 @@ function makePlan(overrides: Partial<Plan> = {}): Plan {
     maxReservations: null,
     maxReservationsPerDay: null,
     maxReservationsPerWeek: null,
+    archivedAt: null,
+    sortOrder: 0,
+    isPopular: false,
     ...overrides,
   };
 }
@@ -153,6 +156,12 @@ function makeDeps() {
       create: vi.fn(),
       update: vi.fn(),
       delete: vi.fn(),
+      countDependents: vi.fn(),
+      archive: vi.fn(),
+      unarchive: vi.fn(),
+      reorder: vi.fn(),
+      setPopular: vi.fn(),
+      clearPopular: vi.fn(),
     },
     quotaRepo: {
       findByPlanId: vi.fn(),

@@ -1,15 +1,19 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { CheckSquare, X } from "lucide-react";
 import type { LiveClass, Discipline } from "@/lib/domain";
 import type { Instructor } from "@/lib/ports/instructor-repository";
 import { CalendarSkeleton, ListSkeleton } from "@/components/ui/Skeleton";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { toast } from "@/components/ui/Toast";
 import { WeekCalendar, type CalendarEvent } from "./WeekCalendar";
 import { DayCalendar } from "./DayCalendar";
 import { MonthCalendar } from "./MonthCalendar";
 import { ListCalendar } from "./ListCalendar";
+import { batchCancelLiveClasses } from "./actions";
 
 type ViewMode = "day" | "week" | "month" | "list";
 
@@ -81,6 +85,24 @@ export function CalendarShell({
     instructorId: null,
     mode: "all",
   });
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [, startCancelTransition] = useTransition();
+
+  function toggleSelect(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function exitSelection() {
+    setSelectionMode(false);
+    setSelectedIds(new Set());
+  }
 
   const dateRange = useCallback((): { from: Date; to: Date } => {
     switch (view) {
@@ -144,6 +166,30 @@ export function CalendarShell({
     if (filters.mode === "online" && !c.isOnline) return false;
     return true;
   });
+
+  const selectedCount = selectedIds.size;
+  const selectedWithReservationsNote = selectedCount > 0
+    ? "Si alguna tiene alumnos con reserva, se les notificará por email."
+    : "";
+
+  function confirmBatchCancel() {
+    const ids = Array.from(selectedIds);
+    setShowCancelConfirm(false);
+    startCancelTransition(async () => {
+      try {
+        const result = await batchCancelLiveClasses(ids);
+        const cancelMsg = `${result.cancelledCount} clase${result.cancelledCount === 1 ? "" : "s"} cancelada${result.cancelledCount === 1 ? "" : "s"}`;
+        const notifyMsg = result.notifiedCount > 0
+          ? ` · ${result.notifiedCount} alumno${result.notifiedCount === 1 ? "" : "s"} notificado${result.notifiedCount === 1 ? "" : "s"}`
+          : "";
+        toast.success(`${cancelMsg}${notifyMsg}`);
+        exitSelection();
+        await fetchData();
+      } catch {
+        toast.error("No se pudieron cancelar las clases");
+      }
+    });
+  }
 
   function navigate(dir: -1 | 0 | 1) {
     if (dir === 0) {
@@ -256,6 +302,27 @@ export function CalendarShell({
           <option value="physical">Solo presencial</option>
           <option value="online">Solo online</option>
         </select>
+
+        {view === "list" && !selectionMode && (
+          <button
+            type="button"
+            onClick={() => setSelectionMode(true)}
+            className="ml-auto inline-flex items-center gap-1.5 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5 text-xs font-medium text-[var(--color-text)] hover:bg-[var(--color-primary-light)]"
+          >
+            <CheckSquare className="h-3.5 w-3.5" aria-hidden />
+            Seleccionar varias
+          </button>
+        )}
+        {selectionMode && (
+          <button
+            type="button"
+            onClick={exitSelection}
+            className="ml-auto inline-flex items-center gap-1.5 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5 text-xs font-medium text-[var(--color-text-muted)] hover:bg-[var(--color-tertiary)]"
+          >
+            <X className="h-3.5 w-3.5" aria-hidden />
+            Salir
+          </button>
+        )}
       </div>
 
       {/* Navigation */}
@@ -291,8 +358,12 @@ export function CalendarShell({
       )}
 
       {/* View content */}
-      {loading && classes.length === 0 ? (
-        view === "list" ? <ListSkeleton /> : <CalendarSkeleton />
+      {loading ? (
+        view === "list" ? (
+          <ListSkeleton />
+        ) : (
+          <CalendarSkeleton view={view} />
+        )
       ) : (
         <>
           {view === "week" && (
@@ -336,10 +407,40 @@ export function CalendarShell({
               classes={filteredClasses}
               events={events}
               loading={loading}
+              selectionMode={selectionMode}
+              selectedIds={selectedIds}
+              onToggleSelect={toggleSelect}
             />
           )}
         </>
       )}
+
+      {selectionMode && selectedCount > 0 && (
+        <div className="fixed inset-x-0 bottom-0 z-40 flex justify-center p-4 pointer-events-none">
+          <div className="pointer-events-auto flex items-center gap-3 rounded-[var(--radius-lg)] bg-[var(--color-surface)] px-4 py-3 shadow-[var(--shadow-lg)] border border-[var(--color-border)]">
+            <span className="text-sm text-[var(--color-text)]">
+              {selectedCount} clase{selectedCount === 1 ? "" : "s"} seleccionada{selectedCount === 1 ? "" : "s"}
+            </span>
+            <button
+              type="button"
+              onClick={() => setShowCancelConfirm(true)}
+              className="rounded-[var(--radius-md)] bg-[var(--color-error)] px-3 py-1.5 text-sm font-medium text-white hover:opacity-90"
+            >
+              Cancelar clases
+            </button>
+          </div>
+        </div>
+      )}
+
+      <ConfirmDialog
+        open={showCancelConfirm}
+        variant="warning"
+        title={`¿Cancelar ${selectedCount} clase${selectedCount === 1 ? "" : "s"}?`}
+        description={`Las clases quedarán marcadas como canceladas y desaparecerán del calendario. ${selectedWithReservationsNote}`}
+        confirmLabel="Sí, cancelarlas"
+        onConfirm={confirmBatchCancel}
+        onCancel={() => setShowCancelConfirm(false)}
+      />
     </div>
   );
 }

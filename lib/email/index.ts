@@ -13,6 +13,7 @@ export {
   buildWelcomeStudentEmail,
   buildPlanExpiringEmail,
   buildPurchaseConfirmationEmail,
+  buildClassCancelledEmail,
   type ReservationConfirmationData,
   type ClassReminderData,
   type SpotFreedData,
@@ -21,4 +22,5 @@ export {
   type WelcomeStudentData,
   type PlanExpiringData,
   type PurchaseConfirmationData,
+  type ClassCancelledData,
 } from "./transactional";

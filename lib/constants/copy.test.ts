@@ -18,7 +18,7 @@ describe("copy", () => {
   });
 
   it("CTAS tiene textos de llamada a la acción", () => {
-    expect(CTAS.comenzarPractica).toBe("Comenzar práctica");
+    expect(CTAS.comenzarPractica).toBe("Comenzar a practicar");
     expect(CTAS.hablemos).toBe("Hablemos");
   });
 });

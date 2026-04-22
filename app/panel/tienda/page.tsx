@@ -56,6 +56,7 @@ export default async function TiendaPage() {
     maxReservations: p.maxReservations,
     maxReservationsPerDay: p.maxReservationsPerDay,
     maxReservationsPerWeek: p.maxReservationsPerWeek,
+    isPopular: p.isPopular,
   }));
 
   return (

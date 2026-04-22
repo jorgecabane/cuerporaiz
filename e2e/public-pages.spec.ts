@@ -6,11 +6,11 @@ test.describe("Páginas públicas", () => {
     await expect(page).toHaveURL(/\/panel\/tienda|\/auth\/login/, { timeout: 15000 });
   });
 
-  test("packs redirige al catálogo on demand", async ({ page }) => {
+  test("packs redirige a la biblioteca virtual", async ({ page }) => {
     await page.goto("/packs");
     await page.waitForURL(/\/catalogo/);
     await expect(
-      page.getByRole("heading", { name: /catálogo on demand/i })
+      page.getByRole("heading", { name: /biblioteca virtual/i })
     ).toBeVisible();
   });
 });

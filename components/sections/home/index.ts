@@ -8,3 +8,5 @@ export { SobreTriniSection } from "./SobreTriniSection";
 export { CtaSection } from "./CtaSection";
 export { DisciplinesSection } from "./DisciplinesSection";
 export { ContactSection } from "./ContactSection";
+export { LibrarySection } from "./LibrarySection";
+export { EventsSection, type UpcomingEvent } from "./EventsSection";

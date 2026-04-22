@@ -58,7 +58,7 @@ export default async function ClientDetailPage({
   const [userPlans, orders, plans, manualPayments] = await Promise.all([
     userPlanRepository.findByUserAndCenter(userId, centerId),
     orderRepository.findManyByUserIdAndCenterId(userId, centerId),
-    planRepository.findManyByCenterId(centerId),
+    planRepository.findManyByCenterId(centerId, { includeArchived: true }),
     prisma.manualPayment.findMany({
       where: { centerId, userId },
       orderBy: { paidAt: "desc" },

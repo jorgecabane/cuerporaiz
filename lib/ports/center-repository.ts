@@ -11,6 +11,7 @@ export interface CenterPoliciesUpdate {
   calendarEndHour?: number;
   calendarWeekStartDay?: number;
   defaultClassDurationMinutes?: number;
+  welcomeEmailCustomBody?: string;
 }
 
 export interface ICenterRepository {

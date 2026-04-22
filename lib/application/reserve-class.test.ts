@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
+  reserveClassUseCase,
   cancelReservationUseCase,
   cancelReservationByStaffUseCase,
   listMyReservationsPaginated,
@@ -11,10 +12,27 @@ const mocks = vi.hoisted(() => ({
     findById: vi.fn(),
     updateStatus: vi.fn(),
     findByUserIdAndCenterPaginated: vi.fn(),
+    countByUserAndStatus: vi.fn(),
+    hasTrialReservation: vi.fn(),
+    findByUserAndLiveClass: vi.fn(),
+    create: vi.fn(),
   },
-  liveClassRepository: { findById: vi.fn() },
+  liveClassRepository: {
+    findById: vi.fn(),
+    countConfirmedReservations: vi.fn(),
+  },
   centerRepository: { findById: vi.fn() },
-  userPlanRepository: { findById: vi.fn(), decrementClassesUsed: vi.fn() },
+  userPlanRepository: {
+    findById: vi.fn(),
+    decrementClassesUsed: vi.fn(),
+    findActiveByUserAndCenter: vi.fn(),
+    incrementClassesUsed: vi.fn(),
+  },
+  centerHolidayRepository: {
+    findByCenterIdAndDate: vi.fn(),
+  },
+  userRepository: { findById: vi.fn() },
+  planRepository: { findById: vi.fn() },
 }));
 
 vi.mock("@/lib/adapters/db", () => ({
@@ -22,9 +40,10 @@ vi.mock("@/lib/adapters/db", () => ({
   liveClassRepository: mocks.liveClassRepository,
   reservationRepository: mocks.reservationRepository,
   userPlanRepository: mocks.userPlanRepository,
-  userRepository: { findById: vi.fn() },
+  userRepository: mocks.userRepository,
   instructorRepository: { findByCenterId: vi.fn() },
-  planRepository: { findById: vi.fn() },
+  planRepository: mocks.planRepository,
+  centerHolidayRepository: mocks.centerHolidayRepository,
 }));
 
 function makeReservation(overrides: Partial<Reservation> = {}): Reservation {
@@ -240,5 +259,67 @@ describe("listMyReservationsPaginated", () => {
         statuses: ["CONFIRMED", "CANCELLED", "LATE_CANCELLED", "ATTENDED", "NO_SHOW"],
       })
     );
+  });
+});
+
+describe("reserveClassUseCase — holiday blocking", () => {
+  const userId = "user-1";
+  const centerId = "center-1";
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.clearAllMocks();
+    vi.setSystemTime(new Date("2026-06-01T10:00:00Z"));
+    mocks.liveClassRepository.findById.mockResolvedValue(
+      makeLiveClass({ startsAt: new Date("2026-06-10T14:00:00Z"), centerId })
+    );
+    mocks.centerRepository.findById.mockResolvedValue({
+      id: centerId,
+      bookBeforeMinutes: 0,
+      cancelBeforeMinutes: 0,
+      maxNoShowsPerMonth: 10,
+      allowTrialClassPerPerson: false,
+    });
+    mocks.reservationRepository.countByUserAndStatus.mockResolvedValue(0);
+    mocks.reservationRepository.hasTrialReservation.mockResolvedValue(false);
+    mocks.liveClassRepository.countConfirmedReservations.mockResolvedValue(0);
+    mocks.reservationRepository.findByUserAndLiveClass.mockResolvedValue(null);
+    mocks.userPlanRepository.findActiveByUserAndCenter.mockResolvedValue([
+      { id: "up-1", planId: "p-1", classesTotal: null, classesUsed: 0, validUntil: null, status: "ACTIVE" },
+    ]);
+    mocks.planRepository.findById.mockResolvedValue({ id: "p-1", type: "LIVE" });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("rechaza reserva si la fecha de la clase es feriado del centro → HOLIDAY", async () => {
+    mocks.centerHolidayRepository.findByCenterIdAndDate.mockResolvedValue({
+      id: "h-1",
+      centerId,
+      date: new Date(Date.UTC(2026, 5, 10)),
+      label: "Día libre",
+      createdAt: new Date(),
+    });
+
+    const result = await reserveClassUseCase(userId, centerId, "lc-1");
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.code).toBe("HOLIDAY");
+      expect(result.message).toMatch(/feriado/i);
+    }
+    expect(mocks.reservationRepository.create).not.toHaveBeenCalled();
+  });
+
+  it("permite reserva si no hay feriado en la fecha", async () => {
+    mocks.centerHolidayRepository.findByCenterIdAndDate.mockResolvedValue(null);
+    mocks.reservationRepository.create.mockResolvedValue(makeReservation());
+
+    const result = await reserveClassUseCase(userId, centerId, "lc-1");
+
+    expect(result.success).toBe(true);
+    expect(mocks.centerHolidayRepository.findByCenterIdAndDate).toHaveBeenCalled();
   });
 });

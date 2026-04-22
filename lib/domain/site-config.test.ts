@@ -10,6 +10,7 @@ describe("SECTION_KEYS", () => {
     expect(SECTION_KEYS).toContain("schedule");
     expect(SECTION_KEYS).toContain("plans");
     expect(SECTION_KEYS).toContain("on-demand");
+    expect(SECTION_KEYS).toContain("events");
     expect(SECTION_KEYS).toContain("disciplines");
     expect(SECTION_KEYS).toContain("team");
     expect(SECTION_KEYS).toContain("testimonials");
@@ -17,8 +18,8 @@ describe("SECTION_KEYS", () => {
     expect(SECTION_KEYS).toContain("contact");
   });
 
-  it("has 11 section keys", () => {
-    expect(SECTION_KEYS.length).toBe(11);
+  it("has 12 section keys", () => {
+    expect(SECTION_KEYS.length).toBe(12);
   });
 
   it("SectionKey type is satisfied by each element", () => {

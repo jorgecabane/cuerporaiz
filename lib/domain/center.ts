@@ -28,6 +28,8 @@ export interface Center {
   bankAccountHolder: string | null;
   bankAccountRut: string | null;
   bankAccountEmail: string | null;
+  /** Fragmento libre del admin que se añade al correo de bienvenida del alumno */
+  welcomeEmailCustomBody: string;
   createdAt: Date;
   updatedAt: Date;
 }

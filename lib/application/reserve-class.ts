@@ -17,6 +17,7 @@ import {
   userPlanRepository,
   userRepository,
   instructorRepository,
+  centerHolidayRepository,
 } from "@/lib/adapters/db";
 import { planRepository } from "@/lib/adapters/db";
 import { sendEmailSafe } from "@/lib/application/send-email";
@@ -81,6 +82,21 @@ export async function reserveClassUseCase(
   }
   if (liveClass.startsAt < new Date()) {
     return { success: false, code: "CLASS_PAST", message: "La clase ya pasó" };
+  }
+
+  // Feriado del centro: no se permite reservar en fechas marcadas como feriado
+  const classDateUtc = new Date(Date.UTC(
+    liveClass.startsAt.getUTCFullYear(),
+    liveClass.startsAt.getUTCMonth(),
+    liveClass.startsAt.getUTCDate(),
+  ));
+  const holiday = await centerHolidayRepository.findByCenterIdAndDate(centerId, classDateUtc);
+  if (holiday) {
+    return {
+      success: false,
+      code: "HOLIDAY",
+      message: "No se puede reservar en feriado",
+    };
   }
 
   // Política: bookBeforeMinutes

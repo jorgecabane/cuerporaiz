@@ -23,6 +23,12 @@ export interface Plan {
   maxReservations: number | null;       // null = ilimitado en el período
   maxReservationsPerDay: number | null;
   maxReservationsPerWeek: number | null;
+  /** Si no es null, el plan está archivado y no se muestra en la tienda. */
+  archivedAt: Date | null;
+  /** Orden manual (ascendente) para la tienda pública. */
+  sortOrder: number;
+  /** Destaca el plan con un badge en la tienda. */
+  isPopular: boolean;
 }
 
 export interface PlanCreateInput {
@@ -39,6 +45,8 @@ export interface PlanCreateInput {
   maxReservations?: number | null;
   maxReservationsPerDay?: number | null;
   maxReservationsPerWeek?: number | null;
+  sortOrder?: number;
+  isPopular?: boolean;
 }
 
 export interface PlanUpdateInput {
@@ -55,14 +63,31 @@ export interface PlanUpdateInput {
   maxReservations?: number | null;
   maxReservationsPerDay?: number | null;
   maxReservationsPerWeek?: number | null;
+  sortOrder?: number;
+  isPopular?: boolean;
+}
+
+export interface FindPlansOptions {
+  /** Cuando true, incluye planes con archivedAt != null. Default false. */
+  includeArchived?: boolean;
 }
 
 export interface IPlanRepository {
   findById(id: string): Promise<Plan | null>;
   findManyByIds(ids: string[]): Promise<Plan[]>;
   findByCenterAndSlug(centerId: string, slug: string): Promise<Plan | null>;
-  findManyByCenterId(centerId: string): Promise<Plan[]>;
+  findManyByCenterId(centerId: string, options?: FindPlansOptions): Promise<Plan[]>;
   create(centerId: string, data: PlanCreateInput): Promise<Plan>;
   update(id: string, centerId: string, data: PlanUpdateInput): Promise<Plan | null>;
   delete(id: string, centerId: string): Promise<boolean>;
+  /** Cuenta UserPlan + Order + Subscription vinculados al plan (todas las filas). */
+  countDependents(id: string, centerId: string): Promise<number>;
+  archive(id: string, centerId: string): Promise<Plan | null>;
+  unarchive(id: string, centerId: string): Promise<Plan | null>;
+  /** Actualiza sortOrder de cada id según su posición en el array. Transaccional. */
+  reorder(centerId: string, orderedIds: string[]): Promise<void>;
+  /** Marca un solo plan como isPopular=true y desmarca al resto del mismo centro. */
+  setPopular(id: string, centerId: string): Promise<Plan | null>;
+  /** Quita el flag isPopular del plan (sin tocar otros). */
+  clearPopular(id: string, centerId: string): Promise<Plan | null>;
 }

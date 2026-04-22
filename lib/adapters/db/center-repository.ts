@@ -23,6 +23,7 @@ function toDomainCenter(c: {
   bankAccountHolder: string | null;
   bankAccountRut: string | null;
   bankAccountEmail: string | null;
+  welcomeEmailCustomBody: string | null;
   createdAt: Date;
   updatedAt: Date;
 }): Center {
@@ -48,6 +49,7 @@ function toDomainCenter(c: {
     bankAccountHolder: c.bankAccountHolder,
     bankAccountRut: c.bankAccountRut,
     bankAccountEmail: c.bankAccountEmail,
+    welcomeEmailCustomBody: c.welcomeEmailCustomBody ?? "",
     createdAt: c.createdAt,
     updatedAt: c.updatedAt,
   };
@@ -86,6 +88,7 @@ export const centerRepository: ICenterRepository = {
     if (data.calendarEndHour !== undefined) payload.calendarEndHour = data.calendarEndHour;
     if (data.calendarWeekStartDay !== undefined) payload.calendarWeekStartDay = data.calendarWeekStartDay;
     if (data.defaultClassDurationMinutes !== undefined) payload.defaultClassDurationMinutes = data.defaultClassDurationMinutes;
+    if (data.welcomeEmailCustomBody !== undefined) payload.welcomeEmailCustomBody = data.welcomeEmailCustomBody;
     const c = await prisma.center.update({
       where: { id: centerId },
       data: payload as Parameters<typeof prisma.center.update>[0]["data"],

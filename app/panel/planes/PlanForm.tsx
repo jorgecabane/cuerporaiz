@@ -51,9 +51,9 @@ const PERIOD_LABEL_SINGULAR: Record<ValidityPeriod, string> = {
 };
 
 const TYPE_OPTIONS: { value: PlanType; label: string; hint: string }[] = [
-  { value: "LIVE", label: "Live", hint: "Con profe en vivo (presencial o por Zoom/Meet)." },
-  { value: "ON_DEMAND", label: "On-demand", hint: "Clases grabadas a desbloquear." },
-  { value: "MEMBERSHIP_ON_DEMAND", label: "Membresía on-demand", hint: "Acceso a la videoteca on-demand." },
+  { value: "LIVE", label: "En vivo", hint: "Con profe en vivo (presencial o por Zoom/Meet)." },
+  { value: "ON_DEMAND", label: "Biblioteca virtual", hint: "Clases grabadas a desbloquear." },
+  { value: "MEMBERSHIP_ON_DEMAND", label: "Membresía biblioteca virtual", hint: "Acceso a la biblioteca virtual." },
 ];
 
 type PlanFormProps =
@@ -100,6 +100,9 @@ export function PlanForm({ mode, plan, slugError, categories = [], initialQuotas
   );
   const [billingMode, setBillingMode] = useState<BillingMode | "">(
     mode === "edit" ? (plan.billingMode as BillingMode) ?? "" : ""
+  );
+  const [isPopular, setIsPopular] = useState<boolean>(
+    mode === "edit" ? plan.isPopular : false
   );
 
   const displaySlug = mode === "create"
@@ -151,6 +154,7 @@ export function PlanForm({ mode, plan, slugError, categories = [], initialQuotas
       maxReservations: usesLimitVal === "unlimited" ? null : (maxReservations ?? undefined),
       maxReservationsPerDay: maxReservationsPerDay ?? undefined,
       maxReservationsPerWeek: maxReservationsPerWeek ?? undefined,
+      isPopular,
       quotas: type === "ON_DEMAND" ? quotas : undefined,
     };
 
@@ -295,7 +299,7 @@ export function PlanForm({ mode, plan, slugError, categories = [], initialQuotas
       {planType === "MEMBERSHIP_ON_DEMAND" && (
         <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg)]/50 p-3">
           <p className="text-sm text-[var(--color-text-muted)]">
-            Este plan dará acceso ilimitado a todo el contenido on demand.
+            Este plan dará acceso ilimitado a toda la biblioteca virtual.
           </p>
         </div>
       )}
@@ -511,6 +515,26 @@ export function PlanForm({ mode, plan, slugError, categories = [], initialQuotas
           </p>
         </div>
       )}
+
+      <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg)]/50 p-3">
+        <label className="inline-flex items-start gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={isPopular}
+            onChange={(e) => setIsPopular(e.target.checked)}
+            className="mt-0.5 rounded border-[var(--color-border)]"
+          />
+          <span>
+            <span className="block text-sm font-medium text-[var(--color-text)]">
+              Destacar como &ldquo;Popular&rdquo; en la tienda
+            </span>
+            <span className="block text-xs text-[var(--color-text-muted)]">
+              Solo un plan puede estar marcado como popular a la vez. Si marcas este, se
+              desmarcará cualquier otro del mismo centro.
+            </span>
+          </span>
+        </label>
+      </div>
 
       {slugError && (
         <p className="text-sm text-[var(--color-error)]">Ese slug ya existe en este centro.</p>

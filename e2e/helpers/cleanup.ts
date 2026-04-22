@@ -2,12 +2,34 @@
  * E2E cleanup helpers — use Prisma directly to remove test data.
  * Called in afterAll as a safety net: even if UI cleanup tests fail,
  * this ensures no E2E data is left behind.
+ *
+ * Nota: no se reusa `lib/adapters/db/prisma` porque Playwright no compila
+ * fuera de `e2e/`. Aquí creamos un cliente dedicado para los workers.
  */
 
-async function getPrisma() {
-  if (!process.env.DATABASE_URL && !process.env.DIRECT_DATABASE_URL) return null;
-  const { prisma } = await import("../../lib/adapters/db/prisma");
-  return prisma;
+import { loadEnvConfig } from "@next/env";
+import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
+
+let envLoaded = false;
+function ensureEnvLoaded() {
+  if (envLoaded) return;
+  loadEnvConfig(process.cwd());
+  envLoaded = true;
+}
+
+let cachedPrisma: PrismaClient | null | undefined;
+async function getPrisma(): Promise<PrismaClient | null> {
+  if (cachedPrisma !== undefined) return cachedPrisma;
+  ensureEnvLoaded();
+  const connectionString = process.env.DATABASE_URL;
+  if (!connectionString) {
+    cachedPrisma = null;
+    return null;
+  }
+  const adapter = new PrismaPg({ connectionString });
+  cachedPrisma = new PrismaClient({ adapter });
+  return cachedPrisma;
 }
 
 /** Delete on-demand categories (cascades to practices + lessons) matching a name pattern */
@@ -37,7 +59,7 @@ export async function cleanupDisciplines(namePattern: string) {
   });
 }
 
-/** Delete plans (and associated quotas) matching a name pattern */
+/** Delete plans (and associated quotas + userPlans/orders/subs) matching a name pattern */
 export async function cleanupPlans(namePattern: string) {
   const prisma = await getPrisma();
   if (!prisma) return;
@@ -46,8 +68,42 @@ export async function cleanupPlans(namePattern: string) {
   });
   for (const plan of plans) {
     await prisma.planCategoryQuota.deleteMany({ where: { planId: plan.id } });
+    // Remove dependents so the hard delete succeeds even if tests created a UserPlan
+    await prisma.userPlan.deleteMany({ where: { planId: plan.id } });
+    await prisma.order.deleteMany({ where: { planId: plan.id } });
+    await prisma.subscription.deleteMany({ where: { planId: plan.id } });
     await prisma.plan.delete({ where: { id: plan.id } }).catch(() => {});
   }
+}
+
+/**
+ * Crea un UserPlan activo para que un test pueda comprobar la lógica de "deshabilitar
+ * plan con alumnos vinculados". Retorna el id del UserPlan creado (para cleanup).
+ * Busca cualquier usuario STUDENT del centro del plan; si no hay, lanza.
+ */
+export async function seedUserPlanForPlan(planId: string): Promise<string> {
+  const prisma = await getPrisma();
+  if (!prisma) throw new Error("No DB for E2E");
+  const plan = await prisma.plan.findUnique({ where: { id: planId } });
+  if (!plan) throw new Error(`Plan ${planId} no encontrado`);
+  const studentMembership = await prisma.userCenterRole.findFirst({
+    where: { centerId: plan.centerId, role: "STUDENT" },
+  });
+  if (!studentMembership) throw new Error(`No hay STUDENT en centro ${plan.centerId}`);
+  const userPlan = await prisma.userPlan.create({
+    data: {
+      userId: studentMembership.userId,
+      planId: plan.id,
+      centerId: plan.centerId,
+      status: "ACTIVE",
+      paymentStatus: "PAID",
+      classesTotal: plan.maxReservations,
+      classesUsed: 0,
+      validFrom: new Date(),
+      validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    },
+  });
+  return userPlan.id;
 }
 
 /** Delete live classes matching a title pattern */

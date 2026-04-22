@@ -31,6 +31,7 @@ export function PoliticasForm({ center }: Props) {
         const calendarStartHour = formData.get("calendarStartHour");
         const calendarEndHour = formData.get("calendarEndHour");
         const defaultClassDurationMinutes = formData.get("defaultClassDurationMinutes");
+        const welcomeEmailCustomBody = formData.get("welcomeEmailCustomBody");
 
         startTransition(async () => {
           const result = await updateCenterPolicies(center.id, {
@@ -43,6 +44,7 @@ export function PoliticasForm({ center }: Props) {
             calendarStartHour: calendarStartHour != null ? Number(calendarStartHour) : undefined,
             calendarEndHour: calendarEndHour != null ? Number(calendarEndHour) : undefined,
             defaultClassDurationMinutes: defaultClassDurationMinutes != null ? Number(defaultClassDurationMinutes) : undefined,
+            welcomeEmailCustomBody: typeof welcomeEmailCustomBody === "string" ? welcomeEmailCustomBody : undefined,
           });
           if (result.error) setError(result.error);
         });
@@ -168,6 +170,11 @@ export function PoliticasForm({ center }: Props) {
         </div>
       </div>
 
+      <WelcomeEmailFragmentField
+        initialValue={center.welcomeEmailCustomBody ?? ""}
+        key={`welcome-${center.updatedAt.toISOString()}`}
+      />
+
       {error && <p className="text-sm text-[var(--color-error)]">{error}</p>}
       <button
         type="submit"
@@ -177,5 +184,40 @@ export function PoliticasForm({ center }: Props) {
         {isPending ? "Guardando…" : "Guardar configuración"}
       </button>
     </form>
+  );
+}
+
+const WELCOME_EMAIL_MAX = 1000;
+
+function WelcomeEmailFragmentField({ initialValue }: { initialValue: string }) {
+  const [value, setValue] = useState(initialValue);
+  const remaining = WELCOME_EMAIL_MAX - value.length;
+  return (
+    <div className="border-t border-[var(--color-border)] pt-6 mt-6">
+      <h2 className="text-base font-semibold text-[var(--color-text)] mb-1">
+        Correo de bienvenida
+      </h2>
+      <p className="text-sm text-[var(--color-text-muted)] mb-3">
+        Texto opcional que se agrega al correo que reciben los alumnos al registrarse.
+        Útil para enviar recordatorios o tips personalizados del centro.
+      </p>
+      <label htmlFor="welcomeEmailCustomBody" className="sr-only">
+        Mensaje personalizado
+      </label>
+      <textarea
+        id="welcomeEmailCustomBody"
+        name="welcomeEmailCustomBody"
+        rows={4}
+        maxLength={WELCOME_EMAIL_MAX}
+        placeholder="Ej: Recuerda traer tu propia esterilla y una toalla a tu primera clase."
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 text-[var(--color-text)]"
+      />
+      <p className="mt-1 text-xs text-[var(--color-text-muted)]">
+        {remaining} caracteres disponibles. Se muestra como texto plano (los saltos
+        de línea se conservan).
+      </p>
+    </div>
   );
 }

@@ -28,11 +28,11 @@ export default async function CategoriasPage() {
     <div className="mx-auto max-w-2xl px-4 py-12">
       <div className="flex items-center justify-between gap-4 mb-2">
         <h1 className="font-display text-2xl font-bold text-[var(--color-primary)]">
-          Categorías On Demand
+          Biblioteca virtual
         </h1>
       </div>
       <p className="text-[var(--color-text-muted)] mb-6">
-        Organiza el contenido on-demand en categorías y prácticas.
+        Organiza el contenido de la biblioteca virtual en categorías y prácticas.
       </p>
 
       <div className="mb-6">

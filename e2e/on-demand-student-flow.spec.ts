@@ -14,7 +14,7 @@ test.describe("Replay (student flow)", () => {
     await page.goto("/panel/replay");
     await expect(page).toHaveURL(/\/panel\/replay/, { timeout: 15000 });
 
-    const replayHeading = page.getByRole("heading", { name: /Replay/i });
+    const replayHeading = page.getByRole("heading", { name: /Biblioteca virtual/i });
     const hasPlan = await replayHeading.isVisible({ timeout: 10000 }).catch(() => false);
     if (!hasPlan) return; // No active plan in seed — skip gracefully.
 
@@ -28,7 +28,7 @@ test.describe("Replay (student flow)", () => {
     await page.goto("/panel/replay");
     await expect(page).toHaveURL(/\/panel\/replay/, { timeout: 15000 });
 
-    const replayHeading = page.getByRole("heading", { name: /Replay/i });
+    const replayHeading = page.getByRole("heading", { name: /Biblioteca virtual/i });
     const hasPlan = await replayHeading.isVisible({ timeout: 10000 }).catch(() => false);
     if (!hasPlan) return;
 
@@ -71,7 +71,7 @@ test.describe("Replay (student flow)", () => {
     await page.goto("/panel/replay");
     await expect(page).toHaveURL(/\/panel\/replay/, { timeout: 15000 });
 
-    const replayHeading = page.getByRole("heading", { name: /Replay/i });
+    const replayHeading = page.getByRole("heading", { name: /Biblioteca virtual/i });
     const hasPlan = await replayHeading.isVisible({ timeout: 10000 }).catch(() => false);
     if (!hasPlan) return;
 
@@ -120,7 +120,7 @@ test.describe("Catálogo público — navegación completa", () => {
   test("catálogo público navega categoría → práctica → lista de lecciones", async ({ page }) => {
     await page.goto("/catalogo");
     await expect(
-      page.getByRole("heading", { name: /Catálogo on demand/i })
+      page.getByRole("heading", { name: /Biblioteca virtual/i })
     ).toBeVisible({ timeout: 15000 });
 
     // Click the first category card link (wraps an h2)

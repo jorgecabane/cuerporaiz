@@ -5,6 +5,7 @@ export const SECTION_KEYS = [
   "schedule",
   "plans",
   "on-demand",
+  "events",
   "disciplines",
   "team",
   "testimonials",

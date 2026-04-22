@@ -3,28 +3,38 @@ import { redirect } from "next/navigation";
 import { planRepository } from "@/lib/adapters/db";
 import { isAdminRole } from "@/lib/domain/role";
 import { Button } from "@/components/ui/Button";
-import { DeletePlanForm } from "./DeletePlanForm";
-
-function formatPrice(cents: number, currency: string): string {
-  if (currency === "CLP") return `$${cents.toLocaleString("es-CL")}`;
-  return `${cents / 100} ${currency}`;
-}
-
-const TYPE_LABELS: Record<string, string> = {
-  LIVE: "Live",
-  ON_DEMAND: "On-demand",
-  MEMBERSHIP_ON_DEMAND: "Membresía on-demand",
-};
+import { PlanesSortableList } from "./PlanesSortableList";
+import { ArchivedPlansList } from "./ArchivedPlansList";
+import { PlanesPageErrorBanner } from "./PlanesPageErrorBanner";
 
 export default async function PanelPlanesPage() {
   const session = await auth();
   if (!session?.user) redirect("/auth/login?callbackUrl=/panel/planes");
   if (!isAdminRole(session.user.role)) redirect("/panel");
   const centerId = session.user.centerId as string;
-  const plans = await planRepository.findManyByCenterId(centerId);
+  const all = await planRepository.findManyByCenterId(centerId, { includeArchived: true });
+  const active = all.filter((p) => p.archivedAt == null);
+  const archived = all.filter((p) => p.archivedAt != null);
+
+  const activeRows = active.map((p) => ({
+    id: p.id,
+    name: p.name,
+    slug: p.slug,
+    type: p.type,
+    amountCents: p.amountCents,
+    currency: p.currency,
+    isPopular: p.isPopular,
+  }));
+  const archivedRows = archived.map((p) => ({
+    id: p.id,
+    name: p.name,
+    slug: p.slug,
+    archivedAt: p.archivedAt!.toISOString(),
+  }));
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-12">
+      <PlanesPageErrorBanner />
       <div className="flex items-center justify-between gap-4 mb-6">
         <h1 className="font-display text-section text-[var(--color-primary)]">
           Planes (admin)
@@ -34,44 +44,20 @@ export default async function PanelPlanesPage() {
         </Button>
       </div>
       <p className="text-[var(--color-text-muted)] mb-6">
-        Gestiona los planes de pago de este centro (packs y membresías).
+        Gestiona los planes de pago de este centro. Arrastra para reordenarlos en la tienda.
       </p>
 
-      {plans.length === 0 ? (
+      {activeRows.length === 0 ? (
         <div className="rounded-[var(--radius-lg)] bg-[var(--color-surface)] p-6">
           <p className="text-[var(--color-text-muted)]">
             No hay planes. Crea uno desde &quot;Nuevo plan&quot;.
           </p>
         </div>
       ) : (
-        <ul className="space-y-3">
-          {plans.map((plan) => (
-            <li
-              key={plan.id}
-              className="rounded-[var(--radius-lg)] bg-[var(--color-surface)] p-4 shadow-[var(--shadow-md)] flex flex-wrap items-center justify-between gap-3"
-            >
-              <div>
-                <h2 className="font-semibold text-[var(--color-text)]">
-                  {plan.name}
-                </h2>
-                <p className="text-sm text-[var(--color-text-muted)]">
-                  {TYPE_LABELS[plan.type] ?? plan.type} · {plan.slug} ·{" "}
-                  {formatPrice(plan.amountCents, plan.currency)}
-                </p>
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  href={`/panel/planes/${plan.id}/editar`}
-                  variant="secondary"
-                >
-                  Editar
-                </Button>
-                <DeletePlanForm planId={plan.id} planName={plan.name} />
-              </div>
-            </li>
-          ))}
-        </ul>
+        <PlanesSortableList initialPlans={activeRows} />
       )}
+
+      <ArchivedPlansList plans={archivedRows} />
 
       <div className="mt-8">
         <Button href="/panel" variant="secondary">

@@ -25,9 +25,19 @@ interface ListCalendarProps {
   classes: LiveClass[];
   events?: CalendarEvent[];
   loading: boolean;
+  selectionMode?: boolean;
+  selectedIds?: Set<string>;
+  onToggleSelect?: (id: string) => void;
 }
 
-export function ListCalendar({ classes, events = [], loading }: ListCalendarProps) {
+export function ListCalendar({
+  classes,
+  events = [],
+  loading,
+  selectionMode = false,
+  selectedIds,
+  onToggleSelect,
+}: ListCalendarProps) {
   const grouped = new Map<string, LiveClass[]>();
   for (const c of classes) {
     const key = formatDateKey(c.startsAt);
@@ -123,28 +133,65 @@ export function ListCalendar({ classes, events = [], loading }: ListCalendarProp
                   </Link>
                 </li>
               ))}
-              {dayClasses.map((c) => (
-                <li key={c.id}>
-                  <Link
-                    href={`/panel/horarios/${c.id}`}
-                    className="flex items-center gap-3 px-4 py-3 hover:bg-[var(--color-primary-light)]/20 transition-colors"
-                  >
-                    <div
-                      className="h-3 w-3 rounded-full shrink-0"
-                      style={{ backgroundColor: c.color || "var(--color-primary)" }}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-[var(--color-text)] truncate">
-                        {c.title}
-                      </p>
-                      <p className="text-xs text-[var(--color-text-muted)]">
-                        {formatTime(c.startsAt)} · {c.durationMinutes} min · {c.maxCapacity} cupos
-                      </p>
-                    </div>
-                    <span className="text-xs text-[var(--color-text-muted)]">→</span>
-                  </Link>
-                </li>
-              ))}
+              {dayClasses.map((c) => {
+                const isSelected = selectedIds?.has(c.id) ?? false;
+                if (selectionMode) {
+                  return (
+                    <li key={c.id}>
+                      <label
+                        className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors ${
+                          isSelected
+                            ? "bg-[var(--color-primary-light)]/30"
+                            : "hover:bg-[var(--color-primary-light)]/20"
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => onToggleSelect?.(c.id)}
+                          className="rounded border-[var(--color-border)]"
+                          aria-label={`Seleccionar ${c.title}`}
+                        />
+                        <div
+                          className="h-3 w-3 rounded-full shrink-0"
+                          style={{ backgroundColor: c.color || "var(--color-primary)" }}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-[var(--color-text)] truncate">
+                            {c.title}
+                          </p>
+                          <p className="text-xs text-[var(--color-text-muted)]">
+                            {formatTime(c.startsAt)} · {c.durationMinutes} min · {c.maxCapacity} cupos
+                            {c.seriesId ? " · de serie" : ""}
+                          </p>
+                        </div>
+                      </label>
+                    </li>
+                  );
+                }
+                return (
+                  <li key={c.id}>
+                    <Link
+                      href={`/panel/horarios/${c.id}`}
+                      className="flex items-center gap-3 px-4 py-3 hover:bg-[var(--color-primary-light)]/20 transition-colors"
+                    >
+                      <div
+                        className="h-3 w-3 rounded-full shrink-0"
+                        style={{ backgroundColor: c.color || "var(--color-primary)" }}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-[var(--color-text)] truncate">
+                          {c.title}
+                        </p>
+                        <p className="text-xs text-[var(--color-text-muted)]">
+                          {formatTime(c.startsAt)} · {c.durationMinutes} min · {c.maxCapacity} cupos
+                        </p>
+                      </div>
+                      <span className="text-xs text-[var(--color-text-muted)]">→</span>
+                    </Link>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         );

@@ -26,7 +26,7 @@ test.describe("On-demand admin CRUD", () => {
   test("admin puede crear una categoría on demand", async ({ page }) => {
     await page.goto("/panel/on-demand/categorias");
     await expect(
-      page.getByRole("heading", { name: /Categorías On Demand/i })
+      page.getByRole("heading", { name: /Biblioteca virtual/i })
     ).toBeVisible({ timeout: 15000 });
 
     // Toggle the inline creation form

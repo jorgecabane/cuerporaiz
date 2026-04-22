@@ -143,4 +143,27 @@ export const reservationRepository: IReservationRepository = {
     });
     return toDomainReservation(r);
   },
+
+  async findActiveByLiveClassIds(liveClassIds: string[]) {
+    if (liveClassIds.length === 0) return [];
+    const list = await prisma.reservation.findMany({
+      where: {
+        liveClassId: { in: liveClassIds },
+        status: "CONFIRMED",
+      },
+    });
+    return list.map(toDomainReservation);
+  },
+
+  async cancelActiveByLiveClassIds(liveClassIds: string[]) {
+    if (liveClassIds.length === 0) return 0;
+    const result = await prisma.reservation.updateMany({
+      where: {
+        liveClassId: { in: liveClassIds },
+        status: "CONFIRMED",
+      },
+      data: { status: "CANCELLED" },
+    });
+    return result.count;
+  },
 };

@@ -20,13 +20,14 @@ export type SerializedPlan = {
   maxReservations: number | null;
   maxReservationsPerDay: number | null;
   maxReservationsPerWeek: number | null;
+  isPopular: boolean;
 };
 
 /* ─── Constants ──────────────────────────────────────────────────────────── */
 
 const TYPE_LABELS: Record<SerializedPlan["type"], string> = {
   LIVE: "En vivo",
-  ON_DEMAND: "On demand",
+  ON_DEMAND: "Biblioteca virtual",
   MEMBERSHIP_ON_DEMAND: "Membresía",
 };
 
@@ -250,13 +251,8 @@ export function TiendaPlans({ plans }: { plans: SerializedPlan[] }) {
   // Filter plans by active types
   const filteredPlans = plans.filter((p) => activeTypes.has(p.type));
 
-  // Popular plan (most generous LIVE plan)
-  const livePlans = plans.filter((p) => p.type === "LIVE");
-  const popularPlanId = livePlans.length > 0
-    ? livePlans.reduce((best, p) =>
-        (p.maxReservations ?? Infinity) > (best.maxReservations ?? Infinity) ? p : best
-      ).id
-    : null;
+  // Popular plan: configurado manualmente por el admin en PlanForm.
+  const popularPlanId = plans.find((p) => p.isPopular)?.id ?? null;
 
   return (
     <>

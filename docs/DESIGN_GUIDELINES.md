@@ -159,7 +159,7 @@ Cualquier nuevo token (p. ej. sombras, breakpoints si se exponen como variable) 
 ## Narrativa y copy
 
 - **Identidad:** Yoga con raíz; tierra y cuerpo. No “spa genérico”.
-- **CTAs:** “Comenzar práctica”, “Ver packs”, “Sumarme a la membresía”, “Acceder al contenido”. Evitar “Comprar ya”, “Añadir al carrito” como protagonistas.
+- **CTAs:** “Comenzar a practicar”, “Ver packs”, “Sumarme a la membresía”, “Acceder al contenido”. Evitar “Comprar ya”, “Añadir al carrito” como protagonistas.
 - **Tono:** Cercano, claro, con identidad. Placeholders y mensajes de éxito/error alineados con ese tono.
 
 ---

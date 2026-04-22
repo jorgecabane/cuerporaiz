@@ -60,6 +60,8 @@ export interface ILiveClassRepository {
   createMany(centerId: string, data: CreateLiveClassInput[]): Promise<number>;
   update(id: string, centerId: string, data: UpdateLiveClassInput): Promise<LiveClass | null>;
   updateManyBySeriesId(seriesId: string, centerId: string, data: UpdateLiveClassInput): Promise<number>;
+  /** Actualiza varias clases por IDs, validando que pertenezcan al centro. Retorna cantidad actualizada. */
+  updateManyByIds(ids: string[], centerId: string, data: UpdateLiveClassInput): Promise<number>;
   deleteBySeriesIdFromDate(seriesId: string, centerId: string, fromDate: Date): Promise<number>;
   delete(id: string, centerId: string): Promise<boolean>;
 }
