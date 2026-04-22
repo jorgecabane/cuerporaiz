@@ -33,7 +33,7 @@ export default async function PanelProfesoresPage() {
           </p>
         </div>
       ) : (
-        <InstructorList variant="profesores" instructors={instructors} />
+        <InstructorList instructors={instructors} />
       )}
 
       <div className="mt-8">

@@ -3,28 +3,11 @@
 import { useFormStatus } from "react-dom";
 import Image from "next/image";
 import { createInstructor, updateInstructor } from "@/app/panel/profesores/actions";
-import { createInstructor as createInstructorFem, updateInstructor as updateInstructorFem } from "@/app/panel/profesoras/actions";
 import { Button } from "@/components/ui/Button";
 import type { Instructor } from "@/lib/ports";
 
-type Variant = "profesores" | "profesoras";
-
 type Props = {
-  variant: Variant;
   instructor?: Instructor;
-};
-
-const LABELS: Record<Variant, { add: string; cancel: string; backHref: string }> = {
-  profesores: {
-    add: "Agregar profesor",
-    cancel: "Cancelar",
-    backHref: "/panel/profesores",
-  },
-  profesoras: {
-    add: "Agregar profesora",
-    cancel: "Cancelar",
-    backHref: "/panel/profesoras",
-  },
 };
 
 function SubmitButton({ label }: { label: string }) {
@@ -40,12 +23,9 @@ function SubmitButton({ label }: { label: string }) {
   );
 }
 
-export function InstructorForm({ variant, instructor }: Props) {
-  const labels = LABELS[variant];
+export function InstructorForm({ instructor }: Props) {
   const isEditing = !!instructor;
-  const action = isEditing
-    ? variant === "profesores" ? updateInstructor : updateInstructorFem
-    : variant === "profesores" ? createInstructor : createInstructorFem;
+  const action = isEditing ? updateInstructor : createInstructor;
 
   return (
     <form action={action} className="space-y-4">
@@ -112,9 +92,9 @@ export function InstructorForm({ variant, instructor }: Props) {
         </p>
       </div>
       <div className="flex gap-3 pt-2">
-        <SubmitButton label={isEditing ? "Guardar cambios" : labels.add} />
-        <Button href={labels.backHref} variant="secondary">
-          {labels.cancel}
+        <SubmitButton label={isEditing ? "Guardar cambios" : "Agregar profesor"} />
+        <Button href="/panel/profesores" variant="secondary">
+          Cancelar
         </Button>
       </div>
     </form>

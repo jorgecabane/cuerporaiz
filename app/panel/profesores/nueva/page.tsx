@@ -18,7 +18,7 @@ export default async function NuevoProfesorPage() {
         Agrega un profesor a tu centro. Si ya tiene cuenta, se le asignará el rol.
       </p>
       <div className="rounded-[var(--radius-lg)] bg-[var(--color-surface)] p-6 shadow-[var(--shadow-md)]">
-        <InstructorForm variant="profesores" />
+        <InstructorForm />
       </div>
       <div className="mt-6">
         <Button href="/panel/profesores" variant="secondary">

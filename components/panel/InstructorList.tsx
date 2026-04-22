@@ -3,41 +3,24 @@
 import { useState, useTransition } from "react";
 import Image from "next/image";
 import { deactivateInstructor } from "@/app/panel/profesores/actions";
-import { deactivateInstructor as deactivateInstructorFem } from "@/app/panel/profesoras/actions";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import type { Instructor } from "@/lib/ports";
 
-type Variant = "profesores" | "profesoras";
-
 type Props = {
-  variant: Variant;
   instructors: Instructor[];
 };
 
-const LABELS: Record<Variant, { editBasePath: string; confirmDescription: string }> = {
-  profesores: {
-    editBasePath: "/panel/profesores",
-    confirmDescription: "Este profesor será desactivado y no aparecerá en la lista.",
-  },
-  profesoras: {
-    editBasePath: "/panel/profesoras",
-    confirmDescription: "Esta profesora será desactivada y no aparecerá en la lista.",
-  },
-};
-
-export function InstructorList({ variant, instructors }: Props) {
+export function InstructorList({ instructors }: Props) {
   const [isPending, startTransition] = useTransition();
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string | null } | null>(null);
-  const labels = LABELS[variant];
-  const deactivate = variant === "profesores" ? deactivateInstructor : deactivateInstructorFem;
 
   function handleDeactivate() {
     if (!deleteTarget) return;
     const fd = new FormData();
     fd.set("id", deleteTarget.id);
     setDeleteTarget(null);
-    startTransition(() => deactivate(fd));
+    startTransition(() => deactivateInstructor(fd));
   }
 
   return (
@@ -75,7 +58,7 @@ export function InstructorList({ variant, instructors }: Props) {
             </div>
             <div className="flex gap-2">
               <Button
-                href={`${labels.editBasePath}/${i.id}/editar`}
+                href={`/panel/profesores/${i.id}/editar`}
                 variant="secondary"
               >
                 Editar
@@ -95,7 +78,7 @@ export function InstructorList({ variant, instructors }: Props) {
       <ConfirmDialog
         open={deleteTarget !== null}
         title={`¿Desactivar a "${deleteTarget?.name ?? "sin nombre"}"?`}
-        description={labels.confirmDescription}
+        description="Este profesor será desactivado y no aparecerá en la lista."
         confirmLabel="Desactivar"
         variant="warning"
         onConfirm={handleDeactivate}

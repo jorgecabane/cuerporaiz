@@ -33,7 +33,7 @@ export default async function EditarProfesorPage({
 
       <div className="space-y-6">
         <div className="rounded-[var(--radius-lg)] bg-[var(--color-surface)] p-6 shadow-[var(--shadow-md)]">
-          <InstructorForm variant="profesores" instructor={instructor} />
+          <InstructorForm instructor={instructor} />
         </div>
 
         <div className="rounded-[var(--radius-lg)] bg-[var(--color-surface)] p-6 shadow-[var(--shadow-md)]">
