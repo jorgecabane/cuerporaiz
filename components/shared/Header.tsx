@@ -7,10 +7,13 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import { SITE_NAME, NAV_LINKS, CTAS } from "@/lib/constants/copy";
 
-/** Rutas que usan cascarón público: header siempre sólido (buen contraste en fondo claro). */
-const PUBLIC_SHELL_PATHS = ["/checkout", "/auth", "/catalogo"];
+type HeaderNavLink = { href: string; label: string };
 
-export function Header() {
+/** Rutas que usan cascarón público: header siempre sólido (buen contraste en fondo claro). */
+const PUBLIC_SHELL_PATHS = ["/checkout", "/auth", "/catalogo", "/sobre"];
+
+export function Header({ navLinks }: { navLinks?: HeaderNavLink[] } = {}) {
+  const links: readonly HeaderNavLink[] = navLinks ?? NAV_LINKS;
   const pathname = usePathname();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
@@ -72,7 +75,7 @@ export function Header() {
 
           {/* Desktop nav */}
           <nav className="hidden items-center gap-[var(--space-6)] lg:flex" aria-label="Principal">
-            {NAV_LINKS.map(({ href, label }) => (
+            {links.map(({ href, label }) => (
               <Link
                 key={href}
                 href={href}
@@ -124,7 +127,7 @@ export function Header() {
               style={{ minHeight: "100dvh" }}
               aria-label="Menú móvil"
             >
-              {NAV_LINKS.map(({ href, label }, i) => (
+              {links.map(({ href, label }, i) => (
                 <motion.div
                   key={href}
                   initial={{ opacity: 0, y: 16 }}
@@ -143,7 +146,7 @@ export function Header() {
               <motion.div
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 + NAV_LINKS.length * 0.07, duration: 0.35 }}
+                transition={{ delay: 0.1 + links.length * 0.07, duration: 0.35 }}
                 className="mt-[var(--space-4)]"
               >
                 <Link
