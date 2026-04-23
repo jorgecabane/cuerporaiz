@@ -13,7 +13,7 @@ export async function GET() {
   const centerId = session.user.centerId;
 
   const config = await siteConfigRepository.findByCenterId(centerId);
-  return NextResponse.json(config ?? { centerId, heroTitle: null, heroSubtitle: null, heroImageUrl: null, logoUrl: null, colorPrimary: null, colorSecondary: null, colorAccent: null, contactEmail: null, contactPhone: null, contactAddress: null, instagramUrl: null, facebookUrl: null, whatsappUrl: null, youtubeUrl: null });
+  return NextResponse.json(config ?? { centerId, heroTitle: null, heroSubtitle: null, heroImageUrl: null, logoUrl: null, colorPrimary: null, colorSecondary: null, colorAccent: null, contactEmail: null, contactPhone: null, contactAddress: null, instagramUrl: null, facebookUrl: null, whatsappUrl: null, youtubeUrl: null, blogEnabled: false, blogLabel: "Blog" });
 }
 
 export async function PATCH(request: Request) {

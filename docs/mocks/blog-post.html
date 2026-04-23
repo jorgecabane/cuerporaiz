@@ -1,0 +1,1013 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Volver al cuerpo cuando la mente no para — Cuerpo Raíz (mock)</title>
+
+    <!-- Tailwind CDN (mock-only) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=DM+Sans:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      :root {
+        --color-primary: #2d3b2a;
+        --color-primary-hover: #232f21;
+        --color-primary-light: rgba(45, 59, 42, 0.08);
+        --color-secondary: #b85c38;
+        --color-secondary-hover: #9e4f2f;
+        --color-secondary-light: rgba(184, 92, 56, 0.08);
+        --color-tertiary: #f5f0e9;
+        --color-text: #1c1c1a;
+        --color-text-muted: #5c5a56;
+        --color-border: #e5e2dc;
+        --color-surface: #ffffff;
+        --font-display: "Cormorant Garamond", Georgia, serif;
+        --font-sans: "DM Sans", system-ui, sans-serif;
+        --shadow-sm: 0 1px 3px rgba(45, 59, 42, 0.08);
+        --shadow-md: 0 4px 14px rgba(45, 59, 42, 0.12);
+        --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+      }
+
+      html,
+      body {
+        background: var(--color-tertiary);
+        color: var(--color-text);
+        font-family: var(--font-sans);
+        -webkit-font-smoothing: antialiased;
+        scroll-behavior: smooth;
+      }
+
+      .font-display {
+        font-family: var(--font-display);
+      }
+
+      .eyebrow {
+        font-family: var(--font-sans);
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: var(--color-secondary);
+      }
+
+      .header-nav {
+        background: rgba(245, 240, 233, 0.92);
+        backdrop-filter: saturate(140%) blur(10px);
+        border-bottom: 1px solid var(--color-border);
+      }
+
+      .btn-primary {
+        background: var(--color-primary);
+        color: #fff;
+        transition:
+          background-color 150ms var(--ease-out),
+          transform 120ms var(--ease-out);
+      }
+      .btn-primary:hover {
+        background: var(--color-primary-hover);
+      }
+      .btn-primary:active {
+        transform: scale(0.97);
+      }
+
+      .btn-secondary {
+        background: transparent;
+        color: var(--color-primary);
+        border: 1px solid var(--color-primary);
+        transition:
+          background-color 150ms var(--ease-out),
+          transform 120ms var(--ease-out);
+      }
+      .btn-secondary:hover {
+        background: var(--color-primary);
+        color: #fff;
+      }
+      .btn-secondary:active {
+        transform: scale(0.97);
+      }
+
+      .post-title {
+        font-size: clamp(2.25rem, 5vw, 3.75rem);
+        line-height: 1.05;
+        letter-spacing: -0.02em;
+      }
+
+      .post-excerpt {
+        font-size: clamp(1.125rem, 1.8vw, 1.5rem);
+        line-height: 1.4;
+        font-style: italic;
+      }
+
+      /* ── Post body (portable text) ─────────────────────────── */
+
+      .post-body {
+        max-width: 65ch;
+        margin: 0 auto;
+        font-family: var(--font-display);
+        font-size: 1.25rem;
+        line-height: 1.75;
+        color: var(--color-text);
+      }
+
+      .post-body > p {
+        margin-bottom: 1.5rem;
+      }
+
+      .post-body h2 {
+        font-family: var(--font-display);
+        font-size: clamp(1.75rem, 3vw, 2.25rem);
+        line-height: 1.15;
+        color: var(--color-primary);
+        margin: 3rem 0 1rem;
+        letter-spacing: -0.01em;
+      }
+
+      .post-body h3 {
+        font-family: var(--font-display);
+        font-size: clamp(1.375rem, 2.2vw, 1.75rem);
+        color: var(--color-primary);
+        margin: 2.25rem 0 0.75rem;
+      }
+
+      .post-body ul,
+      .post-body ol {
+        margin-bottom: 1.5rem;
+        padding-left: 1.5rem;
+      }
+      .post-body ul li,
+      .post-body ol li {
+        margin-bottom: 0.5rem;
+      }
+      .post-body ul li::marker {
+        color: var(--color-secondary);
+      }
+
+      .post-body a {
+        color: var(--color-secondary);
+        text-decoration: underline;
+        text-underline-offset: 3px;
+        text-decoration-thickness: 1px;
+      }
+      .post-body a:hover {
+        color: var(--color-secondary-hover);
+      }
+
+      .post-body blockquote {
+        border-left: 3px solid var(--color-secondary);
+        padding-left: 1.25rem;
+        margin: 2rem 0;
+        font-style: italic;
+        color: var(--color-text-muted);
+      }
+
+      /* ── Callout ───────────────────────────────────────────── */
+
+      .callout {
+        max-width: 65ch;
+        margin: 2.5rem auto;
+        padding: 1.5rem 1.75rem;
+        border-radius: 12px;
+        font-family: var(--font-sans);
+        font-size: 1rem;
+        line-height: 1.6;
+      }
+      .callout-tip {
+        background: var(--color-secondary-light);
+        border-left: 3px solid var(--color-secondary);
+      }
+      .callout-info {
+        background: var(--color-primary-light);
+        border-left: 3px solid var(--color-primary);
+      }
+      .callout-warning {
+        background: rgba(217, 119, 6, 0.08);
+        border-left: 3px solid #d97706;
+      }
+      .callout .callout-icon {
+        font-size: 1.25rem;
+        margin-right: 0.5rem;
+      }
+      .callout .callout-title {
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+        color: var(--color-text);
+      }
+
+      /* ── Pull quote ────────────────────────────────────────── */
+
+      .pull-quote {
+        max-width: 65ch;
+        margin: 3rem auto;
+        padding: 2rem 1rem;
+        text-align: center;
+        font-family: var(--font-display);
+        position: relative;
+      }
+      .pull-quote::before {
+        content: "“";
+        font-size: 6rem;
+        line-height: 0.5;
+        display: block;
+        color: var(--color-secondary);
+        font-family: var(--font-display);
+        margin-bottom: -0.5rem;
+      }
+      .pull-quote p {
+        font-size: clamp(1.5rem, 2.5vw, 2rem);
+        line-height: 1.3;
+        font-style: italic;
+        color: var(--color-primary);
+      }
+      .pull-quote footer {
+        margin-top: 1.5rem;
+        font-size: 0.875rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--color-text-muted);
+        font-family: var(--font-sans);
+      }
+
+      /* ── Image with caption ────────────────────────────────── */
+
+      .post-image {
+        margin: 2.5rem auto;
+      }
+      .post-image.full-bleed {
+        max-width: 100%;
+      }
+      .post-image figure {
+        margin: 0;
+      }
+      .post-image img {
+        width: 100%;
+        height: auto;
+        border-radius: 12px;
+        display: block;
+      }
+      .post-image figcaption {
+        margin-top: 0.75rem;
+        text-align: center;
+        font-size: 0.875rem;
+        font-style: italic;
+        color: var(--color-text-muted);
+      }
+
+      .post-image.full-bleed img {
+        border-radius: 16px;
+      }
+
+      /* ── Divider ornament ─────────────────────────────────── */
+
+      .post-divider {
+        max-width: 400px;
+        margin: 3rem auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        color: var(--color-text-muted);
+      }
+      .post-divider::before,
+      .post-divider::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: var(--color-border);
+      }
+      .post-divider span {
+        font-family: var(--font-display);
+        font-style: italic;
+        font-size: 1.125rem;
+      }
+
+      /* ── Two column ───────────────────────────────────────── */
+
+      .two-column {
+        max-width: 80ch;
+        margin: 3rem auto;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+        align-items: center;
+      }
+      @media (max-width: 640px) {
+        .two-column {
+          grid-template-columns: 1fr;
+        }
+      }
+      .two-column .column img {
+        width: 100%;
+        border-radius: 12px;
+      }
+      .two-column .column h3 {
+        margin-top: 0 !important;
+        margin-bottom: 0.75rem;
+      }
+
+      /* ── Gallery ──────────────────────────────────────────── */
+
+      .post-gallery {
+        max-width: 80ch;
+        margin: 3rem auto;
+      }
+      .post-gallery .gallery-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.5rem;
+      }
+      @media (min-width: 768px) {
+        .post-gallery .gallery-grid {
+          grid-template-columns: repeat(3, 1fr);
+        }
+      }
+      .post-gallery .gallery-grid img {
+        width: 100%;
+        height: 100%;
+        aspect-ratio: 1 / 1;
+        object-fit: cover;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: transform 180ms var(--ease-out);
+      }
+      .post-gallery .gallery-grid img:hover {
+        transform: scale(1.02);
+      }
+
+      /* ── Embed ────────────────────────────────────────────── */
+
+      .post-embed {
+        max-width: 80ch;
+        margin: 3rem auto;
+      }
+      .post-embed .aspect-video {
+        position: relative;
+        padding-bottom: 56.25%;
+        background: var(--color-primary);
+        border-radius: 12px;
+        overflow: hidden;
+      }
+      .post-embed .aspect-video .thumb {
+        position: absolute;
+        inset: 0;
+        background-size: cover;
+        background-position: center;
+        opacity: 0.85;
+      }
+      .post-embed .aspect-video .play {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-size: 2rem;
+      }
+      .post-embed .aspect-video .play span {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 72px;
+        height: 72px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.92);
+        color: var(--color-primary);
+        padding-left: 4px;
+      }
+      .post-embed p {
+        text-align: center;
+        font-size: 0.875rem;
+        font-style: italic;
+        color: var(--color-text-muted);
+        margin-top: 0.75rem;
+      }
+
+      /* ── Asana card (domain-specific) ─────────────────────── */
+
+      .asana-card {
+        max-width: 80ch;
+        margin: 3rem auto;
+        background: var(--color-surface);
+        border-radius: 16px;
+        overflow: hidden;
+        display: grid;
+        grid-template-columns: 1fr 1.5fr;
+        box-shadow: var(--shadow-sm);
+      }
+      @media (max-width: 640px) {
+        .asana-card {
+          grid-template-columns: 1fr;
+        }
+      }
+      .asana-card .asana-img {
+        aspect-ratio: 1 / 1;
+        overflow: hidden;
+      }
+      .asana-card .asana-img img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .asana-card .asana-body {
+        padding: 1.75rem 2rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+      .asana-card .asana-sanskrit {
+        font-family: var(--font-display);
+        font-size: 1.75rem;
+        line-height: 1.1;
+        color: var(--color-primary);
+        font-style: italic;
+      }
+      .asana-card .asana-spanish {
+        font-family: var(--font-sans);
+        font-size: 0.875rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--color-text-muted);
+      }
+      .asana-card .asana-meta {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        font-size: 0.75rem;
+      }
+      .asana-card .asana-meta .badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 999px;
+        background: var(--color-primary-light);
+        color: var(--color-primary);
+      }
+      .asana-card .asana-meta .badge-duration {
+        background: var(--color-secondary-light);
+        color: var(--color-secondary);
+      }
+      .asana-card ul.asana-benefits {
+        padding-left: 1.125rem;
+        font-size: 0.9375rem;
+        line-height: 1.5;
+        color: var(--color-text);
+        font-family: var(--font-sans);
+      }
+      .asana-card ul.asana-benefits li {
+        margin-bottom: 0.25rem;
+      }
+      .asana-card ul.asana-benefits li::marker {
+        color: var(--color-secondary);
+      }
+
+      /* ── Breath pattern (domain-specific) ─────────────────── */
+
+      .breath-card {
+        max-width: 65ch;
+        margin: 3rem auto;
+        background: var(--color-surface);
+        border-radius: 16px;
+        padding: 2rem;
+        text-align: center;
+        box-shadow: var(--shadow-sm);
+      }
+      .breath-card h3 {
+        font-family: var(--font-display);
+        font-size: 1.5rem;
+        color: var(--color-primary);
+        margin-bottom: 0.25rem;
+      }
+      .breath-card .pattern {
+        font-family: var(--font-sans);
+        font-size: 0.875rem;
+        color: var(--color-text-muted);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        margin-bottom: 1.5rem;
+      }
+      .breath-circle {
+        width: 160px;
+        height: 160px;
+        border-radius: 999px;
+        background: var(--color-primary);
+        margin: 0 auto 1rem;
+        animation: breathe 19s ease-in-out infinite;
+        opacity: 0.85;
+      }
+      @keyframes breathe {
+        0% { transform: scale(0.6); opacity: 0.6; }
+        21% { transform: scale(1); opacity: 0.95; }  /* inhale 4s */
+        58% { transform: scale(1); opacity: 0.95; }  /* hold 7s */
+        100% { transform: scale(0.6); opacity: 0.6; } /* exhale 8s */
+      }
+      .breath-card .phase {
+        font-family: var(--font-display);
+        font-style: italic;
+        font-size: 1.125rem;
+        color: var(--color-text-muted);
+      }
+      .breath-card .rounds {
+        margin-top: 1rem;
+        font-size: 0.875rem;
+        color: var(--color-text-muted);
+      }
+      .breath-card button {
+        margin-top: 1.5rem;
+        padding: 0.625rem 1.5rem;
+        border-radius: 999px;
+        font-size: 0.875rem;
+      }
+
+      /* ── Featured event (domain-specific) ─────────────────── */
+
+      .featured-event {
+        max-width: 80ch;
+        margin: 3rem auto;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        background: var(--color-surface);
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+      }
+      @media (max-width: 640px) {
+        .featured-event {
+          grid-template-columns: 1fr;
+        }
+      }
+      .featured-event img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .featured-event .event-body {
+        padding: 1.75rem 2rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 0.5rem;
+      }
+      .featured-event .event-body .eyebrow {
+        color: var(--color-secondary);
+      }
+      .featured-event .event-body h3 {
+        font-family: var(--font-display);
+        font-size: 1.625rem;
+        line-height: 1.2;
+        color: var(--color-primary);
+      }
+      .featured-event .event-body .meta {
+        font-size: 0.875rem;
+        color: var(--color-text-muted);
+      }
+
+      /* ── CTA block ────────────────────────────────────────── */
+
+      .cta-block {
+        max-width: 65ch;
+        margin: 3rem auto;
+        text-align: center;
+      }
+
+      /* ── Author card ──────────────────────────────────────── */
+
+      .author-card {
+        max-width: 65ch;
+        margin: 3rem auto 2rem;
+        padding-top: 3rem;
+        border-top: 1px solid var(--color-border);
+        display: grid;
+        grid-template-columns: 88px 1fr;
+        gap: 1.25rem;
+        align-items: flex-start;
+      }
+      .author-card img {
+        width: 88px;
+        height: 88px;
+        border-radius: 999px;
+        object-fit: cover;
+      }
+      .author-card h4 {
+        font-family: var(--font-display);
+        font-size: 1.5rem;
+        color: var(--color-primary);
+        margin-bottom: 0.25rem;
+      }
+      .author-card .role {
+        font-size: 0.875rem;
+        color: var(--color-text-muted);
+        margin-bottom: 0.5rem;
+      }
+      .author-card p {
+        font-size: 0.9375rem;
+        line-height: 1.6;
+        color: var(--color-text);
+      }
+      .author-card .socials {
+        margin-top: 0.75rem;
+        display: flex;
+        gap: 0.75rem;
+      }
+      .author-card .socials a {
+        font-size: 0.8125rem;
+        color: var(--color-secondary);
+        text-decoration: underline;
+        text-underline-offset: 3px;
+      }
+
+      /* ── Related ─────────────────────────────────────────── */
+
+      .related-grid {
+        max-width: 80ch;
+        margin: 3rem auto 4rem;
+      }
+      .related-grid h3 {
+        font-family: var(--font-display);
+        font-size: 1.5rem;
+        color: var(--color-primary);
+        margin-bottom: 1.5rem;
+      }
+      .related-grid .cards {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.5rem;
+      }
+      @media (max-width: 768px) {
+        .related-grid .cards {
+          grid-template-columns: 1fr;
+        }
+      }
+      .related-card {
+        background: var(--color-surface);
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        transition:
+          transform 180ms var(--ease-out),
+          box-shadow 180ms var(--ease-out);
+      }
+      .related-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+      }
+      .related-card img {
+        width: 100%;
+        aspect-ratio: 4 / 3;
+        object-fit: cover;
+      }
+      .related-card .body {
+        padding: 1rem 1.25rem 1.25rem;
+      }
+      .related-card .meta {
+        font-size: 0.75rem;
+        color: var(--color-text-muted);
+        margin-bottom: 0.25rem;
+      }
+      .related-card h4 {
+        font-family: var(--font-display);
+        font-size: 1.125rem;
+        line-height: 1.25;
+        color: var(--color-primary);
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          transition: none !important;
+          animation: none !important;
+        }
+      }
+    </style>
+  </head>
+
+  <body class="min-h-screen">
+    <!-- Header -->
+    <header class="header-nav fixed top-0 inset-x-0 z-40">
+      <div class="max-w-7xl mx-auto px-6 md:px-10 h-16 flex items-center justify-between">
+        <a href="./blog-index.html" class="font-display text-xl md:text-2xl font-semibold tracking-tight" style="color: var(--color-primary)">
+          Cuerpo Raíz
+        </a>
+        <nav class="hidden lg:flex items-center gap-8 text-sm">
+          <a class="hover:opacity-80" href="#">Cómo funciona</a>
+          <a class="hover:opacity-80" href="#">Clases presenciales</a>
+          <a class="hover:opacity-80" href="#">Online</a>
+          <a class="hover:opacity-80 font-medium" style="color: var(--color-primary)" href="./blog-index.html">Blog</a>
+          <a class="hover:opacity-80" href="#">Sobre</a>
+          <a class="hover:opacity-80" href="#">Contacto</a>
+          <a class="btn-primary rounded-lg px-5 py-2 text-sm" href="#">Entrar</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="pt-16">
+      <!-- Post header -->
+      <article>
+        <header class="max-w-3xl mx-auto px-6 md:px-10 pt-12 md:pt-16 pb-10 text-center">
+          <a href="./blog-index.html" class="inline-flex items-center gap-2 text-sm mb-8" style="color: var(--color-text-muted)">
+            <span aria-hidden="true">←</span> Volver al blog
+          </a>
+
+          <div class="flex items-center justify-center gap-3 text-xs mb-6" style="color: var(--color-text-muted)">
+            <span class="eyebrow" style="color: var(--color-secondary)">Yoga</span>
+            <span>·</span>
+            <span>6 min de lectura</span>
+            <span>·</span>
+            <span>20 abr 2026</span>
+          </div>
+
+          <h1 class="font-display post-title" style="color: var(--color-primary)">
+            Volver al cuerpo cuando la mente no para
+          </h1>
+
+          <p class="font-display post-excerpt mt-6" style="color: var(--color-text-muted)">
+            El apoyo en los pies, el ritmo del aliento: cómo encontrar calma incluso en semanas densas, sin forzar la práctica.
+          </p>
+        </header>
+
+        <!-- Cover -->
+        <div class="max-w-5xl mx-auto px-6 md:px-10 mb-12">
+          <figure>
+            <img
+              src="https://images.unsplash.com/photo-1545389336-cf090694435e?auto=format&fit=crop&w=1600&q=80"
+              alt="Práctica matutina con luz suave entrando por la ventana"
+              class="w-full rounded-2xl"
+              style="aspect-ratio: 16 / 9; object-fit: cover"
+            />
+            <figcaption class="mt-3 text-center italic text-sm" style="color: var(--color-text-muted)">
+              Práctica matutina en la sala de Vitacura. Foto: Lucía López.
+            </figcaption>
+          </figure>
+        </div>
+
+        <!-- Body -->
+        <div class="px-6 md:px-10 pb-10">
+          <div class="post-body">
+            <p>
+              Hay semanas en que la mente corre más rápido que el cuerpo. La lista de pendientes, las
+              conversaciones que quedaron en el aire, los mensajes que todavía no respondo: todo
+              ocurre al mismo tiempo, y el pecho se vuelve estrecho sin que me dé cuenta.
+            </p>
+
+            <p>
+              Cuando me pasa eso, no siempre puedo hacer una hora de práctica. Pero sí puedo bajar a los
+              pies. Y ahí empieza todo.
+            </p>
+
+            <h2>El cuerpo sabe más que la mente</h2>
+
+            <p>
+              Una cosa que aprendí con los años en la esterilla es que el sistema nervioso responde más
+              rápido a la respiración que a la lógica. Podés pasarte horas explicándote que no hay
+              motivo para estar acelerada; no va a cambiar nada. En cambio, tres minutos de exhalaciones
+              largas te llevan a otro estado sin discusión.
+            </p>
+
+            <!-- Callout: tip -->
+            <div class="callout callout-tip">
+              <div class="callout-title">
+                <span class="callout-icon" aria-hidden="true">💡</span> Tip para empezar
+              </div>
+              <p>
+                Si es tu primera vez, probá cinco minutos al despertar, antes de tomar el teléfono. La
+                constancia importa más que la duración — un ritual corto sostenido gana siempre al gesto
+                largo y esporádico.
+              </p>
+            </div>
+
+            <p>
+              No se trata de "hacerlo bien". Se trata de avisarle al cuerpo que está a salvo, que puede
+              soltar la vigilancia por un rato, que hay tiempo.
+            </p>
+          </div>
+
+          <!-- Image full-bleed -->
+          <div class="post-image full-bleed max-w-5xl mx-auto">
+            <figure>
+              <img
+                src="https://images.unsplash.com/photo-1552693673-1bf958298935?auto=format&fit=crop&w=1600&q=80"
+                alt="Detalle de pies descalzos sobre la esterilla"
+              />
+              <figcaption>Los pies son la primera puerta de entrada al presente.</figcaption>
+            </figure>
+          </div>
+
+          <div class="post-body">
+            <h2>Una secuencia breve para días densos</h2>
+
+            <p>
+              Te comparto una mini-secuencia que suelo hacer cuando tengo poco tiempo pero necesito
+              reconectar. Podés incorporarla antes de empezar el día o como pausa a mitad de tarde.
+            </p>
+          </div>
+
+          <!-- Asana card (domain-specific) -->
+          <div class="asana-card">
+            <div class="asana-img">
+              <img src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&w=800&q=80" alt="Postura de la montaña" />
+            </div>
+            <div class="asana-body">
+              <span class="asana-spanish">Postura de la montaña</span>
+              <h3 class="asana-sanskrit">Tadasana</h3>
+              <div class="asana-meta">
+                <span class="badge">Principiante</span>
+                <span class="badge badge-duration">5 respiraciones</span>
+              </div>
+              <ul class="asana-benefits">
+                <li>Ancla el cuerpo al presente a través de los pies</li>
+                <li>Mejora la postura y la alineación general</li>
+                <li>Invita a observar la respiración sin forzar</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Breath pattern (domain-specific) -->
+          <div class="breath-card">
+            <p class="pattern">Pranayama</p>
+            <h3>Respiración 4-7-8</h3>
+            <div class="breath-circle" aria-hidden="true"></div>
+            <p class="phase">Inhala · Sostén · Exhala</p>
+            <p class="rounds">4 ciclos · ~1 minuto</p>
+            <button class="btn-primary">Iniciar práctica</button>
+          </div>
+
+          <div class="post-body">
+            <p>
+              Si podés, cerrá los ojos. Si estás en la oficina, bajá la mirada. Lo importante es que
+              la atención se vuelva hacia adentro. No necesitás hacer más.
+            </p>
+
+            <h2>Lo que no siempre decimos</h2>
+
+            <p>
+              A veces el yoga se vende como productividad emocional: hacer la postura, sentirse bien,
+              rendir más. A mí me ayuda pensarlo al revés.
+            </p>
+          </div>
+
+          <!-- Pull quote -->
+          <div class="pull-quote">
+            <p>La práctica no es un escape del mundo. Es una manera de volver a habitarlo.</p>
+            <footer>— Donna Farhi</footer>
+          </div>
+
+          <div class="post-body">
+            <p>
+              Cuando la esterilla se vuelve otro lugar donde exigirnos, perdió su sentido. Una buena
+              práctica puede ser quedarse cinco minutos en shavasana y llorar un poco. Y está bien.
+            </p>
+
+            <h2>Señales de que tu cuerpo te está pidiendo calma</h2>
+
+            <ul>
+              <li>Te cuesta quedarte quieta más de treinta segundos.</li>
+              <li>La mandíbula está apretada sin que lo notes.</li>
+              <li>Los hombros suben sin permiso hacia las orejas.</li>
+              <li>Te agitás al hablar, aun de cosas cotidianas.</li>
+              <li>Te duerme mal o te despertás con la mente ya corriendo.</li>
+            </ul>
+          </div>
+
+          <!-- Two-column -->
+          <div class="two-column">
+            <div class="column">
+              <img src="https://images.unsplash.com/photo-1575052814086-f385e2e2ad1b?auto=format&fit=crop&w=600&q=80" alt="Bolster y manta preparados" />
+            </div>
+            <div class="column">
+              <h3 class="font-display" style="color: var(--color-primary); font-size: 1.5rem;">Lo que necesitás</h3>
+              <p class="text-base leading-relaxed" style="color: var(--color-text)">
+                Una esterilla, un bolster (o dos cojines), una manta y un temporizador. Nada más. La
+                propuesta restorativa se trata de soltar peso, no de construir fuerza.
+              </p>
+            </div>
+          </div>
+
+          <!-- Embed -->
+          <div class="post-embed">
+            <div class="aspect-video">
+              <div class="thumb" style="background-image: url('https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=1200&q=80')"></div>
+              <div class="play" aria-hidden="true"><span>▶</span></div>
+            </div>
+            <p>Secuencia restorativa de 20 min — video guiado (YouTube embed)</p>
+          </div>
+
+          <!-- Gallery -->
+          <div class="post-gallery">
+            <div class="gallery-grid">
+              <img src="https://images.unsplash.com/photo-1599447541321-ba5d7a6a3da2?auto=format&fit=crop&w=600&q=80" alt="Sala con plantas" />
+              <img src="https://images.unsplash.com/photo-1588286840104-8957b019727f?auto=format&fit=crop&w=600&q=80" alt="Práctica en silencio" />
+              <img src="https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=600&q=80" alt="Detalle esterilla" />
+              <img src="https://images.unsplash.com/photo-1593811167562-9cef47bfc4d7?auto=format&fit=crop&w=600&q=80" alt="Bolster" />
+              <img src="https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=600&q=80" alt="Manta apilada" />
+              <img src="https://images.unsplash.com/photo-1593811167562-9cef47bfc4d7?auto=format&fit=crop&w=600&q=80" alt="Cierre de práctica" />
+            </div>
+          </div>
+
+          <!-- Callout: info -->
+          <div class="callout callout-info">
+            <div class="callout-title">
+              <span class="callout-icon" aria-hidden="true">ℹ️</span> Contraindicaciones
+            </div>
+            <p>
+              Si estás en las primeras semanas de embarazo, evitá retenciones largas de aire. En caso de
+              vértigo, realizá la secuencia sentada en una silla en lugar de pie.
+            </p>
+          </div>
+
+          <div class="post-body">
+            <h2>Seguí practicando con nosotras</h2>
+
+            <p>
+              Si resonaste con este artículo, te dejo dos invitaciones. La primera es reservar una clase
+              de prueba presencial — ir a la sala una vez cambia la relación con la práctica para
+              siempre. La segunda, un retiro breve que estamos organizando en mayo.
+            </p>
+          </div>
+
+          <!-- Featured event (domain-specific) -->
+          <div class="featured-event">
+            <img src="https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=800&q=80" alt="Retiro en la cordillera" />
+            <div class="event-body">
+              <p class="eyebrow">Próximo retiro</p>
+              <h3>Respirar el valle — retiro de tres días</h3>
+              <p class="meta">16 – 18 mayo · Cajón del Maipo</p>
+              <p class="text-sm mt-2" style="color: var(--color-text)">
+                Tres días de silencio, práctica y montaña, para volver al cuerpo sin exigencia.
+              </p>
+              <a href="#" class="btn-primary rounded-lg px-5 py-2.5 text-sm mt-3 self-start inline-flex items-center gap-2">
+                Ver detalles <span aria-hidden="true">→</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Divider ornament -->
+          <div class="post-divider">
+            <span>·</span>
+          </div>
+
+          <!-- CTA block -->
+          <div class="cta-block">
+            <a href="#" class="btn-primary rounded-lg px-8 py-4 text-sm inline-flex items-center gap-2">
+              Agenda tu primera clase <span aria-hidden="true">→</span>
+            </a>
+          </div>
+
+          <!-- Author card -->
+          <div class="author-card">
+            <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80" alt="Trinidad Cáceres" />
+            <div>
+              <h4>Trinidad Cáceres</h4>
+              <p class="role">Guía de yoga y meditación</p>
+              <p>
+                Acompaña prácticas en Vitacura desde 2015. Formada en Ashtanga, Vinyasa y meditación
+                secular. Lidera retiros en Chile y escribe sobre la vida lenta y los pequeños rituales.
+              </p>
+              <div class="socials">
+                <a href="#">Instagram</a>
+                <a href="#">Web</a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Related -->
+          <div class="related-grid">
+            <h3>Sigue leyendo en Yoga</h3>
+            <div class="cards">
+              <a href="#" class="related-card block">
+                <img src="https://images.unsplash.com/photo-1552196563-55cd4e45efb3?auto=format&fit=crop&w=600&q=75" alt="La práctica como refugio" />
+                <div class="body">
+                  <p class="meta">YOGA · 4 min</p>
+                  <h4>La práctica como refugio</h4>
+                </div>
+              </a>
+              <a href="#" class="related-card block">
+                <img src="https://images.unsplash.com/photo-1588286840104-8957b019727f?auto=format&fit=crop&w=600&q=75" alt="Ashtanga desde cero" />
+                <div class="body">
+                  <p class="meta">YOGA · 7 min</p>
+                  <h4>Ashtanga desde cero: mi primer Mysore</h4>
+                </div>
+              </a>
+              <a href="#" class="related-card block">
+                <img src="https://images.unsplash.com/photo-1593811167562-9cef47bfc4d7?auto=format&fit=crop&w=600&q=75" alt="Calma antes que fuerza" />
+                <div class="body">
+                  <p class="meta">PRÁCTICAS · 4 min</p>
+                  <h4>Calma antes que fuerza: relajación activa</h4>
+                </div>
+              </a>
+            </div>
+          </div>
+        </div>
+      </article>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t mt-8" style="border-color: var(--color-border)">
+      <div class="max-w-6xl mx-auto px-6 md:px-10 py-10 text-sm flex flex-col md:flex-row md:items-center md:justify-between gap-4" style="color: var(--color-text-muted)">
+        <p class="font-display text-base">Cuerpo Raíz</p>
+        <p>cuerpo, respiración y placer · el camino de regreso a ti</p>
+      </div>
+    </footer>
+  </body>
+</html>

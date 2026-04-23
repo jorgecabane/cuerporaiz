@@ -17,6 +17,7 @@ export default defineConfig({
         "lib/domain/**",
         "lib/dto/**",
         "lib/email/**",
+        "lib/sanity/embed.ts",
         "lib/application/verify-webhook-signature.ts",
         "lib/application/check-email-preference.ts",
       ],

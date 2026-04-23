@@ -7,7 +7,7 @@ import { Footer } from "./Footer";
 type NavLink = { href: string; label: string };
 
 /** Rutas que usan el cascarón público: contenido a alto completo, footer al final de la página. */
-const PUBLIC_SHELL_PATHS = ["/checkout", "/auth", "/catalogo", "/sobre"];
+const PUBLIC_SHELL_PATHS = ["/checkout", "/auth", "/catalogo", "/sobre", "/blog"];
 
 export function LayoutWithPanel({
   children,
@@ -20,9 +20,10 @@ export function LayoutWithPanel({
 }) {
   const pathname = usePathname();
   const isPanel = pathname?.startsWith("/panel") || pathname === "/planes";
-  const usePublicShell = !isPanel && PUBLIC_SHELL_PATHS.some((p) => pathname?.startsWith(p));
+  const isStudio = pathname?.startsWith("/studio");
+  const usePublicShell = !isPanel && !isStudio && PUBLIC_SHELL_PATHS.some((p) => pathname?.startsWith(p));
 
-  if (isPanel) {
+  if (isPanel || isStudio) {
     return <>{children}</>;
   }
 

@@ -28,6 +28,8 @@ export const upsertSiteConfigSchema = z.object({
   facebookUrl: httpsUrlSchema,
   whatsappUrl: httpsUrlSchema,
   youtubeUrl: httpsUrlSchema,
+  blogEnabled: z.boolean().optional(),
+  blogLabel: z.string().trim().min(1).max(40).optional(),
 });
 export type UpsertSiteConfigInput = z.infer<typeof upsertSiteConfigSchema>;
 

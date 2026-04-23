@@ -50,6 +50,44 @@ describe("upsertSiteConfigSchema", () => {
     const result = upsertSiteConfigSchema.safeParse({});
     expect(result.success).toBe(true);
   });
+
+  describe("blogEnabled + blogLabel", () => {
+    it("accepts blogEnabled true + blogLabel", () => {
+      const result = upsertSiteConfigSchema.safeParse({
+        blogEnabled: true,
+        blogLabel: "Diario",
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("accepts blogEnabled false alone", () => {
+      const result = upsertSiteConfigSchema.safeParse({ blogEnabled: false });
+      expect(result.success).toBe(true);
+    });
+
+    it("rejects empty blogLabel", () => {
+      const result = upsertSiteConfigSchema.safeParse({ blogLabel: "" });
+      expect(result.success).toBe(false);
+    });
+
+    it("rejects blogLabel longer than 40 chars", () => {
+      const result = upsertSiteConfigSchema.safeParse({ blogLabel: "a".repeat(41) });
+      expect(result.success).toBe(false);
+    });
+
+    it("trims whitespace from blogLabel", () => {
+      const result = upsertSiteConfigSchema.safeParse({ blogLabel: "  Blog  " });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.blogLabel).toBe("Blog");
+      }
+    });
+
+    it("rejects non-boolean blogEnabled", () => {
+      const result = upsertSiteConfigSchema.safeParse({ blogEnabled: "yes" });
+      expect(result.success).toBe(false);
+    });
+  });
 });
 
 describe("updateSiteSectionSchema", () => {

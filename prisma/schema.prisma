@@ -793,6 +793,8 @@ model CenterSiteConfig {
   facebookUrl     String?
   whatsappUrl     String?
   youtubeUrl      String?
+  blogEnabled     Boolean  @default(false)
+  blogLabel       String   @default("Blog")
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
