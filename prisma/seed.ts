@@ -371,6 +371,90 @@ async function main() {
 
   console.log("CenterSiteSectionItems creados");
 
+  // ─── Página "Sobre Trini" + galería ───────────────────────────────────────
+  const aboutPage = await prisma.centerAboutPage.upsert({
+    where: { centerId: center.id },
+    create: {
+      centerId: center.id,
+      visible: true,
+      showInHeader: true,
+      headerLabel: "Sobre Trini",
+      pageTitle: "Sobre Trinidad",
+      pageEyebrow: "Sobre mí",
+      name: "Trinidad",
+      tagline:
+        "Un espacio donde el movimiento y la pausa conviven. Una práctica para volver al cuerpo, aquietar la mente y reconocer lo que ya estaba ahí.",
+      heroImageUrl:
+        "https://images.unsplash.com/photo-1545389336-cf090694435e?w=900&q=80&auto=format&fit=crop",
+      bio: [
+        "Practico yoga desde hace más de quince años y enseño desde hace ocho. Lo que empezó como una manera de habitar mi propio cuerpo se fue transformando, con el tiempo, en un oficio que me eligió tanto como yo lo elegí a él.",
+        "",
+        "Me formé en Hatha y Vinyasa, estudié anatomía aplicada al movimiento, y desde entonces no he dejado de aprender. La práctica sigue enseñándome que enseñar, también, es escuchar.",
+        "",
+        "Hoy guío clases en Vitacura, retiros varias veces al año y sesiones online para quienes no pueden estar acá en persona. Mi propuesta está en el cruce entre rigor y suavidad: alineación precisa, respiración consciente, y mucho espacio para lo que cada cuerpo necesita ese día.",
+      ].join("\n"),
+      propuesta: [
+        "Creo en una práctica sostenible. Una que pueda acompañar a lo largo de los años, sin forzar el cuerpo ni apurar el proceso. Una práctica que se ajusta a quien la hace, no al revés.",
+        "",
+        "En cada clase trabajamos tres capas: el cuerpo (alineación, fuerza, flexibilidad), la respiración (ritmo y foco), y la atención (volver, una y otra vez, a este momento).",
+        "",
+        "Movimiento con raíz. Pausa con sentido.",
+      ].join("\n"),
+      ctaLabel: "Agenda tu primera clase",
+      ctaHref: "/#agenda",
+    },
+    update: {},
+  });
+
+  const existingImages = await prisma.centerAboutPageImage.findFirst({
+    where: { pageId: aboutPage.id },
+  });
+  if (!existingImages) {
+    const captionsByCategory = {
+      RETIROS: [
+        { url: "https://images.unsplash.com/photo-1506126613408-eca07ce68773", caption: "Retiro de invierno · Cajón del Maipo" },
+        { url: "https://images.unsplash.com/photo-1528319725582-ddc096101511", caption: "Silencio compartido" },
+        { url: "https://images.unsplash.com/photo-1506629082955-511b1aa562c8", caption: "Sesión al aire libre" },
+        { url: "https://images.unsplash.com/photo-1478144592103-25e218a04891", caption: "Retiro de primavera · Matanzas" },
+      ],
+      CLASES: [
+        { url: "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b", caption: "Clase matinal" },
+        { url: "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b", caption: "Trabajo de inversiones" },
+        { url: "https://images.unsplash.com/photo-1599447421416-3414500d18a5", caption: "Vinyasa flow" },
+        { url: "https://images.unsplash.com/photo-1545205597-3d9d02c29597", caption: "Guía en la respiración" },
+      ],
+      ESPACIO: [
+        { url: "https://images.unsplash.com/photo-1540206395-68808572332f", caption: "La sala principal" },
+        { url: "https://images.unsplash.com/photo-1593810450967-f9c42742e326", caption: "Props y mats" },
+        { url: "https://images.unsplash.com/photo-1599901860904-17e6ed7083a0", caption: "Rincón para la pausa" },
+      ],
+    } as const;
+
+    const imagesData: Array<{
+      pageId: string;
+      imageUrl: string;
+      caption: string;
+      category: "RETIROS" | "CLASES" | "ESPACIO";
+      sortOrder: number;
+    }> = [];
+    for (const [category, items] of Object.entries(captionsByCategory)) {
+      items.forEach((item, i) => {
+        imagesData.push({
+          pageId: aboutPage.id,
+          imageUrl: `${item.url}?w=900&q=80&auto=format&fit=crop`,
+          caption: item.caption,
+          category: category as "RETIROS" | "CLASES" | "ESPACIO",
+          sortOrder: i,
+        });
+      });
+    }
+
+    await prisma.centerAboutPageImage.createMany({ data: imagesData });
+    console.log(`CenterAboutPageImage creadas (${imagesData.length})`);
+  }
+
+  console.log("CenterAboutPage seedeada");
+
   const existingConfig = await prisma.centerMercadoPagoConfig.findUnique({
     where: { centerId: center.id },
   });

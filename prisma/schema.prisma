@@ -60,6 +60,7 @@ model Center {
   emailPreferences EmailPreference[]
   siteConfig      CenterSiteConfig?
   siteSections    CenterSiteSection[]
+  aboutPage       CenterAboutPage?
   onDemandCategories OnDemandCategory[]
   lessonUnlocks      LessonUnlock[]
   events             Event[]
@@ -833,4 +834,49 @@ model CenterSiteSectionItem {
   section     CenterSiteSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
 
   @@index([sectionId])
+}
+
+// ─── Página "Sobre" dedicada (bio + galería por categoría) ──────────────────
+model CenterAboutPage {
+  id            String   @id @default(cuid())
+  centerId      String   @unique
+  visible       Boolean  @default(false)
+  showInHeader  Boolean  @default(false)
+  headerLabel   String   @default("Sobre mí")
+  pageTitle     String   @default("Sobre mí")
+  pageEyebrow   String?
+  name          String?
+  tagline       String?
+  heroImageUrl  String?
+  bio           String?
+  propuesta     String?
+  ctaLabel      String   @default("Agenda tu primera clase")
+  ctaHref       String   @default("/#agenda")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  center        Center                    @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  images        CenterAboutPageImage[]
+}
+
+enum AboutImageCategory {
+  RETIROS
+  CLASES
+  ESPACIO
+}
+
+model CenterAboutPageImage {
+  id          String             @id @default(cuid())
+  pageId      String
+  imageUrl    String
+  caption     String?
+  category    AboutImageCategory
+  sortOrder   Int                @default(0)
+  visible     Boolean            @default(true)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  page        CenterAboutPage    @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  @@index([pageId, category, sortOrder])
 }

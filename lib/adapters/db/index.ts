@@ -20,6 +20,7 @@ export { emailPreferenceRepository } from "./email-preference-repository";
 export { subscriptionRepository } from "./subscription-repository";
 export { siteConfigRepository } from "./site-config-repository";
 export { siteSectionRepository } from "./site-section-repository";
+export { aboutPageRepository } from "./about-page-repository";
 export { onDemandCategoryRepository } from "./on-demand-category-repository";
 export { onDemandPracticeRepository } from "./on-demand-practice-repository";
 export { onDemandLessonRepository } from "./on-demand-lesson-repository";

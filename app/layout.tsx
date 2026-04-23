@@ -6,6 +6,7 @@ import { LayoutWithPanel } from "@/components/shared/LayoutWithPanel";
 import DynamicTheme from "@/components/shared/DynamicTheme";
 import { FooterServer } from "@/components/shared/FooterServer";
 import { Toaster } from "@/components/ui/Toast";
+import { getPublicNavLinks } from "@/lib/server/public-nav";
 
 const fontDisplay = Cormorant_Garamond({
   variable: "--font-display",
@@ -27,11 +28,13 @@ export const metadata: Metadata = {
   keywords: ["yoga", "yoga online", "membresía yoga", "yoga Vitacura", "Trinidad Cáceres"],
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const navLinks = await getPublicNavLinks();
+
   return (
     <html lang="es">
       <body className={`${fontDisplay.variable} ${fontSans.variable}`}>
@@ -43,7 +46,9 @@ export default function RootLayout({
         >
           Saltar al contenido principal
         </a>
-        <LayoutWithPanel footer={<FooterServer />}>{children}</LayoutWithPanel>
+        <LayoutWithPanel footer={<FooterServer />} navLinks={navLinks}>
+          {children}
+        </LayoutWithPanel>
         </AuthProvider>
         <Toaster />
       </body>

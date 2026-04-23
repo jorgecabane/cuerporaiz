@@ -1,0 +1,667 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sobre Trini — Cuerpo Raíz (mock)</title>
+
+    <!-- Tailwind CDN (mock-only) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Same fonts as the real site -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=DM+Sans:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      :root {
+        --color-primary: #2d3b2a;
+        --color-primary-hover: #232f21;
+        --color-primary-light: rgba(45, 59, 42, 0.08);
+        --color-secondary: #b85c38;
+        --color-secondary-hover: #9e4f2f;
+        --color-tertiary: #f5f0e9;
+        --color-text: #1c1c1a;
+        --color-text-muted: #5c5a56;
+        --color-border: #e5e2dc;
+        --color-surface: #ffffff;
+        --font-display: "Cormorant Garamond", Georgia, serif;
+        --font-sans: "DM Sans", system-ui, sans-serif;
+        --shadow-sm: 0 1px 3px rgba(45, 59, 42, 0.08);
+        --shadow-md: 0 4px 12px rgba(45, 59, 42, 0.12);
+        --shadow-lg: 0 8px 24px rgba(45, 59, 42, 0.16);
+        --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+      }
+
+      html,
+      body {
+        background: var(--color-tertiary);
+        color: var(--color-text);
+        font-family: var(--font-sans);
+        -webkit-font-smoothing: antialiased;
+        scroll-behavior: smooth;
+      }
+
+      .font-display {
+        font-family: var(--font-display);
+      }
+
+      .text-hero {
+        font-size: clamp(2.75rem, 7.5vw, 6rem);
+        line-height: 1.04;
+        letter-spacing: -0.025em;
+      }
+
+      .text-section {
+        font-size: clamp(1.875rem, 4vw, 3.25rem);
+        line-height: 1.15;
+        letter-spacing: -0.015em;
+      }
+
+      .bio-body {
+        font-family: var(--font-display);
+        font-size: clamp(1.125rem, 1.6vw, 1.375rem);
+        line-height: 1.75;
+        color: var(--color-text);
+        max-width: 62ch;
+      }
+
+      .btn-primary {
+        background: var(--color-primary);
+        color: #fff;
+        transition:
+          background-color 150ms var(--ease-out),
+          transform 120ms var(--ease-out);
+      }
+      .btn-primary:hover {
+        background: var(--color-primary-hover);
+      }
+      .btn-primary:active {
+        transform: scale(0.98);
+      }
+
+      .btn-ghost {
+        color: var(--color-primary);
+        border: 1px solid var(--color-border);
+        background: transparent;
+        transition:
+          background-color 150ms var(--ease-out),
+          border-color 150ms var(--ease-out);
+      }
+      .btn-ghost:hover {
+        background: var(--color-primary-light);
+        border-color: var(--color-primary);
+      }
+
+      .tab-btn {
+        position: relative;
+        color: var(--color-text-muted);
+        transition: color 200ms var(--ease-out);
+        padding-bottom: 0.5rem;
+      }
+      .tab-btn:hover {
+        color: var(--color-text);
+      }
+      .tab-btn[aria-selected="true"] {
+        color: var(--color-text);
+      }
+      .tab-btn[aria-selected="true"]::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: -1px;
+        height: 2px;
+        background: var(--color-secondary);
+      }
+
+      .gallery-tile {
+        overflow: hidden;
+        border-radius: 0.5rem;
+        background: var(--color-surface);
+        box-shadow: var(--shadow-sm);
+        transition: box-shadow 200ms var(--ease-out);
+      }
+      .gallery-tile:hover {
+        box-shadow: var(--shadow-md);
+      }
+      .gallery-tile img {
+        transition: transform 400ms var(--ease-out);
+      }
+      @media (hover: hover) and (pointer: fine) {
+        .gallery-tile:hover img {
+          transform: scale(1.03);
+        }
+      }
+
+      .fade-up {
+        opacity: 0;
+        transform: translateY(12px);
+        animation: fadeUp 500ms var(--ease-out) forwards;
+      }
+      .fade-up.delay-1 {
+        animation-delay: 60ms;
+      }
+      .fade-up.delay-2 {
+        animation-delay: 120ms;
+      }
+      .fade-up.delay-3 {
+        animation-delay: 180ms;
+      }
+
+      @keyframes fadeUp {
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .gallery-enter {
+        animation: fadeUp 400ms var(--ease-out) both;
+      }
+      .gallery-enter:nth-child(1) {
+        animation-delay: 0ms;
+      }
+      .gallery-enter:nth-child(2) {
+        animation-delay: 60ms;
+      }
+      .gallery-enter:nth-child(3) {
+        animation-delay: 120ms;
+      }
+      .gallery-enter:nth-child(4) {
+        animation-delay: 180ms;
+      }
+      .gallery-enter:nth-child(5) {
+        animation-delay: 240ms;
+      }
+      .gallery-enter:nth-child(6) {
+        animation-delay: 300ms;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .fade-up,
+        .gallery-enter {
+          opacity: 1;
+          transform: none;
+          animation: none;
+        }
+        .gallery-tile:hover img {
+          transform: none;
+        }
+      }
+
+      .divider-ornament {
+        width: 48px;
+        height: 2px;
+        background: var(--color-secondary);
+        border: none;
+      }
+
+      .rule {
+        border-color: var(--color-border);
+      }
+
+      /* Header */
+      .nav-link {
+        color: var(--color-text);
+        transition: color 150ms var(--ease-out);
+      }
+      .nav-link:hover {
+        color: var(--color-primary);
+      }
+      .nav-link[aria-current="page"] {
+        color: var(--color-primary);
+        font-weight: 500;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- Header -->
+    <header
+      class="sticky top-0 z-20"
+      style="background: rgba(245, 240, 233, 0.88); backdrop-filter: blur(8px); border-bottom: 1px solid var(--color-border)"
+    >
+      <nav class="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 md:px-10">
+        <a href="/" class="font-display text-xl tracking-tight" style="color: var(--color-primary)">
+          Cuerpo Raíz
+        </a>
+
+        <div class="hidden items-center gap-8 md:flex">
+          <a class="nav-link text-sm" href="/#como-funciona">Cómo funciona</a>
+          <a class="nav-link text-sm" href="/#agenda">Clases</a>
+          <a class="nav-link text-sm" href="/#oferta">Online</a>
+          <a class="nav-link text-sm" aria-current="page" href="/sobre">Sobre Trini</a>
+          <a class="nav-link text-sm" href="/#contacto">Contacto</a>
+        </div>
+
+        <a
+          href="/#agenda"
+          class="btn-primary hidden rounded-md px-4 py-2 text-sm font-medium md:inline-flex"
+        >
+          Reserva tu clase
+        </a>
+
+        <button class="md:hidden" aria-label="Abrir menú">
+          <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+      </nav>
+    </header>
+
+    <!-- Hero -->
+    <section class="relative">
+      <div class="mx-auto max-w-7xl px-6 py-16 md:px-10 md:py-24 lg:py-32">
+        <div class="grid items-center gap-12 lg:grid-cols-[1.1fr_1fr] lg:gap-20">
+          <div class="fade-up">
+            <p class="mb-5 text-xs uppercase tracking-[0.25em]" style="color: var(--color-secondary)">
+              Sobre mí
+            </p>
+
+            <h1 class="text-hero font-display" style="color: var(--color-primary)">
+              Trinidad
+            </h1>
+
+            <p class="mt-3 font-display text-2xl md:text-3xl" style="color: var(--color-text-muted)">
+              Guía de yoga y meditación
+            </p>
+
+            <p class="bio-body mt-8 italic" style="color: var(--color-text)">
+              "Un espacio donde el movimiento y la pausa conviven. Una práctica para volver al cuerpo,
+              aquietar la mente y reconocer lo que ya estaba ahí."
+            </p>
+
+            <div class="mt-10 flex flex-wrap gap-4">
+              <a
+                href="/#agenda"
+                class="btn-primary inline-flex items-center gap-2 rounded-md px-6 py-3 text-sm font-medium"
+              >
+                Reserva tu clase
+                <span aria-hidden="true">→</span>
+              </a>
+              <a
+                href="#mi-historia"
+                class="btn-ghost inline-flex items-center gap-2 rounded-md px-6 py-3 text-sm font-medium"
+              >
+                Conocer mi historia
+              </a>
+            </div>
+          </div>
+
+          <div class="fade-up delay-2 relative order-first lg:order-last">
+            <div
+              class="relative aspect-[3/4] overflow-hidden"
+              style="border-radius: 0.75rem; box-shadow: var(--shadow-lg)"
+            >
+              <img
+                src="https://images.unsplash.com/photo-1545389336-cf090694435e?w=900&q=80&auto=format&fit=crop"
+                alt="Trini"
+                class="h-full w-full object-cover"
+              />
+            </div>
+            <!-- ornamental accent block -->
+            <div
+              aria-hidden="true"
+              class="absolute -bottom-5 -left-5 hidden h-24 w-24 md:block"
+              style="background: var(--color-secondary); opacity: 0.9; border-radius: 0.5rem"
+            ></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Mi historia -->
+    <section id="mi-historia" class="py-16 md:py-24" style="background: var(--color-surface)">
+      <div class="mx-auto max-w-3xl px-6 md:px-10">
+        <hr class="divider-ornament mb-8" />
+        <h2 class="text-section font-display" style="color: var(--color-primary)">Mi historia</h2>
+
+        <div class="bio-body mt-8 space-y-6">
+          <p>
+            Practico yoga desde hace más de quince años y enseño desde hace ocho. Lo que empezó como
+            una manera de habitar mi propio cuerpo se fue transformando, con el tiempo, en un oficio
+            que me eligió tanto como yo lo elegí a él.
+          </p>
+          <p>
+            Me formé en Hatha y Vinyasa, estudié anatomía aplicada al movimiento, y desde entonces
+            no he dejado de aprender. La práctica sigue enseñándome que enseñar, también, es escuchar.
+          </p>
+          <p>
+            Hoy guío clases en Vitacura, retiros varias veces al año y sesiones online para quienes
+            no pueden estar acá en persona. Mi propuesta está en el cruce entre rigor y suavidad:
+            alineación precisa, respiración consciente, y mucho espacio para lo que cada cuerpo
+            necesita ese día.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Mi propuesta -->
+    <section class="py-16 md:py-24">
+      <div class="mx-auto max-w-3xl px-6 md:px-10">
+        <hr class="divider-ornament mb-8" />
+        <h2 class="text-section font-display" style="color: var(--color-primary)">Mi propuesta</h2>
+
+        <div class="bio-body mt-8 space-y-6">
+          <p>
+            Creo en una práctica sostenible. Una que pueda acompañar a lo largo de los años, sin
+            forzar el cuerpo ni apurar el proceso. Una práctica que se ajusta a quien la hace, no al
+            revés.
+          </p>
+          <p>
+            En cada clase trabajamos tres capas: el cuerpo (alineación, fuerza, flexibilidad), la
+            respiración (ritmo y foco), y la atención (volver, una y otra vez, a este momento).
+          </p>
+          <p style="color: var(--color-secondary)" class="italic">
+            Movimiento con raíz. Pausa con sentido.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Galería -->
+    <section class="py-16 md:py-24" style="background: var(--color-surface)">
+      <div class="mx-auto max-w-7xl px-6 md:px-10">
+        <div class="mb-12 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+          <div>
+            <hr class="divider-ornament mb-8" />
+            <h2 class="text-section font-display" style="color: var(--color-primary)">
+              En imágenes
+            </h2>
+            <p class="mt-3 max-w-md text-sm" style="color: var(--color-text-muted)">
+              Pequeños fragmentos de retiros, clases y del lugar donde nos reunimos.
+            </p>
+          </div>
+
+          <!-- Tabs -->
+          <div
+            role="tablist"
+            aria-label="Categorías de galería"
+            class="flex gap-8 overflow-x-auto text-sm font-medium md:self-end"
+          >
+            <button role="tab" class="tab-btn shrink-0" aria-selected="true" data-tab="retiros">
+              Retiros
+            </button>
+            <button role="tab" class="tab-btn shrink-0" aria-selected="false" data-tab="clases">
+              Clases
+            </button>
+            <button role="tab" class="tab-btn shrink-0" aria-selected="false" data-tab="sala">
+              La sala
+            </button>
+          </div>
+        </div>
+
+        <!-- Grids -->
+        <div id="panel-retiros" role="tabpanel">
+          <div class="grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-6">
+            <figure class="gallery-enter gallery-tile">
+              <img
+                class="aspect-[4/5] w-full object-cover"
+                src="https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&q=80&auto=format&fit=crop"
+                alt="Retiro en la montaña"
+              />
+              <figcaption class="px-4 py-3 text-xs" style="color: var(--color-text-muted)">
+                Retiro de invierno · Cajón del Maipo
+              </figcaption>
+            </figure>
+            <figure class="gallery-enter gallery-tile">
+              <img
+                class="aspect-[4/5] w-full object-cover"
+                src="https://images.unsplash.com/photo-1528319725582-ddc096101511?w=800&q=80&auto=format&fit=crop"
+                alt="Cabaña en la naturaleza"
+              />
+              <figcaption class="px-4 py-3 text-xs" style="color: var(--color-text-muted)">
+                Silencio compartido
+              </figcaption>
+            </figure>
+            <figure class="gallery-enter gallery-tile">
+              <img
+                class="aspect-[4/5] w-full object-cover"
+                src="https://images.unsplash.com/photo-1506629082955-511b1aa562c8?w=800&q=80&auto=format&fit=crop"
+                alt="Sesión al aire libre"
+              />
+              <figcaption class="px-4 py-3 text-xs" style="color: var(--color-text-muted)">
+                Sesión al aire libre
+              </figcaption>
+            </figure>
+            <figure class="gallery-enter gallery-tile">
+              <img
+                class="aspect-[4/5] w-full object-cover"
+                src="https://images.unsplash.com/photo-1478144592103-25e218a04891?w=800&q=80&auto=format&fit=crop"
+                alt="Retiro de primavera"
+              />
+              <figcaption class="px-4 py-3 text-xs" style="color: var(--color-text-muted)">
+                Retiro de primavera · Matanzas
+              </figcaption>
+            </figure>
+            <figure class="gallery-enter gallery-tile">
+              <img
+                class="aspect-[4/5] w-full object-cover"
+                src="https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&q=80&auto=format&fit=crop"
+                alt="Meditación en grupo"
+              />
+              <figcaption class="px-4 py-3 text-xs" style="color: var(--color-text-muted)">
+                Meditación al amanecer
+              </figcaption>
+            </figure>
+            <figure class="gallery-enter gallery-tile">
+              <img
+                class="aspect-[4/5] w-full object-cover"
+                src="https://images.unsplash.com/photo-1528319725582-ddc096101511?w=800&q=80&auto=format&fit=crop"
+                alt="Espacio de retiro"
+              />
+              <figcaption class="px-4 py-3 text-xs" style="color: var(--color-text-muted)">
+                El refugio
+              </figcaption>
+            </figure>
+          </div>
+        </div>
+
+        <div id="panel-clases" role="tabpanel" hidden>
+          <div class="grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-6">
+            <figure class="gallery-enter gallery-tile">
+              <img
+                class="aspect-[4/5] w-full object-cover"
+                src="https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800&q=80&auto=format&fit=crop"
+                alt="Clase presencial"
+              />
+              <figcaption class="px-4 py-3 text-xs" style="color: var(--color-text-muted)">
+                Clase matinal
+              </figcaption>
+            </figure>
+            <figure class="gallery-enter gallery-tile">
+              <img
+                class="aspect-[4/5] w-full object-cover"
+                src="https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=800&q=80&auto=format&fit=crop"
+                alt="Asana"
+              />
+              <figcaption class="px-4 py-3 text-xs" style="color: var(--color-text-muted)">
+                Trabajo de inversiones
+              </figcaption>
+            </figure>
+            <figure class="gallery-enter gallery-tile">
+              <img
+                class="aspect-[4/5] w-full object-cover"
+                src="https://images.unsplash.com/photo-1599447421416-3414500d18a5?w=800&q=80&auto=format&fit=crop"
+                alt="Clase grupal"
+              />
+              <figcaption class="px-4 py-3 text-xs" style="color: var(--color-text-muted)">
+                Vinyasa flow
+              </figcaption>
+            </figure>
+            <figure class="gallery-enter gallery-tile">
+              <img
+                class="aspect-[4/5] w-full object-cover"
+                src="https://images.unsplash.com/photo-1545205597-3d9d02c29597?w=800&q=80&auto=format&fit=crop"
+                alt="Trini guiando"
+              />
+              <figcaption class="px-4 py-3 text-xs" style="color: var(--color-text-muted)">
+                Guía en la respiración
+              </figcaption>
+            </figure>
+            <figure class="gallery-enter gallery-tile">
+              <img
+                class="aspect-[4/5] w-full object-cover"
+                src="https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800&q=80&auto=format&fit=crop"
+                alt="Práctica"
+              />
+              <figcaption class="px-4 py-3 text-xs" style="color: var(--color-text-muted)">
+                Sesión de restaurativo
+              </figcaption>
+            </figure>
+            <figure class="gallery-enter gallery-tile">
+              <img
+                class="aspect-[4/5] w-full object-cover"
+                src="https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=800&q=80&auto=format&fit=crop"
+                alt="Práctica avanzada"
+              />
+              <figcaption class="px-4 py-3 text-xs" style="color: var(--color-text-muted)">
+                Clase abierta
+              </figcaption>
+            </figure>
+          </div>
+        </div>
+
+        <div id="panel-sala" role="tabpanel" hidden>
+          <div class="grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-6">
+            <figure class="gallery-enter gallery-tile">
+              <img
+                class="aspect-[4/5] w-full object-cover"
+                src="https://images.unsplash.com/photo-1540206395-68808572332f?w=800&q=80&auto=format&fit=crop"
+                alt="La sala"
+              />
+              <figcaption class="px-4 py-3 text-xs" style="color: var(--color-text-muted)">
+                La sala principal
+              </figcaption>
+            </figure>
+            <figure class="gallery-enter gallery-tile">
+              <img
+                class="aspect-[4/5] w-full object-cover"
+                src="https://images.unsplash.com/photo-1593810450967-f9c42742e326?w=800&q=80&auto=format&fit=crop"
+                alt="Materiales"
+              />
+              <figcaption class="px-4 py-3 text-xs" style="color: var(--color-text-muted)">
+                Props y mats
+              </figcaption>
+            </figure>
+            <figure class="gallery-enter gallery-tile">
+              <img
+                class="aspect-[4/5] w-full object-cover"
+                src="https://images.unsplash.com/photo-1599901860904-17e6ed7083a0?w=800&q=80&auto=format&fit=crop"
+                alt="Rincón de meditación"
+              />
+              <figcaption class="px-4 py-3 text-xs" style="color: var(--color-text-muted)">
+                Rincón para la pausa
+              </figcaption>
+            </figure>
+            <figure class="gallery-enter gallery-tile">
+              <img
+                class="aspect-[4/5] w-full object-cover"
+                src="https://images.unsplash.com/photo-1540206395-68808572332f?w=800&q=80&auto=format&fit=crop"
+                alt="Luz natural"
+              />
+              <figcaption class="px-4 py-3 text-xs" style="color: var(--color-text-muted)">
+                Luz de la tarde
+              </figcaption>
+            </figure>
+            <figure class="gallery-enter gallery-tile">
+              <img
+                class="aspect-[4/5] w-full object-cover"
+                src="https://images.unsplash.com/photo-1593810450967-f9c42742e326?w=800&q=80&auto=format&fit=crop"
+                alt="Detalle"
+              />
+              <figcaption class="px-4 py-3 text-xs" style="color: var(--color-text-muted)">
+                Madera y cemento pulido
+              </figcaption>
+            </figure>
+            <figure class="gallery-enter gallery-tile">
+              <img
+                class="aspect-[4/5] w-full object-cover"
+                src="https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&q=80&auto=format&fit=crop"
+                alt="Plantas y mats"
+              />
+              <figcaption class="px-4 py-3 text-xs" style="color: var(--color-text-muted)">
+                Plantas y calma
+              </figcaption>
+            </figure>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA final -->
+    <section class="py-20 md:py-32" style="background: var(--color-primary); color: #fff">
+      <div class="mx-auto max-w-3xl px-6 text-center md:px-10">
+        <p class="mb-4 text-xs uppercase tracking-[0.25em]" style="color: rgba(255, 255, 255, 0.6)">
+          Da el primer paso
+        </p>
+        <h2 class="text-section font-display">Agenda tu primera clase</h2>
+        <p class="mt-5 text-base" style="color: rgba(255, 255, 255, 0.8)">
+          Sumate a una clase presencial en Vitacura, online en vivo, o explora la biblioteca virtual a tu ritmo.
+        </p>
+        <div class="mt-10 flex flex-wrap justify-center gap-4">
+          <a
+            href="/#agenda"
+            class="inline-flex items-center gap-2 rounded-md bg-white px-6 py-3 text-sm font-medium"
+            style="color: var(--color-primary)"
+          >
+            Ver la agenda
+            <span aria-hidden="true">→</span>
+          </a>
+          <a
+            href="/catalogo"
+            class="inline-flex items-center gap-2 rounded-md border border-white/30 px-6 py-3 text-sm font-medium text-white"
+          >
+            Biblioteca virtual
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer (placeholder que refleja el real) -->
+    <footer class="py-10 text-xs" style="color: var(--color-text-muted); background: var(--color-tertiary)">
+      <div class="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 md:flex-row md:px-10">
+        <p class="font-display text-base" style="color: var(--color-primary)">Cuerpo Raíz</p>
+        <p>© 2026 · Vitacura, Santiago de Chile</p>
+      </div>
+    </footer>
+
+    <script>
+      (function () {
+        const tabs = document.querySelectorAll(".tab-btn");
+        const panels = {
+          retiros: document.getElementById("panel-retiros"),
+          clases: document.getElementById("panel-clases"),
+          sala: document.getElementById("panel-sala"),
+        };
+
+        tabs.forEach((tab) => {
+          tab.addEventListener("click", () => {
+            const target = tab.dataset.tab;
+
+            tabs.forEach((t) => t.setAttribute("aria-selected", t === tab ? "true" : "false"));
+
+            Object.entries(panels).forEach(([key, panel]) => {
+              if (key === target) {
+                panel.hidden = false;
+                // retrigger stagger
+                panel.querySelectorAll(".gallery-enter").forEach((el) => {
+                  el.style.animation = "none";
+                  // force reflow
+                  void el.offsetWidth;
+                  el.style.animation = "";
+                });
+              } else {
+                panel.hidden = true;
+              }
+            });
+          });
+        });
+      })();
+    </script>
+  </body>
+</html>
