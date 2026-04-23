@@ -51,6 +51,7 @@ export interface SiteSectionItem {
   description: string | null;
   imageUrl: string | null;
   linkUrl: string | null;
+  href: string | null;
   userId: string | null;
   sortOrder: number;
 }

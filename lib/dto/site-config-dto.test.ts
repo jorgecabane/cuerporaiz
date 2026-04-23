@@ -78,6 +78,49 @@ describe("createSiteSectionItemSchema", () => {
     const result = createSiteSectionItemSchema.safeParse({ linkUrl: "Packs online" });
     expect(result.success).toBe(true);
   });
+
+  describe("href", () => {
+    it.each([
+      ["/#agenda", "internal anchor"],
+      ["/planes", "internal path"],
+      ["/sobre", "internal path"],
+      ["https://example.com/foo", "https URL"],
+      ["http://example.com", "http URL"],
+      ["mailto:hola@ejemplo.cl", "mailto link"],
+      ["tel:+56912345678", "tel link"],
+    ])("accepts %s (%s)", (href) => {
+      const result = createSiteSectionItemSchema.safeParse({ href });
+      expect(result.success).toBe(true);
+    });
+
+    it.each([
+      ["javascript:alert(1)"],
+      ["not-a-url"],
+      ["ftp://example.com"],
+      ["data:text/html;base64,PHA+"],
+    ])("rejects %s", (href) => {
+      const result = createSiteSectionItemSchema.safeParse({ href });
+      expect(result.success).toBe(false);
+    });
+
+    it("accepts null", () => {
+      const result = createSiteSectionItemSchema.safeParse({ href: null });
+      expect(result.success).toBe(true);
+    });
+
+    it("transforms empty string to null", () => {
+      const result = createSiteSectionItemSchema.safeParse({ href: "" });
+      expect(result.success).toBe(true);
+      if (result.success) expect(result.data.href).toBe(null);
+    });
+
+    it("rejects strings longer than 500 chars", () => {
+      const result = createSiteSectionItemSchema.safeParse({
+        href: "/" + "a".repeat(501),
+      });
+      expect(result.success).toBe(false);
+    });
+  });
 });
 
 describe("reorderSchema", () => {

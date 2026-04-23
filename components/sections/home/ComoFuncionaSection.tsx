@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { StaggerList, StaggerItem } from "@/components/ui/AnimateIn";
 import { AnimateIn } from "@/components/ui/AnimateIn";
 
@@ -5,6 +6,7 @@ type StepItem = {
   title?: string;
   description?: string;
   linkUrl?: string;
+  href?: string | null;
 };
 
 type ComoFuncionaSectionProps = {
@@ -52,9 +54,10 @@ export function ComoFuncionaSection({ title, subtitle, items }: ComoFuncionaSect
           label,
           title: item.title ?? "",
           description: item.description ?? "",
+          href: item.href ?? null,
         };
       })
-    : DEFAULT_STEPS;
+    : DEFAULT_STEPS.map((s) => ({ ...s, href: null as string | null }));
 
   return (
     <section
@@ -87,8 +90,8 @@ export function ComoFuncionaSection({ title, subtitle, items }: ComoFuncionaSect
           delayChildren={0.15}
           className="mt-[var(--space-16)] divide-y divide-[var(--color-border)]"
         >
-          {steps.map((step) => (
-            <StaggerItem key={step.num}>
+          {steps.map((step) => {
+            const grid = (
               <div className="grid grid-cols-1 gap-[var(--space-4)] py-[var(--space-10)] sm:grid-cols-[auto_1fr] sm:gap-[var(--space-8)] md:grid-cols-[auto_auto_1fr] md:items-start md:gap-[var(--space-12)]">
                 {/* Número */}
                 <span
@@ -118,8 +121,24 @@ export function ComoFuncionaSection({ title, subtitle, items }: ComoFuncionaSect
                   </p>
                 </div>
               </div>
-            </StaggerItem>
-          ))}
+            );
+
+            return (
+              <StaggerItem key={step.num}>
+                {step.href ? (
+                  <Link
+                    href={step.href}
+                    className="block text-inherit no-underline"
+                    aria-label={`${step.label ? `${step.label}: ` : ""}${step.title}`}
+                  >
+                    {grid}
+                  </Link>
+                ) : (
+                  grid
+                )}
+              </StaggerItem>
+            );
+          })}
         </StaggerList>
       </div>
     </section>

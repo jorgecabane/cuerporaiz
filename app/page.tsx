@@ -77,6 +77,7 @@ function serializeItems(items: SiteSectionWithItems["items"]) {
     description: i.description ?? undefined,
     imageUrl: i.imageUrl ?? undefined,
     linkUrl: i.linkUrl ?? undefined,
+    href: i.href ?? undefined,
   }));
 }
 
