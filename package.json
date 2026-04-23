@@ -10,6 +10,7 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "db:seed": "tsx prisma/seed.ts",
+    "sanity:seed": "tsx scripts/seed-sanity.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
