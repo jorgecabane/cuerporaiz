@@ -38,11 +38,29 @@ export const updateSiteSectionSchema = z.object({
 });
 export type UpdateSiteSectionInput = z.infer<typeof updateSiteSectionSchema>;
 
+const hrefSchema = z
+  .string()
+  .trim()
+  .max(500, "Máximo 500 caracteres")
+  .refine(
+    (v) =>
+      v === "" ||
+      /^\/(?:#[A-Za-z0-9_-]+|[A-Za-z0-9_\-./?=&%#]*)$/.test(v) ||
+      /^https?:\/\//.test(v) ||
+      /^mailto:/.test(v) ||
+      /^tel:/.test(v),
+    "Usa una ruta interna (/#anchor, /ruta), URL https://, mailto: o tel:",
+  )
+  .transform((v) => (v === "" ? null : v))
+  .nullable()
+  .optional();
+
 export const createSiteSectionItemSchema = z.object({
   title: z.string().nullable().optional(),
   description: z.string().nullable().optional(),
   imageUrl: z.string().nullable().optional(),
   linkUrl: z.string().nullable().optional(),
+  href: hrefSchema,
   userId: z.string().nullable().optional(),
 });
 export type CreateSiteSectionItemInput = z.infer<typeof createSiteSectionItemSchema>;

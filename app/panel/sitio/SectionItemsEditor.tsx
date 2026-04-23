@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useTransition } from "react";
 import { ChevronUp, ChevronDown } from "lucide-react";
+import { SiteLinkPicker } from "@/components/panel/sitio/SiteLinkPicker";
 
 type SectionItem = {
   id: string;
@@ -9,6 +10,7 @@ type SectionItem = {
   description: string | null;
   imageUrl: string | null;
   linkUrl: string | null;
+  href: string | null;
   order: number;
 };
 
@@ -17,6 +19,7 @@ type ItemFormState = {
   description: string;
   imageUrl: string;
   linkUrl: string;
+  href: string;
 };
 
 const EMPTY_FORM: ItemFormState = {
@@ -24,6 +27,7 @@ const EMPTY_FORM: ItemFormState = {
   description: "",
   imageUrl: "",
   linkUrl: "",
+  href: "",
 };
 
 const INPUT_CLASS =
@@ -60,6 +64,7 @@ export default function SectionItemsEditor({ sectionId, sectionKey }: Props) {
       description: item.description ?? "",
       imageUrl: item.imageUrl ?? "",
       linkUrl: item.linkUrl ?? "",
+      href: item.href ?? "",
     });
   }
 
@@ -486,6 +491,23 @@ function ItemForm({
           </div>
         </>
       )}
+
+      {/* Href field — makes the entire card clickable on the public site */}
+      <div>
+        <label className="block text-xs text-[var(--color-text-muted)] mb-1">
+          Link al hacer click (opcional)
+        </label>
+        <input
+          type="text"
+          value={form.href}
+          onChange={(e) => handleChange("href", e.target.value)}
+          placeholder="/#agenda   ·   /planes   ·   https://..."
+          className={INPUT_CLASS}
+        />
+        <div className="mt-1">
+          <SiteLinkPicker onPick={(href) => onChange({ ...form, href })} />
+        </div>
+      </div>
     </div>
   );
 }

@@ -10,6 +10,7 @@ function toSectionItem(r: {
   description: string | null;
   imageUrl: string | null;
   linkUrl: string | null;
+  href: string | null;
   userId: string | null;
   sortOrder: number;
 }): SiteSectionItem {
@@ -20,6 +21,7 @@ function toSectionItem(r: {
     description: r.description,
     imageUrl: r.imageUrl,
     linkUrl: r.linkUrl,
+    href: r.href,
     userId: r.userId,
     sortOrder: r.sortOrder,
   };
@@ -60,6 +62,7 @@ function toSectionWithItems(r: {
     description: string | null;
     imageUrl: string | null;
     linkUrl: string | null;
+    href: string | null;
     userId: string | null;
     sortOrder: number;
   }[];

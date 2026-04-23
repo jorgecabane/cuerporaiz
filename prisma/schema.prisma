@@ -823,6 +823,7 @@ model CenterSiteSectionItem {
   description String?
   imageUrl    String?
   linkUrl     String?
+  href        String?
   userId      String?
   sortOrder   Int      @default(0)
   createdAt   DateTime @default(now())
