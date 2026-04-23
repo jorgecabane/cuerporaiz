@@ -7,7 +7,7 @@ import { Footer } from "./Footer";
 type NavLink = { href: string; label: string };
 
 /** Rutas que usan el cascarón público: contenido a alto completo, footer al final de la página. */
-const PUBLIC_SHELL_PATHS = ["/checkout", "/auth", "/catalogo"];
+const PUBLIC_SHELL_PATHS = ["/checkout", "/auth", "/catalogo", "/sobre"];
 
 export function LayoutWithPanel({
   children,
