@@ -6,6 +6,7 @@ import { prisma } from "./prisma";
 function toDomain(r: {
   id: string;
   centerId: string;
+  heroEyebrow: string | null;
   heroTitle: string | null;
   heroSubtitle: string | null;
   heroImageUrl: string | null;
@@ -26,6 +27,7 @@ function toDomain(r: {
   return {
     id: r.id,
     centerId: r.centerId,
+    heroEyebrow: r.heroEyebrow,
     heroTitle: r.heroTitle,
     heroSubtitle: r.heroSubtitle,
     heroImageUrl: r.heroImageUrl,

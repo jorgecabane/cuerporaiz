@@ -28,7 +28,7 @@ export default function BrandingForm({ config }: BrandingFormProps) {
     setSuccess(false);
 
     const body: Record<string, string | null> = {};
-    for (const key of ["heroTitle", "heroSubtitle", "heroImageUrl", "logoUrl"]) {
+    for (const key of ["heroEyebrow", "heroTitle", "heroSubtitle", "heroImageUrl", "logoUrl"]) {
       const val = (fd.get(key) as string)?.trim();
       body[key] = val || null;
     }
@@ -57,6 +57,19 @@ export default function BrandingForm({ config }: BrandingFormProps) {
       {/* Hero section */}
       <fieldset className="space-y-4">
         <legend className="text-sm font-semibold text-[var(--color-text)] mb-2">Hero</legend>
+        <div>
+          <label htmlFor="branding-heroEyebrow" className={labelCls}>
+            Bajada (eyebrow)
+          </label>
+          <input
+            id="branding-heroEyebrow"
+            name="heroEyebrow"
+            defaultValue={config?.heroEyebrow ?? ""}
+            maxLength={100}
+            placeholder="Ej: yoga con identidad"
+            className={inputCls}
+          />
+        </div>
         <div>
           <label htmlFor="branding-heroTitle" className={labelCls}>
             Título
