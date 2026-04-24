@@ -1,11 +1,14 @@
-import { centerRepository, aboutPageRepository } from "@/lib/adapters/db";
+import { centerRepository, aboutPageRepository, siteConfigRepository } from "@/lib/adapters/db";
 import { NAV_LINKS } from "@/lib/constants/copy";
+import { isSanityConfigured } from "@/sanity/env";
 
 export type PublicNavLink = { href: string; label: string };
 
 /**
- * Returns the public nav links for the current center, inserting the "About"
- * page link before Contact if the admin enabled it.
+ * Returns the public nav links for the current center:
+ * - Base links from NAV_LINKS
+ * - "Sobre" link inserted before Contact if enabled and about page is visible
+ * - "Blog" link inserted before Contact if enabled and Sanity is configured
  *
  * Server-only: call from a server component. Never throws — on error, falls
  * back to the static NAV_LINKS.
@@ -19,15 +22,29 @@ export async function getPublicNavLinks(): Promise<PublicNavLink[]> {
     const center = await centerRepository.findBySlug(slug);
     if (!center) return base;
 
-    const aboutPage = await aboutPageRepository.findByCenterId(center.id);
-    if (!aboutPage?.visible || !aboutPage.showInHeader) return base;
+    const [aboutPage, siteConfig] = await Promise.all([
+      aboutPageRepository.findByCenterId(center.id),
+      siteConfigRepository.findByCenterId(center.id),
+    ]);
 
-    const link: PublicNavLink = { href: "/sobre", label: aboutPage.headerLabel };
-    const contactIndex = base.findIndex((l) => l.href === "/#contacto");
-    if (contactIndex >= 0) {
-      return [...base.slice(0, contactIndex), link, ...base.slice(contactIndex)];
+    const links: PublicNavLink[] = [...base];
+    const contactIndex = () => links.findIndex((l) => l.href === "/#contacto");
+
+    const insertBeforeContact = (link: PublicNavLink) => {
+      const i = contactIndex();
+      if (i >= 0) links.splice(i, 0, link);
+      else links.push(link);
+    };
+
+    if (aboutPage?.visible && aboutPage.showInHeader) {
+      insertBeforeContact({ href: "/sobre", label: aboutPage.headerLabel });
     }
-    return [...base, link];
+
+    if (siteConfig?.blogEnabled && isSanityConfigured()) {
+      insertBeforeContact({ href: "/blog", label: siteConfig.blogLabel });
+    }
+
+    return links;
   } catch {
     return base;
   }

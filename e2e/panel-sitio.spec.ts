@@ -39,4 +39,15 @@ test.describe("Panel admin - Sitio", () => {
     // Should show email field
     await expect(page.getByLabel(/email/i).first()).toBeVisible();
   });
+
+  test("tab blog muestra toggle y link al Studio", async ({ page }) => {
+    await page.goto("/panel/sitio?tab=blog");
+    await expect(page.getByRole("heading", { name: /sitio web/i })).toBeVisible({ timeout: 15000 });
+    // Toggle "Mostrar link en el header"
+    await expect(page.getByText(/mostrar link en el header/i)).toBeVisible();
+    // Input de label (default "Blog")
+    await expect(page.locator("#blogLabel")).toBeVisible();
+    // Link al Studio (o deshabilitado si Sanity no está configurado)
+    await expect(page.getByRole("link", { name: /abrir studio/i })).toBeVisible();
+  });
 });

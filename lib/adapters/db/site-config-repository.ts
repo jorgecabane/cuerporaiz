@@ -20,6 +20,8 @@ function toDomain(r: {
   facebookUrl: string | null;
   whatsappUrl: string | null;
   youtubeUrl: string | null;
+  blogEnabled: boolean;
+  blogLabel: string;
 }): SiteConfig {
   return {
     id: r.id,
@@ -38,6 +40,8 @@ function toDomain(r: {
     facebookUrl: r.facebookUrl,
     whatsappUrl: r.whatsappUrl,
     youtubeUrl: r.youtubeUrl,
+    blogEnabled: r.blogEnabled,
+    blogLabel: r.blogLabel,
   };
 }
 

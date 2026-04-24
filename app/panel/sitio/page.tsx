@@ -8,11 +8,13 @@ import ContactForm from "./ContactForm";
 import SectionsManager from "./SectionsManager";
 import AboutPageForm from "./AboutPageForm";
 import AboutPageGalleryManager from "./AboutPageGalleryManager";
+import BlogSettingsForm from "./BlogSettingsForm";
 
 const TABS = [
   { key: "branding", label: "Marca" },
   { key: "secciones", label: "Secciones" },
   { key: "sobre", label: "Sobre mí" },
+  { key: "blog", label: "Blog" },
   { key: "contacto", label: "Contacto" },
 ] as const;
 
@@ -66,6 +68,7 @@ export default async function PanelSitioPage({
           {aboutPage && <AboutPageGalleryManager pageId={aboutPage.id} images={aboutPage.images} />}
         </div>
       )}
+      {activeTab === "blog" && <BlogSettingsForm config={config} />}
       {activeTab === "contacto" && <ContactForm config={config} />}
     </div>
   );

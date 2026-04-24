@@ -32,6 +32,8 @@ export interface SiteConfig {
   facebookUrl: string | null;
   whatsappUrl: string | null;
   youtubeUrl: string | null;
+  blogEnabled: boolean;
+  blogLabel: string;
 }
 
 export interface SiteSection {

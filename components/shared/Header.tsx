@@ -10,7 +10,7 @@ import { SITE_NAME, NAV_LINKS, CTAS } from "@/lib/constants/copy";
 type HeaderNavLink = { href: string; label: string };
 
 /** Rutas que usan cascarón público: header siempre sólido (buen contraste en fondo claro). */
-const PUBLIC_SHELL_PATHS = ["/checkout", "/auth", "/catalogo", "/sobre"];
+const PUBLIC_SHELL_PATHS = ["/checkout", "/auth", "/catalogo", "/sobre", "/blog"];
 
 export function Header({ navLinks }: { navLinks?: HeaderNavLink[] } = {}) {
   const links: readonly HeaderNavLink[] = navLinks ?? NAV_LINKS;
