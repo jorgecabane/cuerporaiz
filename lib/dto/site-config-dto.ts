@@ -14,6 +14,7 @@ const httpsUrlSchema = z
   .optional();
 
 export const upsertSiteConfigSchema = z.object({
+  heroEyebrow: z.string().trim().max(100).nullable().optional(),
   heroTitle: z.string().nullable().optional(),
   heroSubtitle: z.string().nullable().optional(),
   heroImageUrl: httpsUrlSchema,

@@ -18,6 +18,7 @@ export type SectionKey = (typeof SECTION_KEYS)[number];
 export interface SiteConfig {
   id: string;
   centerId: string;
+  heroEyebrow: string | null;
   heroTitle: string | null;
   heroSubtitle: string | null;
   heroImageUrl: string | null;

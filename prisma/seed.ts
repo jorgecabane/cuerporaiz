@@ -160,6 +160,7 @@ async function main() {
     where: { centerId: center.id },
     create: {
       centerId: center.id,
+      heroEyebrow: "yoga con identidad",
       heroTitle: "cuerpo,\n*respiración*\ny placer.",
       heroSubtitle: "el camino de regreso a ti.",
       heroImageUrl:
@@ -177,6 +178,7 @@ async function main() {
       youtubeUrl: "https://youtube.com/@cuerporaiz",
     },
     update: {
+      heroEyebrow: "yoga con identidad",
       heroTitle: "cuerpo,\n*respiración*\ny placer.",
       heroSubtitle: "el camino de regreso a ti.",
       heroImageUrl:
