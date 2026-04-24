@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { centerRepository, aboutPageRepository } from "@/lib/adapters/db";
+import { buildSiteMetadata } from "@/lib/seo/metadata";
 import {
   AboutHero,
   AboutBio,
@@ -12,21 +13,20 @@ export const revalidate = 60;
 
 export async function generateMetadata(): Promise<Metadata> {
   const slug = process.env.NEXT_PUBLIC_DEFAULT_CENTER_SLUG;
-  if (!slug) return { title: "Sobre" };
+  if (!slug) return buildSiteMetadata({ path: "/sobre", title: "Sobre" });
 
   const center = await centerRepository.findBySlug(slug);
-  if (!center) return { title: "Sobre" };
+  if (!center) return buildSiteMetadata({ path: "/sobre", title: "Sobre" });
 
   const page = await aboutPageRepository.findByCenterId(center.id);
-  if (!page || !page.visible) return { title: "Sobre" };
+  if (!page || !page.visible) return buildSiteMetadata({ path: "/sobre", title: "Sobre" });
 
-  return {
+  return buildSiteMetadata({
+    path: "/sobre",
     title: `${page.pageTitle} · ${center.name}`,
     description: page.tagline ?? undefined,
-    openGraph: page.heroImageUrl
-      ? { images: [{ url: page.heroImageUrl }] }
-      : undefined,
-  };
+    image: page.heroImageUrl,
+  });
 }
 
 export default async function SobrePage() {
