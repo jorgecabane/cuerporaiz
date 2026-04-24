@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect } from "react";
 import Image from "next/image";
 import { X, Upload, ImagePlus } from "lucide-react";
 import { AdaptiveSheet } from "@/components/ui/AdaptiveSheet";
@@ -163,7 +163,6 @@ function UploadTab({ endpoint, onSelect }: { endpoint: string; onSelect: (url: s
   const [dragOver, setDragOver] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
 
   const upload = useCallback(
     async (file: File) => {
@@ -185,18 +184,6 @@ function UploadTab({ endpoint, onSelect }: { endpoint: string; onSelect: (url: s
     [endpoint, onSelect],
   );
 
-  function openFilePicker() {
-    if (uploading) return;
-    // Reset para permitir reseleccionar el mismo archivo si cancelaron antes.
-    if (inputRef.current) inputRef.current.value = "";
-    inputRef.current?.click();
-  }
-
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const f = e.target.files?.[0];
-    if (f) void upload(f);
-  }
-
   const onDrop = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault();
@@ -209,43 +196,37 @@ function UploadTab({ endpoint, onSelect }: { endpoint: string; onSelect: (url: s
 
   return (
     <div>
-      <div
+      <label
         onDragOver={(e) => {
           e.preventDefault();
           setDragOver(true);
         }}
         onDragLeave={() => setDragOver(false)}
         onDrop={onDrop}
-        className={`flex flex-col items-center justify-center gap-2 border-2 border-dashed rounded-[var(--radius-md)] px-4 py-10 transition-colors ${
+        className={`flex flex-col items-center justify-center gap-2 border-2 border-dashed rounded-[var(--radius-md)] px-4 py-10 cursor-pointer transition-colors ${
           dragOver
             ? "border-[var(--color-primary)] bg-[color-mix(in_srgb,var(--color-primary)_6%,transparent)]"
-            : "border-[var(--color-border)]"
-        }`}
+            : "border-[var(--color-border)] hover:bg-[var(--color-surface)]"
+        } ${uploading ? "opacity-50 pointer-events-none" : ""}`}
       >
         <Upload size={22} className="text-[var(--color-text-muted)]" aria-hidden />
-        <p className="text-sm text-[var(--color-text)] text-center">
-          {uploading ? "Subiendo..." : "Arrastra una imagen aquí"}
-        </p>
-        <p className="text-xs text-[var(--color-text-muted)]">o</p>
-        <button
-          type="button"
-          onClick={openFilePicker}
-          disabled={uploading}
-          className="inline-flex items-center gap-2 rounded-[var(--radius-md)] bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
-        >
-          {uploading ? "Subiendo..." : "Elegir archivo"}
-        </button>
-        <p className="text-xs text-[var(--color-text-muted)]">JPEG, PNG, WebP o AVIF</p>
-      </div>
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/jpeg,image/png,image/webp,image/avif"
-        tabIndex={-1}
-        aria-hidden
-        className="sr-only"
-        onChange={handleFileChange}
-      />
+        <span className="text-sm text-[var(--color-text)]">
+          {uploading ? "Subiendo..." : "Arrastra una imagen o haz click para elegir"}
+        </span>
+        <span className="text-xs text-[var(--color-text-muted)]">JPEG, PNG, WebP o AVIF</span>
+        <input
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/avif"
+          tabIndex={-1}
+          aria-hidden
+          className="sr-only"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) void upload(f);
+            e.target.value = "";
+          }}
+        />
+      </label>
       {error && <p className="mt-3 text-xs text-[var(--color-error,#dc2626)]">{error}</p>}
     </div>
   );
