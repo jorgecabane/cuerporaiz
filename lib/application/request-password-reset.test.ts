@@ -14,6 +14,7 @@ function makeUser(overrides: Partial<User> = {}): User {
     rut: null,
     birthday: null,
     sex: null,
+    imageUrl: null,
     notes: null,
     createdAt: new Date(),
     updatedAt: new Date(),

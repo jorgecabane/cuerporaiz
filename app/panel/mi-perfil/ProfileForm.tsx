@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { SanityImagePicker } from "@/components/panel/SanityImagePicker";
 
 interface ProfileFormProps {
   user: {
@@ -11,6 +12,7 @@ interface ProfileFormProps {
     rut?: string | null;
     birthday?: string | null;
     sex?: string | null;
+    imageUrl?: string | null;
   };
 }
 
@@ -21,6 +23,7 @@ export default function ProfileForm({ user }: ProfileFormProps) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [imageUrl, setImageUrl] = useState<string | null>(user.imageUrl ?? null);
   const router = useRouter();
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -29,7 +32,7 @@ export default function ProfileForm({ user }: ProfileFormProps) {
     setError(null);
     setSuccess(false);
 
-    const body: Record<string, string | null> = {};
+    const body: Record<string, string | null> = { imageUrl };
     for (const key of ["name", "lastName", "phone", "rut", "birthday", "sex"]) {
       const val = (fd.get(key) as string)?.trim();
       if (val !== undefined) body[key] = val || null;
@@ -53,6 +56,18 @@ export default function ProfileForm({ user }: ProfileFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <label className={labelCls}>Foto de perfil</label>
+        <SanityImagePicker
+          value={imageUrl}
+          onChange={setImageUrl}
+          label="Foto de perfil"
+          mode="upload-only"
+          uploadEndpoint="/api/me/sanity-upload"
+          aspect="square"
+        />
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label htmlFor="prof-name" className={labelCls}>Nombre</label>

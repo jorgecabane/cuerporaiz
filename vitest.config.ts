@@ -18,8 +18,10 @@ export default defineConfig({
         "lib/dto/**",
         "lib/email/**",
         "lib/sanity/embed.ts",
+        "lib/sanity/resize.ts",
         "lib/application/verify-webhook-signature.ts",
         "lib/application/check-email-preference.ts",
+        "lib/application/memory-rate-limit.ts",
       ],
       exclude: [
         "**/*.d.ts",

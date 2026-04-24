@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { signOutAction } from "@/app/panel/actions";
 import { useFormStatus } from "react-dom";
@@ -102,7 +103,7 @@ export function PanelShell({
 }: {
   children: React.ReactNode;
   isAdmin: boolean;
-  user: { name?: string | null; email: string };
+  user: { name?: string | null; email: string; imageUrl?: string | null };
   centerName: string;
 }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -234,12 +235,13 @@ export function PanelShell({
           <button
             type="button"
             onClick={() => setUserMenuOpen((o) => !o)}
-            className="flex cursor-pointer items-center gap-2 rounded-[var(--radius-md)] px-3 py-2 text-sm font-medium text-[var(--color-text)] transition-colors duration-200 hover:bg-[var(--color-primary-light)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:ring-offset-2"
+            className="flex cursor-pointer items-center gap-2 rounded-[var(--radius-md)] px-2 py-1.5 text-sm font-medium text-[var(--color-text)] transition-colors duration-200 hover:bg-[var(--color-primary-light)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:ring-offset-2"
             aria-expanded={userMenuOpen}
             aria-haspopup="true"
             aria-label="Menú de cuenta"
           >
-            <span className="max-w-[8rem] truncate md:max-w-[12rem]">
+            <UserAvatar name={user.name ?? user.email} imageUrl={user.imageUrl} size={28} />
+            <span className="hidden max-w-[8rem] truncate sm:inline md:max-w-[12rem]">
               {user.name ?? user.email}
             </span>
             <ChevronDown
@@ -340,5 +342,37 @@ export function PanelShell({
         </main>
       </div>
     </div>
+  );
+}
+
+function UserAvatar({
+  name,
+  imageUrl,
+  size = 28,
+}: {
+  name: string;
+  imageUrl?: string | null;
+  size?: number;
+}) {
+  const initials = name
+    .split(/\s+/)
+    .map((p) => p[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+
+  return (
+    <span
+      className="relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--color-primary-light)] text-[10px] font-semibold text-[var(--color-primary)]"
+      style={{ width: size, height: size }}
+      aria-hidden
+    >
+      {imageUrl ? (
+        <Image src={imageUrl} alt="" fill sizes={`${size}px`} className="object-cover" />
+      ) : (
+        initials || "·"
+      )}
+    </span>
   );
 }

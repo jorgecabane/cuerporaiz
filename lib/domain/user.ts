@@ -16,6 +16,7 @@ export interface User {
   rut: string | null;
   birthday: Date | null;
   sex: string | null;
+  imageUrl: string | null;
   notes: string | null;
   createdAt: Date;
   updatedAt: Date;

@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { SiteConfig } from "@/lib/domain/site-config";
+import { SanityImagePicker } from "@/components/panel/SanityImagePicker";
 
 interface BrandingFormProps {
   config: SiteConfig | null;
@@ -19,6 +20,8 @@ export default function BrandingForm({ config }: BrandingFormProps) {
   const [colorPrimary, setColorPrimary] = useState(config?.colorPrimary ?? "#2D3B2A");
   const [colorSecondary, setColorSecondary] = useState(config?.colorSecondary ?? "#B85C38");
   const [colorAccent, setColorAccent] = useState(config?.colorAccent ?? "#F5E6D3");
+  const [heroImageUrl, setHeroImageUrl] = useState<string | null>(config?.heroImageUrl ?? null);
+  const [logoUrl, setLogoUrl] = useState<string | null>(config?.logoUrl ?? null);
   const router = useRouter();
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -28,10 +31,12 @@ export default function BrandingForm({ config }: BrandingFormProps) {
     setSuccess(false);
 
     const body: Record<string, string | null> = {};
-    for (const key of ["heroEyebrow", "heroTitle", "heroSubtitle", "heroImageUrl", "logoUrl"]) {
+    for (const key of ["heroEyebrow", "heroTitle", "heroSubtitle"]) {
       const val = (fd.get(key) as string)?.trim();
       body[key] = val || null;
     }
+    body.heroImageUrl = heroImageUrl;
+    body.logoUrl = logoUrl;
     body.colorPrimary = colorPrimary;
     body.colorSecondary = colorSecondary;
     body.colorAccent = colorAccent;
@@ -93,32 +98,24 @@ export default function BrandingForm({ config }: BrandingFormProps) {
           />
         </div>
         <div>
-          <label htmlFor="branding-heroImageUrl" className={labelCls}>
-            Imagen URL
-          </label>
-          <input
-            id="branding-heroImageUrl"
-            name="heroImageUrl"
-            type="url"
-            defaultValue={config?.heroImageUrl ?? ""}
-            className={inputCls}
-            placeholder="https://..."
+          <label className={labelCls}>Imagen</label>
+          <SanityImagePicker
+            value={heroImageUrl}
+            onChange={setHeroImageUrl}
+            label="Imagen del hero"
+            aspect="wide"
           />
         </div>
       </fieldset>
 
       {/* Logo */}
       <div>
-        <label htmlFor="branding-logoUrl" className={labelCls}>
-          Logo URL
-        </label>
-        <input
-          id="branding-logoUrl"
-          name="logoUrl"
-          type="url"
-          defaultValue={config?.logoUrl ?? ""}
-          className={inputCls}
-          placeholder="https://..."
+        <label className={labelCls}>Logo</label>
+        <SanityImagePicker
+          value={logoUrl}
+          onChange={setLogoUrl}
+          label="Logo del centro"
+          aspect="square"
         />
       </div>
 

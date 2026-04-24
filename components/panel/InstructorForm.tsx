@@ -1,9 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { useFormStatus } from "react-dom";
-import Image from "next/image";
 import { createInstructor, updateInstructor } from "@/app/panel/profesores/actions";
 import { Button } from "@/components/ui/Button";
+import { SanityImagePicker } from "@/components/panel/SanityImagePicker";
 import type { Instructor } from "@/lib/ports";
 
 type Props = {
@@ -26,10 +27,12 @@ function SubmitButton({ label }: { label: string }) {
 export function InstructorForm({ instructor }: Props) {
   const isEditing = !!instructor;
   const action = isEditing ? updateInstructor : createInstructor;
+  const [imageUrl, setImageUrl] = useState<string | null>(instructor?.imageUrl ?? null);
 
   return (
     <form action={action} className="space-y-4">
       {instructor && <input type="hidden" name="id" value={instructor.id} />}
+      <input type="hidden" name="imageUrl" value={imageUrl ?? ""} />
       <div>
         <label htmlFor="name" className="block text-sm font-medium text-[var(--color-text)] mb-1">
           Nombre
@@ -64,31 +67,17 @@ export function InstructorForm({ instructor }: Props) {
         )}
       </div>
       <div>
-        <label htmlFor="imageUrl" className="block text-sm font-medium text-[var(--color-text)] mb-1">
-          Imagen de perfil (URL)
+        <label className="block text-sm font-medium text-[var(--color-text)] mb-1">
+          Imagen de perfil
         </label>
-        <div className="flex flex-wrap items-start gap-3">
-          {isEditing && instructor?.imageUrl && (
-            <Image
-              src={instructor.imageUrl}
-              alt=""
-              className="h-14 w-14 rounded-full object-cover border border-[var(--color-border)]"
-              width={56}
-              height={56}
-              unoptimized
-            />
-          )}
-          <input
-            id="imageUrl"
-            name="imageUrl"
-            type="url"
-            defaultValue={instructor?.imageUrl ?? ""}
-            placeholder="https://…"
-            className="flex-1 min-w-0 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-[var(--color-text)]"
-          />
-        </div>
+        <SanityImagePicker
+          value={imageUrl}
+          onChange={setImageUrl}
+          label="Foto del profesor"
+          aspect="square"
+        />
         <p className="text-xs text-[var(--color-text-muted)] mt-1">
-          Opcional. URL de una imagen para mostrar como avatar en las clases.
+          Opcional. Se muestra como avatar en las clases.
         </p>
       </div>
       <div className="flex gap-3 pt-2">

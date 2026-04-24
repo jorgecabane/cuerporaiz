@@ -64,6 +64,7 @@ export default async function MiPerfilPage({ searchParams }: { searchParams: Pro
               rut: user.rut,
               birthday: user.birthday?.toISOString().split("T")[0] ?? null,
               sex: user.sex,
+              imageUrl: user.imageUrl,
             }}
           />
           {hasGoogle && (

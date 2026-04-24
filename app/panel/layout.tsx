@@ -28,7 +28,7 @@ export default async function PanelLayout({
   return (
     <PanelShell
       isAdmin={isAdmin}
-      user={{ name: session.user.name ?? undefined, email: session.user.email ?? "" }}
+      user={{ name: session.user.name ?? undefined, email: session.user.email ?? "", imageUrl: user.imageUrl ?? undefined }}
       centerName={centerName}
     >
       {children}

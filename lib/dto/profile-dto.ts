@@ -7,7 +7,12 @@ export const updateProfileSchema = z.object({
   rut: z.string().nullable().optional(),
   birthday: z.string().nullable().optional(), // ISO date string
   sex: z.enum(["M", "F", "X"]).nullable().optional(),
-  imageUrl: z.string().url().nullable().optional(),
+  imageUrl: z
+    .string()
+    .url()
+    .refine((u) => u.startsWith("https://"), "Solo URLs https://")
+    .nullable()
+    .optional(),
 });
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
 
