@@ -218,7 +218,6 @@ function UploadTab({ endpoint, onSelect }: { endpoint: string; onSelect: (url: s
           type="file"
           accept="image/jpeg,image/png,image/webp,image/avif"
           tabIndex={-1}
-          aria-hidden
           className="sr-only"
           onChange={(e) => {
             const f = e.target.files?.[0];
