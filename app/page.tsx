@@ -8,6 +8,7 @@ import {
   onDemandCategoryRepository,
   prisma,
 } from "@/lib/adapters/db";
+import { buildSiteMetadata } from "@/lib/seo/metadata";
 import {
   HeroSection,
   PropuestaSection,
@@ -29,19 +30,7 @@ export const revalidate = 60;
 /* ─── Metadata ──────────────────────────────────────────────────────────── */
 
 export async function generateMetadata(): Promise<Metadata> {
-  const slug = process.env.NEXT_PUBLIC_DEFAULT_CENTER_SLUG;
-  if (!slug) return { title: "Cuerpo Raíz" };
-
-  const center = await centerRepository.findBySlug(slug);
-  if (!center) return { title: "Cuerpo Raíz" };
-
-  const siteConfig = await siteConfigRepository.findByCenterId(center.id);
-  const description = siteConfig?.heroSubtitle ?? "el camino de regreso a ti.";
-
-  return {
-    title: center.name,
-    description,
-  };
+  return buildSiteMetadata({ path: "/", type: "website" });
 }
 
 /* ─── Fallback (no env slug configured) ─────────────────────────────────── */

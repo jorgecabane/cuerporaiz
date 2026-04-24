@@ -1,11 +1,27 @@
+import type { Metadata } from "next";
 import { onDemandCategoryRepository, onDemandPracticeRepository } from "@/lib/adapters/db";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { buildSiteMetadata } from "@/lib/seo/metadata";
 
 export const revalidate = 300;
 
 interface Props {
   params: Promise<{ categoryId: string }>;
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { categoryId } = await params;
+  const category = await onDemandCategoryRepository.findById(categoryId);
+  if (!category || category.status !== "PUBLISHED") {
+    return buildSiteMetadata({ path: `/catalogo/${categoryId}`, noIndex: true });
+  }
+  return buildSiteMetadata({
+    path: `/catalogo/${categoryId}`,
+    title: `${category.name} — Catálogo`,
+    description: category.description ?? undefined,
+    image: category.thumbnailUrl,
+  });
 }
 
 export default async function CatalogoCategoryPage({ params }: Props) {

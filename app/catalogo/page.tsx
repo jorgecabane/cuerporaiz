@@ -1,9 +1,20 @@
+import type { Metadata } from "next";
 import { onDemandCategoryRepository } from "@/lib/adapters/db";
 import { prisma } from "@/lib/adapters/db/prisma";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
+import { buildSiteMetadata } from "@/lib/seo/metadata";
 
 export const revalidate = 300; // 5 min ISR
+
+export async function generateMetadata(): Promise<Metadata> {
+  return buildSiteMetadata({
+    path: "/catalogo",
+    title: "Catálogo de prácticas — Cuerpo Raíz",
+    description:
+      "Explora nuestras categorías de prácticas de yoga on demand: clases grabadas para practicar a tu ritmo, donde y cuando quieras.",
+  });
+}
 
 export default async function CatalogoPage() {
   const center = await prisma.center.findFirst();

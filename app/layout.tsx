@@ -7,6 +7,8 @@ import DynamicTheme from "@/components/shared/DynamicTheme";
 import { FooterServer } from "@/components/shared/FooterServer";
 import { Toaster } from "@/components/ui/Toast";
 import { getPublicNavLinks } from "@/lib/server/public-nav";
+import { buildSiteMetadata } from "@/lib/seo/metadata";
+import { isProductionEnv } from "@/lib/seo/urls";
 
 const fontDisplay = Cormorant_Garamond({
   variable: "--font-display",
@@ -21,12 +23,14 @@ const fontSans = DM_Sans({
   weight: ["400", "500", "600"],
 });
 
-export const metadata: Metadata = {
-  title: "Cuerpo Raíz — cuerpo, respiración y placer",
-  description:
-    "Yoga con identidad. Clases presenciales y online, membresía, retiros. El camino de regreso a ti. Trinidad Cáceres — Vitacura, Chile.",
-  keywords: ["yoga", "yoga online", "membresía yoga", "yoga Vitacura", "Trinidad Cáceres"],
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const base = await buildSiteMetadata({ path: "/" });
+  return {
+    ...base,
+    keywords: ["yoga", "yoga online", "membresía yoga", "yoga Vitacura", "Trinidad Cáceres"],
+    robots: isProductionEnv() ? undefined : { index: false, follow: false },
+  };
+}
 
 export default async function RootLayout({
   children,

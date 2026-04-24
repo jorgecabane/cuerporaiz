@@ -6,6 +6,7 @@ import { draftMode } from "next/headers";
 
 import { isSanityConfigured, sanityFetch } from "@/lib/sanity/client";
 import { urlForImage } from "@/lib/sanity/image";
+import { buildSiteMetadata } from "@/lib/seo/metadata";
 import {
   QUERY_POST_BY_SLUG,
   QUERY_POST_SLUGS,
@@ -45,16 +46,19 @@ export async function generateMetadata(
   const description = post.seo?.metaDescription ?? post.excerpt;
   const ogImage = urlForImage(post.seo?.ogImage ?? post.coverImage) ?? undefined;
 
-  return {
+  const base = await buildSiteMetadata({
+    path: `/blog/${slug}`,
     title: `${title} — Cuerpo Raíz`,
     description,
-    alternates: { canonical: `/blog/${slug}` },
+    image: ogImage ?? null,
+    type: "article",
+  });
+
+  return {
+    ...base,
     openGraph: {
-      title,
-      description,
+      ...base.openGraph,
       type: "article",
-      url: `/blog/${slug}`,
-      images: ogImage ? [{ url: ogImage }] : undefined,
       publishedTime: post.publishedAt,
       authors: [post.author.name],
     },

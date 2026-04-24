@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import {
   onDemandCategoryRepository,
   onDemandPracticeRepository,
@@ -5,11 +6,31 @@ import {
 } from "@/lib/adapters/db";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { buildSiteMetadata } from "@/lib/seo/metadata";
 
 export const revalidate = 300;
 
 interface Props {
   params: Promise<{ categoryId: string; practiceId: string }>;
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { categoryId, practiceId } = await params;
+  const practice = await onDemandPracticeRepository.findById(practiceId);
+  const path = `/catalogo/${categoryId}/${practiceId}`;
+  if (
+    !practice ||
+    practice.status !== "PUBLISHED" ||
+    practice.categoryId !== categoryId
+  ) {
+    return buildSiteMetadata({ path, noIndex: true });
+  }
+  return buildSiteMetadata({
+    path,
+    title: `${practice.name} — Práctica on demand`,
+    description: practice.description ?? undefined,
+    image: practice.thumbnailUrl,
+  });
 }
 
 export default async function CatalogoPracticePage({ params }: Props) {
