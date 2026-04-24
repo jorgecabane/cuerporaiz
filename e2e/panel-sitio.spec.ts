@@ -26,6 +26,14 @@ test.describe("Panel admin - Sitio", () => {
     await expect(page.locator('input[type="color"]').first()).toBeVisible();
   });
 
+  test("tab branding muestra botones Elegir imagen (picker Sanity) en hero y logo", async ({ page }) => {
+    await page.goto("/panel/sitio?tab=branding");
+    await expect(page.getByRole("heading", { name: /sitio web/i })).toBeVisible({ timeout: 15000 });
+    // Al menos dos triggers del picker (hero + logo) — pueden mostrar "Elegir imagen" (vacío) o "Cambiar" (con valor)
+    const pickerTriggers = page.getByRole("button", { name: /elegir imagen|cambiar/i });
+    await expect(pickerTriggers.first()).toBeVisible({ timeout: 5000 });
+  });
+
   test("tab secciones muestra lista con toggles", async ({ page }) => {
     await page.goto("/panel/sitio?tab=secciones");
     await expect(page.getByRole("heading", { name: /sitio web/i })).toBeVisible({ timeout: 15000 });

@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { AboutPageWithImages } from "@/lib/domain/about-page";
 import { SiteLinkPicker } from "@/components/panel/sitio/SiteLinkPicker";
+import { SanityImagePicker } from "@/components/panel/SanityImagePicker";
 
 interface Props {
   page: AboutPageWithImages | null;
@@ -20,6 +21,7 @@ export default function AboutPageForm({ page }: Props) {
   const [visible, setVisible] = useState(page?.visible ?? false);
   const [showInHeader, setShowInHeader] = useState(page?.showInHeader ?? false);
   const [ctaHref, setCtaHref] = useState(page?.ctaHref ?? "/#agenda");
+  const [heroImageUrl, setHeroImageUrl] = useState<string | null>(page?.heroImageUrl ?? null);
   const router = useRouter();
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -32,6 +34,7 @@ export default function AboutPageForm({ page }: Props) {
       visible,
       showInHeader,
       ctaHref,
+      heroImageUrl,
     };
     for (const key of [
       "headerLabel",
@@ -39,7 +42,6 @@ export default function AboutPageForm({ page }: Props) {
       "pageEyebrow",
       "name",
       "tagline",
-      "heroImageUrl",
       "bio",
       "propuesta",
       "ctaLabel",
@@ -154,16 +156,12 @@ export default function AboutPageForm({ page }: Props) {
           />
         </div>
         <div>
-          <label htmlFor="about-heroImageUrl" className={labelCls}>
-            Foto hero URL (vertical 3:4 recomendado)
-          </label>
-          <input
-            id="about-heroImageUrl"
-            name="heroImageUrl"
-            type="url"
-            defaultValue={page?.heroImageUrl ?? ""}
-            className={inputCls}
-            placeholder="https://..."
+          <label className={labelCls}>Foto hero (vertical 3:4 recomendado)</label>
+          <SanityImagePicker
+            value={heroImageUrl}
+            onChange={setHeroImageUrl}
+            label="Foto hero Sobre mí"
+            aspect="portrait"
           />
         </div>
       </fieldset>

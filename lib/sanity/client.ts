@@ -1,5 +1,5 @@
 import { createClient } from "@sanity/client";
-import { apiVersion, dataset, isSanityConfigured, projectId, readToken } from "@/sanity/env";
+import { apiVersion, dataset, isSanityConfigured, projectId, readToken, writeToken } from "@/sanity/env";
 
 /**
  * Sanity client for server components.
@@ -26,6 +26,31 @@ export function getDraftClient() {
     useCdn: false,
     perspective: "previewDrafts",
     token: readToken,
+  });
+}
+
+/**
+ * Sanity client con permisos de escritura.
+ * Usar SOLO desde server components / route handlers — nunca exponer el token al browser.
+ * Lanza si no está configurado; el caller debe manejar el error con un 5xx claro.
+ */
+export function getSanityWriteClient() {
+  if (!projectId) {
+    throw new Error(
+      "Sanity no está configurado: falta NEXT_PUBLIC_SANITY_PROJECT_ID. Ver docs/sanity-setup.md.",
+    );
+  }
+  if (!writeToken) {
+    throw new Error(
+      "SANITY_API_WRITE_TOKEN no configurado. Crea un token con permiso Editor en manage.sanity.io.",
+    );
+  }
+  return createClient({
+    projectId,
+    dataset,
+    apiVersion,
+    useCdn: false,
+    token: writeToken,
   });
 }
 

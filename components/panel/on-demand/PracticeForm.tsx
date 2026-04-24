@@ -5,6 +5,7 @@ import { createPractice, updatePractice, deletePractice } from "@/app/panel/on-d
 import type { OnDemandPractice, OnDemandContentStatus } from "@/lib/domain/on-demand";
 import { CONTENT_STATUS_LABELS } from "@/lib/domain/on-demand";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { SanityImagePicker } from "@/components/panel/SanityImagePicker";
 
 type Props =
   | { mode: "create"; categoryId: string }
@@ -21,12 +22,12 @@ export function PracticeForm(props: Props) {
   const isEdit = props.mode === "edit";
   const practice = isEdit ? props.practice : null;
   const formKey = practice ? `${practice.id}-${practice.status}-${practice.name}` : "create";
+  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(practice?.thumbnailUrl ?? null);
 
   function handleSubmit(formData: FormData) {
     const name = (formData.get("name") as string)?.trim();
     if (!name) return;
     const description = (formData.get("description") as string)?.trim() || null;
-    const thumbnailUrl = (formData.get("thumbnailUrl") as string)?.trim() || null;
     const status = (formData.get("status") as OnDemandContentStatus) || "DRAFT";
     if (isEdit && practice) {
       startTransition(() =>
@@ -99,18 +100,15 @@ export function PracticeForm(props: Props) {
             />
           </div>
           <div>
-            <label htmlFor={`${idPrefix}-thumbnailUrl`} className="block text-sm font-medium text-[var(--color-text)] mb-1">
-              URL de imagen (opcional)
+            <label className="block text-sm font-medium text-[var(--color-text)] mb-1">
+              Imagen (opcional)
             </label>
-            <input
-              id={`${idPrefix}-thumbnailUrl`}
-              name="thumbnailUrl"
-              type="url"
-              placeholder="https://"
-              defaultValue={practice?.thumbnailUrl ?? ""}
-              className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)]"
+            <SanityImagePicker
+              value={thumbnailUrl}
+              onChange={setThumbnailUrl}
+              label="Thumbnail de práctica"
+              aspect="wide"
             />
-            <p className="mt-1 text-xs text-[var(--color-text-muted)]">Debe comenzar con https://</p>
           </div>
           <div>
             <label htmlFor={`${idPrefix}-status`} className="block text-sm font-medium text-[var(--color-text)] mb-1">
@@ -179,18 +177,15 @@ export function PracticeForm(props: Props) {
           />
         </div>
         <div>
-          <label htmlFor={`${idPrefix}-thumbnailUrl`} className="block text-sm font-medium text-[var(--color-text)] mb-1">
-            URL de imagen (opcional)
+          <label className="block text-sm font-medium text-[var(--color-text)] mb-1">
+            Imagen (opcional)
           </label>
-          <input
-            id={`${idPrefix}-thumbnailUrl`}
-            name="thumbnailUrl"
-            type="url"
-            placeholder="https://"
-            defaultValue=""
-            className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)]"
+          <SanityImagePicker
+            value={thumbnailUrl}
+            onChange={setThumbnailUrl}
+            label="Thumbnail de práctica"
+            aspect="wide"
           />
-          <p className="mt-1 text-xs text-[var(--color-text-muted)]">Debe comenzar con https://</p>
         </div>
         <div>
           <label htmlFor={`${idPrefix}-status`} className="block text-sm font-medium text-[var(--color-text)] mb-1">

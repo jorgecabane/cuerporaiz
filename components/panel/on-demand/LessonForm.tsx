@@ -4,6 +4,7 @@ import { useTransition, useState } from "react";
 import { createLesson, updateLesson } from "@/app/panel/on-demand/lecciones/actions";
 import type { OnDemandCategory, OnDemandPractice, OnDemandLesson, OnDemandContentStatus } from "@/lib/domain/on-demand";
 import { CONTENT_STATUS_LABELS } from "@/lib/domain/on-demand";
+import { SanityImagePicker } from "@/components/panel/SanityImagePicker";
 
 interface LessonFormProps {
   categories: OnDemandCategory[];
@@ -30,6 +31,7 @@ export function LessonForm({ categories, practices, defaultPracticeId, lesson }:
   const initialCategoryId = getDefaultCategoryId(practices, defaultPracticeId, lesson?.practiceId);
   const [categoryId, setCategoryId] = useState(initialCategoryId);
   const [practiceId, setPracticeId] = useState(lesson?.practiceId ?? defaultPracticeId ?? "");
+  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(lesson?.thumbnailUrl ?? null);
 
   const filteredPractices = practices.filter((p) => p.categoryId === categoryId);
 
@@ -45,7 +47,6 @@ export function LessonForm({ categories, practices, defaultPracticeId, lesson }:
 
     const description = (formData.get("description") as string)?.trim() || null;
     const promoVideoUrl = (formData.get("promoVideoUrl") as string)?.trim() || null;
-    const thumbnailUrl = (formData.get("thumbnailUrl") as string)?.trim() || null;
     const durationRaw = (formData.get("durationMinutes") as string)?.trim();
     const durationMinutes = durationRaw ? Number(durationRaw) : null;
     const level = (formData.get("level") as string)?.trim() || null;
@@ -168,16 +169,14 @@ export function LessonForm({ categories, practices, defaultPracticeId, lesson }:
       </div>
 
       <div>
-        <label htmlFor="thumbnailUrl" className="block text-sm font-medium text-[var(--color-text)] mb-1">
-          URL de imagen (opcional)
+        <label className="block text-sm font-medium text-[var(--color-text)] mb-1">
+          Imagen (opcional)
         </label>
-        <input
-          id="thumbnailUrl"
-          name="thumbnailUrl"
-          type="url"
-          placeholder="https://"
-          defaultValue={lesson?.thumbnailUrl ?? ""}
-          className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)]"
+        <SanityImagePicker
+          value={thumbnailUrl}
+          onChange={setThumbnailUrl}
+          label="Thumbnail de lección"
+          aspect="wide"
         />
       </div>
 

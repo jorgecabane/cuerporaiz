@@ -18,6 +18,7 @@ function toDomainUser(u: {
   rut: string | null;
   birthday: Date | null;
   sex: string | null;
+  imageUrl: string | null;
   notes: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -31,6 +32,7 @@ function toDomainUser(u: {
     rut: u.rut,
     birthday: u.birthday,
     sex: u.sex,
+    imageUrl: u.imageUrl,
     notes: u.notes,
     createdAt: u.createdAt,
     updatedAt: u.updatedAt,

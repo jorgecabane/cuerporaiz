@@ -24,6 +24,18 @@ Este token se usa para:
 - Draft mode (preview de posts no publicados desde el Studio).
 - Consultas server-side con autenticación (si en el futuro el dataset queda privado).
 
+## 2b. Crear API Write Token (para uploads desde el panel)
+
+Necesario para que el admin suba imágenes desde `/panel/sitio`, `/panel/eventos`, `/panel/on-demand`, etc. sin pegar URLs externas. También lo usan los usuarios finales para su foto de perfil (endpoint `/api/me/sanity-upload`, con rate limit y resize server-side).
+
+En `manage.sanity.io` → **API** → **Tokens** → **Add API token**:
+
+- **Name**: `cuerporaiz-write`
+- **Permissions**: `Editor` (permite upload de assets + delete)
+- Copiar el token. **Nunca exponer este token al browser** — solo se usa desde API routes server-side.
+
+Sin este token, los botones "Elegir imagen" siguen funcionando en modo "biblioteca" (si hay assets ya subidos), pero el "Subir" devuelve 500 con mensaje claro.
+
 ## 3. Configurar CORS
 
 En `manage.sanity.io` → **API** → **CORS origins** → agregar:
@@ -43,6 +55,7 @@ NEXT_PUBLIC_SANITY_PROJECT_ID=xxxxxxxx
 NEXT_PUBLIC_SANITY_DATASET=production
 NEXT_PUBLIC_SANITY_API_VERSION=2026-04-23
 SANITY_API_READ_TOKEN=sk...
+SANITY_API_WRITE_TOKEN=sk...
 # Para preview desde el Studio: generar con `openssl rand -hex 32`
 SANITY_PREVIEW_SECRET=<hex aleatorio>
 ```

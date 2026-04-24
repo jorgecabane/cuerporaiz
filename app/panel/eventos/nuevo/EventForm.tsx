@@ -5,6 +5,7 @@ import { createEvent, updateEvent, deleteEvent } from "@/app/panel/eventos/actio
 import type { Event, EventStatus } from "@/lib/domain/event";
 import { EVENT_STATUS_LABELS } from "@/lib/domain/event";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { SanityImagePicker } from "@/components/panel/SanityImagePicker";
 
 type Props =
   | { mode: "create" }
@@ -40,6 +41,7 @@ export function EventForm(props: Props) {
   const [isPending, startTransition] = useTransition();
   const [isDeleting, startDeleteTransition] = useTransition();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [imageUrl, setImageUrl] = useState<string | null>(event?.imageUrl ?? null);
 
   function handleSubmit(formData: FormData) {
     const title = (formData.get("title") as string)?.trim();
@@ -47,7 +49,6 @@ export function EventForm(props: Props) {
 
     const description = (formData.get("description") as string)?.trim() || null;
     const location = (formData.get("location") as string)?.trim() || null;
-    const imageUrl = (formData.get("imageUrl") as string)?.trim() || null;
     const startsAt = new Date(formData.get("startsAt") as string);
     const endsAt = new Date(formData.get("endsAt") as string);
     const amountCents = parseInt(formData.get("amountCents") as string, 10) || 0;
@@ -205,16 +206,12 @@ export function EventForm(props: Props) {
 
         {/* Imagen */}
         <div>
-          <label htmlFor={`${idPrefix}-imageUrl`} className={LABEL_CLASS}>
-            URL de imagen (opcional)
-          </label>
-          <input
-            id={`${idPrefix}-imageUrl`}
-            name="imageUrl"
-            type="url"
-            placeholder="https://"
-            defaultValue={event?.imageUrl ?? ""}
-            className={INPUT_CLASS}
+          <label className={LABEL_CLASS}>Imagen (opcional)</label>
+          <SanityImagePicker
+            value={imageUrl}
+            onChange={setImageUrl}
+            label="Imagen del evento"
+            aspect="wide"
           />
         </div>
 

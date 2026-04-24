@@ -24,6 +24,7 @@ import {
   type AboutImage,
   type AboutImageCategory,
 } from "@/lib/domain/about-page";
+import { SanityImagePicker } from "@/components/panel/SanityImagePicker";
 
 interface Props {
   pageId: string;
@@ -36,6 +37,8 @@ const inputCls =
 export default function AboutPageGalleryManager({ pageId, images: initialImages }: Props) {
   const [images, setImages] = useState<AboutImage[]>(initialImages);
   const [activeCategory, setActiveCategory] = useState<AboutImageCategory>("RETIROS");
+  const [newImageUrl, setNewImageUrl] = useState<string | null>(null);
+  const [newCaption, setNewCaption] = useState("");
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -83,18 +86,17 @@ export default function AboutPageGalleryManager({ pageId, images: initialImages 
     });
   }
 
-  async function addImage(formData: FormData) {
-    const imageUrl = String(formData.get("imageUrl") ?? "").trim();
-    const caption = String(formData.get("caption") ?? "").trim();
-    if (!imageUrl) return;
+  async function addImage() {
+    if (!newImageUrl) return;
     setError(null);
+    const caption = newCaption.trim();
 
     startTransition(async () => {
       const res = await fetch("/api/panel/about-page/images", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          imageUrl,
+          imageUrl: newImageUrl,
           caption: caption || null,
           category: activeCategory,
           visible: true,
@@ -107,6 +109,8 @@ export default function AboutPageGalleryManager({ pageId, images: initialImages 
       }
       const created: AboutImage = await res.json();
       setImages((prev) => [...prev, created]);
+      setNewImageUrl(null);
+      setNewCaption("");
       router.refresh();
     });
   }
@@ -167,41 +171,34 @@ export default function AboutPageGalleryManager({ pageId, images: initialImages 
       </div>
 
       {/* Add form */}
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          const fd = new FormData(e.currentTarget);
-          addImage(fd);
-          e.currentTarget.reset();
-        }}
-        className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] p-3 space-y-2"
-      >
-        <div className="flex flex-col gap-2 md:flex-row">
-          <input
-            name="imageUrl"
-            type="url"
-            required
-            placeholder="URL de la imagen (https://...)"
-            className={`${inputCls} md:flex-1`}
-          />
-          <input
-            name="caption"
-            placeholder="Caption (opcional)"
-            className={`${inputCls} md:w-64`}
-            maxLength={280}
-          />
+      <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] p-3 space-y-3">
+        <SanityImagePicker
+          value={newImageUrl}
+          onChange={setNewImageUrl}
+          label={`Foto para ${ABOUT_IMAGE_CATEGORY_LABELS[activeCategory]}`}
+          aspect="square"
+        />
+        <input
+          value={newCaption}
+          onChange={(e) => setNewCaption(e.target.value)}
+          placeholder="Caption (opcional)"
+          className={inputCls}
+          maxLength={280}
+        />
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-[10px] text-[var(--color-text-muted)]">
+            Se agrega a <strong>{ABOUT_IMAGE_CATEGORY_LABELS[activeCategory]}</strong>.
+          </p>
           <button
-            type="submit"
-            disabled={isPending}
+            type="button"
+            onClick={() => void addImage()}
+            disabled={isPending || !newImageUrl}
             className="shrink-0 rounded-[var(--radius-md)] bg-[var(--color-primary)] px-4 py-2 text-xs text-white hover:opacity-90 disabled:opacity-50"
           >
             Agregar
           </button>
         </div>
-        <p className="text-[10px] text-[var(--color-text-muted)]">
-          Las imágenes se agregan a la categoría <strong>{ABOUT_IMAGE_CATEGORY_LABELS[activeCategory]}</strong>.
-        </p>
-      </form>
+      </div>
 
       {error && <p className="text-xs text-[var(--color-error,#dc2626)]">{error}</p>}
 

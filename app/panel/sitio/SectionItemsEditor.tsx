@@ -3,6 +3,7 @@
 import { useState, useEffect, useTransition } from "react";
 import { ChevronUp, ChevronDown } from "lucide-react";
 import { SiteLinkPicker } from "@/components/panel/sitio/SiteLinkPicker";
+import { SanityImagePicker } from "@/components/panel/SanityImagePicker";
 
 type SectionItem = {
   id: string;
@@ -448,17 +449,17 @@ function ItemForm({
         </div>
       )}
 
-      {/* Image URL field (hide if no label configured) */}
+      {/* Image picker (hide if no label configured) */}
       {labels.imageUrl !== undefined && (
         <div>
           <label className="block text-xs text-[var(--color-text-muted)] mb-1">
-            {labels.imageUrl ?? "URL de imagen"}
+            {labels.imageUrl?.replace(/\s*\(URL\)\s*$/, "") ?? "Imagen"}
           </label>
-          <input
-            type="text"
-            value={form.imageUrl}
-            onChange={(e) => handleChange("imageUrl", e.target.value)}
-            className={INPUT_CLASS}
+          <SanityImagePicker
+            value={form.imageUrl || null}
+            onChange={(url) => handleChange("imageUrl", url ?? "")}
+            label={labels.imageUrl ?? "Imagen"}
+            aspect={sectionKey === "team" ? "portrait" : "square"}
           />
         </div>
       )}
@@ -482,8 +483,13 @@ function ItemForm({
       {!labels.title && (
         <>
           <div>
-            <label className="block text-xs text-[var(--color-text-muted)] mb-1">URL de imagen</label>
-            <input type="text" value={form.imageUrl} onChange={(e) => handleChange("imageUrl", e.target.value)} className={INPUT_CLASS} />
+            <label className="block text-xs text-[var(--color-text-muted)] mb-1">Imagen</label>
+            <SanityImagePicker
+              value={form.imageUrl || null}
+              onChange={(url) => handleChange("imageUrl", url ?? "")}
+              label="Imagen"
+              aspect="square"
+            />
           </div>
           <div>
             <label className="block text-xs text-[var(--color-text-muted)] mb-1">URL de enlace (opcional)</label>
