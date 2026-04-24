@@ -38,27 +38,27 @@ export interface BuildSiteMetadataOpts {
   noIndex?: boolean;
 }
 
-const DEFAULT_TAGLINE = "cuerpo, respiración y placer";
+const DEFAULT_TAGLINE = "yoga con identidad para volver a tu cuerpo";
 const DEFAULT_DESCRIPTION =
-  "Yoga con identidad. Clases presenciales y online, membresía, retiros. El camino de regreso a ti.";
+  "Yoga con identidad en Vitacura. Clases presenciales y online, membresía, retiros y biblioteca on demand — el camino de regreso a tu cuerpo.";
 
 export async function buildSiteMetadata(opts: BuildSiteMetadataOpts): Promise<Metadata> {
   const ctx = await getSiteContext();
   const siteName = ctx?.center.name ?? "Cuerpo Raíz";
   const defaultTitle = `${siteName} — ${DEFAULT_TAGLINE}`;
-  const defaultDescription = ctx?.siteConfig?.heroSubtitle?.trim() || DEFAULT_DESCRIPTION;
 
   const title = opts.title ?? defaultTitle;
-  const description = opts.description ?? defaultDescription;
+  const description = opts.description ?? DEFAULT_DESCRIPTION;
   const canonicalPath = opts.path.startsWith("/") ? opts.path : `/${opts.path}`;
   const urlAbsolute = absoluteUrl(canonicalPath);
 
-  const explicitImage = resolveImageUrl(opts.image ?? ctx?.siteConfig?.heroImageUrl ?? null);
-
-  const openGraphImages = explicitImage
-    ? [{ url: explicitImage, width: 1200, height: 630, alt: title }]
-    : undefined;
-  const twitterImages = explicitImage ? [explicitImage] : undefined;
+  // Page-specific image (blog cover, category thumbnail, etc) wins. Otherwise we
+  // point to the dynamic `/opengraph-image` route (app/opengraph-image.tsx).
+  // Setting an explicit URL here is required because declaring an `openGraph`
+  // object prevents Next.js from auto-wiring the file-based OG image.
+  const imageUrl = resolveImageUrl(opts.image ?? null) ?? absoluteUrl("/opengraph-image");
+  const openGraphImages = [{ url: imageUrl, width: 1200, height: 630, alt: title }];
+  const twitterImages = [imageUrl];
 
   return {
     metadataBase: new URL(getSiteUrl()),
