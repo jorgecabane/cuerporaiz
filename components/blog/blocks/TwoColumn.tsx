@@ -1,3 +1,5 @@
+"use client";
+
 import {
   PortableText,
   type PortableTextComponents,
@@ -42,7 +44,7 @@ export function TwoColumn({ value }: { value: TwoColumnValue }) {
   const ratio = value.ratio ?? "50-50";
   return (
     <div
-      className={`not-prose mx-auto my-[var(--space-10)] grid max-w-[80ch] grid-cols-1 items-center gap-[var(--space-8)] ${RATIO_CLASSES[ratio]}`}
+      className={`not-prose mx-auto my-[var(--space-10)] grid max-w-[52rem] grid-cols-1 items-center gap-[var(--space-8)] ${RATIO_CLASSES[ratio]}`}
     >
       <div>
         <PortableText value={value.left} components={columnComponents} />

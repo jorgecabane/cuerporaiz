@@ -6,7 +6,7 @@ export function AuthorCard({ author }: { author: PostAuthorRef }) {
   const photoUrl = urlForImage(author.photo) ?? "";
 
   return (
-    <aside className="mx-auto mb-[var(--space-8)] mt-[var(--space-12)] grid max-w-[65ch] grid-cols-[88px_1fr] gap-[var(--space-5)] border-t border-[var(--color-border)] pt-[var(--space-12)]">
+    <aside className="mx-auto mb-[var(--space-8)] mt-[var(--space-12)] grid max-w-[42rem] grid-cols-[88px_1fr] gap-[var(--space-5)] border-t border-[var(--color-border)] pt-[var(--space-12)]">
       <div className="relative h-[88px] w-[88px] overflow-hidden rounded-full bg-[var(--color-primary-light)]">
         {photoUrl ? (
           <Image

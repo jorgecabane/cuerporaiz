@@ -12,7 +12,7 @@ export function Testimonial({ value }: { value: TestimonialValue }) {
   const photoUrl = urlForImage(value.photo as Parameters<typeof urlForImage>[0]);
 
   return (
-    <figure className="not-prose mx-auto my-[var(--space-10)] max-w-[65ch] rounded-2xl bg-[var(--color-surface)] p-[var(--space-8)] shadow-[var(--shadow-sm)]">
+    <figure className="not-prose mx-auto my-[var(--space-10)] max-w-[42rem] rounded-2xl bg-[var(--color-surface)] p-[var(--space-8)] shadow-[var(--shadow-sm)]">
       <blockquote className="font-display text-xl italic leading-relaxed text-[var(--color-text)]">
         &ldquo;{value.quote}&rdquo;
       </blockquote>

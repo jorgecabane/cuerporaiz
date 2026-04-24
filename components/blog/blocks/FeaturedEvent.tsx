@@ -24,7 +24,7 @@ export function FeaturedEvent({ value }: { value: FeaturedEventValue }) {
   );
 
   return (
-    <article className="not-prose mx-auto my-[var(--space-10)] grid max-w-[80ch] grid-cols-1 overflow-hidden rounded-2xl bg-[var(--color-surface)] shadow-[var(--shadow-sm)] sm:grid-cols-2">
+    <article className="not-prose mx-auto my-[var(--space-10)] grid max-w-[52rem] grid-cols-1 overflow-hidden rounded-2xl bg-[var(--color-surface)] shadow-[var(--shadow-sm)] sm:grid-cols-2">
       <div className="relative aspect-[4/3] sm:aspect-auto">
         {url ? (
           <Image

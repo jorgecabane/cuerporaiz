@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import {
   PortableText,
@@ -27,39 +29,39 @@ type AnyTypeComponent = PortableTextTypeComponent;
 const components: PortableTextComponents = {
   block: {
     normal: ({ children }) => (
-      <p className="mx-auto mb-6 max-w-[65ch] font-display text-xl leading-[1.75] text-[var(--color-text)]">
+      <p className="mx-auto mb-6 max-w-[42rem] font-display text-xl leading-[1.75] text-[var(--color-text)]">
         {children}
       </p>
     ),
     h2: ({ children }) => (
-      <h2 className="mx-auto mb-4 mt-12 max-w-[65ch] font-display text-3xl tracking-tight text-[var(--color-primary)] md:text-4xl">
+      <h2 className="mx-auto mb-4 mt-12 max-w-[42rem] font-display text-3xl tracking-tight text-[var(--color-primary)] md:text-4xl">
         {children}
       </h2>
     ),
     h3: ({ children }) => (
-      <h3 className="mx-auto mb-3 mt-10 max-w-[65ch] font-display text-2xl text-[var(--color-primary)]">
+      <h3 className="mx-auto mb-3 mt-10 max-w-[42rem] font-display text-2xl text-[var(--color-primary)]">
         {children}
       </h3>
     ),
     h4: ({ children }) => (
-      <h4 className="mx-auto mb-2 mt-8 max-w-[65ch] font-display text-xl text-[var(--color-primary)]">
+      <h4 className="mx-auto mb-2 mt-8 max-w-[42rem] font-display text-xl text-[var(--color-primary)]">
         {children}
       </h4>
     ),
     blockquote: ({ children }) => (
-      <blockquote className="mx-auto my-8 max-w-[65ch] border-l-[3px] border-[var(--color-secondary)] pl-5 font-display text-xl italic leading-relaxed text-[var(--color-text-muted)]">
+      <blockquote className="mx-auto my-8 max-w-[42rem] border-l-[3px] border-[var(--color-secondary)] pl-5 font-display text-xl italic leading-relaxed text-[var(--color-text-muted)]">
         {children}
       </blockquote>
     ),
   },
   list: {
     bullet: ({ children }) => (
-      <ul className="mx-auto mb-6 max-w-[65ch] list-disc space-y-2 pl-6 font-display text-xl leading-[1.75] text-[var(--color-text)] marker:text-[var(--color-secondary)]">
+      <ul className="mx-auto mb-6 max-w-[42rem] list-disc space-y-2 pl-6 font-display text-xl leading-[1.75] text-[var(--color-text)] marker:text-[var(--color-secondary)]">
         {children}
       </ul>
     ),
     number: ({ children }) => (
-      <ol className="mx-auto mb-6 max-w-[65ch] list-decimal space-y-2 pl-6 font-display text-xl leading-[1.75] text-[var(--color-text)]">
+      <ol className="mx-auto mb-6 max-w-[42rem] list-decimal space-y-2 pl-6 font-display text-xl leading-[1.75] text-[var(--color-text)]">
         {children}
       </ol>
     ),

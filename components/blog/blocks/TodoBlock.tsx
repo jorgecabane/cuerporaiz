@@ -4,7 +4,7 @@ type TodoValue = { items: TodoItem[] };
 export function TodoBlock({ value }: { value: TodoValue }) {
   const items = value.items ?? [];
   return (
-    <ul className="not-prose mx-auto my-[var(--space-8)] max-w-[65ch] space-y-2 text-base text-[var(--color-text)]">
+    <ul className="not-prose mx-auto my-[var(--space-8)] max-w-[42rem] space-y-2 text-base text-[var(--color-text)]">
       {items.map((item, i) => (
         <li key={i} className="flex items-start gap-3">
           <span

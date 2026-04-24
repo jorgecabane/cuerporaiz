@@ -14,7 +14,7 @@ export function ImageBlock({ value }: { value: ImageBlockValue }) {
 
   const wrapperClass = value.fullBleed
     ? "not-prose -mx-6 md:mx-auto max-w-5xl my-[var(--space-10)]"
-    : "not-prose mx-auto max-w-[80ch] my-[var(--space-8)]";
+    : "not-prose mx-auto max-w-[52rem] my-[var(--space-8)]";
 
   return (
     <figure className={wrapperClass}>

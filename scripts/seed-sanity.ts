@@ -60,6 +60,22 @@ async function uploadImageFromUrl(url: string, filename: string): Promise<Sanity
   return { _type: "reference", _ref: asset._id };
 }
 
+/**
+ * Versión tolerante: si la URL falla, loguea un warning y retorna null
+ * (el caller decide si incluir el item o saltarlo).
+ */
+async function tryUploadImageFromUrl(
+  url: string,
+  filename: string,
+): Promise<SanityImageAssetRef | null> {
+  try {
+    return await uploadImageFromUrl(url, filename);
+  } catch (err) {
+    console.warn(`  ⚠️  ${filename} no pudo subirse (${(err as Error).message}), skipeo.`);
+    return null;
+  }
+}
+
 function imageRef(ref: SanityImageAssetRef, alt: string, caption?: string) {
   return {
     _type: "image",
@@ -135,14 +151,20 @@ async function main() {
     "https://images.unsplash.com/photo-1575052814086-f385e2e2ad1b?auto=format&fit=crop&w=600&q=80",
     "bolster.jpg",
   );
-  const galleryImgs = await Promise.all([
-    uploadImageFromUrl("https://images.unsplash.com/photo-1599447541321-ba5d7a6a3da2?auto=format&fit=crop&w=800&q=80", "gal-1.jpg"),
-    uploadImageFromUrl("https://images.unsplash.com/photo-1588286840104-8957b019727f?auto=format&fit=crop&w=800&q=80", "gal-2.jpg"),
-    uploadImageFromUrl("https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=800&q=80", "gal-3.jpg"),
-    uploadImageFromUrl("https://images.unsplash.com/photo-1593811167562-9cef47bfc4d7?auto=format&fit=crop&w=800&q=80", "gal-4.jpg"),
-    uploadImageFromUrl("https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=800&q=80", "gal-5.jpg"),
-    uploadImageFromUrl("https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=800&q=80", "gal-6.jpg"),
-  ]);
+  const galleryCandidates = [
+    { url: "https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=800&q=80", filename: "gal-1.jpg" },
+    { url: "https://images.unsplash.com/photo-1588286840104-8957b019727f?auto=format&fit=crop&w=800&q=80", filename: "gal-2.jpg" },
+    { url: "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=800&q=80", filename: "gal-3.jpg" },
+    { url: "https://images.unsplash.com/photo-1593811167562-9cef47bfc4d7?auto=format&fit=crop&w=800&q=80", filename: "gal-4.jpg" },
+    { url: "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=800&q=80", filename: "gal-5.jpg" },
+    { url: "https://images.unsplash.com/photo-1552693673-1bf958298935?auto=format&fit=crop&w=800&q=80", filename: "gal-6.jpg" },
+  ];
+  const galleryResults = await Promise.all(
+    galleryCandidates.map((c) => tryUploadImageFromUrl(c.url, c.filename)),
+  );
+  const galleryImgs = galleryResults.filter(
+    (r): r is SanityImageAssetRef => r !== null,
+  );
   const eventImg = await uploadImageFromUrl(
     "https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=1200&q=80",
     "event-retiro.jpg",
@@ -445,18 +467,22 @@ async function main() {
         url: "https://www.youtube.com/watch?v=v7AYKMP6rOE",
         caption: "Secuencia restorativa de 20 min — video guiado.",
       },
-      // Gallery
-      {
-        _type: "gallery",
-        _key: key(),
-        layout: "grid",
-        images: galleryImgs.map((ref, i) => ({
-          _type: "image",
-          _key: key(),
-          asset: ref,
-          alt: `Detalle del espacio ${i + 1}`,
-        })),
-      },
+      // Gallery (solo si pudimos subir al menos 2 imágenes)
+      ...(galleryImgs.length >= 2
+        ? [
+            {
+              _type: "gallery",
+              _key: key(),
+              layout: "grid",
+              images: galleryImgs.map((ref, i) => ({
+                _type: "image",
+                _key: key(),
+                asset: ref,
+                alt: `Detalle del espacio ${i + 1}`,
+              })),
+            },
+          ]
+        : []),
       // Callout info
       {
         _type: "callout",

@@ -8,7 +8,7 @@ export function TableBlock({ value }: { value: TableValue }) {
   const [headerRow, ...bodyRows] = value.hasHeaderRow ? rows : [null, ...rows];
 
   return (
-    <div className="not-prose mx-auto my-[var(--space-10)] max-w-[80ch] overflow-x-auto rounded-[var(--radius-md)] border border-[var(--color-border)]">
+    <div className="not-prose mx-auto my-[var(--space-10)] max-w-[52rem] overflow-x-auto rounded-[var(--radius-md)] border border-[var(--color-border)]">
       <table className="w-full border-collapse text-left">
         {headerRow ? (
           <thead className="bg-[color-mix(in_srgb,var(--color-primary)_6%,transparent)]">

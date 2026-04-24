@@ -29,7 +29,7 @@ export function Gallery({ value }: { value: GalleryValue }) {
       : "grid grid-cols-2 md:grid-cols-3 gap-2";
 
   return (
-    <div className="not-prose mx-auto my-[var(--space-10)] max-w-[80ch]">
+    <div className="not-prose mx-auto my-[var(--space-10)] max-w-[52rem]">
       <div className={gridClasses}>
         {images.map((img, i) => {
           const url = urlForImage(img.asset as Parameters<typeof urlForImage>[0]);

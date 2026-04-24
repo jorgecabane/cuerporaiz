@@ -20,7 +20,7 @@ export function AsanaCard({ value }: { value: AsanaCardValue }) {
   const url = urlForImage(value.poseImage as Parameters<typeof urlForImage>[0]);
 
   return (
-    <article className="not-prose mx-auto my-[var(--space-10)] grid max-w-[80ch] grid-cols-1 overflow-hidden rounded-2xl bg-[var(--color-surface)] shadow-[var(--shadow-sm)] sm:grid-cols-[1fr_1.5fr]">
+    <article className="not-prose mx-auto my-[var(--space-10)] grid max-w-[52rem] grid-cols-1 overflow-hidden rounded-2xl bg-[var(--color-surface)] shadow-[var(--shadow-sm)] sm:grid-cols-[1fr_1.5fr]">
       <div className="relative aspect-square overflow-hidden">
         {url ? (
           <Image

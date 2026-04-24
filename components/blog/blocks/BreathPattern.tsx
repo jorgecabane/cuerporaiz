@@ -88,7 +88,7 @@ export function BreathPattern({ value }: { value: BreathPatternValue }) {
   })();
 
   return (
-    <section className="not-prose mx-auto my-[var(--space-10)] max-w-[65ch] rounded-2xl bg-[var(--color-surface)] p-[var(--space-8)] text-center shadow-[var(--shadow-sm)]">
+    <section className="not-prose mx-auto my-[var(--space-10)] max-w-[42rem] rounded-2xl bg-[var(--color-surface)] p-[var(--space-8)] text-center shadow-[var(--shadow-sm)]">
       <p className="text-xs font-medium uppercase tracking-[0.08em] text-[var(--color-text-muted)]">
         Pranayama
       </p>

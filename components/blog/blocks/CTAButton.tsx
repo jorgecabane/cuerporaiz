@@ -22,7 +22,7 @@ export function CTAButton({ value }: { value: CTAButtonValue }) {
     </>
   );
 
-  const className = `not-prose mx-auto my-[var(--space-10)] flex max-w-[65ch] items-center justify-center`;
+  const className = `not-prose mx-auto my-[var(--space-10)] flex max-w-[42rem] items-center justify-center`;
   const btn = `inline-flex items-center gap-2 rounded-[var(--radius-md)] px-8 py-4 text-sm font-medium transition-colors duration-[var(--duration-normal)] ease-out active:scale-[0.97] ${styles}`;
 
   return (

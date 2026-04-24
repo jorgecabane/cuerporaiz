@@ -1,3 +1,5 @@
+"use client";
+
 import { PortableText, type PortableTextComponents } from "@portabletext/react";
 import type { PortableTextBlock } from "@portabletext/types";
 
@@ -35,7 +37,7 @@ export function Callout({ value }: { value: CalloutValue }) {
   const tone = value.tone ?? "tip";
   return (
     <aside
-      className={`not-prose mx-auto my-[var(--space-10)] max-w-[65ch] rounded-[var(--radius-md)] border-l-[3px] px-7 py-6 font-sans text-base leading-relaxed ${TONE_CLASSES[tone]}`}
+      className={`not-prose mx-auto my-[var(--space-10)] max-w-[42rem] rounded-[var(--radius-md)] border-l-[3px] px-7 py-6 font-sans text-base leading-relaxed ${TONE_CLASSES[tone]}`}
       role="note"
     >
       {value.title ? (

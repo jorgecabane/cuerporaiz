@@ -2,7 +2,7 @@ type PullQuoteValue = { quote: string; attribution?: string };
 
 export function PullQuote({ value }: { value: PullQuoteValue }) {
   return (
-    <figure className="not-prose mx-auto my-[var(--space-12)] max-w-[65ch] px-4 text-center">
+    <figure className="not-prose mx-auto my-[var(--space-12)] max-w-[42rem] px-4 text-center">
       <span
         aria-hidden="true"
         className="block font-display text-[6rem] leading-[0.5] text-[var(--color-secondary)]"

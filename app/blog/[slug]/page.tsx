@@ -150,7 +150,7 @@ export default async function BlogPostPage({ params }: { params: Promise<Params>
       </div>
 
       {relatedPosts.length > 0 && primaryCategory ? (
-        <section className="mx-auto mt-[var(--space-16)] max-w-[80ch] px-[var(--space-6)] md:px-[var(--space-10)]">
+        <section className="mx-auto mt-[var(--space-16)] max-w-[52rem] px-[var(--space-6)] md:px-[var(--space-10)]">
           <h3 className="mb-[var(--space-6)] font-display text-2xl text-[var(--color-primary)]">
             Sigue leyendo en {primaryCategory.name}
           </h3>

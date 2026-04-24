@@ -1,3 +1,5 @@
+"use client";
+
 import { PortableText, type PortableTextComponents } from "@portabletext/react";
 import type { PortableTextBlock } from "@portabletext/types";
 
@@ -27,7 +29,7 @@ const bodyComponents: PortableTextComponents = {
 
 export function ToggleBlock({ value }: { value: ToggleValue }) {
   return (
-    <details className="not-prose group mx-auto my-[var(--space-8)] max-w-[65ch] overflow-hidden rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)]">
+    <details className="not-prose group mx-auto my-[var(--space-8)] max-w-[42rem] overflow-hidden rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)]">
       <summary className="flex cursor-pointer items-center justify-between gap-4 px-5 py-4 font-display text-lg text-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-primary)_4%,transparent)]">
         <span>{value.summary}</span>
         <span

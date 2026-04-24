@@ -6,14 +6,14 @@ export function Embed({ value }: { value: EmbedValue }) {
   const info = parseEmbed(value.url);
   if (!info) {
     return (
-      <div className="not-prose mx-auto my-[var(--space-10)] max-w-[80ch] rounded-[var(--radius-md)] border border-dashed border-[var(--color-border)] p-6 text-center text-sm text-[var(--color-text-muted)]">
+      <div className="not-prose mx-auto my-[var(--space-10)] max-w-[52rem] rounded-[var(--radius-md)] border border-dashed border-[var(--color-border)] p-6 text-center text-sm text-[var(--color-text-muted)]">
         No se pudo procesar el enlace: {value.url}
       </div>
     );
   }
 
   return (
-    <div className="not-prose mx-auto my-[var(--space-10)] max-w-[80ch]">
+    <div className="not-prose mx-auto my-[var(--space-10)] max-w-[52rem]">
       <div
         className="relative overflow-hidden rounded-[var(--radius-md)] bg-[var(--color-primary)]"
         style={{ aspectRatio: info.aspectRatio }}
