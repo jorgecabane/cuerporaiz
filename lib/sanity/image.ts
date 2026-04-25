@@ -32,3 +32,25 @@ export function urlForImageWithWidth(
     return null;
   }
 }
+
+/**
+ * Agrega query params a una URL del CDN de Sanity (host `cdn.sanity.io`).
+ * Para cualquier otro host devuelve la URL original sin tocar.
+ * Si la URL no parsea, devuelve el string original.
+ */
+export function withSanityImageParams(
+  url: string,
+  params: Record<string, string | number>,
+): string {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return url;
+  }
+  if (parsed.hostname !== "cdn.sanity.io") return url;
+  for (const [key, value] of Object.entries(params)) {
+    parsed.searchParams.set(key, String(value));
+  }
+  return parsed.toString();
+}
