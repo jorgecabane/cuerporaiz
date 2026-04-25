@@ -784,6 +784,7 @@ model CenterSiteConfig {
   heroSubtitle    String?
   heroImageUrl    String?
   logoUrl         String?
+  faviconUrl      String?
   colorPrimary    String?
   colorSecondary  String?
   colorAccent     String?
