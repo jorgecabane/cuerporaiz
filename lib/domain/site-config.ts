@@ -23,6 +23,7 @@ export interface SiteConfig {
   heroSubtitle: string | null;
   heroImageUrl: string | null;
   logoUrl: string | null;
+  faviconUrl: string | null;
   colorPrimary: string | null;
   colorSecondary: string | null;
   colorAccent: string | null;
