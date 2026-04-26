@@ -22,6 +22,7 @@ export default function BrandingForm({ config }: BrandingFormProps) {
   const [colorAccent, setColorAccent] = useState(config?.colorAccent ?? "#F5E6D3");
   const [heroImageUrl, setHeroImageUrl] = useState<string | null>(config?.heroImageUrl ?? null);
   const [logoUrl, setLogoUrl] = useState<string | null>(config?.logoUrl ?? null);
+  const [faviconUrl, setFaviconUrl] = useState<string | null>(config?.faviconUrl ?? null);
   const router = useRouter();
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -37,6 +38,7 @@ export default function BrandingForm({ config }: BrandingFormProps) {
     }
     body.heroImageUrl = heroImageUrl;
     body.logoUrl = logoUrl;
+    body.faviconUrl = faviconUrl;
     body.colorPrimary = colorPrimary;
     body.colorSecondary = colorSecondary;
     body.colorAccent = colorAccent;
@@ -115,6 +117,22 @@ export default function BrandingForm({ config }: BrandingFormProps) {
           value={logoUrl}
           onChange={setLogoUrl}
           label="Logo del centro"
+          aspect="square"
+        />
+      </div>
+
+      {/* Favicon */}
+      <div>
+        <label className={labelCls}>Favicon</label>
+        <p className="text-xs text-[var(--color-text-muted)] mb-2">
+          Imagen cuadrada, PNG o SVG. Mínimo recomendado <strong>256×256 px</strong>, ideal{" "}
+          <strong>512×512 px</strong>. Se usará para la pestaña del navegador (32×32) y para iOS
+          (180×180).
+        </p>
+        <SanityImagePicker
+          value={faviconUrl}
+          onChange={setFaviconUrl}
+          label="Favicon del sitio"
           aspect="square"
         />
       </div>
