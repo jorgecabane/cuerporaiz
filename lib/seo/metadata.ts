@@ -3,6 +3,7 @@ import { cache } from "react";
 import { centerRepository, siteConfigRepository } from "@/lib/adapters/db";
 import type { SiteConfig } from "@/lib/domain/site-config";
 import { absoluteUrl, getSiteUrl, resolveImageUrl } from "./urls";
+import { withSanityImageParams } from "@/lib/sanity/image";
 
 type Center = { id: string; name: string; slug: string };
 type SiteContext = { center: Center; siteConfig: SiteConfig | null };
@@ -60,6 +61,18 @@ export async function buildSiteMetadata(opts: BuildSiteMetadataOpts): Promise<Me
   const openGraphImages = [{ url: imageUrl, width: 1200, height: 630, alt: title }];
   const twitterImages = [imageUrl];
 
+  const favicon = ctx?.siteConfig?.faviconUrl ?? null;
+  const icons: Metadata["icons"] | undefined = favicon
+    ? {
+        icon: [
+          { url: withSanityImageParams(favicon, { w: 32, h: 32, fit: "crop" }), sizes: "32x32" },
+          { url: withSanityImageParams(favicon, { w: 192, h: 192, fit: "crop" }), sizes: "192x192" },
+        ],
+        apple: withSanityImageParams(favicon, { w: 180, h: 180, fit: "crop" }),
+        shortcut: withSanityImageParams(favicon, { w: 32, h: 32, fit: "crop" }),
+      }
+    : undefined;
+
   return {
     metadataBase: new URL(getSiteUrl()),
     title,
@@ -67,6 +80,7 @@ export async function buildSiteMetadata(opts: BuildSiteMetadataOpts): Promise<Me
     applicationName: siteName,
     alternates: { canonical: canonicalPath },
     robots: opts.noIndex ? { index: false, follow: false } : undefined,
+    icons,
     openGraph: {
       title,
       description,

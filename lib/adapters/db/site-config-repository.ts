@@ -11,6 +11,7 @@ function toDomain(r: {
   heroSubtitle: string | null;
   heroImageUrl: string | null;
   logoUrl: string | null;
+  faviconUrl: string | null;
   colorPrimary: string | null;
   colorSecondary: string | null;
   colorAccent: string | null;
@@ -32,6 +33,7 @@ function toDomain(r: {
     heroSubtitle: r.heroSubtitle,
     heroImageUrl: r.heroImageUrl,
     logoUrl: r.logoUrl,
+    faviconUrl: r.faviconUrl,
     colorPrimary: r.colorPrimary,
     colorSecondary: r.colorSecondary,
     colorAccent: r.colorAccent,

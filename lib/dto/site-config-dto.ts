@@ -19,6 +19,7 @@ export const upsertSiteConfigSchema = z.object({
   heroSubtitle: z.string().nullable().optional(),
   heroImageUrl: httpsUrlSchema,
   logoUrl: httpsUrlSchema,
+  faviconUrl: httpsUrlSchema,
   colorPrimary: hexColorSchema,
   colorSecondary: hexColorSchema,
   colorAccent: hexColorSchema,

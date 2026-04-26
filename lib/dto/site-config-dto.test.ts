@@ -36,6 +36,21 @@ describe("upsertSiteConfigSchema", () => {
     expect(result.success).toBe(true);
   });
 
+  it("accepts https faviconUrl", () => {
+    const result = upsertSiteConfigSchema.safeParse({ faviconUrl: "https://cdn.sanity.io/images/p/d/abc.png" });
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts null faviconUrl", () => {
+    const result = upsertSiteConfigSchema.safeParse({ faviconUrl: null });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects non-https faviconUrl", () => {
+    const result = upsertSiteConfigSchema.safeParse({ faviconUrl: "http://example.com/favicon.png" });
+    expect(result.success).toBe(false);
+  });
+
   it("rejects javascript: URL", () => {
     const result = upsertSiteConfigSchema.safeParse({ logoUrl: "javascript:alert(1)" });
     expect(result.success).toBe(false);
