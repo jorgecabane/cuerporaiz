@@ -32,6 +32,8 @@ export const upsertSiteConfigSchema = z.object({
   youtubeUrl: httpsUrlSchema,
   blogEnabled: z.boolean().optional(),
   blogLabel: z.string().trim().min(1).max(40).optional(),
+  seoTitle: z.string().trim().max(120).nullable().optional(),
+  seoDescription: z.string().trim().max(300).nullable().optional(),
 });
 export type UpsertSiteConfigInput = z.infer<typeof upsertSiteConfigSchema>;
 

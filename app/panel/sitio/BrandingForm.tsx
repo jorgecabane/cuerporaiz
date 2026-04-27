@@ -32,7 +32,7 @@ export default function BrandingForm({ config }: BrandingFormProps) {
     setSuccess(false);
 
     const body: Record<string, string | null> = {};
-    for (const key of ["heroEyebrow", "heroTitle", "heroSubtitle"]) {
+    for (const key of ["heroEyebrow", "heroTitle", "heroSubtitle", "seoTitle", "seoDescription"]) {
       const val = (fd.get(key) as string)?.trim();
       body[key] = val || null;
     }
@@ -172,6 +172,44 @@ export default function BrandingForm({ config }: BrandingFormProps) {
           />
           <span className="text-sm text-[var(--color-text-muted)] font-mono">{colorAccent}</span>
           <span className="text-xs text-[var(--color-text-muted)]">Acento</span>
+        </div>
+      </fieldset>
+
+      {/* SEO */}
+      <fieldset className="space-y-4">
+        <legend className="text-sm font-semibold text-[var(--color-text)] mb-2">SEO</legend>
+        <p className="text-xs text-[var(--color-text-muted)]">
+          Aparece cuando alguien comparte tu sitio en WhatsApp, redes o buscadores. Si dejás los
+          campos vacíos, usamos el título y la descripción por defecto.
+        </p>
+        <div>
+          <label htmlFor="branding-seoTitle" className={labelCls}>
+            Título SEO
+          </label>
+          <input
+            id="branding-seoTitle"
+            name="seoTitle"
+            defaultValue={config?.seoTitle ?? ""}
+            maxLength={120}
+            placeholder="Ej: Cuerpo Raíz — yoga con identidad para volver a tu cuerpo"
+            className={inputCls}
+          />
+          <p className="mt-1 text-xs text-[var(--color-text-muted)]">Recomendado: 50-60 caracteres.</p>
+        </div>
+        <div>
+          <label htmlFor="branding-seoDescription" className={labelCls}>
+            Descripción SEO
+          </label>
+          <textarea
+            id="branding-seoDescription"
+            name="seoDescription"
+            defaultValue={config?.seoDescription ?? ""}
+            maxLength={300}
+            rows={3}
+            placeholder="Resumí en 1-2 frases qué ofrece tu centro, dónde y a quién."
+            className={inputCls}
+          />
+          <p className="mt-1 text-xs text-[var(--color-text-muted)]">Recomendado: 110-160 caracteres.</p>
         </div>
       </fieldset>
 
