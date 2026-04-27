@@ -24,6 +24,8 @@ function toDomain(r: {
   youtubeUrl: string | null;
   blogEnabled: boolean;
   blogLabel: string;
+  seoTitle: string | null;
+  seoDescription: string | null;
 }): SiteConfig {
   return {
     id: r.id,
@@ -46,6 +48,8 @@ function toDomain(r: {
     youtubeUrl: r.youtubeUrl,
     blogEnabled: r.blogEnabled,
     blogLabel: r.blogLabel,
+    seoTitle: r.seoTitle,
+    seoDescription: r.seoDescription,
   };
 }
 

@@ -48,8 +48,8 @@ export async function buildSiteMetadata(opts: BuildSiteMetadataOpts): Promise<Me
   const siteName = ctx?.center.name ?? "Cuerpo Raíz";
   const defaultTitle = `${siteName} — ${DEFAULT_TAGLINE}`;
 
-  const title = opts.title ?? defaultTitle;
-  const description = opts.description ?? DEFAULT_DESCRIPTION;
+  const title = opts.title ?? ctx?.siteConfig?.seoTitle ?? defaultTitle;
+  const description = opts.description ?? ctx?.siteConfig?.seoDescription ?? DEFAULT_DESCRIPTION;
   const canonicalPath = opts.path.startsWith("/") ? opts.path : `/${opts.path}`;
   const urlAbsolute = absoluteUrl(canonicalPath);
 

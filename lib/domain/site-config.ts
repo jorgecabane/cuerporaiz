@@ -36,6 +36,8 @@ export interface SiteConfig {
   youtubeUrl: string | null;
   blogEnabled: boolean;
   blogLabel: string;
+  seoTitle: string | null;
+  seoDescription: string | null;
 }
 
 export interface SiteSection {

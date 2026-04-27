@@ -103,6 +103,39 @@ describe("upsertSiteConfigSchema", () => {
       expect(result.success).toBe(false);
     });
   });
+
+  describe("seoTitle + seoDescription", () => {
+    it("accepts seoTitle within 120 chars", () => {
+      const result = upsertSiteConfigSchema.safeParse({ seoTitle: "a".repeat(120) });
+      expect(result.success).toBe(true);
+    });
+
+    it("rejects seoTitle longer than 120 chars", () => {
+      const result = upsertSiteConfigSchema.safeParse({ seoTitle: "a".repeat(121) });
+      expect(result.success).toBe(false);
+    });
+
+    it("accepts seoDescription within 300 chars", () => {
+      const result = upsertSiteConfigSchema.safeParse({ seoDescription: "a".repeat(300) });
+      expect(result.success).toBe(true);
+    });
+
+    it("rejects seoDescription longer than 300 chars", () => {
+      const result = upsertSiteConfigSchema.safeParse({ seoDescription: "a".repeat(301) });
+      expect(result.success).toBe(false);
+    });
+
+    it("accepts null seo fields", () => {
+      const result = upsertSiteConfigSchema.safeParse({ seoTitle: null, seoDescription: null });
+      expect(result.success).toBe(true);
+    });
+
+    it("trims whitespace from seoTitle", () => {
+      const result = upsertSiteConfigSchema.safeParse({ seoTitle: "  Cuerpo Raíz  " });
+      expect(result.success).toBe(true);
+      if (result.success) expect(result.data.seoTitle).toBe("Cuerpo Raíz");
+    });
+  });
 });
 
 describe("updateSiteSectionSchema", () => {
