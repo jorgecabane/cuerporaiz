@@ -1,12 +1,54 @@
 "use client";
 
 import { useTransition, useState, useMemo, useRef } from "react";
-import { updateLiveClass, cancelLiveClass, updateSeriesClasses, createMeetingForClass } from "../actions";
-import type { EditScope } from "../actions";
+import {
+  updateLiveClass,
+  cancelLiveClassWithScope,
+  previewCancelScope,
+  updateSeriesClasses,
+  createMeetingForClass,
+} from "../actions";
+import type { EditScope, CancelScopePreview } from "../actions";
 import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import type { LiveClass, Discipline, LiveClassSeries } from "@/lib/domain";
 import type { Instructor } from "@/lib/ports/instructor-repository";
+
+function cancelDialogTitle(
+  hasSeries: boolean,
+  scope: EditScope,
+  preview: CancelScopePreview | null,
+): string {
+  if (!hasSeries || scope === "this") return "¿Cancelar esta clase?";
+  if (scope === "thisAndFollowing") {
+    return preview
+      ? `¿Cancelar esta clase y las siguientes (${preview.classCount} en total)?`
+      : "¿Cancelar esta clase y las siguientes?";
+  }
+  return preview
+    ? `¿Cancelar toda la serie (${preview.classCount} clases)?`
+    : "¿Cancelar toda la serie?";
+}
+
+function cancelDialogDescription(
+  loading: boolean,
+  preview: CancelScopePreview | null,
+): string {
+  if (loading || !preview) return "Calculando alcance…";
+  const lines: string[] = [
+    `Se marcarán como canceladas ${preview.classCount} clase${preview.classCount === 1 ? "" : "s"}.`,
+  ];
+  if (preview.willEmailCount > 0) {
+    lines.push(
+      `${preview.willEmailCount} alumno${preview.willEmailCount === 1 ? "" : "s"} con reserva en clases futuras recibirá${preview.willEmailCount === 1 ? "" : "n"} un correo de notificación.`,
+    );
+  } else {
+    lines.push("No se enviarán correos (no hay reservas activas en clases futuras).");
+  }
+  lines.push("Esta acción no se puede deshacer.");
+  return lines.join(" ");
+}
 
 function toLocalISO(d: Date): string {
   const copy = new Date(d);
@@ -19,7 +61,6 @@ interface Props {
   disciplines: Discipline[];
   instructors: Instructor[];
   series: LiveClassSeries | null;
-  reservationCount: number;
   defaultDuration: number;
   videoProviders?: { zoom: boolean; meet: boolean };
 }
@@ -29,13 +70,14 @@ export function EditClassForm({
   disciplines,
   instructors,
   series,
-  reservationCount,
   defaultDuration,
   videoProviders = { zoom: false, meet: false },
 }: Props) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const [confirmCancel, setConfirmCancel] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [preview, setPreview] = useState<CancelScopePreview | null>(null);
+  const [loadingPreview, setLoadingPreview] = useState(false);
   const [editScope, setEditScope] = useState<EditScope>("this");
 
   const [isTrialClass, setIsTrialClass] = useState(liveClass.isTrialClass);
@@ -111,8 +153,29 @@ export function EditClassForm({
     }
   }
 
+  const cancelScope: EditScope = series ? editScope : "this";
+
+  async function openCancelConfirm() {
+    setPreview(null);
+    setLoadingPreview(true);
+    setConfirmOpen(true);
+    try {
+      const p = await previewCancelScope(liveClass.id, cancelScope);
+      setPreview(p);
+    } catch {
+      setPreview({ classCount: 0, willEmailCount: 0 });
+    } finally {
+      setLoadingPreview(false);
+    }
+  }
+
+  function closeCancelConfirm() {
+    setConfirmOpen(false);
+    setPreview(null);
+  }
+
   function handleCancel() {
-    startTransition(() => cancelLiveClass(liveClass.id));
+    startTransition(() => cancelLiveClassWithScope(liveClass.id, cancelScope));
   }
 
   async function handleGenerateMeeting(provider: "zoom" | "meet") {
@@ -170,9 +233,9 @@ export function EditClassForm({
             ))}
           </div>
           <p className="text-xs text-[var(--color-text-muted)]">
-            {editScope === "this" && "Los cambios solo se aplican a esta instancia. Se desvincula de la serie."}
-            {editScope === "thisAndFollowing" && "Se aplica a esta clase y todas las instancias futuras de la serie."}
-            {editScope === "all" && "Se actualiza la serie completa y todas sus instancias."}
+            {editScope === "this" && "Los cambios y la cancelación solo aplican a esta instancia. Se desvincula de la serie."}
+            {editScope === "thisAndFollowing" && "Aplica a esta clase y todas las instancias futuras de la serie."}
+            {editScope === "all" && "Aplica a la serie completa y todas sus instancias."}
           </p>
         </div>
       )}
@@ -454,40 +517,27 @@ export function EditClassForm({
         </Button>
 
         <div className="ml-auto">
-          {!confirmCancel ? (
-            <button
-              type="button"
-              onClick={() => setConfirmCancel(true)}
-              className="text-sm text-[var(--color-error)] hover:underline"
-            >
-              Cancelar clase
-            </button>
-          ) : (
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-[var(--color-text-muted)]">
-                {reservationCount > 0
-                  ? `${reservationCount} reserva${reservationCount !== 1 ? "s" : ""} se cancelarán.`
-                  : "¿Confirmar?"}
-              </span>
-              <button
-                type="button"
-                onClick={handleCancel}
-                disabled={isPending}
-                className="rounded-[var(--radius-md)] bg-[var(--color-error)] px-3 py-1.5 text-xs font-medium text-white hover:bg-[var(--color-error)]/80 disabled:opacity-50"
-              >
-                Sí, cancelar
-              </button>
-              <button
-                type="button"
-                onClick={() => setConfirmCancel(false)}
-                className="text-xs text-[var(--color-text-muted)] hover:underline"
-              >
-                No
-              </button>
-            </div>
-          )}
+          <button
+            type="button"
+            onClick={openCancelConfirm}
+            className="text-sm text-[var(--color-error)] hover:underline"
+          >
+            Cancelar clase
+          </button>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onConfirm={handleCancel}
+        onCancel={closeCancelConfirm}
+        title={cancelDialogTitle(!!series, cancelScope, preview)}
+        description={cancelDialogDescription(loadingPreview, preview)}
+        confirmLabel="Sí, cancelar"
+        cancelLabel="No, volver"
+        variant="danger"
+        loading={isPending || loadingPreview}
+      />
     </form>
   );
 }

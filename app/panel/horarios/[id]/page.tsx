@@ -65,7 +65,6 @@ export default async function EditClassPage({ params }: Props) {
           disciplines={disciplines}
           instructors={instructors}
           series={series}
-          reservationCount={reservationCount}
           defaultDuration={center?.defaultClassDurationMinutes ?? 60}
           videoProviders={videoProviders}
         />
