@@ -3,7 +3,7 @@ import { test as setup, expect } from "@playwright/test";
 const authFile = ".auth/student.json";
 
 setup("authenticate as student", async ({ page }) => {
-  const email = process.env.E2E_STUDENT_EMAIL ?? "student@cuerporaiz.cl";
+  const email = process.env.E2E_STUDENT_EMAIL ?? "student@e2e.test";
   const password = process.env.E2E_STUDENT_PASSWORD ?? "student123";
 
   await page.goto("/auth/login");

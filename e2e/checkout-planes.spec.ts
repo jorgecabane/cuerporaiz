@@ -33,7 +33,7 @@ test.describe("Planes y checkout", () => {
     const orderId = hasDb
       ? (
           await (async () => {
-            const email = process.env.E2E_USER_EMAIL ?? "admin@cuerporaiz.cl";
+            const email = process.env.E2E_USER_EMAIL ?? "admin@e2e.test";
             const user = await prisma!.user.findUnique({
               where: { email },
               include: { memberships: { take: 1 } },
