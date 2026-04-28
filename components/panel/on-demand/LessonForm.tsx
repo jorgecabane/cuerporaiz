@@ -177,6 +177,7 @@ export function LessonForm({ categories, practices, defaultPracticeId, lesson }:
           onChange={setThumbnailUrl}
           label="Thumbnail de lección"
           aspect="wide"
+          imageKind="lesson"
         />
       </div>
 

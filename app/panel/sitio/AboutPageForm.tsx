@@ -162,6 +162,7 @@ export default function AboutPageForm({ page }: Props) {
             onChange={setHeroImageUrl}
             label="Foto hero Sobre mí"
             aspect="portrait"
+            imageKind="cover"
           />
         </div>
       </fieldset>

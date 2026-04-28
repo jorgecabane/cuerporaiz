@@ -75,6 +75,7 @@ export function InstructorForm({ instructor }: Props) {
           onChange={setImageUrl}
           label="Foto del profesor"
           aspect="square"
+          imageKind="instructor"
         />
         <p className="text-xs text-[var(--color-text-muted)] mt-1">
           Opcional. Se muestra como avatar en las clases.

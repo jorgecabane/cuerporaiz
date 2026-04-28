@@ -108,6 +108,7 @@ export function PracticeForm(props: Props) {
               onChange={setThumbnailUrl}
               label="Thumbnail de práctica"
               aspect="wide"
+              imageKind="practice"
             />
           </div>
           <div>
@@ -185,6 +186,7 @@ export function PracticeForm(props: Props) {
             onChange={setThumbnailUrl}
             label="Thumbnail de práctica"
             aspect="wide"
+            imageKind="practice"
           />
         </div>
         <div>

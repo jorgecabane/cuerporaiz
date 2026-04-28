@@ -106,6 +106,7 @@ export default function BrandingForm({ config }: BrandingFormProps) {
             onChange={setHeroImageUrl}
             label="Imagen del hero"
             aspect="wide"
+            imageKind="hero"
           />
         </div>
       </fieldset>
@@ -118,6 +119,7 @@ export default function BrandingForm({ config }: BrandingFormProps) {
           onChange={setLogoUrl}
           label="Logo del centro"
           aspect="square"
+          imageKind="logo"
         />
       </div>
 
@@ -134,6 +136,7 @@ export default function BrandingForm({ config }: BrandingFormProps) {
           onChange={setFaviconUrl}
           label="Favicon del sitio"
           aspect="square"
+          imageKind="favicon"
         />
       </div>
 

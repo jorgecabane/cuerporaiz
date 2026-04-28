@@ -212,6 +212,7 @@ export function EventForm(props: Props) {
             onChange={setImageUrl}
             label="Imagen del evento"
             aspect="wide"
+            imageKind="event"
           />
         </div>
 

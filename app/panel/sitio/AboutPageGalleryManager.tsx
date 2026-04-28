@@ -177,6 +177,7 @@ export default function AboutPageGalleryManager({ pageId, images: initialImages 
           onChange={setNewImageUrl}
           label={`Foto para ${ABOUT_IMAGE_CATEGORY_LABELS[activeCategory]}`}
           aspect="square"
+          imageKind="gallery"
         />
         <input
           value={newCaption}
