@@ -11,7 +11,7 @@ import { test, expect } from "@playwright/test";
 test.describe("Panel Mi cuenta", () => {
   test.use({ storageState: { cookies: [], origins: [] } });
 
-  const email = process.env.E2E_USER_EMAIL ?? "admin@cuerporaiz.cl";
+  const email = process.env.E2E_USER_EMAIL ?? "admin@e2e.test";
   const password = process.env.E2E_USER_PASSWORD ?? "admin123";
 
   test("panel requiere login", async ({ page }) => {

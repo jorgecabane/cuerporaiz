@@ -13,12 +13,12 @@ const prisma = new PrismaClient({ adapter });
 
 async function main() {
   const center = await prisma.center.upsert({
-    where: { slug: "cuerporaiz" },
-    create: { name: "Cuerpo Raíz", slug: "cuerporaiz" },
+    where: { slug: "e2e-test" },
+    create: { name: "Centro E2E", slug: "e2e-test" },
     update: {},
   });
 
-  const email = process.env.SEED_ADMIN_EMAIL ?? "admin@cuerporaiz.cl";
+  const email = process.env.SEED_ADMIN_EMAIL ?? "admin@e2e.test";
   const password = process.env.SEED_ADMIN_PASSWORD ?? "admin123";
   const hash = await bcrypt.hash(password, 12);
 
@@ -45,7 +45,7 @@ async function main() {
   });
 
   // Usuario Student fijo para E2E (credenciales estables)
-  const studentEmail = process.env.SEED_STUDENT_EMAIL ?? "student@cuerporaiz.cl";
+  const studentEmail = process.env.SEED_STUDENT_EMAIL ?? "student@e2e.test";
   const studentPassword = process.env.SEED_STUDENT_PASSWORD ?? "student123";
   const studentHash = await bcrypt.hash(studentPassword, 12);
   const student = await prisma.user.upsert({
@@ -70,7 +70,7 @@ async function main() {
   });
 
   // Usuario Instructor fijo para E2E
-  const instructorEmail = process.env.SEED_INSTRUCTOR_EMAIL ?? "instructor@cuerporaiz.cl";
+  const instructorEmail = process.env.SEED_INSTRUCTOR_EMAIL ?? "instructor@e2e.test";
   const instructorPassword = process.env.SEED_INSTRUCTOR_PASSWORD ?? "instructor123";
   const instructorHash = await bcrypt.hash(instructorPassword, 12);
   const instructor = await prisma.user.upsert({
@@ -95,6 +95,22 @@ async function main() {
   });
   console.log("Seed OK: instructor", instructor.email, "role INSTRUCTOR");
 
+  // Disciplinas base (necesarias para que el filtro de disciplinas tenga opciones)
+  const disciplineDefs = [
+    { name: "Vinyasa", color: "#B85C38" },
+    { name: "Yin Yoga", color: "#6B7C5C" },
+    { name: "Hatha", color: "#D4A574" },
+  ];
+  for (const def of disciplineDefs) {
+    await prisma.discipline.upsert({
+      where: { centerId_name: { centerId: center.id, name: def.name } },
+      create: { centerId: center.id, ...def },
+      update: {},
+    });
+  }
+  const vinyasa = await prisma.discipline.findFirst({ where: { centerId: center.id, name: "Vinyasa" } });
+  const yin = await prisma.discipline.findFirst({ where: { centerId: center.id, name: "Yin Yoga" } });
+
   // Clases live de ejemplo para reservas (solo si no hay ninguna)
   const existingClass = await prisma.liveClass.findFirst({ where: { centerId: center.id } });
   if (!existingClass) {
@@ -113,6 +129,7 @@ async function main() {
           durationMinutes: 60,
           maxCapacity: 10,
           instructorId: instructor.id,
+          disciplineId: vinyasa?.id ?? null,
         },
         {
           centerId: center.id,
@@ -121,6 +138,7 @@ async function main() {
           durationMinutes: 75,
           maxCapacity: 8,
           instructorId: instructor.id,
+          disciplineId: yin?.id ?? null,
         },
       ],
     });
@@ -168,7 +186,7 @@ async function main() {
       colorPrimary: "#2D3B2A",
       colorSecondary: "#B85C38",
       colorAccent: "#D4A574",
-      contactEmail: "contacto@cuerporaiz.cl",
+      contactEmail: "contacto@e2e.test",
       contactPhone: "+56900000000",
       contactAddress: "Vitacura, Santiago, Chile",
       whatsappUrl:

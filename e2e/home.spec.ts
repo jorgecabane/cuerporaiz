@@ -5,7 +5,7 @@ test.describe("Home", () => {
     test.setTimeout(60_000);
     await page.goto("/");
 
-    await expect(page).toHaveTitle(/Cuerpo Raíz/);
+    await expect(page).toHaveTitle(/Centro E2E/);
     await expect(page.getByRole("heading", { level: 1 })).toContainText("cuerpo");
     await expect(page.getByRole("link", { name: /seguir leyendo/i })).toBeVisible();
   });

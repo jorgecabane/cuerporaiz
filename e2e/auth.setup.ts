@@ -3,7 +3,7 @@ import { test as setup, expect } from "@playwright/test";
 const authFile = ".auth/admin.json";
 
 setup("authenticate as admin", async ({ page }) => {
-  const email = process.env.E2E_USER_EMAIL ?? "admin@cuerporaiz.cl";
+  const email = process.env.E2E_USER_EMAIL ?? "admin@e2e.test";
   const password = process.env.E2E_USER_PASSWORD ?? "admin123";
 
   await page.goto("/auth/login");
