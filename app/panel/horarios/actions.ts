@@ -17,7 +17,7 @@ import { createZoomMeeting } from "@/lib/application/create-zoom-meeting";
 import { createGoogleMeetMeeting } from "@/lib/application/create-google-meet-meeting";
 import { sendEmailSafe } from "@/lib/application/send-email";
 import { buildClassCancelledEmail } from "@/lib/email";
-import type { RepeatFrequency } from "@/lib/domain";
+import type { LiveClass, RepeatFrequency } from "@/lib/domain";
 import type { UpdateSeriesInput } from "@/lib/ports";
 
 async function requireAdminCenterId(): Promise<string> {
@@ -182,19 +182,6 @@ export async function updateLiveClass(data: UpdateClassFormData): Promise<void> 
   redirect(`/panel/horarios`);
 }
 
-export async function cancelLiveClass(id: string): Promise<void> {
-  const centerId = await requireAdminCenterId();
-
-  const existing = await liveClassRepository.findById(id);
-  if (!existing || existing.centerId !== centerId) {
-    throw new Error("Clase no encontrada.");
-  }
-
-  await liveClassRepository.update(id, centerId, { status: "CANCELLED" });
-  revalidatePath("/panel/horarios");
-  redirect("/panel/horarios");
-}
-
 export interface BatchCancelResult {
   cancelledCount: number;
   notifiedCount: number;
@@ -234,11 +221,13 @@ export async function batchCancelLiveClasses(ids: string[]): Promise<BatchCancel
   const classMap = new Map(classes.filter((c) => c != null).map((c) => [c!.id, c!]));
   const centerName = center?.name ?? "el centro";
 
+  const now = new Date();
   let notifiedCount = 0;
   for (const reservation of affectedReservations) {
     const user = userMap.get(reservation.userId);
     const cls = classMap.get(reservation.liveClassId);
     if (!user || !cls) continue;
+    if (cls.startsAt < now) continue;
     sendEmailSafe(
       buildClassCancelledEmail({
         toEmail: user.email,
@@ -343,6 +332,68 @@ export async function updateSeriesClasses(data: EditSeriesFormData): Promise<voi
     await liveClassRepository.updateManyBySeriesId(series.id, centerId, classUpdate);
   }
 
+  redirect("/panel/horarios");
+}
+
+export interface CancelScopePreview {
+  classCount: number;
+  willEmailCount: number;
+}
+
+async function resolveTargetClasses(
+  existing: LiveClass,
+  scope: EditScope,
+  centerId: string,
+): Promise<LiveClass[]> {
+  if (scope === "this" || !existing.seriesId) return [existing];
+  const all = await liveClassRepository.findBySeriesId(existing.seriesId);
+  const sameCenter = all.filter((c) => c.centerId === centerId);
+  if (scope === "all") return sameCenter;
+  return sameCenter.filter((c) => c.startsAt >= existing.startsAt);
+}
+
+export async function previewCancelScope(
+  liveClassId: string,
+  scope: EditScope,
+): Promise<CancelScopePreview> {
+  const centerId = await requireAdminCenterId();
+  const existing = await liveClassRepository.findById(liveClassId);
+  if (!existing || existing.centerId !== centerId) {
+    throw new Error("Clase no encontrada.");
+  }
+
+  const targets = await resolveTargetClasses(existing, scope, centerId);
+  if (targets.length === 0) return { classCount: 0, willEmailCount: 0 };
+
+  const now = new Date();
+  const futureClassIds = new Set(
+    targets.filter((c) => c.startsAt >= now).map((c) => c.id),
+  );
+
+  if (futureClassIds.size === 0) {
+    return { classCount: targets.length, willEmailCount: 0 };
+  }
+
+  const reservations = await reservationRepository.findActiveByLiveClassIds(
+    [...futureClassIds],
+  );
+  const willEmailUsers = new Set(reservations.map((r) => r.userId));
+  return { classCount: targets.length, willEmailCount: willEmailUsers.size };
+}
+
+export async function cancelLiveClassWithScope(
+  liveClassId: string,
+  scope: EditScope,
+): Promise<void> {
+  const centerId = await requireAdminCenterId();
+  const existing = await liveClassRepository.findById(liveClassId);
+  if (!existing || existing.centerId !== centerId) {
+    throw new Error("Clase no encontrada.");
+  }
+
+  const targets = await resolveTargetClasses(existing, scope, centerId);
+  const ids = targets.map((c) => c.id);
+  if (ids.length > 0) await batchCancelLiveClasses(ids);
   redirect("/panel/horarios");
 }
 
