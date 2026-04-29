@@ -107,10 +107,13 @@ export default defineConfig({
     ];
   })(),
   webServer: {
-    // Asegura schema + datos base para E2E (en local/CI). Si no hay DB, E2E no puede correr igual.
+    // En CI el workflow ya hizo db push + seed + build, así que solo arrancamos el server.
+    // En local hacemos todo: migrate deploy + seed + build + start.
     // NEXT_PUBLIC_DEFAULT_CENTER_SLUG fija el centro de pruebas (creado por el seed) para que
     // las páginas públicas (home, sobre, sitemap) lo resuelvan en E2E sin depender del .env local.
-    command: `${process.env.CI ? "rm -rf .next && " : ""}NEXT_PUBLIC_DEFAULT_CENTER_SLUG=e2e-test npx prisma migrate deploy && npm run db:seed && NEXT_PUBLIC_DEFAULT_CENTER_SLUG=e2e-test npm run build && NEXT_PUBLIC_DEFAULT_CENTER_SLUG=e2e-test PORT=${port} npm run start`,
+    command: process.env.CI
+      ? `NEXT_PUBLIC_DEFAULT_CENTER_SLUG=e2e-test PORT=${port} npm run start`
+      : `NEXT_PUBLIC_DEFAULT_CENTER_SLUG=e2e-test npx prisma migrate deploy && npm run db:seed && NEXT_PUBLIC_DEFAULT_CENTER_SLUG=e2e-test npm run build && NEXT_PUBLIC_DEFAULT_CENTER_SLUG=e2e-test PORT=${port} npm run start`,
     url: `http://localhost:${port}`,
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,
