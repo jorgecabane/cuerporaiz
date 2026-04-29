@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { prisma } from "../lib/adapters/db/prisma";
 
 test.describe("Planes y checkout", () => {
   test.describe("sin sesión", () => {
@@ -28,37 +29,33 @@ test.describe("Planes y checkout", () => {
 
   test("checkout abre MercadoPago y deja orden PENDING (sin pagar)", async ({ page }) => {
     const hasDb = !!process.env.DATABASE_URL;
-    const prisma = hasDb ? (await import("../lib/adapters/db/prisma")).prisma : null;
-
     const orderId = hasDb
-      ? (
-          await (async () => {
-            const email = process.env.E2E_USER_EMAIL ?? "admin@e2e.test";
-            const user = await prisma!.user.findUnique({
-              where: { email },
-              include: { memberships: { take: 1 } },
-            });
-            expect(user).toBeTruthy();
+      ? await (async () => {
+          const email = process.env.E2E_USER_EMAIL ?? "admin@e2e.test";
+          const user = await prisma.user.findUnique({
+            where: { email },
+            include: { memberships: { take: 1 } },
+          });
+          expect(user).toBeTruthy();
 
-            const centerId = user!.memberships[0]?.centerId;
-            expect(centerId).toBeTruthy();
-            const plan = await prisma!.plan.findFirst({ where: { centerId } });
-            expect(plan).toBeTruthy();
+          const centerId = user!.memberships[0]?.centerId;
+          expect(centerId).toBeTruthy();
+          const plan = await prisma.plan.findFirst({ where: { centerId } });
+          expect(plan).toBeTruthy();
 
-            const order = await prisma!.order.create({
-              data: {
-                centerId,
-                userId: user!.id,
-                planId: plan!.id,
-                amountCents: plan!.amountCents,
-                currency: plan!.currency,
-                externalReference: `e2e-${Date.now()}`,
-                status: "PENDING",
-              },
-            });
-            return order.id;
-          })()
-        )
+          const order = await prisma.order.create({
+            data: {
+              centerId,
+              userId: user!.id,
+              planId: plan!.id,
+              amountCents: plan!.amountCents,
+              currency: plan!.currency,
+              externalReference: `e2e-${Date.now()}`,
+              status: "PENDING",
+            },
+          });
+          return order.id;
+        })()
       : `e2e-no-db-${Date.now()}`;
 
     // Mock del endpoint para evitar depender de credenciales MP reales.
@@ -96,10 +93,10 @@ test.describe("Planes y checkout", () => {
     // Simula cerrar MP (volver a la app) y verifica que la orden sigue pendiente.
     await page.goto("/panel/tienda");
     if (hasDb) {
-      const orderAfter = await prisma!.order.findUnique({ where: { id: orderId } });
+      const orderAfter = await prisma.order.findUnique({ where: { id: orderId } });
       expect(orderAfter?.status).toBe("PENDING");
       // Cleanup: borrar la orden creada por E2E para no dejar basura en DB.
-      await prisma!.order.delete({ where: { id: orderId } });
+      await prisma.order.delete({ where: { id: orderId } });
     }
   });
 });
