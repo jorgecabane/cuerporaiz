@@ -13,9 +13,30 @@ defaults:
 jobs:
   quality:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: cuerporaiz_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     env:
-      DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/cuerporaiz_ci
+      DIRECT_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/cuerporaiz_ci
+      AUTH_SECRET: ci-only-test-secret-not-for-production-use-1234567890
+      AUTH_URL: http://localhost:3000
+      NEXTAUTH_URL: http://localhost:3000
+      NEXT_PUBLIC_DEFAULT_CENTER_SLUG: e2e-test
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -31,6 +52,12 @@ jobs:
 
       - name: Generate Prisma client
         run: npx prisma generate
+
+      - name: Apply migrations
+        run: npx prisma migrate deploy
+
+      - name: Seed database
+        run: npm run db:seed
 
       - name: Lint
         run: npm run lint
@@ -48,5 +75,4 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: E2E tests
-        if: ${{ env.DATABASE_URL != '' && env.AUTH_SECRET != '' }}
         run: npm run e2e
