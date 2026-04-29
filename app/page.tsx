@@ -194,6 +194,7 @@ export default async function HomePage() {
                 subtitle={siteConfig?.heroSubtitle ?? undefined}
                 eyebrow={siteConfig?.heroEyebrow ?? section.subtitle ?? undefined}
                 imageUrl={siteConfig?.heroImageUrl ?? undefined}
+                overlayEnabled={siteConfig?.heroOverlayEnabled ?? true}
               />
             );
 

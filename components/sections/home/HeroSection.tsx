@@ -52,6 +52,7 @@ type HeroSectionProps = {
   eyebrow?: string;
   imageUrl?: string;
   ctaText?: string;
+  overlayEnabled?: boolean;
 };
 
 export function HeroSection({
@@ -60,6 +61,7 @@ export function HeroSection({
   eyebrow,
   imageUrl,
   ctaText,
+  overlayEnabled = true,
 }: HeroSectionProps) {
   const heroImage = imageUrl ?? DEFAULT_IMAGE;
   const heroSubtitle = subtitle ?? "el camino de regreso a ti.";
@@ -91,7 +93,7 @@ export function HeroSection({
           sizes="100vw"
           quality={90}
         />
-        <div className="hero-overlay absolute inset-0" />
+        {overlayEnabled && <div className="hero-overlay absolute inset-0" />}
       </motion.div>
 
       {/* Contenido */}

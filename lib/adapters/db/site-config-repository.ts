@@ -26,6 +26,7 @@ function toDomain(r: {
   blogLabel: string;
   seoTitle: string | null;
   seoDescription: string | null;
+  heroOverlayEnabled: boolean;
 }): SiteConfig {
   return {
     id: r.id,
@@ -50,6 +51,7 @@ function toDomain(r: {
     blogLabel: r.blogLabel,
     seoTitle: r.seoTitle,
     seoDescription: r.seoDescription,
+    heroOverlayEnabled: r.heroOverlayEnabled,
   };
 }
 

@@ -799,6 +799,7 @@ model CenterSiteConfig {
   blogLabel       String   @default("Blog")
   seoTitle        String?
   seoDescription  String?
+  heroOverlayEnabled Boolean @default(true)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 

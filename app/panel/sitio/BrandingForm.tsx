@@ -21,6 +21,7 @@ export default function BrandingForm({ config }: BrandingFormProps) {
   const [colorSecondary, setColorSecondary] = useState(config?.colorSecondary ?? "#B85C38");
   const [colorAccent, setColorAccent] = useState(config?.colorAccent ?? "#F5E6D3");
   const [heroImageUrl, setHeroImageUrl] = useState<string | null>(config?.heroImageUrl ?? null);
+  const [heroOverlayEnabled, setHeroOverlayEnabled] = useState<boolean>(config?.heroOverlayEnabled ?? true);
   const [logoUrl, setLogoUrl] = useState<string | null>(config?.logoUrl ?? null);
   const [faviconUrl, setFaviconUrl] = useState<string | null>(config?.faviconUrl ?? null);
   const router = useRouter();
@@ -31,12 +32,13 @@ export default function BrandingForm({ config }: BrandingFormProps) {
     setError(null);
     setSuccess(false);
 
-    const body: Record<string, string | null> = {};
+    const body: Record<string, string | boolean | null> = {};
     for (const key of ["heroEyebrow", "heroTitle", "heroSubtitle", "seoTitle", "seoDescription"]) {
       const val = (fd.get(key) as string)?.trim();
       body[key] = val || null;
     }
     body.heroImageUrl = heroImageUrl;
+    body.heroOverlayEnabled = heroOverlayEnabled;
     body.logoUrl = logoUrl;
     body.faviconUrl = faviconUrl;
     body.colorPrimary = colorPrimary;
@@ -109,6 +111,21 @@ export default function BrandingForm({ config }: BrandingFormProps) {
             imageKind="hero"
           />
         </div>
+        <label className="flex cursor-pointer items-center gap-3">
+          <input
+            type="checkbox"
+            checked={heroOverlayEnabled}
+            onChange={(e) => setHeroOverlayEnabled(e.target.checked)}
+            className="h-4 w-4 accent-[var(--color-primary)]"
+          />
+          <span className="text-sm text-[var(--color-text)]">
+            Mostrar gradiente sobre la imagen
+          </span>
+        </label>
+        <p className="text-xs text-[var(--color-text-muted)] -mt-2 ml-7">
+          Mejora la legibilidad del texto. Desactivá si la imagen ya es oscura o si querés que se vea
+          tal cual.
+        </p>
       </fieldset>
 
       {/* Logo */}
