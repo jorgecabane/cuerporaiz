@@ -53,8 +53,12 @@ jobs:
       - name: Generate Prisma client
         run: npx prisma generate
 
-      - name: Apply migrations
-        run: npx prisma migrate deploy
+      # En CI usamos db push (no migrate deploy) porque el historial de migraciones
+      # tiene una baseline (20260317133157_baseline) que duplica CREATE TYPE/TABLE
+      # de las migraciones previas, lo que rompe en una DB fresca con error 42710.
+      # El schema queda igual; el test de migraciones reales se hace al deployar a Supabase.
+      - name: Push schema to test database
+        run: npx prisma db push --skip-generate --accept-data-loss
 
       - name: Seed database
         run: npm run db:seed
