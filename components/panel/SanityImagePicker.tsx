@@ -4,6 +4,8 @@ import { useState, useCallback, useEffect } from "react";
 import Image from "next/image";
 import { X, Upload, ImagePlus } from "lucide-react";
 import { AdaptiveSheet } from "@/components/ui/AdaptiveSheet";
+import { optimizeImage, ImageTooLargeError } from "@/lib/client/optimize-image";
+import type { ImageKind } from "@/lib/client/image-presets";
 
 type PickerMode = "full" | "upload-only";
 
@@ -23,6 +25,7 @@ export type SanityImagePickerProps = {
   assetsEndpoint?: string;
   aspect?: "square" | "wide" | "portrait";
   disabled?: boolean;
+  imageKind?: ImageKind;
 };
 
 const DEFAULT_UPLOAD = "/api/panel/sanity-upload";
@@ -43,6 +46,7 @@ export function SanityImagePicker({
   assetsEndpoint = DEFAULT_ASSETS,
   aspect = "wide",
   disabled = false,
+  imageKind = "default",
 }: SanityImagePickerProps) {
   const [open, setOpen] = useState(false);
 
@@ -99,6 +103,7 @@ export function SanityImagePicker({
           label={label}
           uploadEndpoint={uploadEndpoint}
           assetsEndpoint={assetsEndpoint}
+          imageKind={imageKind}
           onSelect={(url) => {
             onChange(url);
             setOpen(false);
@@ -116,10 +121,11 @@ type SheetProps = {
   label: string;
   uploadEndpoint: string;
   assetsEndpoint: string;
+  imageKind: ImageKind;
   onSelect: (url: string) => void;
 };
 
-function PickerSheet({ open, onOpenChange, mode, label, uploadEndpoint, assetsEndpoint, onSelect }: SheetProps) {
+function PickerSheet({ open, onOpenChange, mode, label, uploadEndpoint, assetsEndpoint, imageKind, onSelect }: SheetProps) {
   const [tab, setTab] = useState<"upload" | "library">("upload");
   const showLibrary = mode === "full";
 
@@ -150,7 +156,7 @@ function PickerSheet({ open, onOpenChange, mode, label, uploadEndpoint, assetsEn
         )}
 
         {tab === "upload" || !showLibrary ? (
-          <UploadTab endpoint={uploadEndpoint} onSelect={onSelect} />
+          <UploadTab endpoint={uploadEndpoint} imageKind={imageKind} onSelect={onSelect} />
         ) : (
           <LibraryTab endpoint={assetsEndpoint} onSelect={onSelect} />
         )}
@@ -159,29 +165,46 @@ function PickerSheet({ open, onOpenChange, mode, label, uploadEndpoint, assetsEn
   );
 }
 
-function UploadTab({ endpoint, onSelect }: { endpoint: string; onSelect: (url: string) => void }) {
+type UploadStatus = "idle" | "optimizing" | "uploading";
+
+function UploadTab({
+  endpoint,
+  imageKind,
+  onSelect,
+}: {
+  endpoint: string;
+  imageKind: ImageKind;
+  onSelect: (url: string) => void;
+}) {
   const [dragOver, setDragOver] = useState(false);
-  const [uploading, setUploading] = useState(false);
+  const [status, setStatus] = useState<UploadStatus>("idle");
   const [error, setError] = useState<string | null>(null);
+  const busy = status !== "idle";
 
   const upload = useCallback(
     async (file: File) => {
       setError(null);
-      setUploading(true);
       try {
+        setStatus("optimizing");
+        const optimized = await optimizeImage(file, imageKind);
+        setStatus("uploading");
         const fd = new FormData();
-        fd.append("file", file);
+        fd.append("file", optimized);
         const res = await fetch(endpoint, { method: "POST", body: fd });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error ?? "Error al subir");
         onSelect(data.url);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error al subir");
+        if (err instanceof ImageTooLargeError) {
+          setError(err.message);
+        } else {
+          setError(err instanceof Error ? err.message : "Error al subir");
+        }
       } finally {
-        setUploading(false);
+        setStatus("idle");
       }
     },
-    [endpoint, onSelect],
+    [endpoint, imageKind, onSelect],
   );
 
   const onDrop = useCallback(
@@ -207,11 +230,15 @@ function UploadTab({ endpoint, onSelect }: { endpoint: string; onSelect: (url: s
           dragOver
             ? "border-[var(--color-primary)] bg-[color-mix(in_srgb,var(--color-primary)_6%,transparent)]"
             : "border-[var(--color-border)] hover:bg-[var(--color-surface)]"
-        } ${uploading ? "opacity-50 pointer-events-none" : ""}`}
+        } ${busy ? "opacity-50 pointer-events-none" : ""}`}
       >
         <Upload size={22} className="text-[var(--color-text-muted)]" aria-hidden />
         <span className="text-sm text-[var(--color-text)]">
-          {uploading ? "Subiendo..." : "Arrastra una imagen o haz click para elegir"}
+          {status === "optimizing"
+            ? "Optimizando..."
+            : status === "uploading"
+              ? "Subiendo..."
+              : "Arrastra una imagen o haz click para elegir"}
         </span>
         <span className="text-xs text-[var(--color-text-muted)]">JPEG, PNG, WebP o AVIF</span>
         <input

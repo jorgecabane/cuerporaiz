@@ -105,6 +105,7 @@ export function CategoryForm(props: Props) {
               onChange={setThumbnailUrl}
               label="Thumbnail de categoría"
               aspect="wide"
+              imageKind="category"
             />
           </div>
           <div>
@@ -182,6 +183,7 @@ export function CategoryForm(props: Props) {
             onChange={setThumbnailUrl}
             label="Thumbnail de categoría"
             aspect="wide"
+            imageKind="category"
           />
         </div>
         <div>

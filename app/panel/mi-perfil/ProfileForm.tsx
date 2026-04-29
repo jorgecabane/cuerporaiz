@@ -65,6 +65,7 @@ export default function ProfileForm({ user }: ProfileFormProps) {
           mode="upload-only"
           uploadEndpoint="/api/me/sanity-upload"
           aspect="square"
+          imageKind="instructor"
         />
       </div>
 

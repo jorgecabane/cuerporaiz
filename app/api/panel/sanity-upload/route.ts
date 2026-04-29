@@ -3,7 +3,7 @@ import { auth } from "@/auth";
 import { isAdminRole } from "@/lib/domain/role";
 import { getSanityWriteClient } from "@/lib/sanity/client";
 
-const MAX_BYTES = 10 * 1024 * 1024;
+const MAX_BYTES = 4 * 1024 * 1024;
 const ALLOWED_MIME = new Set(["image/jpeg", "image/png", "image/webp", "image/avif"]);
 
 export async function POST(request: Request) {
@@ -27,7 +27,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Archivo vacío" }, { status: 400 });
   }
   if (file.size > MAX_BYTES) {
-    return NextResponse.json({ error: "Máximo 10MB" }, { status: 413 });
+    return NextResponse.json({ error: "Máximo 4MB" }, { status: 413 });
   }
   if (!ALLOWED_MIME.has(file.type)) {
     return NextResponse.json(

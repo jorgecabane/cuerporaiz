@@ -460,6 +460,7 @@ function ItemForm({
             onChange={(url) => handleChange("imageUrl", url ?? "")}
             label={labels.imageUrl ?? "Imagen"}
             aspect={sectionKey === "team" ? "portrait" : "square"}
+            imageKind={sectionKey === "team" ? "instructor" : "section-item"}
           />
         </div>
       )}
@@ -489,6 +490,7 @@ function ItemForm({
               onChange={(url) => handleChange("imageUrl", url ?? "")}
               label="Imagen"
               aspect="square"
+              imageKind="section-item"
             />
           </div>
           <div>
