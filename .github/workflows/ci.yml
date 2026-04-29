@@ -58,7 +58,7 @@ jobs:
       # de las migraciones previas, lo que rompe en una DB fresca con error 42710.
       # El schema queda igual; el test de migraciones reales se hace al deployar a Supabase.
       - name: Push schema to test database
-        run: npx prisma db push --skip-generate --accept-data-loss
+        run: npx prisma db push --accept-data-loss
 
       - name: Seed database
         run: npm run db:seed
