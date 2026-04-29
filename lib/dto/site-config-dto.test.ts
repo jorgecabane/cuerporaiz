@@ -104,6 +104,28 @@ describe("upsertSiteConfigSchema", () => {
     });
   });
 
+  describe("heroOverlayEnabled", () => {
+    it("accepts true", () => {
+      const result = upsertSiteConfigSchema.safeParse({ heroOverlayEnabled: true });
+      expect(result.success).toBe(true);
+    });
+
+    it("accepts false", () => {
+      const result = upsertSiteConfigSchema.safeParse({ heroOverlayEnabled: false });
+      expect(result.success).toBe(true);
+    });
+
+    it("accepts omitted (optional)", () => {
+      const result = upsertSiteConfigSchema.safeParse({});
+      expect(result.success).toBe(true);
+    });
+
+    it("rejects non-boolean", () => {
+      const result = upsertSiteConfigSchema.safeParse({ heroOverlayEnabled: "yes" });
+      expect(result.success).toBe(false);
+    });
+  });
+
   describe("seoTitle + seoDescription", () => {
     it("accepts seoTitle within 120 chars", () => {
       const result = upsertSiteConfigSchema.safeParse({ seoTitle: "a".repeat(120) });

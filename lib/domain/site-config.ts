@@ -38,6 +38,7 @@ export interface SiteConfig {
   blogLabel: string;
   seoTitle: string | null;
   seoDescription: string | null;
+  heroOverlayEnabled: boolean;
 }
 
 export interface SiteSection {
