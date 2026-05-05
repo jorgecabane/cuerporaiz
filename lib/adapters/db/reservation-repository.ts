@@ -115,11 +115,14 @@ export const reservationRepository: IReservationRepository = {
   },
 
   async hasTrialReservation(userId: string, centerId: string) {
+    // La clase de prueba se considera "ya usada" si quedó como CONFIRMED/ATTENDED
+    // o si el usuario incumplió: LATE_CANCELLED (canceló fuera del plazo) o NO_SHOW
+    // (no asistió). Solo CANCELLED a tiempo la libera, para evitar abuso.
     const count = await prisma.reservation.count({
       where: {
         userId,
         liveClass: { centerId, isTrialClass: true },
-        status: { in: ["CONFIRMED", "ATTENDED"] },
+        status: { in: ["CONFIRMED", "ATTENDED", "LATE_CANCELLED", "NO_SHOW"] },
       },
     });
     return count > 0;

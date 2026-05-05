@@ -14,6 +14,7 @@ import {
 } from "@/components/panel/reservas";
 import { localYmdFromDate } from "@/lib/datetime/local-ymd";
 import { CalendarHomeSkeleton } from "@/components/ui/PanelSkeletons";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 const RESERVATIONS_PAGE_SIZE = 50;
 
@@ -61,6 +62,7 @@ export function PanelHomeCalendar({
     plans: UserPlanOptionDto[];
   } | null>(null);
   const [attendanceLoadingId, setAttendanceLoadingId] = useState<string | null>(null);
+  const [trialConfirmFor, setTrialConfirmFor] = useState<string | null>(null);
 
   const loadReservations = useCallback(async () => {
     const res = await fetch(`/api/reservations?page=1&pageSize=${RESERVATIONS_PAGE_SIZE}`);
@@ -258,6 +260,19 @@ export function PanelHomeCalendar({
   }
 
   async function handleReserve(liveClassId: string, userPlanId?: string) {
+    // Si la clase es de prueba y el usuario no eligió un plan específico,
+    // pedimos confirmación explícita: la clase de prueba es única por centro.
+    if (!userPlanId && isStudentRole(role)) {
+      const target = liveClasses.find((c) => c.id === liveClassId);
+      if (target?.isTrialClass) {
+        setTrialConfirmFor(liveClassId);
+        return;
+      }
+    }
+    await doReserve(liveClassId, userPlanId);
+  }
+
+  async function doReserve(liveClassId: string, userPlanId?: string) {
     setActionLoading(liveClassId);
     setPlanSelectionFor(null);
     try {
@@ -384,6 +399,21 @@ export function PanelHomeCalendar({
 
   return (
     <div className="space-y-4">
+      <ConfirmDialog
+        open={trialConfirmFor !== null}
+        title="¿Reservar tu clase de prueba?"
+        description="La clase de prueba es única por centro: solo podés usarla una vez. Si cancelás a tiempo, vuelve a quedar disponible."
+        confirmLabel="Reservar clase de prueba"
+        cancelLabel="Cancelar"
+        variant="warning"
+        loading={actionLoading !== null}
+        onConfirm={async () => {
+          const id = trialConfirmFor;
+          setTrialConfirmFor(null);
+          if (id) await doReserve(id);
+        }}
+        onCancel={() => setTrialConfirmFor(null)}
+      />
       <WeekNav
         weekAnchor={weekAnchor}
         weekStartDay={weekStartDay}
