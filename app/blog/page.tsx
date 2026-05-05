@@ -24,10 +24,12 @@ export const metadata: Metadata = {
 export default async function BlogIndexPage() {
   if (!isSanityConfigured()) notFound();
 
+  // Si Sanity está temporalmente inalcanzable en build/SSR, devolvemos página vacía
+  // en lugar de romper el build entero. ISR (revalidate=60) lo recuperará al volver.
   const [featured, posts, categories] = await Promise.all([
-    sanityFetch<PostSummary | null>(QUERY_FEATURED_POST, {}, { tags: ["posts"] }),
-    sanityFetch<PostSummary[]>(QUERY_ALL_POSTS, {}, { tags: ["posts"] }),
-    sanityFetch<PostCategoryRef[]>(QUERY_ALL_CATEGORIES, {}, { tags: ["categories"] }),
+    sanityFetch<PostSummary | null>(QUERY_FEATURED_POST, {}, { tags: ["posts"] }).catch(() => null),
+    sanityFetch<PostSummary[]>(QUERY_ALL_POSTS, {}, { tags: ["posts"] }).catch(() => [] as PostSummary[]),
+    sanityFetch<PostCategoryRef[]>(QUERY_ALL_CATEGORIES, {}, { tags: ["categories"] }).catch(() => [] as PostCategoryRef[]),
   ]);
 
   const restPosts = featured

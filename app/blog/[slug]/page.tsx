@@ -24,7 +24,9 @@ export const revalidate = 60;
 
 export async function generateStaticParams() {
   if (!isSanityConfigured()) return [];
-  const slugs = (await sanityFetch<string[]>(QUERY_POST_SLUGS, {}, { revalidate: 300 })) ?? [];
+  // Si Sanity está inalcanzable en build, ISR los generará en demand al volver.
+  const slugs =
+    (await sanityFetch<string[]>(QUERY_POST_SLUGS, {}, { revalidate: 300 }).catch(() => [])) ?? [];
   return slugs.map((slug) => ({ slug }));
 }
 

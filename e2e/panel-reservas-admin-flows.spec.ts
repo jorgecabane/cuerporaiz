@@ -7,12 +7,20 @@ function mockClassStartsAtIso(): string {
 
 async function selectWeekTabShowingClass(page: Page, title: string) {
   await page.getByRole("tablist", { name: /Días de la semana/i }).waitFor({ timeout: 15_000 });
-  if (await page.getByText(title).isVisible().catch(() => false)) return;
+  const tryVisible = async () => {
+    return await page
+      .getByText(title)
+      .first()
+      .waitFor({ state: "visible", timeout: 1500 })
+      .then(() => true)
+      .catch(() => false);
+  };
+  if (await tryVisible()) return;
   const tabs = page.getByRole("tab");
   const n = await tabs.count();
   for (let i = 0; i < n; i++) {
     await tabs.nth(i).click();
-    if (await page.getByText(title).isVisible().catch(() => false)) return;
+    if (await tryVisible()) return;
   }
   throw new Error(`No se encontró "${title}" en ningún día de la semana mostrada`);
 }

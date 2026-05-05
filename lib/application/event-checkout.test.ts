@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { createEventCheckout } from "./event-checkout";
 import type { Event, EventTicket } from "@/lib/domain/event";
 
@@ -77,6 +77,8 @@ function makeTicket(overrides: Partial<EventTicket> = {}): EventTicket {
 
 describe("createEventCheckout", () => {
   beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-04-15T10:00:00Z"));
     vi.clearAllMocks();
     mocks.eventRepository.findById.mockResolvedValue(makeEvent());
     mocks.eventTicketRepository.findByEventAndUser.mockResolvedValue(null);
@@ -92,6 +94,10 @@ describe("createEventCheckout", () => {
       checkoutUrl: "https://mp.com/checkout",
       preferenceId: "pref-1",
     });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it("evento de pago: crea ticket PENDING y devuelve checkoutUrl", async () => {
