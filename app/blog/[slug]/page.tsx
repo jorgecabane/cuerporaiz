@@ -41,7 +41,7 @@ export async function generateMetadata(
     QUERY_POST_BY_SLUG,
     { slug },
     { tags: [`post:${slug}`] },
-  );
+  ).catch(() => null);
   if (!post) return {};
 
   const title = post.seo?.metaTitle ?? post.title;
@@ -72,11 +72,12 @@ export default async function BlogPostPage({ params }: { params: Promise<Params>
   const { slug } = await params;
   const { isEnabled: isDraft } = await draftMode();
 
+  // Sanity caído en build/SSR: devolvemos 404 (ISR lo recupera al volver la conexión).
   const post = await sanityFetch<PostDetail | null>(
     QUERY_POST_BY_SLUG,
     { slug },
     { tags: [`post:${slug}`], draft: isDraft },
-  );
+  ).catch(() => null);
   if (!post) notFound();
 
   const primaryCategory = post.categories?.[0];
@@ -87,7 +88,7 @@ export default async function BlogPostPage({ params }: { params: Promise<Params>
         QUERY_RELATED_POSTS,
         { slug, categoryIds },
         { tags: ["posts"] },
-      )) ?? []
+      ).catch(() => [] as PostSummary[])) ?? []
     : [];
 
   const coverUrl = urlForImage(post.coverImage) ?? "";
