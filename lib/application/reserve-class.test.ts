@@ -59,7 +59,7 @@ function makeReservation(overrides: Partial<Reservation> = {}): Reservation {
   };
 }
 
-function makeLiveClass(overrides: { startsAt?: Date; centerId?: string } = {}): LiveClass {
+function makeLiveClass(overrides: Partial<LiveClass> = {}): LiveClass {
   return {
     id: "lc-1",
     centerId: "center-1",
@@ -322,4 +322,77 @@ describe("reserveClassUseCase — holiday blocking", () => {
     expect(result.success).toBe(true);
     expect(mocks.centerHolidayRepository.findByCenterIdAndDate).toHaveBeenCalled();
   });
+});
+
+describe("reserveClassUseCase — clase de prueba (trial)", () => {
+  const userId = "user-1";
+  const centerId = "center-1";
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.clearAllMocks();
+    vi.setSystemTime(new Date("2026-06-01T10:00:00Z"));
+    mocks.centerRepository.findById.mockResolvedValue({
+      id: centerId,
+      bookBeforeMinutes: 0,
+      cancelBeforeMinutes: 0,
+      maxNoShowsPerMonth: 10,
+      allowTrialClassPerPerson: true,
+    });
+    mocks.reservationRepository.countByUserAndStatus.mockResolvedValue(0);
+    mocks.liveClassRepository.countConfirmedReservations.mockResolvedValue(0);
+    mocks.reservationRepository.findByUserAndLiveClass.mockResolvedValue(null);
+    mocks.centerHolidayRepository.findByCenterIdAndDate.mockResolvedValue(null);
+    mocks.reservationRepository.create.mockImplementation(async (data) =>
+      makeReservation({ userPlanId: data.userPlanId ?? null })
+    );
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("permite reservar una clase de prueba sin UserPlan activo (primera vez)", async () => {
+    mocks.liveClassRepository.findById.mockResolvedValue(
+      makeLiveClass({ startsAt: new Date("2026-06-10T14:00:00Z"), centerId, isTrialClass: true })
+    );
+    mocks.reservationRepository.hasTrialReservation.mockResolvedValue(false);
+    mocks.userPlanRepository.findActiveByUserAndCenter.mockResolvedValue([]);
+
+    const result = await reserveClassUseCase(userId, centerId, "lc-1");
+
+    expect(result.success).toBe(true);
+    expect(mocks.reservationRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({ userId, liveClassId: "lc-1", userPlanId: null })
+    );
+    expect(mocks.userPlanRepository.incrementClassesUsed).not.toHaveBeenCalled();
+  });
+
+  it("rechaza con TRIAL_ALREADY_USED si ya usó la clase de prueba", async () => {
+    mocks.liveClassRepository.findById.mockResolvedValue(
+      makeLiveClass({ startsAt: new Date("2026-06-10T14:00:00Z"), centerId, isTrialClass: true })
+    );
+    mocks.reservationRepository.hasTrialReservation.mockResolvedValue(true);
+    mocks.userPlanRepository.findActiveByUserAndCenter.mockResolvedValue([]);
+
+    const result = await reserveClassUseCase(userId, centerId, "lc-1");
+
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.code).toBe("TRIAL_ALREADY_USED");
+    expect(mocks.reservationRepository.create).not.toHaveBeenCalled();
+  });
+
+  it("rechaza con NO_ACTIVE_PLAN si la clase NO es de prueba y no hay plan", async () => {
+    mocks.liveClassRepository.findById.mockResolvedValue(
+      makeLiveClass({ startsAt: new Date("2026-06-10T14:00:00Z"), centerId, isTrialClass: false })
+    );
+    mocks.userPlanRepository.findActiveByUserAndCenter.mockResolvedValue([]);
+
+    const result = await reserveClassUseCase(userId, centerId, "lc-1");
+
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.code).toBe("NO_ACTIVE_PLAN");
+    expect(mocks.reservationRepository.create).not.toHaveBeenCalled();
+  });
+
 });
