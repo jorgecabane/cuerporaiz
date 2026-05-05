@@ -132,6 +132,7 @@ function makeDeps() {
       findByUserIdAndCenterId: vi.fn(),
       findByUserAndLesson: vi.fn(),
       countByUserPlanAndCategory: vi.fn(),
+      countByLessonId: vi.fn(),
       create: vi.fn(),
     },
     userPlanRepo: {

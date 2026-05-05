@@ -53,6 +53,10 @@ export const lessonUnlockRepository: ILessonUnlockRepository = {
     });
   },
 
+  async countByLessonId(lessonId: string) {
+    return prisma.lessonUnlock.count({ where: { lessonId } });
+  },
+
   async create(data: CreateLessonUnlockInput) {
     const r = await prisma.lessonUnlock.create({
       data: {

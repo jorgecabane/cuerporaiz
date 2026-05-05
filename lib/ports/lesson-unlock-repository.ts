@@ -5,5 +5,6 @@ export interface ILessonUnlockRepository {
   findByUserIdAndCenterId(userId: string, centerId: string): Promise<LessonUnlock[]>;
   findByUserAndLesson(userId: string, lessonId: string): Promise<LessonUnlock | null>;
   countByUserPlanAndCategory(userPlanId: string, categoryId: string): Promise<number>;
+  countByLessonId(lessonId: string): Promise<number>;
   create(data: CreateLessonUnlockInput): Promise<LessonUnlock>;
 }

@@ -672,6 +672,7 @@ model EventTicket {
 enum OnDemandContentStatus {
   DRAFT
   PUBLISHED
+  ARCHIVED
 }
 
 model OnDemandCategory {

@@ -3,7 +3,7 @@
  * Unlock system: students unlock lessons using plan quotas.
  */
 
-export type OnDemandContentStatus = "DRAFT" | "PUBLISHED";
+export type OnDemandContentStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
 
 export interface OnDemandCategory {
   id: string;
@@ -138,4 +138,5 @@ export interface CreateLessonUnlockInput {
 export const CONTENT_STATUS_LABELS: Record<OnDemandContentStatus, string> = {
   DRAFT: "Borrador",
   PUBLISHED: "Publicado",
+  ARCHIVED: "Archivada",
 };
