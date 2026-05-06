@@ -3,7 +3,7 @@ import type { CategoryQuotaUsage } from "@/lib/application/get-category-quota-us
 interface QuotaChipsProps {
   quotaUsage: CategoryQuotaUsage[];
   categoryNames: Record<string, string>;
-  /** true for MEMBERSHIP_ON_DEMAND plans */
+  /** true para planes MEMBERSHIP_ON_DEMAND. */
   unlimited: boolean;
 }
 

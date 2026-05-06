@@ -23,7 +23,7 @@ export async function generateMetadata(
   const category = await sanityFetch<PostCategoryRef | null>(
     QUERY_CATEGORY_BY_SLUG,
     { slug },
-  );
+  ).catch(() => null);
   if (!category) return {};
 
   return {
@@ -41,10 +41,15 @@ export default async function BlogCategoryPage({
   if (!isSanityConfigured()) notFound();
   const { slug } = await params;
 
+  // Sanity caído en build/SSR: 404 para que ISR (revalidate=60) lo recupere al volver.
   const [category, posts, categories] = await Promise.all([
-    sanityFetch<PostCategoryRef | null>(QUERY_CATEGORY_BY_SLUG, { slug }),
-    sanityFetch<PostSummary[]>(QUERY_POSTS_BY_CATEGORY, { slug }, { tags: ["posts"] }),
-    sanityFetch<PostCategoryRef[]>(QUERY_ALL_CATEGORIES, {}, { tags: ["categories"] }),
+    sanityFetch<PostCategoryRef | null>(QUERY_CATEGORY_BY_SLUG, { slug }).catch(() => null),
+    sanityFetch<PostSummary[]>(QUERY_POSTS_BY_CATEGORY, { slug }, { tags: ["posts"] }).catch(
+      () => [] as PostSummary[]
+    ),
+    sanityFetch<PostCategoryRef[]>(QUERY_ALL_CATEGORIES, {}, { tags: ["categories"] }).catch(
+      () => [] as PostCategoryRef[]
+    ),
   ]);
 
   if (!category) notFound();

@@ -672,6 +672,7 @@ model EventTicket {
 enum OnDemandContentStatus {
   DRAFT
   PUBLISHED
+  ARCHIVED
 }
 
 model OnDemandCategory {
@@ -797,6 +798,15 @@ model CenterSiteConfig {
   youtubeUrl      String?
   blogEnabled     Boolean  @default(false)
   blogLabel       String   @default("Blog")
+  blogHeroTitle    String?
+  blogHeroSubtitle String?
+  headerNavLabelHowItWorks String?
+  headerNavLabelInPerson   String?
+  headerNavLabelOnline     String?
+  headerNavLabelContact    String?
+  libraryHeroTitle       String?
+  libraryHeroDescription String?
+  libraryHeroImageUrl    String?
   seoTitle        String?
   seoDescription  String?
   heroOverlayEnabled Boolean @default(true)

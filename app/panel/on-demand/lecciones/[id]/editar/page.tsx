@@ -5,6 +5,7 @@ import {
   onDemandCategoryRepository,
   onDemandLessonRepository,
   onDemandPracticeRepository,
+  lessonUnlockRepository,
 } from "@/lib/adapters/db";
 import { LessonForm } from "@/components/panel/on-demand/LessonForm";
 import { OnDemandBreadcrumb } from "@/components/panel/on-demand/OnDemandBreadcrumb";
@@ -24,6 +25,7 @@ export default async function EditarLeccionPage({
   const lesson = await onDemandLessonRepository.findById(id);
   if (!lesson) notFound();
 
+  const unlockCount = await lessonUnlockRepository.countByLessonId(lesson.id);
   const categories = await onDemandCategoryRepository.findByCenterId(centerId);
   const practicesPerCategory = await Promise.all(
     categories.map((cat) => onDemandPracticeRepository.findByCategoryId(cat.id))
@@ -65,6 +67,7 @@ export default async function EditarLeccionPage({
           categories={categories}
           practices={practices}
           lesson={lesson}
+          unlockCount={unlockCount}
         />
       </div>
     </div>

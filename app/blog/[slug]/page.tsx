@@ -24,7 +24,9 @@ export const revalidate = 60;
 
 export async function generateStaticParams() {
   if (!isSanityConfigured()) return [];
-  const slugs = (await sanityFetch<string[]>(QUERY_POST_SLUGS, {}, { revalidate: 300 })) ?? [];
+  // Si Sanity está inalcanzable en build, ISR los generará en demand al volver.
+  const slugs =
+    (await sanityFetch<string[]>(QUERY_POST_SLUGS, {}, { revalidate: 300 }).catch(() => [])) ?? [];
   return slugs.map((slug) => ({ slug }));
 }
 
@@ -39,7 +41,7 @@ export async function generateMetadata(
     QUERY_POST_BY_SLUG,
     { slug },
     { tags: [`post:${slug}`] },
-  );
+  ).catch(() => null);
   if (!post) return {};
 
   const title = post.seo?.metaTitle ?? post.title;
@@ -70,11 +72,12 @@ export default async function BlogPostPage({ params }: { params: Promise<Params>
   const { slug } = await params;
   const { isEnabled: isDraft } = await draftMode();
 
+  // Sanity caído en build/SSR: devolvemos 404 (ISR lo recupera al volver la conexión).
   const post = await sanityFetch<PostDetail | null>(
     QUERY_POST_BY_SLUG,
     { slug },
     { tags: [`post:${slug}`], draft: isDraft },
-  );
+  ).catch(() => null);
   if (!post) notFound();
 
   const primaryCategory = post.categories?.[0];
@@ -85,7 +88,7 @@ export default async function BlogPostPage({ params }: { params: Promise<Params>
         QUERY_RELATED_POSTS,
         { slug, categoryIds },
         { tags: ["posts"] },
-      )) ?? []
+      ).catch(() => [] as PostSummary[])) ?? []
     : [];
 
   const coverUrl = urlForImage(post.coverImage) ?? "";

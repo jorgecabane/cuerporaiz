@@ -36,6 +36,15 @@ export interface SiteConfig {
   youtubeUrl: string | null;
   blogEnabled: boolean;
   blogLabel: string;
+  blogHeroTitle: string | null;
+  blogHeroSubtitle: string | null;
+  headerNavLabelHowItWorks: string | null;
+  headerNavLabelInPerson: string | null;
+  headerNavLabelOnline: string | null;
+  headerNavLabelContact: string | null;
+  libraryHeroTitle: string | null;
+  libraryHeroDescription: string | null;
+  libraryHeroImageUrl: string | null;
   seoTitle: string | null;
   seoDescription: string | null;
   heroOverlayEnabled: boolean;

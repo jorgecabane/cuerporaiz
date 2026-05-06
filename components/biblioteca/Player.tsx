@@ -23,7 +23,7 @@ interface SiblingLesson {
   unlocked: boolean;
 }
 
-interface ReplayPlayerProps {
+interface PlayerProps {
   lesson: LessonFull;
   practiceName: string;
   siblings: SiblingLesson[];
@@ -31,13 +31,10 @@ interface ReplayPlayerProps {
   onNavigate: (lessonId: string) => void;
 }
 
-export function ReplayPlayer({
-  lesson,
-  practiceName,
-  siblings,
-  onBack,
-  onNavigate,
-}: ReplayPlayerProps) {
+/**
+ * Player de lección. Solo se renderiza en modo authenticated (con videoUrl real).
+ */
+export function Player({ lesson, practiceName, siblings, onBack, onNavigate }: PlayerProps) {
   const tags = [
     lesson.level,
     lesson.intensity,
@@ -49,7 +46,6 @@ export function ReplayPlayer({
 
   return (
     <div>
-      {/* Back button */}
       <button
         onClick={onBack}
         className="inline-flex items-center gap-2 text-sm font-medium text-[var(--color-text)] mb-4 hover:text-[var(--color-primary)] transition-colors"
@@ -58,22 +54,17 @@ export function ReplayPlayer({
         <span>Volver a {practiceName}</span>
       </button>
 
-      {/* Video — edge-to-edge on mobile, rounded on desktop */}
       <div className="sm:rounded-[var(--radius-lg)] overflow-hidden -mx-4 sm:mx-0 mb-6 shadow-lg">
         <VimeoEmbed url={lesson.videoUrl} title={lesson.title} />
       </div>
 
-      {/* Lesson info card */}
       <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 sm:p-6 mb-6">
-        {/* Title + duration row */}
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="min-w-0">
             <h1 className="text-lg sm:text-xl font-bold text-[var(--color-text)] leading-tight">
               {lesson.title}
             </h1>
-            <p className="text-sm text-[var(--color-text-muted)] mt-1">
-              {practiceName}
-            </p>
+            <p className="text-sm text-[var(--color-text-muted)] mt-1">{practiceName}</p>
           </div>
           {lesson.durationMinutes && (
             <div className="flex-shrink-0 rounded-full bg-[var(--color-primary)] px-3 py-1">
@@ -82,7 +73,6 @@ export function ReplayPlayer({
           )}
         </div>
 
-        {/* Tags */}
         {tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mb-4">
             {tags.map((tag) => (
@@ -96,14 +86,12 @@ export function ReplayPlayer({
           </div>
         )}
 
-        {/* Description */}
         {lesson.description && (
           <p className="text-sm text-[var(--color-text)] leading-relaxed mb-4">
             {lesson.description}
           </p>
         )}
 
-        {/* Equipment & audience detail */}
         {(lesson.equipment ?? lesson.targetAudience) && (
           <div className="border-t border-[var(--color-border)] pt-3 space-y-2">
             {lesson.equipment && (
@@ -122,12 +110,9 @@ export function ReplayPlayer({
         )}
       </div>
 
-      {/* Next in practice */}
       {otherLessons.length > 0 && (
         <div>
-          <h2 className="text-sm font-bold text-[var(--color-text)] mb-3">
-            Más en {practiceName}
-          </h2>
+          <h2 className="text-sm font-bold text-[var(--color-text)] mb-3">Más en {practiceName}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {otherLessons.map((s) => (
               <button

@@ -240,6 +240,9 @@ export default async function HomePage() {
                 key={section.id}
                 title={section.title ?? undefined}
                 subtitle={section.subtitle ?? undefined}
+                heroTitle={siteConfig?.libraryHeroTitle ?? undefined}
+                heroDescription={siteConfig?.libraryHeroDescription ?? undefined}
+                heroImage={siteConfig?.libraryHeroImageUrl ?? undefined}
                 categories={libraryCategories.length > 0 ? libraryCategories : undefined}
                 ctaPriceLabel={libraryPriceLabel}
               />

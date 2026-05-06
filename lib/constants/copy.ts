@@ -11,7 +11,7 @@ export const TAGLINE =
 export const NAV_LINKS = [
   { href: "/#como-funciona", label: "Cómo funciona" },
   { href: "/#agenda", label: "Clases presenciales" },
-  { href: "/#oferta", label: "Online" },
+  { href: "/catalogo", label: "Online" },
   { href: "/#contacto", label: "Contacto" },
 ] as const;
 

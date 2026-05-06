@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
-import { onDemandCategoryRepository, onDemandPracticeRepository } from "@/lib/adapters/db";
-import Link from "next/link";
+import { onDemandCategoryRepository } from "@/lib/adapters/db";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
+import { BibliotecaShell } from "@/components/biblioteca/BibliotecaShell";
+import type { CategoryData } from "@/components/biblioteca/types";
 import { buildSiteMetadata } from "@/lib/seo/metadata";
 
 export const revalidate = 300;
@@ -26,88 +28,55 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function CatalogoCategoryPage({ params }: Props) {
   const { categoryId } = await params;
-
-  const [category, practicesWithLessons] = await Promise.all([
-    onDemandCategoryRepository.findById(categoryId),
-    onDemandPracticeRepository.findPublishedWithLessonsByCategoryId(categoryId),
-  ]);
+  const category = await onDemandCategoryRepository.findById(categoryId);
   if (!category || category.status !== "PUBLISHED") notFound();
 
-  const practicesWithCounts = practicesWithLessons.map((p) => ({
-    ...p,
-    lessonCount: p.lessons.length,
+  // El shell se renderiza con TODAS las categorías del centro: así, en la vista 2 (práctica)
+  // el shell tiene contexto suficiente para resolver categoryName y armar breadcrumb.
+  const tree = await onDemandCategoryRepository.findPublishedTreeByCenterId(category.centerId);
+  const filtered = tree.filter((c) => c.id === categoryId);
+  const categories: CategoryData[] = filtered.map((cat) => ({
+    id: cat.id,
+    name: cat.name,
+    description: cat.description ?? null,
+    thumbnailUrl: cat.thumbnailUrl ?? null,
+    practices: cat.practices.map((p) => ({
+      id: p.id,
+      name: p.name,
+      description: p.description,
+      thumbnailUrl: p.thumbnailUrl ?? null,
+      categoryId: cat.id,
+      lessons: p.lessons.map((l) => ({
+        id: l.id,
+        title: l.title,
+        description: l.description,
+        durationMinutes: l.durationMinutes,
+        level: l.level,
+        intensity: l.intensity,
+        targetAudience: l.targetAudience,
+        equipment: l.equipment,
+        tags: l.tags,
+        thumbnailUrl: l.thumbnailUrl,
+        promoVideoUrl: l.promoVideoUrl,
+        videoUrl: null,
+        practiceId: l.practiceId,
+      })),
+    })),
   }));
 
   return (
-    <>
-      {/* Page header with breadcrumb */}
-      <div className="pt-[calc(var(--header-height)+var(--space-8))] pb-[var(--space-6)] px-[var(--space-4)] md:px-[var(--space-8)]">
-        <div className="mx-auto max-w-4xl">
-          <nav className="text-sm flex items-center gap-2 mb-4">
-            <Link href="/catalogo" className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors">
-              Catálogo
-            </Link>
-            <span className="text-[var(--color-border)]">/</span>
-            <span className="text-[var(--color-text)]">{category.name}</span>
-          </nav>
-          <h1 className="text-section font-display font-semibold text-[var(--color-primary)]">
-            {category.name}
-          </h1>
-          {category.description && (
-            <p className="text-base text-[var(--color-text-muted)] mt-2 max-w-lg">{category.description}</p>
-          )}
-        </div>
-      </div>
-
-      {/* Practice cards */}
-      <div className="mx-auto max-w-4xl px-[var(--space-4)] md:px-[var(--space-8)] py-[var(--space-10)]">
-        {practicesWithCounts.length === 0 ? (
-          <p className="text-[var(--color-text-muted)] animate-fade-in">
-            Aún no hay prácticas disponibles.
-          </p>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            {practicesWithCounts.map((practice) => (
-              <Link
-                key={practice.id}
-                href={`/catalogo/${category.id}/${practice.id}`}
-                className="group rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] overflow-hidden hover:shadow-[var(--shadow-md)] transition-shadow"
-              >
-                {practice.thumbnailUrl && (
-                  <img
-                    src={practice.thumbnailUrl}
-                    alt={practice.name}
-                    loading="lazy"
-                    className="w-full h-40 object-cover group-hover:scale-[1.03] transition-transform duration-300"
-                  />
-                )}
-                <div className="p-4">
-                  <h2 className="text-lg font-medium text-[var(--color-text)] group-hover:text-[var(--color-primary)]">
-                    {practice.name}
-                  </h2>
-                  {practice.description && (
-                    <p className="text-sm text-[var(--color-text-muted)] mt-1">
-                      {practice.description}
-                    </p>
-                  )}
-                  <p className="text-xs text-[var(--color-text-muted)] mt-2">
-                    {practice.lessonCount} {practice.lessonCount === 1 ? "clase" : "clases"}
-                  </p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
-
-        <div className="text-center pt-8">
-          <Link
-            href="/auth/login"
-            className="inline-flex items-center gap-2 rounded-[var(--radius-md)] bg-[var(--color-primary)] px-6 py-3 text-sm font-medium text-white hover:bg-[var(--color-primary-hover)]"
-          >
-            Inicia sesión para desbloquear
-          </Link>
-        </div>
-      </div>
-    </>
+    <div className="px-4 py-6 sm:py-12 pt-[calc(var(--header-height)+var(--space-4))]">
+      <Suspense fallback={null}>
+        <BibliotecaShell
+          categories={categories}
+          mode={{ kind: "public" }}
+          routingMode="path"
+          basePath="/catalogo"
+          selectedCategoryId={categoryId}
+          title={category.name}
+          subtitle={category.description ?? undefined}
+        />
+      </Suspense>
+    </div>
   );
 }

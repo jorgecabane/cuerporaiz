@@ -24,6 +24,15 @@ function toDomain(r: {
   youtubeUrl: string | null;
   blogEnabled: boolean;
   blogLabel: string;
+  blogHeroTitle: string | null;
+  blogHeroSubtitle: string | null;
+  headerNavLabelHowItWorks: string | null;
+  headerNavLabelInPerson: string | null;
+  headerNavLabelOnline: string | null;
+  headerNavLabelContact: string | null;
+  libraryHeroTitle: string | null;
+  libraryHeroDescription: string | null;
+  libraryHeroImageUrl: string | null;
   seoTitle: string | null;
   seoDescription: string | null;
   heroOverlayEnabled: boolean;
@@ -49,6 +58,15 @@ function toDomain(r: {
     youtubeUrl: r.youtubeUrl,
     blogEnabled: r.blogEnabled,
     blogLabel: r.blogLabel,
+    blogHeroTitle: r.blogHeroTitle,
+    blogHeroSubtitle: r.blogHeroSubtitle,
+    headerNavLabelHowItWorks: r.headerNavLabelHowItWorks,
+    headerNavLabelInPerson: r.headerNavLabelInPerson,
+    headerNavLabelOnline: r.headerNavLabelOnline,
+    headerNavLabelContact: r.headerNavLabelContact,
+    libraryHeroTitle: r.libraryHeroTitle,
+    libraryHeroDescription: r.libraryHeroDescription,
+    libraryHeroImageUrl: r.libraryHeroImageUrl,
     seoTitle: r.seoTitle,
     seoDescription: r.seoDescription,
     heroOverlayEnabled: r.heroOverlayEnabled,

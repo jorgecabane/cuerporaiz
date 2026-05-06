@@ -3,6 +3,8 @@
 import { useState, useEffect, useTransition } from "react";
 import { ChevronUp, ChevronDown, Pencil } from "lucide-react";
 import SectionItemsEditor from "./SectionItemsEditor";
+import LibraryHeroEditor from "./LibraryHeroEditor";
+import type { SiteConfig } from "@/lib/domain/site-config";
 
 const SECTION_LABELS: Record<string, string> = {
   hero: "Hero / Portada",
@@ -19,10 +21,14 @@ const SECTION_LABELS: Record<string, string> = {
   contact: "Contacto",
 };
 
-/** Sections that have editable sub-items */
+/** Sections con sub-items repetibles (team, testimonios, etc.) */
 const HAS_ITEMS_SECTIONS = new Set(["team", "testimonials", "about", "how-it-works", "cta"]);
+/** Sections con un editor especial: hero singleton (on-demand combina título + subtítulo + hero). */
+const HAS_HERO_EDITOR_SECTIONS = new Set(["on-demand"]);
+/** Sections que muestran botón expandible (suma items + hero editors). */
+const HAS_EXPANDABLE_EDITOR = new Set([...HAS_ITEMS_SECTIONS, ...HAS_HERO_EDITOR_SECTIONS]);
 
-/** Sections where title/subtitle can be edited inline (most sections) */
+/** Sections donde el título/subtítulo se editan inline con el lápiz. */
 const HAS_TITLE_SECTIONS = new Set([
   "about", "how-it-works", "schedule", "plans", "on-demand", "events",
   "disciplines", "team", "testimonials", "cta",
@@ -41,7 +47,7 @@ type Section = {
   items: unknown[];
 };
 
-export default function SectionsManager() {
+export default function SectionsManager({ siteConfig }: { siteConfig: SiteConfig | null }) {
   const [sections, setSections] = useState<Section[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -211,8 +217,8 @@ export default function SectionsManager() {
               </button>
             ) : null}
 
-            {/* Edit items button */}
-            {HAS_ITEMS_SECTIONS.has(section.sectionKey) && (
+            {/* Edit items / hero editor button */}
+            {HAS_EXPANDABLE_EDITOR.has(section.sectionKey) && (
               <button
                 type="button"
                 onClick={() => setExpandedId((prev) => (prev === section.id ? null : section.id))}
@@ -284,10 +290,14 @@ export default function SectionsManager() {
             </div>
           )}
 
-          {/* Expanded items editor */}
+          {/* Expanded editor: items repetibles o hero singleton (on-demand) */}
           {expandedId === section.id && (
             <div className="border-t border-[var(--color-border)] px-4 py-4">
-              <SectionItemsEditor sectionId={section.id} sectionKey={section.sectionKey} />
+              {HAS_HERO_EDITOR_SECTIONS.has(section.sectionKey) ? (
+                <LibraryHeroEditor config={siteConfig} />
+              ) : (
+                <SectionItemsEditor sectionId={section.id} sectionKey={section.sectionKey} />
+              )}
             </div>
           )}
         </div>

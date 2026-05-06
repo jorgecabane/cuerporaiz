@@ -101,6 +101,7 @@ export async function reserveClassUseCase(
 
   // Política: bookBeforeMinutes
   const center = await centerRepository.findById(centerId);
+  let isTrialEligible = false;
   if (center) {
     const minutesUntilClass =
       (liveClass.startsAt.getTime() - Date.now()) / (1000 * 60);
@@ -129,6 +130,7 @@ export async function reserveClassUseCase(
     }
 
     // Política: allowTrialClassPerPerson (1 clase de prueba por persona por centro)
+    // Si la clase es de prueba y el usuario aún no la usó, permite reservar sin plan activo.
     if (liveClass.isTrialClass && center.allowTrialClassPerPerson) {
       const hasTrial = await reservationRepository.hasTrialReservation(userId, centerId);
       if (hasTrial) {
@@ -138,6 +140,7 @@ export async function reserveClassUseCase(
           message: "Ya utilizaste tu clase de prueba en este centro",
         };
       }
+      isTrialEligible = true;
     }
   }
 
@@ -154,57 +157,60 @@ export async function reserveClassUseCase(
     return { success: false, code: "ALREADY_RESERVED", message: "Ya tienes un registro para esta clase" };
   }
 
-  // Validar plan activo tipo Live
-  const activePlans = await userPlanRepository.findActiveByUserAndCenter(userId, centerId);
-  const livePlans = [];
-  for (const up of activePlans) {
-    if (!isUserPlanUsable(up)) continue;
-    const plan = await planRepository.findById(up.planId);
-    if (!plan) continue;
-    if (plan.type === "LIVE") livePlans.push(up);
-  }
-
-  if (livePlans.length === 0) {
-    return { success: false, code: "NO_ACTIVE_PLAN", message: "No tienes un plan activo para reservar clases" };
-  }
-
-  // Seleccionar plan: si se especificó userPlanId, validar que esté entre los disponibles
-  let selectedPlan = livePlans[0];
-  if (userPlanId) {
-    const match = livePlans.find((p) => p.id === userPlanId);
-    if (!match) {
-      return { success: false, code: "PLAN_NOT_VALID", message: "El plan seleccionado no es válido para esta reserva" };
+  // Validar plan activo tipo Live (se omite cuando es una clase de prueba elegible).
+  let selectedPlan: Awaited<ReturnType<typeof userPlanRepository.findActiveByUserAndCenter>>[number] | null = null;
+  if (!isTrialEligible) {
+    const activePlans = await userPlanRepository.findActiveByUserAndCenter(userId, centerId);
+    const livePlans = [];
+    for (const up of activePlans) {
+      if (!isUserPlanUsable(up)) continue;
+      const plan = await planRepository.findById(up.planId);
+      if (!plan) continue;
+      if (plan.type === "LIVE") livePlans.push(up);
     }
-    selectedPlan = match;
-  } else if (livePlans.length > 1) {
-    const planOptions = [];
-    for (const up of livePlans) {
-      const p = await planRepository.findById(up.planId);
-      planOptions.push({
-        id: up.id,
-        planId: up.planId,
-        planName: p?.name,
-        classesTotal: up.classesTotal,
-        classesUsed: up.classesUsed,
-        validUntil: up.validUntil?.toISOString() ?? null,
-      });
+
+    if (livePlans.length === 0) {
+      return { success: false, code: "NO_ACTIVE_PLAN", message: "No tienes un plan activo para reservar clases" };
     }
-    return {
-      success: false,
-      code: "PLAN_SELECTION_REQUIRED",
-      message: "Tienes más de un plan activo. Selecciona con cuál quieres reservar.",
-      plans: planOptions,
-    };
+
+    // Seleccionar plan: si se especificó userPlanId, validar que esté entre los disponibles
+    selectedPlan = livePlans[0];
+    if (userPlanId) {
+      const match = livePlans.find((p) => p.id === userPlanId);
+      if (!match) {
+        return { success: false, code: "PLAN_NOT_VALID", message: "El plan seleccionado no es válido para esta reserva" };
+      }
+      selectedPlan = match;
+    } else if (livePlans.length > 1) {
+      const planOptions = [];
+      for (const up of livePlans) {
+        const p = await planRepository.findById(up.planId);
+        planOptions.push({
+          id: up.id,
+          planId: up.planId,
+          planName: p?.name,
+          classesTotal: up.classesTotal,
+          classesUsed: up.classesUsed,
+          validUntil: up.validUntil?.toISOString() ?? null,
+        });
+      }
+      return {
+        success: false,
+        code: "PLAN_SELECTION_REQUIRED",
+        message: "Tienes más de un plan activo. Selecciona con cuál quieres reservar.",
+        plans: planOptions,
+      };
+    }
   }
 
   const reservation = await reservationRepository.create({
     userId,
     liveClassId,
-    userPlanId: selectedPlan.id,
+    userPlanId: selectedPlan?.id ?? null,
   });
 
-  // Descontar clase del plan (solo si tiene límite)
-  if (selectedPlan.classesTotal !== null) {
+  // Descontar clase del plan (solo si hay plan asignado y tiene límite)
+  if (selectedPlan && selectedPlan.classesTotal !== null) {
     await userPlanRepository.incrementClassesUsed(selectedPlan.id);
   }
 

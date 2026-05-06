@@ -44,6 +44,7 @@ function makeUnlockRepo(overrides: Partial<ILessonUnlockRepository> = {}): ILess
     findByUserIdAndCenterId: vi.fn(),
     findByUserAndLesson: vi.fn(),
     countByUserPlanAndCategory: vi.fn(),
+    countByLessonId: vi.fn(),
     create: vi.fn(),
     ...overrides,
   };
