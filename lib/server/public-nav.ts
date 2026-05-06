@@ -13,6 +13,21 @@ export type PublicNavLink = { href: string; label: string };
  * Server-only: call from a server component. Never throws — on error, falls
  * back to the static NAV_LINKS.
  */
+/** Mapeo de href → campo de override en CenterSiteConfig (item 6: header labels editables). */
+const NAV_LABEL_OVERRIDE_BY_HREF: Record<string, keyof OverrideKeys> = {
+  "/#como-funciona": "headerNavLabelHowItWorks",
+  "/#agenda": "headerNavLabelInPerson",
+  "/catalogo": "headerNavLabelOnline",
+  "/#contacto": "headerNavLabelContact",
+};
+
+type OverrideKeys = {
+  headerNavLabelHowItWorks: string | null;
+  headerNavLabelInPerson: string | null;
+  headerNavLabelOnline: string | null;
+  headerNavLabelContact: string | null;
+};
+
 export async function getPublicNavLinks(): Promise<PublicNavLink[]> {
   const base = NAV_LINKS.map((l) => ({ href: l.href, label: l.label }));
   const slug = process.env.NEXT_PUBLIC_DEFAULT_CENTER_SLUG;
@@ -27,7 +42,14 @@ export async function getPublicNavLinks(): Promise<PublicNavLink[]> {
       siteConfigRepository.findByCenterId(center.id),
     ]);
 
-    const links: PublicNavLink[] = [...base];
+    // Aplica overrides de los labels del header desde siteConfig si existen.
+    const links: PublicNavLink[] = base.map((link) => {
+      const overrideKey = NAV_LABEL_OVERRIDE_BY_HREF[link.href];
+      if (!overrideKey || !siteConfig) return link;
+      const customLabel = siteConfig[overrideKey];
+      return customLabel ? { ...link, label: customLabel } : link;
+    });
+
     const contactIndex = () => links.findIndex((l) => l.href === "/#contacto");
 
     const insertBeforeContact = (link: PublicNavLink) => {

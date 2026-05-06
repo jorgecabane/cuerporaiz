@@ -11,8 +11,13 @@ import type { PostCategoryRef, PostSummary } from "@/lib/sanity/types";
 import { BlogHero } from "@/components/blog/BlogHero";
 import { CategoryFilter } from "@/components/blog/CategoryFilter";
 import { PostGrid } from "@/components/blog/PostGrid";
+import { centerRepository, siteConfigRepository } from "@/lib/adapters/db";
 
 export const revalidate = 60;
+
+const DEFAULT_HERO_TITLE = "Ideas sobre cuerpo, respiración y el camino de regreso a ti.";
+const DEFAULT_HERO_SUBTITLE =
+  "Ensayos, prácticas guiadas y crónicas desde la sala de Vitacura y los retiros.";
 
 export const metadata: Metadata = {
   title: "Blog — Cuerpo Raíz",
@@ -21,16 +26,28 @@ export const metadata: Metadata = {
   alternates: { canonical: "/blog" },
 };
 
+async function loadHeroCopy() {
+  const slug = process.env.NEXT_PUBLIC_DEFAULT_CENTER_SLUG;
+  if (!slug) return null;
+  const center = await centerRepository.findBySlug(slug);
+  if (!center) return null;
+  return siteConfigRepository.findByCenterId(center.id);
+}
+
 export default async function BlogIndexPage() {
   if (!isSanityConfigured()) notFound();
 
   // Si Sanity está temporalmente inalcanzable en build/SSR, devolvemos página vacía
   // en lugar de romper el build entero. ISR (revalidate=60) lo recuperará al volver.
-  const [featured, posts, categories] = await Promise.all([
+  const [featured, posts, categories, siteConfig] = await Promise.all([
     sanityFetch<PostSummary | null>(QUERY_FEATURED_POST, {}, { tags: ["posts"] }).catch(() => null),
     sanityFetch<PostSummary[]>(QUERY_ALL_POSTS, {}, { tags: ["posts"] }).catch(() => [] as PostSummary[]),
     sanityFetch<PostCategoryRef[]>(QUERY_ALL_CATEGORIES, {}, { tags: ["categories"] }).catch(() => [] as PostCategoryRef[]),
+    loadHeroCopy(),
   ]);
+
+  const heroTitle = siteConfig?.blogHeroTitle ?? DEFAULT_HERO_TITLE;
+  const heroSubtitle = siteConfig?.blogHeroSubtitle ?? DEFAULT_HERO_SUBTITLE;
 
   const restPosts = featured
     ? (posts ?? []).filter((p) => p._id !== featured._id)
@@ -43,10 +60,10 @@ export default async function BlogIndexPage() {
           Blog
         </p>
         <h1 className="max-w-3xl font-display text-4xl italic leading-[1.04] tracking-tight text-[var(--color-primary)] md:text-6xl lg:text-7xl">
-          Ideas sobre cuerpo, respiración y el camino de regreso a ti.
+          {heroTitle}
         </h1>
         <p className="mt-[var(--space-5)] max-w-xl font-display text-lg text-[var(--color-text-muted)] md:text-xl">
-          Ensayos, prácticas guiadas y crónicas desde la sala de Vitacura y los retiros.
+          {heroSubtitle}
         </p>
       </header>
 

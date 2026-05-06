@@ -18,7 +18,13 @@ export default function BlogSettingsForm({ config }: BlogSettingsFormProps) {
   const [success, setSuccess] = useState(false);
   const [blogEnabled, setBlogEnabled] = useState(config?.blogEnabled ?? false);
   const [blogLabel, setBlogLabel] = useState(config?.blogLabel ?? "Blog");
+  const [blogHeroTitle, setBlogHeroTitle] = useState(config?.blogHeroTitle ?? "");
+  const [blogHeroSubtitle, setBlogHeroSubtitle] = useState(config?.blogHeroSubtitle ?? "");
   const router = useRouter();
+
+  const DEFAULT_HERO_TITLE = "Ideas sobre cuerpo, respiración y el camino de regreso a ti.";
+  const DEFAULT_HERO_SUBTITLE =
+    "Ensayos, prácticas guiadas y crónicas desde la sala de Vitacura y los retiros.";
 
   const sanityProjectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID;
   const sanityDataset = process.env.NEXT_PUBLIC_SANITY_DATASET ?? "production";
@@ -33,7 +39,12 @@ export default function BlogSettingsForm({ config }: BlogSettingsFormProps) {
       const res = await fetch("/api/panel/site-config", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ blogEnabled, blogLabel: blogLabel.trim() || "Blog" }),
+        body: JSON.stringify({
+          blogEnabled,
+          blogLabel: blogLabel.trim() || "Blog",
+          blogHeroTitle: blogHeroTitle.trim() || null,
+          blogHeroSubtitle: blogHeroSubtitle.trim() || null,
+        }),
       });
       if (!res.ok) {
         const data = await res.json();
@@ -101,6 +112,45 @@ export default function BlogSettingsForm({ config }: BlogSettingsFormProps) {
               className={inputCls}
               placeholder="Blog"
               maxLength={40}
+            />
+          </div>
+        </fieldset>
+
+        <fieldset className="space-y-4 border-t border-[var(--color-border)] pt-6">
+          <legend className="mb-2 text-sm font-semibold text-[var(--color-text)]">
+            Encabezado de la página /blog
+          </legend>
+          <p className="text-xs text-[var(--color-text-muted)] -mt-2">
+            Personaliza el título y subtítulo que aparecen arriba del listado de artículos. Vacío usa el default.
+          </p>
+
+          <div>
+            <label htmlFor="blogHeroTitle" className={labelCls}>
+              Título del hero
+            </label>
+            <textarea
+              id="blogHeroTitle"
+              value={blogHeroTitle}
+              onChange={(e) => setBlogHeroTitle(e.target.value)}
+              className={inputCls}
+              placeholder={DEFAULT_HERO_TITLE}
+              rows={2}
+              maxLength={200}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="blogHeroSubtitle" className={labelCls}>
+              Subtítulo del hero
+            </label>
+            <textarea
+              id="blogHeroSubtitle"
+              value={blogHeroSubtitle}
+              onChange={(e) => setBlogHeroSubtitle(e.target.value)}
+              className={inputCls}
+              placeholder={DEFAULT_HERO_SUBTITLE}
+              rows={2}
+              maxLength={400}
             />
           </div>
         </fieldset>

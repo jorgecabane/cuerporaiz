@@ -61,7 +61,7 @@ export default async function PanelSitioPage({
 
       {/* Tab content */}
       {activeTab === "branding" && <BrandingForm config={config} />}
-      {activeTab === "secciones" && <SectionsManager />}
+      {activeTab === "secciones" && <SectionsManager siteConfig={config} />}
       {activeTab === "sobre" && (
         <div className="space-y-8">
           <AboutPageForm page={aboutPage} />
