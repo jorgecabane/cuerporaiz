@@ -131,3 +131,247 @@ export async function cleanupEvents(titlePattern: string) {
     await prisma.event.delete({ where: { id: evt.id } }).catch(() => {});
   }
 }
+
+/**
+ * Garantiza que el centro `e2e-test` exista con un CenterSiteConfig que
+ * tenga `logoUrl` seteado al valor pasado. Devuelve el valor anterior para
+ * que el caller lo restaure en afterAll. Si la config no existía retorna
+ * null.
+ */
+export async function setCenterLogoUrl(slug: string, logoUrl: string | null): Promise<string | null> {
+  const prisma = await getPrisma();
+  if (!prisma) return null;
+  const center = await prisma.center.findUnique({ where: { slug } });
+  if (!center) return null;
+  const existing = await prisma.centerSiteConfig.findUnique({ where: { centerId: center.id } });
+  const previous = existing?.logoUrl ?? null;
+  if (existing) {
+    await prisma.centerSiteConfig.update({
+      where: { centerId: center.id },
+      data: { logoUrl },
+    });
+  } else {
+    await prisma.centerSiteConfig.create({
+      data: { centerId: center.id, logoUrl: logoUrl ?? undefined },
+    });
+  }
+  return previous;
+}
+
+/**
+ * Crea u obtiene una Order PENDING marcada como TRANSFER lista para que el
+ * admin la apruebe/rechace. Devuelve `{ orderId, externalReference, planId, userId }`.
+ *
+ * - El user es el admin seedeado (admin@e2e.test) — para fines de test, en
+ *   producción no compraría planes pero a nivel modelo no hay restricción.
+ * - El plan se busca o crea con nombre único basado en `runId`.
+ * - El receipt es null por simplicidad (centro de test sin requireReceipt).
+ */
+export async function seedPendingTransferOrder(opts: {
+  centerSlug: string;
+  userEmail: string;
+  planName: string;
+  amountCents?: number;
+  /** Prefijo para el externalReference. Default `e2e-tx-`. Útil para que cleanup lo agarre. */
+  externalReferencePrefix?: string;
+}): Promise<{ orderId: string; externalReference: string; planId: string; userId: string } | null> {
+  const prisma = await getPrisma();
+  if (!prisma) return null;
+  const center = await prisma.center.findUnique({ where: { slug: opts.centerSlug } });
+  if (!center) return null;
+  const user = await prisma.user.findUnique({ where: { email: opts.userEmail } });
+  if (!user) return null;
+  const amountCents = opts.amountCents ?? 29900;
+
+  const planSlug = opts.planName.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+  const plan = await prisma.plan.upsert({
+    where: { centerId_slug: { centerId: center.id, slug: planSlug } },
+    update: {},
+    create: {
+      centerId: center.id,
+      name: opts.planName,
+      slug: planSlug,
+      description: "Plan E2E para tests de transferencia",
+      type: "LIVE",
+      amountCents,
+      currency: "CLP",
+      maxReservations: 4,
+      validityDays: 30,
+      billingMode: "ONE_TIME",
+    },
+  });
+
+  const prefix = opts.externalReferencePrefix ?? "e2e-tx-";
+  const externalReference = `${prefix}${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const order = await prisma.order.create({
+    data: {
+      centerId: center.id,
+      userId: user.id,
+      planId: plan.id,
+      amountCents,
+      currency: "CLP",
+      status: "PENDING",
+      paymentMethod: "TRANSFER",
+      transferClaimedAt: new Date(),
+      externalReference,
+    },
+  });
+  return { orderId: order.id, externalReference, planId: plan.id, userId: user.id };
+}
+
+/**
+ * Estado del plugin de transferencia bancaria del centro `slug`. Útil para
+ * setup/teardown en tests del flujo de transferencia.
+ */
+export interface BankTransferSnapshot {
+  enabled: boolean;
+  acceptPlans: boolean;
+  acceptEvents: boolean;
+  requireReceipt: boolean;
+  bankName: string | null;
+  bankAccountType: string | null;
+  bankAccountNumber: string | null;
+  bankAccountHolder: string | null;
+  bankAccountRut: string | null;
+  bankAccountEmail: string | null;
+}
+
+/** Captura el estado actual del plugin transferencia para restaurarlo después. */
+export async function snapshotBankTransfer(slug: string): Promise<BankTransferSnapshot | null> {
+  const prisma = await getPrisma();
+  if (!prisma) return null;
+  const center = await prisma.center.findUnique({ where: { slug } });
+  if (!center) return null;
+  return {
+    enabled: center.bankTransferEnabled,
+    acceptPlans: center.bankTransferAcceptPlans,
+    acceptEvents: center.bankTransferAcceptEvents,
+    requireReceipt: center.bankTransferRequireReceipt,
+    bankName: center.bankName,
+    bankAccountType: center.bankAccountType,
+    bankAccountNumber: center.bankAccountNumber,
+    bankAccountHolder: center.bankAccountHolder,
+    bankAccountRut: center.bankAccountRut,
+    bankAccountEmail: center.bankAccountEmail,
+  };
+}
+
+/** Aplica un set de overrides al plugin transferencia. */
+export async function setBankTransfer(
+  slug: string,
+  overrides: Partial<BankTransferSnapshot>,
+): Promise<void> {
+  const prisma = await getPrisma();
+  if (!prisma) return;
+  const center = await prisma.center.findUnique({ where: { slug } });
+  if (!center) return;
+  await prisma.center.update({
+    where: { id: center.id },
+    data: {
+      ...(overrides.enabled !== undefined && { bankTransferEnabled: overrides.enabled }),
+      ...(overrides.acceptPlans !== undefined && { bankTransferAcceptPlans: overrides.acceptPlans }),
+      ...(overrides.acceptEvents !== undefined && { bankTransferAcceptEvents: overrides.acceptEvents }),
+      ...(overrides.requireReceipt !== undefined && {
+        bankTransferRequireReceipt: overrides.requireReceipt,
+      }),
+      ...(overrides.bankName !== undefined && { bankName: overrides.bankName }),
+      ...(overrides.bankAccountType !== undefined && { bankAccountType: overrides.bankAccountType }),
+      ...(overrides.bankAccountNumber !== undefined && {
+        bankAccountNumber: overrides.bankAccountNumber,
+      }),
+      ...(overrides.bankAccountHolder !== undefined && {
+        bankAccountHolder: overrides.bankAccountHolder,
+      }),
+      ...(overrides.bankAccountRut !== undefined && { bankAccountRut: overrides.bankAccountRut }),
+      ...(overrides.bankAccountEmail !== undefined && {
+        bankAccountEmail: overrides.bankAccountEmail,
+      }),
+    },
+  });
+}
+
+/**
+ * Crea un Plan listo para ser comprado vía /panel/tienda. Idempotente por slug.
+ * Devuelve `{ id, name, slug, amountCents }`.
+ */
+export async function seedPlan(opts: {
+  centerSlug: string;
+  name: string;
+  amountCents?: number;
+  validityDays?: number;
+}): Promise<{ id: string; name: string; slug: string; amountCents: number } | null> {
+  const prisma = await getPrisma();
+  if (!prisma) return null;
+  const center = await prisma.center.findUnique({ where: { slug: opts.centerSlug } });
+  if (!center) return null;
+  const slug = opts.name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+  const amountCents = opts.amountCents ?? 29900;
+  const plan = await prisma.plan.upsert({
+    where: { centerId_slug: { centerId: center.id, slug } },
+    update: {},
+    create: {
+      centerId: center.id,
+      name: opts.name,
+      slug,
+      description: "Plan E2E",
+      type: "LIVE",
+      amountCents,
+      currency: "CLP",
+      maxReservations: 4,
+      validityDays: opts.validityDays ?? 30,
+      billingMode: "ONE_TIME",
+    },
+  });
+  return { id: plan.id, name: plan.name, slug: plan.slug, amountCents: plan.amountCents };
+}
+
+/**
+ * Crea un evento PUBLISHED listo para ser reservado/comprado en E2E.
+ * `amountCents=0` → evento gratis. >0 → evento pagado.
+ * Devuelve `{ id, title }`.
+ */
+export async function seedEvent(opts: {
+  centerSlug: string;
+  title: string;
+  amountCents: number;
+  maxCapacity?: number | null;
+}): Promise<{ id: string; title: string } | null> {
+  const prisma = await getPrisma();
+  if (!prisma) return null;
+  const center = await prisma.center.findUnique({ where: { slug: opts.centerSlug } });
+  if (!center) return null;
+  const startsAt = new Date();
+  startsAt.setDate(startsAt.getDate() + 7);
+  startsAt.setHours(10, 0, 0, 0);
+  const endsAt = new Date(startsAt);
+  endsAt.setHours(12, 0, 0, 0);
+  const event = await prisma.event.create({
+    data: {
+      centerId: center.id,
+      title: opts.title,
+      description: "Evento E2E",
+      location: "Sala de pruebas",
+      startsAt,
+      endsAt,
+      amountCents: opts.amountCents,
+      currency: "CLP",
+      maxCapacity: opts.maxCapacity ?? null,
+      status: "PUBLISHED",
+    },
+  });
+  return { id: event.id, title: event.title };
+}
+
+/** Limpia la Order y el plan de test creados por seedPendingTransferOrder. */
+export async function cleanupPendingTransferOrders(externalReferencePrefix: string) {
+  const prisma = await getPrisma();
+  if (!prisma) return;
+  const orders = await prisma.order.findMany({
+    where: { externalReference: { startsWith: externalReferencePrefix } },
+  });
+  for (const o of orders) {
+    await prisma.userPlan.deleteMany({ where: { orderId: o.id } }).catch(() => {});
+    await prisma.manualPayment.deleteMany({ where: { userPlanId: { not: null } } }).catch(() => {});
+    await prisma.order.delete({ where: { id: o.id } }).catch(() => {});
+  }
+}

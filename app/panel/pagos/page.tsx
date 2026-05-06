@@ -181,7 +181,14 @@ export default async function PanelPagosPage({
     parsed.type === "checkout"
       ? [...new Set(orders.map((o) => o.planId))]
       : parsed.type === "transfers"
-        ? [...new Set(transfersList.filter((t) => t.kind === "order").map((t) => t.itemId))]
+        ? [
+            ...new Set(
+              transfersList
+                .filter((t) => t.kind === "order")
+                .map((t) => t.planId)
+                .filter((id): id is string => Boolean(id)),
+            ),
+          ]
         : [];
   const [users, plans] = await Promise.all([
     userRepository.findManyByIds(userIds),

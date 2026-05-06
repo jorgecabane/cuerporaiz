@@ -44,17 +44,27 @@ test.describe("Panel admin - Eventos CRUD", () => {
     await page.getByLabel(/Capacidad/i).fill("20");
 
     await page.getByRole("button", { name: /Crear evento/i }).click();
-    await expect(page).toHaveURL(/\/panel\/eventos/, { timeout: 15000 });
+    // El server action redirige a /panel/eventos/{id} (detalle), no al listado.
+    await expect(page).toHaveURL(/\/panel\/eventos\/[a-z0-9]+/, { timeout: 15000 });
   });
 
   test("admin ve el evento en la lista", async ({ page }) => {
     await page.goto("/panel/eventos");
-    await expect(page.getByText(eventName)).toBeVisible({ timeout: 15000 });
+    // Locator robusto: anclar al link de detalle (rol=link) que envuelve el título.
+    // Eventos seedeados pueden empujar al test event abajo (ordenados por startsAt asc),
+    // así que scrolleamos antes de aseverar visibilidad.
+    const eventLink = page.getByRole("link", { name: new RegExp(eventName, "i") });
+    await expect(eventLink).toBeAttached({ timeout: 15000 });
+    await eventLink.scrollIntoViewIfNeeded();
+    await expect(eventLink).toBeVisible();
   });
 
   test("admin puede ver detalle del evento", async ({ page }) => {
     await page.goto("/panel/eventos");
-    await page.getByText(eventName).click();
+    const eventLink = page.getByRole("link", { name: new RegExp(eventName, "i") });
+    await expect(eventLink).toBeAttached({ timeout: 15000 });
+    await eventLink.scrollIntoViewIfNeeded();
+    await eventLink.click();
     await expect(page.getByRole("heading", { name: new RegExp(eventName, "i") })).toBeVisible({
       timeout: 15000,
     });
@@ -62,7 +72,10 @@ test.describe("Panel admin - Eventos CRUD", () => {
 
   test("cleanup: elimina el evento E2E", async ({ page }) => {
     await page.goto("/panel/eventos");
-    await page.getByText(eventName).click();
+    const eventLink = page.getByRole("link", { name: new RegExp(eventName, "i") });
+    await expect(eventLink).toBeAttached({ timeout: 15000 });
+    await eventLink.scrollIntoViewIfNeeded();
+    await eventLink.click();
     await expect(page.getByRole("heading", { name: new RegExp(eventName, "i") })).toBeVisible({
       timeout: 15000,
     });
@@ -75,6 +88,6 @@ test.describe("Panel admin - Eventos CRUD", () => {
 
     await page.getByRole("button", { name: /Eliminar evento/i }).click();
     await page.getByRole("alertdialog").getByRole("button", { name: /Eliminar/i }).click();
-    await expect(page).toHaveURL(/\/panel\/eventos/, { timeout: 15000 });
+    await expect(page).toHaveURL(/\/panel\/eventos$/, { timeout: 15000 });
   });
 });
