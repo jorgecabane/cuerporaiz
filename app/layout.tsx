@@ -7,6 +7,7 @@ import DynamicTheme from "@/components/shared/DynamicTheme";
 import { FooterServer } from "@/components/shared/FooterServer";
 import { Toaster } from "@/components/ui/Toast";
 import { getPublicNavLinks } from "@/lib/server/public-nav";
+import { getPublicSiteBranding } from "@/lib/server/site-branding";
 import { buildSiteMetadata } from "@/lib/seo/metadata";
 import { isProductionEnv } from "@/lib/seo/urls";
 
@@ -37,7 +38,10 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const navLinks = await getPublicNavLinks();
+  const [navLinks, branding] = await Promise.all([
+    getPublicNavLinks(),
+    getPublicSiteBranding(),
+  ]);
 
   return (
     <html lang="es">
@@ -50,7 +54,12 @@ export default async function RootLayout({
         >
           Saltar al contenido principal
         </a>
-        <LayoutWithPanel footer={<FooterServer />} navLinks={navLinks}>
+        <LayoutWithPanel
+          footer={<FooterServer />}
+          navLinks={navLinks}
+          logoUrl={branding.logoUrl}
+          centerName={branding.centerName}
+        >
           {children}
         </LayoutWithPanel>
         </AuthProvider>

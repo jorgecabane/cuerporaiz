@@ -10,8 +10,7 @@ export function CategoryFilter({ categories, activeSlug }: CategoryFilterProps) 
   return (
     <nav
       aria-label="Filtro de categorías"
-      className="flex items-center gap-2 overflow-x-auto pb-2"
-      style={{ scrollSnapType: "x mandatory" }}
+      className="flex flex-wrap items-center gap-2 pb-1"
     >
       <CategoryChip href="/blog" active={!activeSlug}>
         Todo
@@ -45,7 +44,7 @@ function CategoryChip({
     : "border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-text)]";
 
   return (
-    <Link href={href} className={`${base} ${style}`} style={{ scrollSnapAlign: "start" }}>
+    <Link href={href} className={`${base} ${style}`}>
       {children}
     </Link>
   );

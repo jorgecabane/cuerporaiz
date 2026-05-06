@@ -19,7 +19,7 @@ export function BlogHero({ featured }: BlogHeroProps) {
       </p>
 
       <article className="grid grid-cols-1 overflow-hidden rounded-2xl bg-[var(--color-surface)] shadow-[var(--shadow-sm)] md:grid-cols-2">
-        <Link href={`/blog/${featured.slug}`} className="relative block aspect-[5/4] md:aspect-auto">
+        <Link href={`/blog/${featured.slug}`} className="relative block aspect-[4/3] md:aspect-auto">
           {coverUrl ? (
             <Image
               src={coverUrl}
@@ -32,8 +32,8 @@ export function BlogHero({ featured }: BlogHeroProps) {
           ) : null}
         </Link>
 
-        <div className="flex flex-col justify-center p-[var(--space-8)] md:p-[var(--space-12)]">
-          <div className="flex items-center gap-3 text-xs text-[var(--color-text-muted)]">
+        <div className="flex flex-col justify-center p-[var(--space-6)] sm:p-[var(--space-8)] md:p-[var(--space-12)]">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[var(--color-text-muted)]">
             {featured.category ? (
               <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-[var(--color-secondary)]">
                 {featured.category.name}

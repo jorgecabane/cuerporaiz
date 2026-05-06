@@ -54,15 +54,15 @@ export default async function BlogIndexPage() {
     : posts ?? [];
 
   return (
-    <div className="mx-auto max-w-6xl px-[var(--space-6)] py-[var(--space-16)] md:px-[var(--space-10)]">
-      <header className="mb-[var(--space-12)] md:mb-[var(--space-16)]">
+    <div className="mx-auto max-w-6xl px-[var(--space-4)] py-[var(--space-10)] sm:px-[var(--space-6)] sm:py-[var(--space-12)] md:px-[var(--space-10)] md:py-[var(--space-16)]">
+      <header className="mb-[var(--space-10)] md:mb-[var(--space-16)]">
         <p className="mb-[var(--space-4)] text-[11px] font-medium uppercase tracking-[0.12em] text-[var(--color-secondary)]">
           Blog
         </p>
-        <h1 className="max-w-3xl font-display text-4xl italic leading-[1.04] tracking-tight text-[var(--color-primary)] md:text-6xl lg:text-7xl">
+        <h1 className="max-w-3xl font-display text-3xl italic leading-[1.08] tracking-tight text-[var(--color-primary)] sm:text-4xl md:text-6xl lg:text-7xl">
           {heroTitle}
         </h1>
-        <p className="mt-[var(--space-5)] max-w-xl font-display text-lg text-[var(--color-text-muted)] md:text-xl">
+        <p className="mt-[var(--space-5)] max-w-xl font-display text-base text-[var(--color-text-muted)] sm:text-lg md:text-xl">
           {heroSubtitle}
         </p>
       </header>

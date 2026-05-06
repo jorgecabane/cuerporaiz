@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { SITE_NAME } from "@/lib/constants/copy";
 import { PANEL_NAV_ITEMS, PANEL_ADMIN_ITEMS } from "@/lib/panel-nav";
+import { SiteLogoMark } from "@/components/shared/SiteLogoMark";
 
 const NAV_ICONS = [Home, Calendar, CreditCard, Banknote, Play, Ticket] as const;
 const ADMIN_ICONS = [Clock, Sparkles, UserCheck, CalendarOff, Users, Settings, Plug, LayoutDashboard, Wallet, Globe, Play] as const;
@@ -100,12 +101,15 @@ export function PanelShell({
   isAdmin,
   user,
   centerName,
+  logoUrl = null,
 }: {
   children: React.ReactNode;
   isAdmin: boolean;
   user: { name?: string | null; email: string; imageUrl?: string | null };
   centerName: string;
+  logoUrl?: string | null;
 }) {
+  const hasLogo = Boolean(logoUrl);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [adminOpen, setAdminOpen] = useState(true);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -216,13 +220,33 @@ export function PanelShell({
           >
             <Menu className="h-6 w-6" aria-hidden />
           </button>
+          {/* Marca: en desktop logo+texto a la izquierda; en mobile sólo el texto (el logo va centrado). */}
           <Link
             href="/"
-            className="font-display text-xl font-semibold text-[var(--color-primary)] transition-colors duration-200 hover:text-[var(--color-primary-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:ring-offset-2 focus:ring-offset-[var(--color-surface)] rounded-[var(--radius-md)]"
+            className="flex items-center gap-2 font-display text-xl font-semibold text-[var(--color-primary)] transition-colors duration-200 hover:text-[var(--color-primary-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:ring-offset-2 focus:ring-offset-[var(--color-surface)] rounded-[var(--radius-md)]"
           >
-            {SITE_NAME}
+            {hasLogo && logoUrl && (
+              <SiteLogoMark
+                logoUrl={logoUrl}
+                centerName={centerName}
+                size={26}
+                className="hidden md:block"
+              />
+            )}
+            <span>{SITE_NAME}</span>
           </Link>
         </div>
+
+        {/* Logo centrado sólo en mobile (md:hidden) si hay logo */}
+        {hasLogo && logoUrl && (
+          <Link
+            href="/"
+            aria-label={`Ir al inicio de ${centerName}`}
+            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 md:hidden"
+          >
+            <SiteLogoMark logoUrl={logoUrl} centerName={centerName} size={32} />
+          </Link>
+        )}
 
         <div className="relative flex items-center gap-2" ref={menuRef}>
           <Link
