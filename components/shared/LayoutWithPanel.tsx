@@ -13,10 +13,14 @@ export function LayoutWithPanel({
   children,
   footer,
   navLinks,
+  logoUrl,
+  centerName,
 }: {
   children: React.ReactNode;
   footer?: React.ReactNode;
   navLinks?: NavLink[];
+  logoUrl?: string | null;
+  centerName?: string;
 }) {
   const pathname = usePathname();
   const isPanel = pathname?.startsWith("/panel") || pathname === "/planes";
@@ -30,7 +34,7 @@ export function LayoutWithPanel({
   if (usePublicShell) {
     return (
       <>
-        <Header navLinks={navLinks} />
+        <Header navLinks={navLinks} logoUrl={logoUrl} centerName={centerName} />
         <div className="flex min-h-screen flex-col pt-[var(--header-height)]">
           <main id="main" className="flex-1 flex flex-col">
             {children}
@@ -43,7 +47,7 @@ export function LayoutWithPanel({
 
   return (
     <>
-      <Header navLinks={navLinks} />
+      <Header navLinks={navLinks} logoUrl={logoUrl} centerName={centerName} />
       <main id="main">{children}</main>
       {footer ?? <Footer />}
     </>

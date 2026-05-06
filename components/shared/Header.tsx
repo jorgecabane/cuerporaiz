@@ -6,14 +6,22 @@ import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import { SITE_NAME, NAV_LINKS, CTAS } from "@/lib/constants/copy";
+import { SiteLogoMark } from "./SiteLogoMark";
 
 type HeaderNavLink = { href: string; label: string };
+
+interface HeaderProps {
+  navLinks?: HeaderNavLink[];
+  logoUrl?: string | null;
+  centerName?: string;
+}
 
 /** Rutas que usan cascarón público: header siempre sólido (buen contraste en fondo claro). */
 const PUBLIC_SHELL_PATHS = ["/checkout", "/auth", "/catalogo", "/sobre", "/blog"];
 
-export function Header({ navLinks }: { navLinks?: HeaderNavLink[] } = {}) {
+export function Header({ navLinks, logoUrl = null, centerName = SITE_NAME }: HeaderProps = {}) {
   const links: readonly HeaderNavLink[] = navLinks ?? NAV_LINKS;
+  const hasLogo = Boolean(logoUrl);
   const pathname = usePathname();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
@@ -62,16 +70,35 @@ export function Header({ navLinks }: { navLinks?: HeaderNavLink[] } = {}) {
         }`}
         role="banner"
       >
-        <div className="mx-auto flex h-[var(--header-height)] max-w-6xl items-center justify-between px-[var(--space-4)] md:px-[var(--space-8)]">
-          {/* Logo */}
+        <div className="relative mx-auto flex h-[var(--header-height)] max-w-6xl items-center justify-between px-[var(--space-4)] md:px-[var(--space-8)]">
+          {/* Marca a la izquierda. En desktop muestra logo + nombre; en mobile sólo el nombre (el logo va centrado). */}
           <Link
             href="/"
-            className={`font-display text-xl font-semibold tracking-tight transition-colors duration-[var(--duration-normal)] md:text-2xl ${
+            className={`flex items-center gap-2 font-display text-xl font-semibold tracking-tight transition-colors duration-[var(--duration-normal)] md:text-2xl ${
               solid ? "text-[var(--color-primary)]" : "text-white"
             }`}
           >
-            {SITE_NAME}
+            {hasLogo && logoUrl && (
+              <SiteLogoMark
+                logoUrl={logoUrl}
+                centerName={centerName}
+                size={28}
+                className="hidden lg:block"
+              />
+            )}
+            <span>{centerName}</span>
           </Link>
+
+          {/* Logo centrado sólo en mobile (lg:hidden) cuando hay logoUrl. Absoluto al centro del header. */}
+          {hasLogo && logoUrl && (
+            <Link
+              href="/"
+              aria-label={`Ir al inicio de ${centerName}`}
+              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 lg:hidden"
+            >
+              <SiteLogoMark logoUrl={logoUrl} centerName={centerName} size={32} />
+            </Link>
+          )}
 
           {/* Desktop nav */}
           <nav className="hidden items-center gap-[var(--space-6)] lg:flex" aria-label="Principal">
@@ -152,7 +179,7 @@ export function Header({ navLinks }: { navLinks?: HeaderNavLink[] } = {}) {
                 <Link
                   href="/panel"
                   onClick={() => setIsOpen(false)}
-                  className="rounded-[var(--radius-md)] border-2 border-[var(--color-secondary)] px-[var(--space-8)] py-[var(--space-4)] text-base font-medium text-[var(--color-secondary)] transition-all hover:bg-[var(--color-secondary)] hover:text-white"
+                  className="rounded-[var(--radius-md)] bg-white px-[var(--space-8)] py-[var(--space-4)] text-base font-semibold text-[var(--color-primary)] shadow-[var(--shadow-sm)] transition-colors hover:bg-[var(--color-secondary)] hover:text-white"
                 >
                   {CTAS.comenzarPractica}
                 </Link>
