@@ -30,6 +30,11 @@ function toDomain(r: {
 }
 
 export const eventTicketRepository: IEventTicketRepository = {
+  async findById(id: string) {
+    const r = await prisma.eventTicket.findUnique({ where: { id } });
+    return r ? toDomain(r) : null;
+  },
+
   async findByEventId(eventId: string) {
     const list = await prisma.eventTicket.findMany({
       where: { eventId },

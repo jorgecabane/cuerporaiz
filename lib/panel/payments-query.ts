@@ -1,4 +1,4 @@
-export type PaymentsType = "checkout" | "manual";
+export type PaymentsType = "checkout" | "manual" | "transfers";
 export type PaymentsDatePreset = "today" | "last7" | "thisMonth" | "custom";
 
 export interface PaymentsSearchParamsInput {
@@ -22,7 +22,7 @@ export interface PaymentsSearchParams {
 }
 
 function isPaymentsType(v: string): v is PaymentsType {
-  return v === "checkout" || v === "manual";
+  return v === "checkout" || v === "manual" || v === "transfers";
 }
 
 function isDatePreset(v: string): v is PaymentsDatePreset {

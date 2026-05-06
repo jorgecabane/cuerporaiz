@@ -41,6 +41,11 @@ export function ComprarEventoButton({ eventId, amountCents, currency, isFree }: 
         return;
       }
 
+      // Centro acepta transferencia para eventos → selector inline.
+      if (data.redirectTo) {
+        window.location.href = data.redirectTo;
+        return;
+      }
       if (data.checkoutUrl) {
         window.location.href = data.checkoutUrl;
         return;
@@ -59,7 +64,7 @@ export function ComprarEventoButton({ eventId, amountCents, currency, isFree }: 
   const label = loading
     ? isFree
       ? "Reservando…"
-      : "Redirigiendo a MercadoPago…"
+      : "Procesando…"
     : isFree
       ? "Reservar (gratis)"
       : `Comprar — ${formatPrice(amountCents, currency)}`;

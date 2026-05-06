@@ -5,10 +5,14 @@ import { centerRepository, userPlanRepository, planRepository } from "@/lib/adap
 import { prisma } from "@/lib/adapters/db/prisma";
 import { canShowTrialCta, listMyReservationsPaginated } from "@/lib/application/reserve-class";
 import {
+  getPendingTransfersForUser,
+  getPendingTransfersForCenter,
+} from "@/lib/application/pending-transfers";
+import { PendingTransferBanner } from "@/components/panel/PendingTransferBanner";
+import {
   ArrowRight,
   Banknote,
   Calendar,
-  CalendarDays,
   CreditCard,
   Sparkles,
   Users,
@@ -86,9 +90,12 @@ export default async function PanelPage() {
     isStudentRole(user.role as Role) &&
     (await canShowTrialCta(user.id, centerId));
 
-  const [activePlans, reservationsResult] = await Promise.all([
+  const [activePlans, reservationsResult, pendingTransfers] = await Promise.all([
     userPlanRepository.findActiveByUserAndCenter(user.id, centerId),
     listMyReservationsPaginated(user.id, centerId, { page: 1, pageSize: 100 }),
+    isAdminRole(user.role as Role)
+      ? getPendingTransfersForCenter(centerId)
+      : getPendingTransfersForUser(user.id, centerId),
   ]);
   const firstPlan = activePlans[0];
   const planName = firstPlan
@@ -123,6 +130,12 @@ export default async function PanelPage() {
       </header>
 
       {needsVerification && <EmailVerificationBanner />}
+
+      <PendingTransferBanner
+        count={pendingTransfers.count}
+        oldestClaimedAt={pendingTransfers.oldestClaimedAt}
+        variant={isAdminRole(user.role as Role) ? "admin" : "student"}
+      />
 
       {/* Planes activos / resumen: antes del calendario, con margen superior */}
       <section

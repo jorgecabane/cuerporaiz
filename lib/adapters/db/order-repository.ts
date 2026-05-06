@@ -4,10 +4,13 @@ import type {
   CreateOrderInput,
   OrderStatus,
 } from "@/lib/ports";
-import type { OrderListFilters } from "@/lib/ports/order-repository";
+import type { OrderListFilters, PaymentMethod } from "@/lib/ports/order-repository";
 import type { OrderPageResult } from "@/lib/ports/order-repository";
 import { prisma } from "./prisma";
-import type { OrderStatus as PrismaOrderStatus } from "@prisma/client";
+import type {
+  OrderStatus as PrismaOrderStatus,
+  PaymentMethod as PrismaPaymentMethod,
+} from "@prisma/client";
 
 function toDomain(o: {
   id: string;
@@ -18,9 +21,13 @@ function toDomain(o: {
   amountCents: number;
   currency: string;
   status: PrismaOrderStatus;
+  paymentMethod: PrismaPaymentMethod;
   externalReference: string;
   mpPreferenceId: string | null;
   mpPaymentId: string | null;
+  transferClaimedAt: Date | null;
+  transferReceiptSanityId: string | null;
+  transferRejectedReason: string | null;
   createdAt: Date;
   updatedAt: Date;
 }): Order {
@@ -33,9 +40,13 @@ function toDomain(o: {
     amountCents: o.amountCents,
     currency: o.currency,
     status: o.status as unknown as OrderStatus,
+    paymentMethod: o.paymentMethod as unknown as PaymentMethod,
     externalReference: o.externalReference,
     mpPreferenceId: o.mpPreferenceId,
     mpPaymentId: o.mpPaymentId,
+    transferClaimedAt: o.transferClaimedAt,
+    transferReceiptSanityId: o.transferReceiptSanityId,
+    transferRejectedReason: o.transferRejectedReason,
     createdAt: o.createdAt,
     updatedAt: o.updatedAt,
   };

@@ -15,6 +15,9 @@ const mocks = vi.hoisted(() => ({
   mercadopagoConfigRepository: {
     findByCenterId: vi.fn(),
   },
+  centerRepository: {
+    findById: vi.fn(),
+  },
   mercadoPagoPaymentAdapter: {
     createPreference: vi.fn(),
   },
@@ -24,6 +27,7 @@ vi.mock("@/lib/adapters/db", () => ({
   eventRepository: mocks.eventRepository,
   eventTicketRepository: mocks.eventTicketRepository,
   mercadopagoConfigRepository: mocks.mercadopagoConfigRepository,
+  centerRepository: mocks.centerRepository,
 }));
 
 vi.mock("@/lib/adapters/payment", () => ({
@@ -88,6 +92,12 @@ describe("createEventCheckout", () => {
       accessToken: "TEST_TOKEN",
       enabled: true,
       webhookSecret: "secret",
+    });
+    // Centro sin transferencia para eventos por default → camino MP tradicional.
+    mocks.centerRepository.findById.mockResolvedValue({
+      id: "center-1",
+      bankTransferEnabled: false,
+      bankTransferAcceptEvents: false,
     });
     mocks.mercadoPagoPaymentAdapter.createPreference.mockResolvedValue({
       success: true,

@@ -37,6 +37,10 @@ model Center {
   bankAccountHolder String?
   bankAccountRut    String?
   bankAccountEmail  String?
+  // Toggles secundarios del plugin (qué se puede pagar por transferencia)
+  bankTransferAcceptPlans    Boolean @default(true)
+  bankTransferAcceptEvents   Boolean @default(false)
+  bankTransferRequireReceipt Boolean @default(true)
   // Fragmento opcional que el admin añade al correo de bienvenida del alumno
   welcomeEmailCustomBody String? @default("")
   createdAt DateTime @default(now())
@@ -257,24 +261,28 @@ model UserPlan {
 
 // Pagos manuales: pueden ser de un UserPlan (cuota, transferencia) o sueltos (registro contable)
 model ManualPayment {
-  id          String   @id @default(cuid())
-  centerId    String
-  userId      String
-  userPlanId  String?  // null = pago suelto no vinculado a plan
-  amountCents Int
-  currency    String   @default("CLP")
-  method      String   @default("transfer") // transfer, cash, other
-  note        String?  // ej: "Cuota 1/3 Plan A", "Pago extra mat"
-  paidAt      DateTime @default(now())
-  createdAt   DateTime @default(now())
+  id              String   @id @default(cuid())
+  centerId        String
+  userId          String
+  userPlanId      String?  // null = pago suelto no vinculado a plan
+  eventTicketId   String?  // para transferencias de eventos aprobadas manualmente
+  amountCents     Int
+  currency        String   @default("CLP")
+  method          String   @default("transfer") // transfer, cash, other
+  note            String?  // ej: "Cuota 1/3 Plan A", "Pago extra mat"
+  receiptSanityId String?  // doc id en Sanity con el comprobante (si aplica)
+  paidAt          DateTime @default(now())
+  createdAt       DateTime @default(now())
 
-  center   Center    @relation(fields: [centerId], references: [id], onDelete: Cascade)
-  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userPlan UserPlan? @relation(fields: [userPlanId], references: [id], onDelete: SetNull)
+  center      Center       @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userPlan    UserPlan?    @relation(fields: [userPlanId], references: [id], onDelete: SetNull)
+  eventTicket EventTicket? @relation(fields: [eventTicketId], references: [id], onDelete: SetNull)
 
   @@index([centerId])
   @@index([userId])
   @@index([userPlanId])
+  @@index([eventTicketId])
 }
 
 // Datos bancarios por instructora (depósitos), por centro.
@@ -470,20 +478,30 @@ enum OrderStatus {
   CANCELLED
 }
 
+enum PaymentMethod {
+  MERCADOPAGO
+  TRANSFER
+}
+
 model Order {
-  id                 String      @id @default(cuid())
+  id                 String        @id @default(cuid())
   centerId           String
   userId             String
   planId             String
-  subscriptionId     String?     // si es cuota de suscripción recurrente
+  subscriptionId     String?       // si es cuota de suscripción recurrente
   amountCents        Int
-  currency           String      @default("CLP")
-  status             OrderStatus @default(PENDING)
-  externalReference  String      @unique
+  currency           String        @default("CLP")
+  status             OrderStatus   @default(PENDING)
+  paymentMethod      PaymentMethod @default(MERCADOPAGO)
+  externalReference  String        @unique
   mpPreferenceId     String?
   mpPaymentId        String?
-  createdAt          DateTime    @default(now())
-  updatedAt          DateTime    @updatedAt
+  // Transferencia bancaria (sólo cuando paymentMethod = TRANSFER)
+  transferClaimedAt       DateTime?
+  transferReceiptSanityId String?
+  transferRejectedReason  String?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
 
   center       Center        @relation(fields: [centerId], references: [id], onDelete: Cascade)
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -492,6 +510,7 @@ model Order {
 
   @@index([centerId])
   @@index([centerId, createdAt])
+  @@index([centerId, paymentMethod, status])
   @@index([userId])
   @@index([externalReference])
   @@index([mpPaymentId])
@@ -648,23 +667,30 @@ model Event {
 }
 
 model EventTicket {
-  id          String            @id @default(cuid())
-  eventId     String
-  userId      String
-  amountCents Int
-  currency    String            @default("CLP")
-  status      EventTicketStatus @default(PENDING)
-  mpPaymentId String?
-  orderId     String?
-  paidAt      DateTime?
-  createdAt   DateTime          @default(now())
+  id            String            @id @default(cuid())
+  eventId       String
+  userId        String
+  amountCents   Int
+  currency      String            @default("CLP")
+  status        EventTicketStatus @default(PENDING)
+  paymentMethod PaymentMethod     @default(MERCADOPAGO)
+  mpPaymentId   String?
+  orderId       String?
+  // Transferencia bancaria (sólo cuando paymentMethod = TRANSFER)
+  transferClaimedAt       DateTime?
+  transferReceiptSanityId String?
+  transferRejectedReason  String?
+  paidAt        DateTime?
+  createdAt     DateTime          @default(now())
 
-  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event           Event           @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  manualPayments  ManualPayment[]
 
   @@unique([eventId, userId])
   @@index([eventId])
   @@index([userId])
+  @@index([paymentMethod, status])
 }
 
 // ─── On Demand ────────────────────────────────────────────────────────────────

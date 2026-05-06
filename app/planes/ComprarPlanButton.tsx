@@ -5,11 +5,11 @@ import { Button } from "@/components/ui/Button";
 
 export function ComprarPlanButton({
   planId,
-  planName,
   className = "",
 }: {
   planId: string;
-  planName: string;
+  /** Reservado para tracking/analytics futuros; por ahora no se usa. */
+  planName?: string;
   className?: string;
 }) {
   const [loading, setLoading] = useState(false);
@@ -29,6 +29,12 @@ export function ComprarPlanButton({
         setError(data.message ?? "Error al crear el checkout");
         return;
       }
+      // Centro acepta transferencia → llevamos al selector inline.
+      if (data.redirectTo) {
+        window.location.href = data.redirectTo;
+        return;
+      }
+      // Centro sólo acepta MP → redirección directa al checkout MP.
       if (data.checkoutUrl) {
         window.location.href = data.checkoutUrl;
         return;
@@ -50,7 +56,7 @@ export function ComprarPlanButton({
         onClick={handleClick}
         className="min-h-[44px] w-full sm:w-auto cursor-pointer"
       >
-        {loading ? "Redirigiendo a MercadoPago…" : "Comprar"}
+        {loading ? "Procesando…" : "Comprar"}
       </Button>
       {error && (
         <p className="text-sm text-red-600" role="alert">

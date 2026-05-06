@@ -1,7 +1,7 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { manualPaymentRepository, orderRepository, planRepository, userRepository } from "@/lib/adapters/db";
+import { manualPaymentRepository, orderRepository, planRepository } from "@/lib/adapters/db";
 import { Button } from "@/components/ui/Button";
 import type { OrderStatus } from "@/lib/ports";
 import { ORDER_STATUS_LABELS } from "@/lib/ports";
@@ -109,6 +109,17 @@ export default async function PanelMisPagosPage({
       <p className="text-[var(--color-text-muted)] mb-6">
         Tus compras por checkout y pagos manuales registrados en el centro.
       </p>
+
+      {raw.recien && (
+        <div className="mb-5 rounded-[var(--radius-md)] border border-[var(--color-success)] bg-[#F0FDF4] p-4">
+          <p className="text-sm font-medium text-[var(--color-success-hover)]">
+            ✓ Tu transferencia fue registrada
+          </p>
+          <p className="mt-1 text-xs text-[var(--color-text-muted)]">
+            Te avisaremos por mail apenas el centro la apruebe.
+          </p>
+        </div>
+      )}
 
       <div className="mb-5 space-y-3">
         <div className="flex flex-wrap gap-2">
@@ -241,8 +252,23 @@ export default async function PanelMisPagosPage({
               </tr>
             </thead>
             <tbody>
-              {orders.map((order) => (
-                <tr key={order.id} className="border-b border-[var(--color-border)] last:border-0">
+              {orders.map((order) => {
+                const isTransferPending =
+                  order.status === "PENDING" &&
+                  order.paymentMethod === "TRANSFER" &&
+                  order.transferClaimedAt != null;
+                const isTransferRejected =
+                  order.status === "CANCELLED" &&
+                  order.paymentMethod === "TRANSFER" &&
+                  order.transferRejectedReason != null;
+                const highlight = raw.recien === order.id;
+                return (
+                <tr
+                  key={order.id}
+                  className={`border-b border-[var(--color-border)] last:border-0 ${
+                    highlight ? "bg-[#F0FDF4] ring-2 ring-[var(--color-success)]" : ""
+                  }`}
+                >
                   <td className="p-3 text-[var(--color-text-muted)]">
                     {order.createdAt.toLocaleString("es-CL")}
                   </td>
@@ -253,13 +279,32 @@ export default async function PanelMisPagosPage({
                     {formatPrice(order.amountCents, order.currency)}
                   </td>
                   <td className="p-3">
-                    {ORDER_STATUS_LABELS[order.status]}
+                    {isTransferPending ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-[#FEF3C7] px-2 py-0.5 text-xs font-medium text-[#78350F]">
+                        ⏳ Esperando confirmación
+                      </span>
+                    ) : isTransferRejected ? (
+                      <span
+                        className="inline-flex items-center gap-1 rounded-full bg-[var(--color-error-bg)] px-2 py-0.5 text-xs font-medium text-[var(--color-error-text)]"
+                        title={order.transferRejectedReason ?? undefined}
+                      >
+                        ✕ Rechazado
+                      </span>
+                    ) : (
+                      ORDER_STATUS_LABELS[order.status]
+                    )}
+                    {isTransferRejected && order.transferRejectedReason && (
+                      <p className="mt-1 max-w-[260px] text-xs text-[var(--color-text-muted)]">
+                        Motivo: {order.transferRejectedReason}
+                      </p>
+                    )}
                   </td>
                   <td className="p-3 font-mono text-xs">
                     {order.externalReference}
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>

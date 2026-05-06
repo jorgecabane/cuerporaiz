@@ -3,6 +3,7 @@ import type { SchemaTypeDefinition } from "sanity";
 import { post } from "./documents/post";
 import { author } from "./documents/author";
 import { category } from "./documents/category";
+import { paymentReceipt } from "./documents/payment-receipt";
 
 import { seo } from "./objects/seo";
 import { imageBlock } from "./objects/blocks/image-block";
@@ -26,6 +27,7 @@ export const schemaTypes: SchemaTypeDefinition[] = [
   post,
   author,
   category,
+  paymentReceipt,
 
   // objects
   seo,

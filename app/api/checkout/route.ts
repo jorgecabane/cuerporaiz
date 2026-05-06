@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { createCheckoutUseCase } from "@/lib/application/checkout";
+import { createCheckoutUseCase, createPendingOrderForPlan } from "@/lib/application/checkout";
 import { createCheckoutBodySchema } from "@/lib/dto/checkout-dto";
 import { centerRepository } from "@/lib/adapters/db";
 
@@ -51,6 +51,28 @@ export async function POST(request: Request) {
     }
 
     const baseUrl = getBaseUrl(request);
+
+    // Si el centro acepta transferencia para planes, creamos sólo la Order y
+    // mandamos al selector inline. La preferencia MP se crea cuando la alumna
+    // elige "Continuar a MercadoPago".
+    const transferAllowed = center.bankTransferEnabled && center.bankTransferAcceptPlans;
+    if (transferAllowed) {
+      const orderRes = await createPendingOrderForPlan({
+        centerId: center.id,
+        userId: session.user.id,
+        planId,
+      });
+      if (!orderRes.success) {
+        return NextResponse.json(
+          { code: "CHECKOUT_ERROR", message: orderRes.error },
+          { status: 404 }
+        );
+      }
+      return NextResponse.json({
+        orderId: orderRes.orderId,
+        redirectTo: `/checkout/${orderRes.orderId}`,
+      });
+    }
 
     const nameParts = (session.user.name ?? "").trim().split(/\s+/);
     const payerFirstName = nameParts[0] ?? undefined;
