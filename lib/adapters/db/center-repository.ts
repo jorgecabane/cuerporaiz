@@ -23,6 +23,9 @@ function toDomainCenter(c: {
   bankAccountHolder: string | null;
   bankAccountRut: string | null;
   bankAccountEmail: string | null;
+  bankTransferAcceptPlans: boolean;
+  bankTransferAcceptEvents: boolean;
+  bankTransferRequireReceipt: boolean;
   welcomeEmailCustomBody: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -49,6 +52,9 @@ function toDomainCenter(c: {
     bankAccountHolder: c.bankAccountHolder,
     bankAccountRut: c.bankAccountRut,
     bankAccountEmail: c.bankAccountEmail,
+    bankTransferAcceptPlans: c.bankTransferAcceptPlans,
+    bankTransferAcceptEvents: c.bankTransferAcceptEvents,
+    bankTransferRequireReceipt: c.bankTransferRequireReceipt,
     welcomeEmailCustomBody: c.welcomeEmailCustomBody ?? "",
     createdAt: c.createdAt,
     updatedAt: c.updatedAt,

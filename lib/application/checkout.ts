@@ -59,15 +59,42 @@ export interface CreateCheckoutResult {
 export async function createCheckoutUseCase(
   input: CreateCheckoutInput
 ): Promise<CreateCheckoutResult> {
-  const center = await centerRepository.findById(input.centerId);
-  if (!center) {
-    return { success: false, error: "Centro no encontrado" };
-  }
+  const orderRes = await createPendingOrderForPlan({
+    centerId: input.centerId,
+    userId: input.userId,
+    planId: input.planId,
+  });
+  if (!orderRes.success) return { success: false, error: orderRes.error };
 
-  const config = await mercadopagoConfigRepository.findByCenterId(center.id);
-  if (!config || !config.enabled) {
-    return { success: false, error: "MercadoPago no está configurado para este centro" };
-  }
+  return await createMpPreferenceForOrder({
+    orderId: orderRes.orderId,
+    baseUrl: input.baseUrl,
+    payerEmail: input.payerEmail,
+    payerFirstName: input.payerFirstName,
+    payerLastName: input.payerLastName,
+  });
+}
+
+export interface CreatePendingOrderInput {
+  centerId: string;
+  userId: string;
+  planId: string;
+}
+
+export type CreatePendingOrderResult =
+  | { success: true; orderId: string }
+  | { success: false; error: string };
+
+/**
+ * Crea una Order en PENDING sin método de pago decidido todavía.
+ * Usado cuando el centro permite transferencia: la alumna eligirá MP o transferencia
+ * en `/panel/checkout/[orderId]`.
+ */
+export async function createPendingOrderForPlan(
+  input: CreatePendingOrderInput,
+): Promise<CreatePendingOrderResult> {
+  const center = await centerRepository.findById(input.centerId);
+  if (!center) return { success: false, error: "Centro no encontrado" };
 
   const plan = await planRepository.findById(input.planId);
   if (!plan || plan.centerId !== center.id) {
@@ -84,15 +111,53 @@ export async function createCheckoutUseCase(
     externalReference: externalRef,
   });
 
+  return { success: true, orderId: order.id };
+}
+
+export interface CreateMpPreferenceInput {
+  orderId: string;
+  baseUrl: string;
+  payerEmail?: string;
+  payerFirstName?: string;
+  payerLastName?: string;
+}
+
+/**
+ * Crea (o reutiliza) la preferencia de MercadoPago para una Order PENDING existente
+ * y devuelve la URL del checkout. Si la Order ya tiene `mpPreferenceId`, intenta
+ * reutilizarlo (la URL de MP es estable mientras la preferencia exista).
+ */
+export async function createMpPreferenceForOrder(
+  input: CreateMpPreferenceInput,
+): Promise<CreateCheckoutResult> {
+  const order = await orderRepository.findById(input.orderId);
+  if (!order) return { success: false, error: "Orden no encontrada" };
+  if (order.status !== "PENDING") {
+    return { success: false, error: "Esta orden ya no admite pago" };
+  }
+  if (order.transferClaimedAt) {
+    return { success: false, error: "Esta orden ya está pendiente por transferencia" };
+  }
+
+  const center = await centerRepository.findById(order.centerId);
+  if (!center) return { success: false, error: "Centro no encontrado" };
+
+  const config = await mercadopagoConfigRepository.findByCenterId(center.id);
+  if (!config || !config.enabled) {
+    return { success: false, error: "MercadoPago no está configurado para este centro" };
+  }
+
+  const plan = await planRepository.findById(order.planId);
+  if (!plan) return { success: false, error: "Plan no encontrado" };
+
   const base = input.baseUrl.replace(/\/$/, "");
-  // MercadoPago valida `auto_return=approved` solo si `back_urls.success` es una URL válida (y en la práctica
-  // suele rechazar `http://localhost...`). En dev/local evitamos auto_return para no bloquear el checkout.
   const isHttps = base.startsWith("https://");
   const autoReturn = isHttps ? ("approved" as const) : undefined;
   const statementDescriptor = (center.name ?? "CUERPORAIZ")
     .replace(/[^a-zA-Z0-9]/g, "")
     .toUpperCase()
     .slice(0, 22) || "CUERPORAIZ";
+
   const result = await paymentProvider.createPreference({
     accessToken: config.accessToken,
     title: plan.name,

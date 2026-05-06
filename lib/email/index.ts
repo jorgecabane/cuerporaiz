@@ -14,6 +14,8 @@ export {
   buildPlanExpiringEmail,
   buildPurchaseConfirmationEmail,
   buildClassCancelledEmail,
+  buildTransferReceivedEmail,
+  buildTransferRejectedEmail,
   type ReservationConfirmationData,
   type ClassReminderData,
   type SpotFreedData,
@@ -23,4 +25,6 @@ export {
   type PlanExpiringData,
   type PurchaseConfirmationData,
   type ClassCancelledData,
+  type TransferReceivedData,
+  type TransferRejectedData,
 } from "./transactional";

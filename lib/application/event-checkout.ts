@@ -6,6 +6,7 @@ import {
   eventRepository,
   eventTicketRepository,
   mercadopagoConfigRepository,
+  centerRepository,
 } from "@/lib/adapters/db";
 import { mercadoPagoPaymentAdapter } from "@/lib/adapters/payment";
 import type { EventTicket } from "@/lib/domain/event";
@@ -20,7 +21,7 @@ export type EventCheckoutErrorCode =
   | "MP_PREFERENCE_FAILED";
 
 export type EventCheckoutResult =
-  | { success: true; ticket: EventTicket; checkoutUrl?: string }
+  | { success: true; ticket: EventTicket; checkoutUrl?: string; redirectTo?: string }
   | { success: false; code: EventCheckoutErrorCode; message: string };
 
 export interface CreateEventCheckoutInput {
@@ -77,7 +78,28 @@ export async function createEventCheckout(
     return { success: true, ticket: paid ?? ticket };
   }
 
-  // Evento de pago: crear ticket PENDING + preferencia MP
+  // Evento de pago: si el centro permite transferencia, devolvemos sólo el
+  // ticket PENDING y el cliente redirige al selector inline. La preferencia
+  // MP se crea cuando la alumna elige "Continuar a MercadoPago".
+  const center = await centerRepository.findById(input.centerId);
+  const transferAllowed =
+    !!center && center.bankTransferEnabled && center.bankTransferAcceptEvents;
+
+  if (transferAllowed) {
+    const ticket = await eventTicketRepository.create({
+      eventId: event.id,
+      userId: input.userId,
+      amountCents: event.amountCents,
+      currency: event.currency,
+    });
+    return {
+      success: true,
+      ticket,
+      redirectTo: `/checkout-evento/${ticket.id}`,
+    };
+  }
+
+  // Camino tradicional: crear ticket + preferencia MP en un sólo paso.
   const mpConfig = await mercadopagoConfigRepository.findByCenterId(input.centerId);
   if (!mpConfig || !mpConfig.enabled) {
     return { success: false, code: "MP_NOT_CONFIGURED", message: "MercadoPago no está configurado para este centro" };
@@ -121,4 +143,86 @@ export async function createEventCheckout(
   }
 
   return { success: true, ticket, checkoutUrl: result.checkoutUrl };
+}
+
+/**
+ * Crea (o reusa) la preferencia MP para un EventTicket PENDING existente.
+ * Usado desde el selector inline cuando la alumna elige tarjeta.
+ */
+export interface CreateMpPreferenceForTicketInput {
+  ticketId: string;
+  userId: string;
+  baseUrl: string;
+  payerEmail?: string;
+  payerFirstName?: string;
+  payerLastName?: string;
+}
+
+export type CreateMpPreferenceForTicketResult =
+  | { success: true; checkoutUrl: string }
+  | { success: false; code: EventCheckoutErrorCode | "TICKET_NOT_FOUND" | "TICKET_NOT_OWNED"; message: string };
+
+export async function createMpPreferenceForTicket(
+  input: CreateMpPreferenceForTicketInput,
+): Promise<CreateMpPreferenceForTicketResult> {
+  const ticket = await eventTicketRepository.findById(input.ticketId);
+  if (!ticket) {
+    return { success: false, code: "TICKET_NOT_FOUND", message: "Ticket no encontrado" };
+  }
+  if (ticket.userId !== input.userId) {
+    return { success: false, code: "TICKET_NOT_OWNED", message: "Este ticket no es tuyo" };
+  }
+  if (ticket.status !== "PENDING") {
+    return { success: false, code: "ALREADY_PURCHASED", message: "Este ticket ya no admite pago" };
+  }
+
+  const event = await eventRepository.findById(ticket.eventId);
+  if (!event) {
+    return { success: false, code: "EVENT_NOT_FOUND", message: "Evento no encontrado" };
+  }
+
+  const mpConfig = await mercadopagoConfigRepository.findByCenterId(event.centerId);
+  if (!mpConfig || !mpConfig.enabled) {
+    return {
+      success: false,
+      code: "MP_NOT_CONFIGURED",
+      message: "MercadoPago no está configurado para este centro",
+    };
+  }
+
+  const externalRef = `evt_${crypto.randomUUID()}`;
+  const base = input.baseUrl.replace(/\/$/, "");
+  const isHttps = base.startsWith("https://");
+  const autoReturn = isHttps ? ("approved" as const) : undefined;
+
+  const result = await mercadoPagoPaymentAdapter.createPreference({
+    accessToken: mpConfig.accessToken,
+    title: event.title,
+    quantity: 1,
+    unitPrice: event.amountCents,
+    externalReference: externalRef,
+    backUrls: {
+      success: `${base}/api/events/checkout/success?centerId=${event.centerId}&ticketId=${ticket.id}`,
+      failure: `${base}/api/events/checkout/failure?centerId=${event.centerId}&ticketId=${ticket.id}`,
+      pending: `${base}/api/events/checkout/pending?centerId=${event.centerId}&ticketId=${ticket.id}`,
+    },
+    notificationUrl: `${base}/api/webhooks/mercadopago/${event.centerId}`,
+    autoReturn,
+    payerEmail: input.payerEmail,
+    payerFirstName: input.payerFirstName,
+    payerLastName: input.payerLastName,
+    itemId: event.id,
+    itemDescription: event.description ?? undefined,
+    itemCategoryId: "tickets",
+  });
+
+  if (!result.success || !result.checkoutUrl) {
+    return {
+      success: false,
+      code: "MP_PREFERENCE_FAILED",
+      message: result.error ?? "Error al crear preferencia de pago",
+    };
+  }
+
+  return { success: true, checkoutUrl: result.checkoutUrl };
 }

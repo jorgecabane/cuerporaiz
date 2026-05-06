@@ -3,8 +3,9 @@ import { Button } from "@/components/ui/Button";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { planRepository, userPlanRepository } from "@/lib/adapters/db";
+import { prisma } from "@/lib/adapters/db/prisma";
 import { MisPlansTabs } from "@/app/planes/MisPlansTabs";
-import type { MisPlanItem } from "@/app/planes/MisPlansTabs";
+import type { MisPlanItem, PendingTransferItem } from "@/app/planes/MisPlansTabs";
 import { TiendaPlans } from "./TiendaPlans";
 import type { SerializedPlan } from "./TiendaPlans";
 
@@ -16,10 +17,49 @@ export default async function TiendaPage() {
   const centerId = session.user.centerId;
   const userId = session.user.id;
 
-  const [plans, userPlans] = await Promise.all([
+  const [plans, userPlans, pendingOrders, pendingTickets] = await Promise.all([
     planRepository.findManyByCenterId(centerId),
     userPlanRepository.findByUserAndCenter(userId, centerId),
+    prisma.order.findMany({
+      where: {
+        userId,
+        centerId,
+        status: "PENDING",
+        paymentMethod: "TRANSFER",
+        transferClaimedAt: { not: null },
+      },
+      include: { plan: { select: { name: true } } },
+      orderBy: { transferClaimedAt: "desc" },
+    }),
+    prisma.eventTicket.findMany({
+      where: {
+        userId,
+        status: "PENDING",
+        paymentMethod: "TRANSFER",
+        transferClaimedAt: { not: null },
+        event: { centerId },
+      },
+      include: { event: { select: { title: true } } },
+      orderBy: { transferClaimedAt: "desc" },
+    }),
   ]);
+
+  const pendingTransfers: PendingTransferItem[] = [
+    ...pendingOrders.map((o) => ({
+      id: o.id,
+      kind: "plan" as const,
+      itemName: o.plan?.name ?? "Plan",
+      amountCents: o.amountCents,
+      claimedAt: o.transferClaimedAt!.toISOString(),
+    })),
+    ...pendingTickets.map((t) => ({
+      id: `ticket-${t.id}`,
+      kind: "event" as const,
+      itemName: t.event?.title ?? "Evento",
+      amountCents: t.amountCents,
+      claimedAt: t.transferClaimedAt!.toISOString(),
+    })),
+  ].sort((a, b) => b.claimedAt.localeCompare(a.claimedAt));
 
   const planMap = new Map(plans.map((p) => [p.id, p]));
   const missingPlanIds = [...new Set(userPlans.map((up) => up.planId))].filter(
@@ -69,7 +109,7 @@ export default async function TiendaPage() {
       </p>
 
       <div className="mb-12">
-        <MisPlansTabs items={misPlansItems} />
+        <MisPlansTabs items={misPlansItems} pendingTransfers={pendingTransfers} />
       </div>
 
       <section aria-labelledby="planes-disponibles-heading">

@@ -28,6 +28,10 @@ export interface Center {
   bankAccountHolder: string | null;
   bankAccountRut: string | null;
   bankAccountEmail: string | null;
+  /** Toggles secundarios del plugin de transferencia bancaria */
+  bankTransferAcceptPlans: boolean;
+  bankTransferAcceptEvents: boolean;
+  bankTransferRequireReceipt: boolean;
   /** Fragmento libre del admin que se añade al correo de bienvenida del alumno */
   welcomeEmailCustomBody: string;
   createdAt: Date;

@@ -17,6 +17,8 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   CANCELLED: "Cancelado",
 };
 
+export type PaymentMethod = "MERCADOPAGO" | "TRANSFER";
+
 export interface Order {
   id: string;
   centerId: string;
@@ -27,9 +29,16 @@ export interface Order {
   amountCents: number;
   currency: string;
   status: OrderStatus;
+  paymentMethod: PaymentMethod;
   externalReference: string;
   mpPreferenceId: string | null;
   mpPaymentId: string | null;
+  /** Cuando la alumna marcó "Ya transferí" (sólo paymentMethod=TRANSFER) */
+  transferClaimedAt: Date | null;
+  /** Documento Sanity con el comprobante (sólo paymentMethod=TRANSFER, si fue subido) */
+  transferReceiptSanityId: string | null;
+  /** Motivo escrito por el admin al rechazar la transferencia */
+  transferRejectedReason: string | null;
   createdAt: Date;
   updatedAt: Date;
 }

@@ -398,6 +398,80 @@ export function buildPurchaseConfirmationEmail(data: PurchaseConfirmationData): 
   return { from: DEFAULT_FROM, to: [data.toEmail], subject: `Compra confirmada: ${data.planName}`, html, text };
 }
 
+// ─── Transferencia bancaria ─────────────────────────────────────────────────
+
+export interface TransferReceivedData {
+  toEmail: string;
+  userName: string;
+  centerName: string;
+  /** Nombre del plan o evento */
+  itemName: string;
+  amountFormatted: string;
+  misPagosUrl: string;
+}
+
+export function buildTransferReceivedEmail(data: TransferReceivedData): SendEmailDto {
+  const body = `
+    <p>Hola ${data.userName},</p>
+    <p>Recibimos tu transferencia. Está a la espera de que ${data.centerName} la confirme.</p>
+    <p><strong>${data.itemName}</strong><br>
+    Monto: ${data.amountFormatted}</p>
+    <p>Te avisaremos por mail apenas esté aprobada.</p>
+    <p><a href="${data.misPagosUrl}" style="${EMAIL_CTA_STYLE}">Ver mis pagos</a></p>`;
+  const html = emailBaseLayout({ body, centerName: data.centerName });
+  const text = [
+    `Hola ${data.userName},`,
+    `Recibimos tu transferencia para ${data.itemName} (${data.amountFormatted}).`,
+    `Está pendiente de confirmación por parte de ${data.centerName}. Te avisaremos por mail cuando esté aprobada.`,
+    `Ver mis pagos: ${data.misPagosUrl}`,
+  ].join("\n");
+  return {
+    from: DEFAULT_FROM,
+    to: [data.toEmail],
+    subject: `Recibimos tu transferencia — ${data.itemName}`,
+    html,
+    text,
+  };
+}
+
+export interface TransferRejectedData {
+  toEmail: string;
+  userName: string;
+  centerName: string;
+  itemName: string;
+  amountFormatted: string;
+  /** Motivo escrito por el admin (lo mostramos literal entre comillas) */
+  reason: string;
+  /** Email de soporte / del centro para coordinar */
+  contactEmail: string;
+  tiendaUrl: string;
+}
+
+export function buildTransferRejectedEmail(data: TransferRejectedData): SendEmailDto {
+  const safeReason = data.reason.replace(/[<>]/g, "");
+  const body = `
+    <p>Hola ${data.userName},</p>
+    <p>${data.centerName} rechazó tu transferencia para <strong>${data.itemName}</strong> (${data.amountFormatted}).</p>
+    <p><strong>Motivo:</strong> "${safeReason}"</p>
+    <p>Si fue un error, comunicate directamente con el centro: <a href="mailto:${data.contactEmail}">${data.contactEmail}</a>. También puedes intentar comprar de nuevo:</p>
+    <p><a href="${data.tiendaUrl}" style="${EMAIL_CTA_STYLE}">Volver a la tienda</a></p>`;
+  const html = emailBaseLayout({ body, centerName: data.centerName });
+  const text = [
+    `Hola ${data.userName},`,
+    `${data.centerName} rechazó tu transferencia para ${data.itemName} (${data.amountFormatted}).`,
+    `Motivo: "${safeReason}"`,
+    `Contacto: ${data.contactEmail}`,
+    `Volver a la tienda: ${data.tiendaUrl}`,
+  ].join("\n");
+  return {
+    from: DEFAULT_FROM,
+    to: [data.toEmail],
+    subject: `Transferencia rechazada — ${data.itemName}`,
+    html,
+    text,
+  };
+}
+
 // ─── Subscription emails ─────────────────────────────────────────────────────
 
 export interface SubscriptionConfirmedData {

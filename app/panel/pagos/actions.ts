@@ -6,6 +6,10 @@ import { orderRepository } from "@/lib/adapters/db";
 import { prisma } from "@/lib/adapters/db/prisma";
 import { isAdminRole } from "@/lib/domain";
 import { activatePlanForOrder } from "@/lib/application/activate-plan";
+import {
+  rejectTransferOrder,
+  rejectTransferEventTicket,
+} from "@/lib/application/reject-transfer-order";
 
 async function requireAdminCenterId(): Promise<string> {
   const session = await auth();
@@ -44,8 +48,97 @@ export async function approveOrderManually(formData: FormData): Promise<void> {
         currency: order.currency,
         method,
         note,
+        receiptSanityId: order.transferReceiptSanityId ?? null,
       },
     });
   }
+  redirect("/panel/pagos");
+}
+
+/**
+ * Aprueba un EventTicket pagado por transferencia: lo marca como PAID,
+ * registra el ManualPayment con el comprobante (si lo hay) y libera la
+ * confirmación al estudiante (mail estándar de "purchase confirmed" se
+ * dispara desde un punto separado del sistema; para tickets, por ahora
+ * sólo confirmamos el cupo).
+ */
+export async function approveEventTicketManually(formData: FormData): Promise<void> {
+  const ticketId = formData.get("ticketId");
+  if (typeof ticketId !== "string" || !ticketId.trim()) redirect("/panel/pagos");
+  const noteRaw = formData.get("note");
+  const note = typeof noteRaw === "string" && noteRaw.trim() ? noteRaw.trim() : null;
+
+  const centerId = await requireAdminCenterId();
+  const ticket = await prisma.eventTicket.findUnique({
+    where: { id: ticketId.trim() },
+    include: { event: { select: { centerId: true, maxCapacity: true } } },
+  });
+  if (!ticket || ticket.event.centerId !== centerId || ticket.status !== "PENDING") {
+    redirect("/panel/pagos");
+  }
+
+  // Re-chequear cupo por si se llenó mientras esta transferencia esperaba
+  if (ticket.event.maxCapacity !== null) {
+    const occupying = await prisma.eventTicket.count({
+      where: {
+        eventId: ticket.eventId,
+        OR: [
+          { status: "PAID" },
+          { status: "PENDING", transferClaimedAt: { not: null } },
+        ],
+        NOT: { id: ticket.id },
+      },
+    });
+    if (occupying >= ticket.event.maxCapacity) {
+      redirect("/panel/pagos?error=event-full");
+    }
+  }
+
+  await prisma.eventTicket.update({
+    where: { id: ticket.id },
+    data: { status: "PAID", paidAt: new Date() },
+  });
+
+  await prisma.manualPayment.create({
+    data: {
+      centerId,
+      userId: ticket.userId,
+      eventTicketId: ticket.id,
+      amountCents: ticket.amountCents,
+      currency: ticket.currency,
+      method: "transfer",
+      note,
+      receiptSanityId: ticket.transferReceiptSanityId ?? null,
+    },
+  });
+
+  redirect("/panel/pagos");
+}
+
+export async function rejectTransferOrderAction(formData: FormData): Promise<void> {
+  const orderId = formData.get("orderId");
+  const reason = formData.get("reason");
+  if (typeof orderId !== "string" || !orderId.trim()) redirect("/panel/pagos");
+  if (typeof reason !== "string") redirect("/panel/pagos");
+  const centerId = await requireAdminCenterId();
+  await rejectTransferOrder({
+    orderId: orderId.trim(),
+    reason,
+    adminCenterId: centerId,
+  });
+  redirect("/panel/pagos");
+}
+
+export async function rejectTransferEventTicketAction(formData: FormData): Promise<void> {
+  const ticketId = formData.get("ticketId");
+  const reason = formData.get("reason");
+  if (typeof ticketId !== "string" || !ticketId.trim()) redirect("/panel/pagos");
+  if (typeof reason !== "string") redirect("/panel/pagos");
+  const centerId = await requireAdminCenterId();
+  await rejectTransferEventTicket({
+    ticketId: ticketId.trim(),
+    reason,
+    adminCenterId: centerId,
+  });
   redirect("/panel/pagos");
 }

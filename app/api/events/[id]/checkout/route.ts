@@ -60,6 +60,9 @@ export async function POST(
       return NextResponse.json({ code: result.code, message: result.message }, { status });
     }
 
+    if (result.redirectTo) {
+      return NextResponse.json({ ticket: result.ticket, redirectTo: result.redirectTo });
+    }
     if (result.checkoutUrl) {
       return NextResponse.json({ checkoutUrl: result.checkoutUrl });
     }

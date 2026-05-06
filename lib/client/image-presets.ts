@@ -10,6 +10,7 @@ export type ImageKind =
   | "section-item"
   | "logo"
   | "favicon"
+  | "transferReceipt"
   | "default";
 
 export type ImagePreset = {
@@ -31,5 +32,7 @@ export const IMAGE_PRESETS: Record<ImageKind, ImagePreset> = {
   "section-item": { maxDimension: 1400, targetSizeMB: 1.5, output: "webp", initialQuality: 0.9 },
   logo: { maxDimension: 1024, targetSizeMB: 0.8, output: "preserve", initialQuality: 0.95 },
   favicon: { maxDimension: 512, targetSizeMB: 0.2, output: "preserve", initialQuality: 0.95 },
+  // Comprobante de transferencia: necesita resolución suficiente para leer montos / referencias bancarias.
+  transferReceipt: { maxDimension: 1600, targetSizeMB: 1, output: "webp", initialQuality: 0.82 },
   default: { maxDimension: 1800, targetSizeMB: 2, output: "webp", initialQuality: 0.9 },
 };

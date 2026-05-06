@@ -1,6 +1,7 @@
 import type { EventTicket, EventTicketStatus } from "@/lib/domain/event";
 
 export interface IEventTicketRepository {
+  findById(id: string): Promise<EventTicket | null>;
   findByEventId(eventId: string): Promise<EventTicket[]>;
   findByUserId(userId: string): Promise<EventTicket[]>;
   findByEventAndUser(eventId: string, userId: string): Promise<EventTicket | null>;

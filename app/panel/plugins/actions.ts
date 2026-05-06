@@ -72,6 +72,34 @@ export async function toggleBankTransfer(centerId: string, enabled: boolean): Pr
   revalidatePath("/panel/plugins");
 }
 
+export interface BankTransferOptionsInput {
+  centerId: string;
+  acceptPlans: boolean;
+  acceptEvents: boolean;
+  requireReceipt: boolean;
+}
+
+export async function saveBankTransferOptions(data: BankTransferOptionsInput): Promise<{ error?: string }> {
+  const session = await auth();
+  if (!session?.user || !isAdminRole(session.user.role)) {
+    redirect("/auth/login");
+  }
+  if (session.user.centerId !== data.centerId) {
+    redirect("/panel");
+  }
+  await prisma.center.update({
+    where: { id: data.centerId },
+    data: {
+      bankTransferAcceptPlans: data.acceptPlans,
+      bankTransferAcceptEvents: data.acceptEvents,
+      bankTransferRequireReceipt: data.requireReceipt,
+    },
+  });
+  revalidatePath("/panel/plugins");
+  revalidatePath("/panel/plugins/transferencia");
+  return {};
+}
+
 export interface BankDataInput {
   centerId: string;
   bankName: string | null;
