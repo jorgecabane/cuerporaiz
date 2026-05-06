@@ -9,7 +9,8 @@ import {
   planCategoryQuotaRepository,
 } from "@/lib/adapters/db";
 import { getCategoryQuotaUsage } from "@/lib/application/get-category-quota-usage";
-import { ReplayShell } from "@/components/panel/replay/ReplayShell";
+import { BibliotecaShell } from "@/components/biblioteca/BibliotecaShell";
+import type { CategoryData } from "@/components/biblioteca/types";
 import Link from "next/link";
 import { Suspense } from "react";
 
@@ -36,7 +37,9 @@ export default async function ReplayPage() {
   if (!onDemandUserPlan) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-12">
-        <h1 className="text-xl sm:text-2xl font-bold text-[var(--color-text)] mb-2">Biblioteca virtual</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-[var(--color-text)] mb-2">
+          Biblioteca virtual
+        </h1>
         <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] p-8 text-center">
           <p className="text-[var(--color-text-muted)] mb-4">
             No tienes un plan activo. Adquiere uno para acceder a las clases grabadas.
@@ -56,14 +59,16 @@ export default async function ReplayPage() {
   const unlimited = matchedPlan?.type === "MEMBERSHIP_ON_DEMAND";
 
   const videoUrlMap = new Map<string, string>();
-  const categoriesWithContent = categoriesTree.map((cat) => ({
+  const categoriesWithContent: CategoryData[] = categoriesTree.map((cat) => ({
     id: cat.id,
     name: cat.name,
     description: cat.description ?? null,
+    thumbnailUrl: cat.thumbnailUrl ?? null,
     practices: cat.practices.map((practice) => ({
       id: practice.id,
       name: practice.name,
       description: practice.description,
+      thumbnailUrl: practice.thumbnailUrl ?? null,
       categoryId: cat.id,
       lessons: practice.lessons.map((l) => {
         videoUrlMap.set(l.id, l.videoUrl);
@@ -98,7 +103,7 @@ export default async function ReplayPage() {
 
   const unlockedLessonIds = unlocks.map((u) => u.lessonId);
 
-  // Inject videoUrl for unlocked lessons from the map (no re-fetch needed)
+  // Inyecta videoUrl solo para lecciones canjeadas (no se reenvían los demás videoUrls al cliente).
   for (const cat of categoriesWithContent) {
     for (const practice of cat.practices) {
       for (const lesson of practice.lessons) {
@@ -112,11 +117,18 @@ export default async function ReplayPage() {
   return (
     <div className="px-4 py-6 sm:py-12">
       <Suspense fallback={null}>
-        <ReplayShell
+        <BibliotecaShell
           categories={categoriesWithContent}
-          unlockedLessonIds={unlockedLessonIds}
-          quotaUsage={quotaUsage}
-          unlimited={unlimited}
+          mode={{
+            kind: "authenticated",
+            unlockedLessonIds,
+            quotaUsage,
+            unlimited,
+            hasOnDemandPlan: true,
+          }}
+          routingMode="query"
+          basePath="/panel/replay"
+          subtitle="Clases grabadas para practicar cuando quieras"
         />
       </Suspense>
     </div>
