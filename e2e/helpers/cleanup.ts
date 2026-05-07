@@ -375,3 +375,466 @@ export async function cleanupPendingTransferOrders(externalReferencePrefix: stri
     await prisma.order.delete({ where: { id: o.id } }).catch(() => {});
   }
 }
+
+// ─── Tier 1 helpers ────────────────────────────────────────────────────────
+// Prefijo `seedTier1*` para evitar colisión con otros agentes en paralelo.
+
+/**
+ * Crea una Order PENDING vía MERCADOPAGO con `mpPreferenceId` simulado.
+ * Asegura que el plugin de MP esté configurado con `webhookSecret` retornado
+ * (creándolo si no existe). Útil para tests de webhook MP / aprobación manual
+ * del path APPROVED → UserPlan ACTIVE.
+ */
+export async function seedTier1PendingMpOrder(opts: {
+  centerSlug: string;
+  userEmail: string;
+  planName: string;
+  amountCents?: number;
+  externalReferencePrefix?: string;
+}): Promise<{
+  orderId: string;
+  externalReference: string;
+  mpPreferenceId: string;
+  webhookSecret: string;
+  planId: string;
+  userId: string;
+} | null> {
+  const prisma = await getPrisma();
+  if (!prisma) return null;
+  const center = await prisma.center.findUnique({ where: { slug: opts.centerSlug } });
+  if (!center) return null;
+  const user = await prisma.user.findUnique({ where: { email: opts.userEmail } });
+  if (!user) return null;
+  const amountCents = opts.amountCents ?? 29900;
+
+  // Asegurar plugin MP con webhookSecret estable.
+  const mpConfig = await prisma.centerMercadoPagoConfig.upsert({
+    where: { centerId: center.id },
+    create: {
+      centerId: center.id,
+      accessToken: "TEST-mp-access-token",
+      webhookSecret: "tier1-webhook-secret-" + center.id.slice(0, 8),
+      enabled: true,
+    },
+    update: {},
+  });
+
+  const planSlug = opts.planName.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+  const plan = await prisma.plan.upsert({
+    where: { centerId_slug: { centerId: center.id, slug: planSlug } },
+    update: {},
+    create: {
+      centerId: center.id,
+      name: opts.planName,
+      slug: planSlug,
+      description: "Plan E2E Tier 1 webhook MP",
+      type: "LIVE",
+      amountCents,
+      currency: "CLP",
+      maxReservations: 4,
+      validityDays: 30,
+      billingMode: "ONE_TIME",
+    },
+  });
+
+  const prefix = opts.externalReferencePrefix ?? "e2e-tier1-mp-";
+  const externalReference = `${prefix}${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const mpPreferenceId = `pref_e2e_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  const order = await prisma.order.create({
+    data: {
+      centerId: center.id,
+      userId: user.id,
+      planId: plan.id,
+      amountCents,
+      currency: "CLP",
+      status: "PENDING",
+      paymentMethod: "MERCADOPAGO",
+      externalReference,
+      mpPreferenceId,
+    },
+  });
+  return {
+    orderId: order.id,
+    externalReference,
+    mpPreferenceId,
+    webhookSecret: mpConfig.webhookSecret,
+    planId: plan.id,
+    userId: user.id,
+  };
+}
+
+/**
+ * Crea una LiveClass futura del centro.
+ * `daysFromNow=2, hour=10` → en 2 días a las 10:00 hora local del server.
+ * Para tests donde la clase debe ser reservable dentro de la ventana
+ * `bookBeforeMinutes`, considerar el setting del centro (default 1440 = 24 h).
+ */
+export async function seedTier1LiveClass(opts: {
+  centerSlug: string;
+  title: string;
+  daysFromNow?: number;
+  /** Si se setea, override exacto de minutos desde ahora (positivo en el futuro). */
+  minutesFromNow?: number;
+  hour?: number;
+  durationMinutes?: number;
+  maxCapacity?: number;
+}): Promise<{ liveClassId: string; startsAt: Date; centerId: string } | null> {
+  const prisma = await getPrisma();
+  if (!prisma) return null;
+  const center = await prisma.center.findUnique({ where: { slug: opts.centerSlug } });
+  if (!center) return null;
+
+  let startsAt: Date;
+  if (typeof opts.minutesFromNow === "number") {
+    startsAt = new Date(Date.now() + opts.minutesFromNow * 60 * 1000);
+  } else {
+    const days = opts.daysFromNow ?? 2;
+    const hour = opts.hour ?? 10;
+    startsAt = new Date();
+    startsAt.setDate(startsAt.getDate() + days);
+    startsAt.setHours(hour, 0, 0, 0);
+  }
+
+  const liveClass = await prisma.liveClass.create({
+    data: {
+      centerId: center.id,
+      title: opts.title,
+      startsAt,
+      durationMinutes: opts.durationMinutes ?? 60,
+      maxCapacity: opts.maxCapacity ?? 10,
+    },
+  });
+  return { liveClassId: liveClass.id, startsAt, centerId: center.id };
+}
+
+/**
+ * Crea (o reutiliza) un usuario STUDENT del centro y le asigna un UserPlan
+ * ACTIVE con clases disponibles.
+ * Si el email ya existe lo reutiliza (asegura el role STUDENT en el centro).
+ */
+export async function seedTier1StudentWithActivePlan(opts: {
+  centerSlug: string;
+  email: string;
+  password?: string;
+  name?: string;
+  classesTotal?: number;
+  classesUsed?: number;
+  planName?: string;
+}): Promise<{ userId: string; userPlanId: string; planId: string } | null> {
+  const prisma = await getPrisma();
+  if (!prisma) return null;
+  const center = await prisma.center.findUnique({ where: { slug: opts.centerSlug } });
+  if (!center) return null;
+
+  const bcryptMod = await import("bcryptjs");
+  const passwordHash = await bcryptMod.default.hash(opts.password ?? "Test1234!", 12);
+  const user = await prisma.user.upsert({
+    where: { email: opts.email },
+    create: {
+      email: opts.email,
+      passwordHash,
+      name: opts.name ?? "Student Tier1",
+    },
+    update: {},
+  });
+  await prisma.userCenterRole.upsert({
+    where: { userId_centerId: { userId: user.id, centerId: center.id } },
+    create: { userId: user.id, centerId: center.id, role: "STUDENT" },
+    update: { role: "STUDENT" },
+  });
+
+  const planName = opts.planName ?? `Tier1 Plan ${Date.now()}`;
+  const planSlug = planName.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+  const plan = await prisma.plan.upsert({
+    where: { centerId_slug: { centerId: center.id, slug: planSlug } },
+    create: {
+      centerId: center.id,
+      name: planName,
+      slug: planSlug,
+      description: "Plan Tier1 E2E",
+      type: "LIVE",
+      amountCents: 29900,
+      currency: "CLP",
+      maxReservations: opts.classesTotal ?? 4,
+      validityDays: 30,
+      billingMode: "ONE_TIME",
+    },
+    update: {},
+  });
+
+  const userPlan = await prisma.userPlan.create({
+    data: {
+      userId: user.id,
+      planId: plan.id,
+      centerId: center.id,
+      status: "ACTIVE",
+      paymentStatus: "PAID",
+      classesTotal: opts.classesTotal ?? 4,
+      classesUsed: opts.classesUsed ?? 0,
+      validFrom: new Date(),
+      validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    },
+  });
+
+  return { userId: user.id, userPlanId: userPlan.id, planId: plan.id };
+}
+
+/**
+ * Asigna un UserPlan ACTIVE a un usuario existente (busca por email).
+ * Devuelve el id. Útil para que admin@e2e.test pueda reservar como "buyer".
+ */
+export async function seedTier1UserPlanForExistingUser(opts: {
+  centerSlug: string;
+  userEmail: string;
+  classesTotal?: number;
+  classesUsed?: number;
+  planName?: string;
+}): Promise<{ userId: string; userPlanId: string; planId: string } | null> {
+  const prisma = await getPrisma();
+  if (!prisma) return null;
+  const center = await prisma.center.findUnique({ where: { slug: opts.centerSlug } });
+  if (!center) return null;
+  const user = await prisma.user.findUnique({ where: { email: opts.userEmail } });
+  if (!user) return null;
+
+  const planName = opts.planName ?? `Tier1 Plan ${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+  const planSlug = planName.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+  const plan = await prisma.plan.upsert({
+    where: { centerId_slug: { centerId: center.id, slug: planSlug } },
+    create: {
+      centerId: center.id,
+      name: planName,
+      slug: planSlug,
+      description: "Plan Tier1 E2E",
+      type: "LIVE",
+      amountCents: 29900,
+      currency: "CLP",
+      maxReservations: opts.classesTotal ?? 4,
+      validityDays: 30,
+      billingMode: "ONE_TIME",
+    },
+    update: {},
+  });
+
+  const userPlan = await prisma.userPlan.create({
+    data: {
+      userId: user.id,
+      planId: plan.id,
+      centerId: center.id,
+      status: "ACTIVE",
+      paymentStatus: "PAID",
+      classesTotal: opts.classesTotal ?? 4,
+      classesUsed: opts.classesUsed ?? 0,
+      validFrom: new Date(),
+      validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    },
+  });
+  return { userId: user.id, userPlanId: userPlan.id, planId: plan.id };
+}
+
+/** Crea una Reservation CONFIRMED para un user/clase/plan dados. */
+export async function seedTier1Reservation(opts: {
+  userId: string;
+  liveClassId: string;
+  userPlanId: string;
+  /** Si true, además incrementa classesUsed del plan en +1 (simula reserva real). */
+  incrementClassesUsed?: boolean;
+}): Promise<{ reservationId: string } | null> {
+  const prisma = await getPrisma();
+  if (!prisma) return null;
+  const reservation = await prisma.reservation.create({
+    data: {
+      userId: opts.userId,
+      liveClassId: opts.liveClassId,
+      userPlanId: opts.userPlanId,
+      status: "CONFIRMED",
+    },
+  });
+  if (opts.incrementClassesUsed) {
+    await prisma.userPlan.update({
+      where: { id: opts.userPlanId },
+      data: { classesUsed: { increment: 1 } },
+    });
+  }
+  return { reservationId: reservation.id };
+}
+
+/** Override temporal de `bookBeforeMinutes` y `cancelBeforeMinutes` del centro. */
+export async function setTier1CenterPolicies(
+  slug: string,
+  overrides: {
+    bookBeforeMinutes?: number;
+    cancelBeforeMinutes?: number;
+  },
+): Promise<{ bookBeforeMinutes: number; cancelBeforeMinutes: number } | null> {
+  const prisma = await getPrisma();
+  if (!prisma) return null;
+  const center = await prisma.center.findUnique({ where: { slug } });
+  if (!center) return null;
+  const previous = {
+    bookBeforeMinutes: center.bookBeforeMinutes,
+    cancelBeforeMinutes: center.cancelBeforeMinutes,
+  };
+  await prisma.center.update({
+    where: { id: center.id },
+    data: {
+      ...(overrides.bookBeforeMinutes !== undefined && {
+        bookBeforeMinutes: overrides.bookBeforeMinutes,
+      }),
+      ...(overrides.cancelBeforeMinutes !== undefined && {
+        cancelBeforeMinutes: overrides.cancelBeforeMinutes,
+      }),
+    },
+  });
+  return previous;
+}
+
+/** Lee el último EmailVerificationToken creado para un user (por email). */
+export async function getTier1LatestEmailVerificationToken(
+  userEmail: string,
+): Promise<{ token: string; expiresAt: Date; userId: string } | null> {
+  const prisma = await getPrisma();
+  if (!prisma) return null;
+  const user = await prisma.user.findUnique({ where: { email: userEmail } });
+  if (!user) return null;
+  const token = await prisma.emailVerificationToken.findFirst({
+    where: { userId: user.id },
+    orderBy: { createdAt: "desc" },
+  });
+  if (!token) return null;
+  return { token: token.token, expiresAt: token.expiresAt, userId: user.id };
+}
+
+/** Lee `emailVerifiedAt` de un user por email. */
+export async function getTier1UserEmailVerifiedAt(
+  userEmail: string,
+): Promise<Date | null> {
+  const prisma = await getPrisma();
+  if (!prisma) return null;
+  const user = await prisma.user.findUnique({
+    where: { email: userEmail },
+    select: { emailVerifiedAt: true },
+  });
+  return user?.emailVerifiedAt ?? null;
+}
+
+/** Lee una Order por id (para asserts de status post-action). */
+export async function getTier1OrderById(orderId: string): Promise<{
+  status: string;
+  paymentMethod: string;
+} | null> {
+  const prisma = await getPrisma();
+  if (!prisma) return null;
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    select: { status: true, paymentMethod: true },
+  });
+  if (!order) return null;
+  return { status: order.status, paymentMethod: order.paymentMethod };
+}
+
+/**
+ * Lee el UserPlan creado para una Order específica (ACTIVE + PAID tras
+ * activatePlanForOrder).
+ */
+export async function getTier1UserPlanByOrderId(orderId: string): Promise<{
+  id: string;
+  status: string;
+  paymentStatus: string;
+  classesTotal: number | null;
+  classesUsed: number;
+} | null> {
+  const prisma = await getPrisma();
+  if (!prisma) return null;
+  const up = await prisma.userPlan.findFirst({
+    where: { orderId },
+    select: {
+      id: true,
+      status: true,
+      paymentStatus: true,
+      classesTotal: true,
+      classesUsed: true,
+    },
+  });
+  return up;
+}
+
+/** Lee una Reservation por id (status, userPlanId). */
+export async function getTier1ReservationById(reservationId: string): Promise<{
+  status: string;
+  userPlanId: string | null;
+} | null> {
+  const prisma = await getPrisma();
+  if (!prisma) return null;
+  const r = await prisma.reservation.findUnique({
+    where: { id: reservationId },
+    select: { status: true, userPlanId: true },
+  });
+  return r;
+}
+
+/** Lee UserPlan.classesUsed por id. */
+export async function getTier1UserPlanClassesUsed(
+  userPlanId: string,
+): Promise<number | null> {
+  const prisma = await getPrisma();
+  if (!prisma) return null;
+  const up = await prisma.userPlan.findUnique({
+    where: { id: userPlanId },
+    select: { classesUsed: true },
+  });
+  return up?.classesUsed ?? null;
+}
+
+/**
+ * Borra usuarios cuyo email empiece con `prefix`. Protege explícitamente
+ * `admin@e2e.test`, `student@e2e.test`, `instructor@e2e.test`.
+ * Cascadea relaciones via FK (UserPlan, Reservation, Order, etc.).
+ */
+export async function cleanupTier1UsersByEmailPrefix(prefix: string) {
+  const prisma = await getPrisma();
+  if (!prisma) return;
+  const PROTECTED = new Set([
+    "admin@e2e.test",
+    "student@e2e.test",
+    "instructor@e2e.test",
+  ]);
+  const users = await prisma.user.findMany({
+    where: { email: { startsWith: prefix } },
+    select: { id: true, email: true },
+  });
+  for (const u of users) {
+    if (PROTECTED.has(u.email)) continue;
+    // Borrar dependientes que no cascadean por FK estricta (Order/Plan/UserPlan).
+    await prisma.reservation.deleteMany({ where: { userId: u.id } }).catch(() => {});
+    await prisma.userPlan.deleteMany({ where: { userId: u.id } }).catch(() => {});
+    await prisma.manualPayment.deleteMany({ where: { userId: u.id } }).catch(() => {});
+    await prisma.order.deleteMany({ where: { userId: u.id } }).catch(() => {});
+    await prisma.subscription.deleteMany({ where: { userId: u.id } }).catch(() => {});
+    await prisma.emailVerificationToken.deleteMany({ where: { userId: u.id } }).catch(() => {});
+    await prisma.passwordResetToken.deleteMany({ where: { userId: u.id } }).catch(() => {});
+    await prisma.userCenterRole.deleteMany({ where: { userId: u.id } }).catch(() => {});
+    await prisma.user.delete({ where: { id: u.id } }).catch(() => {});
+  }
+}
+
+/** Borra Reservations por id. Si pasa array vacío, no hace nada. */
+export async function cleanupTier1Reservations(reservationIds: string[]) {
+  const prisma = await getPrisma();
+  if (!prisma || reservationIds.length === 0) return;
+  await prisma.reservation
+    .deleteMany({ where: { id: { in: reservationIds } } })
+    .catch(() => {});
+}
+
+/** Borra LiveClasses por id (cascadea Reservations). */
+export async function cleanupTier1LiveClasses(liveClassIds: string[]) {
+  const prisma = await getPrisma();
+  if (!prisma || liveClassIds.length === 0) return;
+  await prisma.reservation
+    .deleteMany({ where: { liveClassId: { in: liveClassIds } } })
+    .catch(() => {});
+  await prisma.liveClass
+    .deleteMany({ where: { id: { in: liveClassIds } } })
+    .catch(() => {});
+}
