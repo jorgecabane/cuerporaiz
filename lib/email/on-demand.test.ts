@@ -4,6 +4,9 @@ import {
   buildQuotaExhaustedEmail,
   buildNewContentEmail,
 } from "./on-demand";
+import { defaultBranding } from "./branding";
+
+const BRANDING = defaultBranding("Cuerpo Raíz");
 
 describe("buildLessonUnlockedEmail", () => {
   it("genera email con remaining lessons", () => {
@@ -15,6 +18,7 @@ describe("buildLessonUnlockedEmail", () => {
       categoryName: "Yoga",
       remainingLessons: 3,
       onDemandUrl: "https://example.com/panel/replay",
+      branding: BRANDING,
     });
 
     expect(result.subject).toBe("Desbloqueaste: Hatha principiantes");
@@ -34,6 +38,7 @@ describe("buildLessonUnlockedEmail", () => {
       categoryName: "Cat Z",
       remainingLessons: null,
       onDemandUrl: "https://example.com/panel/replay",
+      branding: BRANDING,
     });
 
     expect(result.html).toContain("Clase X");
@@ -49,6 +54,7 @@ describe("buildLessonUnlockedEmail", () => {
       categoryName: "C",
       remainingLessons: null,
       onDemandUrl: "https://example.com",
+      branding: BRANDING,
     });
 
     expect(result.text).toContain("Hola,");
@@ -62,6 +68,7 @@ describe("buildQuotaExhaustedEmail", () => {
       userName: "Pedro",
       categoryName: "Yoga",
       storeUrl: "https://example.com/tienda",
+      branding: BRANDING,
     });
 
     expect(result.subject).toBe("Usaste todas tus clases de Yoga");
@@ -76,6 +83,7 @@ describe("buildQuotaExhaustedEmail", () => {
       toEmail: "test@example.com",
       categoryName: "Yoga",
       storeUrl: "https://example.com/tienda",
+      branding: BRANDING,
     });
 
     expect(result.text).toContain("Hola,");
@@ -90,6 +98,7 @@ describe("buildNewContentEmail", () => {
       lessonTitle: "Vinyasa matinal",
       practiceName: "Vinyasa Flow",
       catalogUrl: "https://example.com/catalogo",
+      branding: BRANDING,
     });
 
     expect(result.subject).toBe("Nueva clase disponible: Vinyasa matinal");
@@ -105,6 +114,7 @@ describe("buildNewContentEmail", () => {
       lessonTitle: "Clase",
       practiceName: "P",
       catalogUrl: "https://example.com",
+      branding: BRANDING,
     });
 
     expect(result.text).toContain("Hola,");

@@ -6,6 +6,7 @@
 import { NextResponse } from "next/server";
 import { resendEmailAdapter } from "@/lib/adapters/email";
 import { buildReservationConfirmationEmail } from "@/lib/email";
+import { defaultBranding } from "@/lib/email/branding";
 
 export async function POST(request: Request) {
   if (process.env.NODE_ENV !== "development") {
@@ -30,6 +31,7 @@ export async function POST(request: Request) {
       endAt,
       location: "Av. Luis Pasteur 5728, Vitacura",
       myReservationsUrl: process.env.NEXTAUTH_URL ? `${process.env.NEXTAUTH_URL}/panel` : undefined,
+      branding: defaultBranding(),
     });
     const result = await resendEmailAdapter.send(dto);
     if (!result.success) {

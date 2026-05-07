@@ -4,10 +4,15 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { isAdminRole } from "@/lib/domain/role";
-import { userRepository } from "@/lib/adapters/db";
+import { userRepository, authTokenRepository, centerRepository } from "@/lib/adapters/db";
 import { prisma } from "@/lib/adapters/db/prisma";
 import bcrypt from "bcryptjs";
 import { randomUUID } from "crypto";
+import { sendEmailSafe } from "@/lib/application/send-email";
+import { buildWelcomeStudentByAdminEmail } from "@/lib/email";
+import { getEmailBranding } from "@/lib/email/branding";
+import { getBaseUrl } from "@/lib/utils/base-url";
+import { requestInvitationToken } from "@/lib/application/request-password-reset";
 
 export async function createClient(data: {
   email: string;
@@ -27,11 +32,14 @@ export async function createClient(data: {
     if (memberships.length > 0) {
       return { error: "Este email ya está registrado en tu centro" };
     }
+    // Usuario existente en otro centro: solo agregamos el rol.
     await userRepository.addRole(existing.id, centerId, "STUDENT");
     revalidatePath("/panel/clientes");
     return {};
   }
 
+  // Usuario nuevo: creamos cuenta con contraseña random + le mandamos invitación
+  // para que defina la suya con un token de password-reset de 7 días.
   const tempPassword = randomUUID().slice(0, 12);
   const passwordHash = await bcrypt.hash(tempPassword, 10);
   const user = await userRepository.create({
@@ -40,6 +48,22 @@ export async function createClient(data: {
     name: data.name || null,
   });
   await userRepository.addRole(user.id, centerId, "STUDENT");
+
+  const token = await requestInvitationToken(user.id, authTokenRepository);
+  const branding = await getEmailBranding(centerId);
+  const center = await centerRepository.findById(centerId);
+  const setPasswordUrl = `${getBaseUrl()}/auth/reset-password?token=${token}&invite=1`;
+
+  sendEmailSafe(
+    buildWelcomeStudentByAdminEmail({
+      toEmail: data.email,
+      userName: data.name || data.email.split("@")[0],
+      setPasswordUrl,
+      customBodyFragment: center?.welcomeEmailCustomBody?.trim() || undefined,
+      branding,
+    })
+  );
+
   revalidatePath("/panel/clientes");
   return {};
 }

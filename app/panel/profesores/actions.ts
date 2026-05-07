@@ -2,10 +2,13 @@
 
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import { instructorBankAccountRepository, instructorRepository, centerRepository } from "@/lib/adapters/db";
+import { instructorBankAccountRepository, instructorRepository, authTokenRepository, prisma } from "@/lib/adapters/db";
 import { isAdminRole } from "@/lib/domain/role";
 import { sendEmailSafe } from "@/lib/application/send-email";
 import { buildWelcomeStaffEmail } from "@/lib/email/transactional";
+import { getEmailBranding } from "@/lib/email/branding";
+import { getBaseUrl } from "@/lib/utils/base-url";
+import { requestInvitationToken } from "@/lib/application/request-password-reset";
 
 async function requireAdminCenterId(): Promise<string> {
   const session = await auth();
@@ -23,17 +26,26 @@ export async function createInstructor(formData: FormData): Promise<void> {
   if (!name || !email) return;
   await instructorRepository.create(centerId, { name, email, imageUrl: imageUrl || null });
 
-  const center = await centerRepository.findById(centerId);
-  const baseUrl = process.env.NEXTAUTH_URL ?? process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
-  sendEmailSafe(
-    buildWelcomeStaffEmail({
-      toEmail: email,
-      name,
-      role: "INSTRUCTOR",
-      centerName: center?.name ?? "tu centro",
-      loginUrl: `${baseUrl}/auth/register`,
-    })
-  );
+  // Si el User recién fue creado por el repo, generamos token de invitación
+  // y mandamos correo con link a set-password. Si ya tenía cuenta, no mandamos
+  // (el rol se agregó silenciosamente; el profe sigue usando su contraseña actual).
+  const user = await prisma.user.findUnique({ where: { email }, select: { id: true, passwordHash: true, emailVerifiedAt: true } });
+  const isFirstTime = user && !user.emailVerifiedAt;
+
+  if (user && isFirstTime) {
+    const token = await requestInvitationToken(user.id, authTokenRepository);
+    const branding = await getEmailBranding(centerId);
+    const setPasswordUrl = `${getBaseUrl()}/auth/reset-password?token=${token}&invite=1`;
+    sendEmailSafe(
+      buildWelcomeStaffEmail({
+        toEmail: email,
+        name,
+        role: "INSTRUCTOR",
+        setPasswordUrl,
+        branding,
+      })
+    );
+  }
 
   redirect("/panel/profesores");
 }

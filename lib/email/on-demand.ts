@@ -3,17 +3,14 @@
  */
 
 import type { SendEmailDto } from "@/lib/dto/email-dto";
-import { SITE_NAME } from "@/lib/constants/copy";
-import { emailBaseLayout, EMAIL_CTA_STYLE } from "./base-layout";
+import { emailBaseLayout, emailCtaStyle } from "./base-layout";
+import { escapeHtml } from "./utils";
+import type { EmailBranding } from "./branding";
 
 const DEFAULT_FROM = process.env.EMAIL_FROM ?? `Cuerpo Raíz <onboarding@resend.dev>`;
 
-function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+function fromForBranding(b: EmailBranding): string {
+  return process.env.EMAIL_FROM ?? `${b.centerName} <onboarding@resend.dev>`;
 }
 
 // ─── Lección desbloqueada ────────────────────────────────────────────────────
@@ -26,20 +23,23 @@ export interface LessonUnlockedEmailData {
   remainingLessons: number | null;
   onDemandUrl: string;
   preferencesUrl?: string;
+  branding: EmailBranding;
 }
 
 export function buildLessonUnlockedEmail(data: LessonUnlockedEmailData): SendEmailDto {
+  const { branding } = data;
   const greeting = data.userName ? `Hola ${escapeHtml(data.userName)}` : "Hola";
+  const cta = emailCtaStyle(branding.colorSecondary);
   const remainingLine =
     data.remainingLessons !== null
-      ? `<p>Te quedan <strong>${data.remainingLessons}</strong> clases de ${escapeHtml(data.categoryName)}.</p>`
+      ? `<p style="font-size:13px;color:#5C5A56;">Te quedan <strong style="color:${branding.colorPrimary};">${data.remainingLessons}</strong> clases de ${escapeHtml(data.categoryName)}.</p>`
       : "";
   const body = `
     <p>${greeting},</p>
     <p>Desbloqueaste <strong>${escapeHtml(data.lessonTitle)}</strong> de ${escapeHtml(data.practiceName)}.</p>
     ${remainingLine}
-    <p><a href="${data.onDemandUrl}" style="${EMAIL_CTA_STYLE}">Ver clase</a></p>`;
-  const html = emailBaseLayout({ body, centerName: SITE_NAME, preferencesUrl: data.preferencesUrl });
+    <p style="text-align:center;margin:28px 0;"><a href="${data.onDemandUrl}" style="${cta}">Ver clase</a></p>`;
+  const html = emailBaseLayout({ body, branding, preferencesUrl: data.preferencesUrl });
   const remainingText =
     data.remainingLessons !== null
       ? `Te quedan ${data.remainingLessons} clases de ${data.categoryName}.`
@@ -49,13 +49,11 @@ export function buildLessonUnlockedEmail(data: LessonUnlockedEmailData): SendEma
     `Desbloqueaste ${data.lessonTitle} de ${data.practiceName}.`,
     remainingText,
     `Ver clase: ${data.onDemandUrl}`,
-    `— ${SITE_NAME}`,
-  ]
-    .filter(Boolean)
-    .join("\n");
+    `— ${branding.centerName}`,
+  ].filter(Boolean).join("\n");
 
   return {
-    from: DEFAULT_FROM,
+    from: fromForBranding(branding),
     to: [data.toEmail],
     subject: `Desbloqueaste: ${data.lessonTitle}`,
     html,
@@ -70,26 +68,29 @@ export interface QuotaExhaustedEmailData {
   categoryName: string;
   storeUrl: string;
   preferencesUrl?: string;
+  branding: EmailBranding;
 }
 
 export function buildQuotaExhaustedEmail(data: QuotaExhaustedEmailData): SendEmailDto {
+  const { branding } = data;
   const greeting = data.userName ? `Hola ${escapeHtml(data.userName)}` : "Hola";
+  const cta = emailCtaStyle(branding.colorSecondary);
   const body = `
     <p>${greeting},</p>
     <p>Usaste todas tus clases de <strong>${escapeHtml(data.categoryName)}</strong>.</p>
-    <p>Renueva tu plan o compra una membresía para acceso ilimitado.</p>
-    <p><a href="${data.storeUrl}" style="${EMAIL_CTA_STYLE}">Ver planes</a></p>`;
-  const html = emailBaseLayout({ body, centerName: SITE_NAME, preferencesUrl: data.preferencesUrl });
+    <p>Renová tu plan o suma una membresía para acceso ilimitado.</p>
+    <p style="text-align:center;margin:28px 0;"><a href="${data.storeUrl}" style="${cta}">Ver planes</a></p>`;
+  const html = emailBaseLayout({ body, branding, preferencesUrl: data.preferencesUrl });
   const text = [
     `${greeting},`,
     `Usaste todas tus clases de ${data.categoryName}.`,
-    "Renueva tu plan o compra una membresía para acceso ilimitado.",
+    "Renová tu plan o suma una membresía para acceso ilimitado.",
     `Ver planes: ${data.storeUrl}`,
-    `— ${SITE_NAME}`,
+    `— ${branding.centerName}`,
   ].join("\n");
 
   return {
-    from: DEFAULT_FROM,
+    from: fromForBranding(branding),
     to: [data.toEmail],
     subject: `Usaste todas tus clases de ${data.categoryName}`,
     html,
@@ -105,29 +106,33 @@ export interface NewContentEmailData {
   practiceName: string;
   catalogUrl: string;
   preferencesUrl?: string;
+  branding: EmailBranding;
 }
 
 export function buildNewContentEmail(data: NewContentEmailData): SendEmailDto {
+  const { branding } = data;
   const greeting = data.userName ? `Hola ${escapeHtml(data.userName)}` : "Hola";
+  const cta = emailCtaStyle(branding.colorSecondary);
   const body = `
     <p>${greeting},</p>
     <p>Se agregó <strong>${escapeHtml(data.lessonTitle)}</strong> a ${escapeHtml(data.practiceName)}.</p>
-    <p>Explora la biblioteca virtual.</p>
-    <p><a href="${data.catalogUrl}" style="${EMAIL_CTA_STYLE}">Ver catálogo</a></p>`;
-  const html = emailBaseLayout({ body, centerName: SITE_NAME, preferencesUrl: data.preferencesUrl });
+    <p>Pasate por la biblioteca virtual a explorarla.</p>
+    <p style="text-align:center;margin:28px 0;"><a href="${data.catalogUrl}" style="${cta}">Ver catálogo</a></p>`;
+  const html = emailBaseLayout({ body, branding, preferencesUrl: data.preferencesUrl });
   const text = [
     `${greeting},`,
     `Se agregó ${data.lessonTitle} a ${data.practiceName}.`,
-    "Explora la biblioteca virtual.",
     `Ver catálogo: ${data.catalogUrl}`,
-    `— ${SITE_NAME}`,
+    `— ${branding.centerName}`,
   ].join("\n");
 
   return {
-    from: DEFAULT_FROM,
+    from: fromForBranding(branding),
     to: [data.toEmail],
     subject: `Nueva clase disponible: ${data.lessonTitle}`,
     html,
     text,
   };
 }
+
+export { DEFAULT_FROM };

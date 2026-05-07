@@ -3,10 +3,13 @@ import {
   buildForgotPasswordEmail,
   buildEmailVerificationEmail,
 } from "./auth";
+import { defaultBranding } from "./branding";
+
+const BRANDING = defaultBranding("Cuerpo Raíz");
 
 const BASE = {
   toEmail: "alumna@example.com",
-  centerName: "Cuerpo Raíz",
+  branding: BRANDING,
 };
 
 describe("buildForgotPasswordEmail", () => {
@@ -32,7 +35,6 @@ describe("buildForgotPasswordEmail", () => {
       ...BASE,
       resetUrl: "https://x/reset",
     });
-    // HTML empieza con "Hola," (sin nombre)
     expect(dto.html).toContain("<p>Hola,</p>");
     expect(dto.text!.split("\n")[0]).toBe("Hola,");
   });
@@ -41,7 +43,7 @@ describe("buildForgotPasswordEmail", () => {
     const dto = buildForgotPasswordEmail({
       toEmail: "x@example.com",
       userName: "<script>alert(1)</script>",
-      centerName: "Raíz & Ruta \"yoga\"",
+      branding: { ...BRANDING, centerName: "Raíz & Ruta \"yoga\"" },
       resetUrl: "https://x/reset",
     });
     expect(dto.html).not.toContain("<script>alert(1)</script>");
@@ -90,7 +92,7 @@ describe("buildEmailVerificationEmail", () => {
     const dto = buildEmailVerificationEmail({
       toEmail: "x@example.com",
       userName: "<b>Evil</b>",
-      centerName: "Centro & Co",
+      branding: { ...BRANDING, centerName: "Centro & Co" },
       verifyUrl: "https://x/verify",
     });
     expect(dto.html).not.toContain("<b>Evil</b>");

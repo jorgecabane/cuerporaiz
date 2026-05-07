@@ -21,7 +21,12 @@ import {
 } from "@/lib/adapters/db";
 import { planRepository } from "@/lib/adapters/db";
 import { sendEmailSafe } from "@/lib/application/send-email";
-import { buildReservationConfirmationEmail } from "@/lib/email/transactional";
+import {
+  buildReservationConfirmationEmail,
+  buildTrialClassNoticeToTeacherEmail,
+} from "@/lib/email/transactional";
+import { getEmailBranding } from "@/lib/email/branding";
+import { getBaseUrl } from "@/lib/utils/base-url";
 import { formatMinutesAsShortSpanish } from "@/lib/domain/center-policy";
 
 function toReservationDto(r: Reservation, liveClassDto?: LiveClassDto): ReservationDto {
@@ -226,11 +231,17 @@ export async function reserveClassUseCase(
     { isTrialClass: liveClass.isTrialClass, isOnline: liveClass.isOnline }
   );
 
-  // Fire-and-forget: email de confirmacion
+  // Fire-and-forget: emails post-reserva
   const user = await userRepository.findById(userId);
   if (user) {
     const endAt = new Date(liveClass.startsAt.getTime() + liveClass.durationMinutes * 60000);
-    const baseUrl = process.env.NEXTAUTH_URL ?? process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
+    const baseUrl = getBaseUrl();
+    const branding = await getEmailBranding(centerId);
+    // Para clases online: meetingUrl. Para presenciales: dirección del sitio del centro.
+    const location = liveClass.isOnline
+      ? (liveClass.meetingUrl ?? "Por confirmar")
+      : (branding.contactAddress ?? "Presencial");
+
     sendEmailSafe(
       buildReservationConfirmationEmail({
         toEmail: user.email,
@@ -238,10 +249,34 @@ export async function reserveClassUseCase(
         className: liveClass.title,
         startAt: liveClass.startsAt.toISOString(),
         endAt: endAt.toISOString(),
-        location: liveClass.meetingUrl ?? "Presencial",
+        location,
         myReservationsUrl: `${baseUrl}/panel/reservas`,
+        branding,
       })
     );
+
+    // Aviso al profe/admin si es clase de prueba.
+    if (liveClass.isTrialClass) {
+      const teacher = liveClass.instructorId
+        ? await instructorRepository.findById(liveClass.instructorId, centerId)
+        : null;
+      const teacherEmail = teacher?.email ?? branding.contactEmail;
+      if (teacherEmail) {
+        sendEmailSafe(
+          buildTrialClassNoticeToTeacherEmail({
+            toEmail: teacherEmail,
+            teacherName: teacher?.name ?? undefined,
+            studentName: user.name ?? user.email,
+            studentEmail: user.email,
+            className: liveClass.title,
+            startAt: liveClass.startsAt.toISOString(),
+            endAt: endAt.toISOString(),
+            location,
+            branding,
+          })
+        );
+      }
+    }
   }
 
   return {

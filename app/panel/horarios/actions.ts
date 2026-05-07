@@ -9,7 +9,6 @@ import {
   centerHolidayRepository,
   reservationRepository,
   userRepository,
-  centerRepository,
 } from "@/lib/adapters/db";
 import { isAdminRole } from "@/lib/domain/role";
 import { generateSeriesInstances } from "@/lib/application/generate-series-instances";
@@ -17,6 +16,8 @@ import { createZoomMeeting } from "@/lib/application/create-zoom-meeting";
 import { createGoogleMeetMeeting } from "@/lib/application/create-google-meet-meeting";
 import { sendEmailSafe } from "@/lib/application/send-email";
 import { buildClassCancelledEmail } from "@/lib/email";
+import { getEmailBranding } from "@/lib/email/branding";
+import { getBaseUrl } from "@/lib/utils/base-url";
 import type { LiveClass, RepeatFrequency } from "@/lib/domain";
 import type { UpdateSeriesInput } from "@/lib/ports";
 
@@ -198,10 +199,9 @@ export async function batchCancelLiveClasses(ids: string[]): Promise<BatchCancel
     return { cancelledCount: 0, notifiedCount: 0 };
   }
 
-  const [cancelledCount, affectedReservations, center] = await Promise.all([
+  const [cancelledCount, affectedReservations] = await Promise.all([
     liveClassRepository.updateManyByIds(ids, centerId, { status: "CANCELLED" }),
     reservationRepository.findActiveByLiveClassIds(ids),
-    centerRepository.findById(centerId),
   ]);
 
   if (affectedReservations.length === 0) {
@@ -219,7 +219,8 @@ export async function batchCancelLiveClasses(ids: string[]): Promise<BatchCancel
   ]);
   const userMap = new Map(users.map((u) => [u.id, u]));
   const classMap = new Map(classes.filter((c) => c != null).map((c) => [c!.id, c!]));
-  const centerName = center?.name ?? "el centro";
+  const branding = await getEmailBranding(centerId);
+  const tiendaUrl = `${getBaseUrl()}/horarios`;
 
   const now = new Date();
   let notifiedCount = 0;
@@ -234,7 +235,8 @@ export async function batchCancelLiveClasses(ids: string[]): Promise<BatchCancel
         userName: user.name ?? undefined,
         className: cls.title,
         startAt: cls.startsAt.toISOString(),
-        centerName,
+        tiendaUrl,
+        branding,
       })
     );
     notifiedCount++;

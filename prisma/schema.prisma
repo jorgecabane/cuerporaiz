@@ -18,6 +18,7 @@ model Center {
   name      String
   slug      String   @unique
   currency  String   @default("CLP")  // moneda del centro (localidad); usada en planes
+  timezone  String   @default("America/Santiago")  // IANA tz para mostrar fechas en correos / UI cliente
   // Políticas del centro (tenant)
   cancelBeforeMinutes Int      @default(720)   // anticipación mínima (min) para cancelar sin consumir clase (720 = 12 h)
   maxNoShowsPerMonth   Int      @default(2)   // no-shows máximos antes de advertencia/bloqueo

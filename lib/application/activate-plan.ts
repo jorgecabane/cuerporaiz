@@ -7,6 +7,9 @@ import type { Plan, ValidityPeriod } from "@/lib/ports/plan-repository";
 import type { UserPlan } from "@/lib/domain/user-plan";
 import { sendEmailSafe } from "./send-email";
 import { buildPurchaseConfirmationEmail } from "@/lib/email";
+import { getEmailBranding } from "@/lib/email/branding";
+import { formatLongDate } from "@/lib/email/format-datetime";
+import { getBaseUrl } from "@/lib/utils/base-url";
 import { shouldSendEmail } from "./check-email-preference";
 
 export function computeValidUntil(
@@ -94,18 +97,20 @@ export async function activatePlanForOrder(
       centerRepository.findById(centerId),
     ]);
     if (buyer && center) {
+      const branding = await getEmailBranding(centerId);
       const validUntilStr = validUntil
-        ? validUntil.toLocaleDateString("es-CL", { timeZone: "America/Santiago" })
+        ? formatLongDate(validUntil, branding.timezone)
         : "Sin vencimiento";
+      const baseUrl = getBaseUrl();
       sendEmailSafe(buildPurchaseConfirmationEmail({
         toEmail: buyer.email,
         userName: buyer.name ?? buyer.email.split("@")[0],
-        centerName: center.name,
         planName: plan.name,
         amountFormatted: `$${plan.amountCents.toLocaleString("es-CL")}`,
         validUntil: validUntilStr,
-        tiendaUrl: `${process.env.NEXTAUTH_URL ?? ""}/panel/tienda`,
-        preferencesUrl: `${process.env.NEXTAUTH_URL ?? ""}/panel/mi-perfil?tab=correos`,
+        tiendaUrl: `${baseUrl}/panel/tienda`,
+        preferencesUrl: `${baseUrl}/panel/mi-perfil?tab=correos`,
+        branding,
       }));
     }
   }

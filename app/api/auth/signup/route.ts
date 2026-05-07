@@ -7,6 +7,7 @@ import { sendEmailSafe } from "@/lib/application/send-email";
 import { buildWelcomeStudentEmail } from "@/lib/email";
 import { requestEmailVerification } from "@/lib/application/request-email-verification";
 import { buildEmailVerificationEmail } from "@/lib/email/auth";
+import { getEmailBranding } from "@/lib/email/branding";
 
 export async function POST(request: Request) {
   try {
@@ -42,13 +43,14 @@ export async function POST(request: Request) {
     await userRepository.addRole(user.id, center.id, assignRole);
 
     const baseUrl = new URL(request.url).origin;
+    const branding = await getEmailBranding(center.id);
     sendEmailSafe(buildWelcomeStudentEmail({
       toEmail: email,
       userName: name ?? email.split("@")[0],
-      centerName: center.name,
       dashboardUrl: `${baseUrl}/panel`,
       profileUrl: `${baseUrl}/panel/mi-perfil`,
       customBodyFragment: center.welcomeEmailCustomBody?.trim() || undefined,
+      branding,
     }));
 
     const verificationToken = await requestEmailVerification(user.id, authTokenRepository);
@@ -56,8 +58,8 @@ export async function POST(request: Request) {
     sendEmailSafe(buildEmailVerificationEmail({
       toEmail: email,
       userName: name ?? undefined,
-      centerName: center.name,
       verifyUrl,
+      branding,
     }));
 
     return NextResponse.json(

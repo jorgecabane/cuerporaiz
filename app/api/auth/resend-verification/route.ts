@@ -5,6 +5,8 @@ import { requestEmailVerification } from "@/lib/application/request-email-verifi
 import { authTokenRepository, loginAttemptRepository, centerRepository, prisma } from "@/lib/adapters/db";
 import { buildEmailVerificationEmail } from "@/lib/email/auth";
 import { sendEmailSafe } from "@/lib/application/send-email";
+import { getEmailBranding, defaultBranding } from "@/lib/email/branding";
+import { getBaseUrl } from "@/lib/utils/base-url";
 
 export async function POST(request: Request) {
   try {
@@ -41,13 +43,14 @@ export async function POST(request: Request) {
     const center =
       (await centerRepository.findBySlug(centerId)) ??
       (await centerRepository.findById(centerId));
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+    const baseUrl = getBaseUrl();
+    const branding = center ? await getEmailBranding(center.id) : defaultBranding();
 
     sendEmailSafe(
       buildEmailVerificationEmail({
         toEmail: email,
-        centerName: center?.name ?? "Cuerpo Raíz",
         verifyUrl: `${baseUrl}/auth/verify-email?token=${token}`,
+        branding,
       })
     );
 

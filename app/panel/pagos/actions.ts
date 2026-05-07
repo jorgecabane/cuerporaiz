@@ -112,6 +112,15 @@ export async function approveEventTicketManually(formData: FormData): Promise<vo
     },
   });
 
+  const { notifyEventTicketConfirmation } = await import("@/lib/application/notify-event-ticket-confirmation");
+  notifyEventTicketConfirmation({
+    eventId: ticket.eventId,
+    userId: ticket.userId,
+    centerId,
+    amountCents: ticket.amountCents,
+    currency: ticket.currency,
+  }).catch((err) => console.error("[approve-event-ticket] confirm email", err));
+
   redirect("/panel/pagos");
 }
 

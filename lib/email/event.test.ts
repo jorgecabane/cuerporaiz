@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { buildEventTicketConfirmationEmail } from "./event";
+import { defaultBranding } from "./branding";
 
 const BASE_DATA = {
   toEmail: "user@example.com",
@@ -9,6 +10,7 @@ const BASE_DATA = {
   location: "Santiago, Chile",
   amountCents: 15000,
   currency: "CLP",
+  branding: defaultBranding("Cuerpo Raíz"),
 };
 
 describe("buildEventTicketConfirmationEmail", () => {

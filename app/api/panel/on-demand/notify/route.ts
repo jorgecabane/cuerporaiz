@@ -10,6 +10,8 @@ import {
 } from "@/lib/adapters/db";
 import { sendEmailSafe } from "@/lib/application/send-email";
 import { buildNewContentEmail } from "@/lib/email/on-demand";
+import { getEmailBranding } from "@/lib/email/branding";
+import { getBaseUrl } from "@/lib/utils/base-url";
 
 const notifySchema = z.object({
   lessonId: z.string().min(1),
@@ -63,7 +65,10 @@ export async function POST(request: Request) {
       },
     });
 
-    const catalogUrl = `${process.env.NEXTAUTH_URL ?? ""}/on-demand`;
+    const baseUrl = getBaseUrl();
+    const catalogUrl = `${baseUrl}/on-demand`;
+    const preferencesUrl = `${baseUrl}/panel/mi-perfil?tab=correos`;
+    const branding = await getEmailBranding(centerId);
 
     let notified = 0;
     const seenUserIds = new Set<string>();
@@ -84,6 +89,8 @@ export async function POST(request: Request) {
           lessonTitle: lesson.title,
           practiceName: practice.name,
           catalogUrl,
+          preferencesUrl,
+          branding,
         })
       );
       notified++;

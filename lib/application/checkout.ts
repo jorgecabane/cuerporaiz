@@ -288,6 +288,30 @@ export async function processWebhookUseCase(
     await activatePlanForOrder(order.id, order.userId, order.planId, order.centerId);
   }
 
+  if (status === "REJECTED") {
+    const [{ buildPaymentFailedEmail }, { sendEmailSafe }, { getEmailBranding }, { getBaseUrl }, { userRepository, planRepository }] = await Promise.all([
+      import("@/lib/email"),
+      import("./send-email"),
+      import("@/lib/email/branding"),
+      import("@/lib/utils/base-url"),
+      import("@/lib/adapters/db"),
+    ]);
+    const [user, plan] = await Promise.all([
+      userRepository.findById(order.userId),
+      planRepository.findById(order.planId),
+    ]);
+    if (user && plan) {
+      const branding = await getEmailBranding(order.centerId);
+      sendEmailSafe(buildPaymentFailedEmail({
+        toEmail: user.email,
+        userName: user.name ?? undefined,
+        productName: plan.name,
+        retryPaymentUrl: `${getBaseUrl()}/panel/tienda`,
+        branding,
+      }));
+    }
+  }
+
   await webhookEventRepository.markProcessed(input.centerId, requestId);
 
   return { success: true, alreadyProcessed: false };

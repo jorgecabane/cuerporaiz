@@ -8,6 +8,7 @@ function ResetPasswordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token") ?? "";
+  const isInvite = searchParams.get("invite") === "1";
 
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -45,7 +46,7 @@ function ResetPasswordForm() {
         return;
       }
 
-      router.push("/auth/login?reset=1");
+      router.push(isInvite ? "/auth/login?welcome=1" : "/auth/login?reset=1");
     } catch {
       setError("Error al procesar la solicitud");
     } finally {
@@ -94,9 +95,14 @@ function ResetPasswordForm() {
   return (
     <div className="min-h-[80vh] flex flex-col items-center justify-center px-4">
       <div className="w-full max-w-sm rounded-[var(--radius-lg)] bg-[var(--color-surface)] p-[var(--space-8)] shadow-[var(--shadow-md)]">
-        <h1 className="font-display text-section text-[var(--color-primary)] mb-[var(--space-6)]">
-          Nueva contraseña
+        <h1 className="font-display text-section text-[var(--color-primary)] mb-[var(--space-2)]">
+          {isInvite ? "Crea tu contraseña" : "Nueva contraseña"}
         </h1>
+        {isInvite && (
+          <p className="text-sm text-[var(--color-text-muted)] mb-[var(--space-5)]">
+            Bienvenida/o. Define una contraseña para entrar a tu panel.
+          </p>
+        )}
         <form onSubmit={handleSubmit} className="flex flex-col gap-[var(--space-5)]">
           <label className="flex flex-col gap-1">
             <span className="text-sm font-medium text-[var(--color-text-muted)]">Nueva contraseña</span>
@@ -129,7 +135,7 @@ function ResetPasswordForm() {
             disabled={loading}
             className="mt-2 rounded-[var(--radius-md)] bg-[var(--color-primary)] px-4 py-3 font-medium text-white transition-colors hover:bg-[var(--color-primary-hover)] disabled:opacity-60"
           >
-            {loading ? "Guardando…" : "Guardar contraseña"}
+            {loading ? "Guardando…" : isInvite ? "Crear contraseña" : "Guardar contraseña"}
           </button>
         </form>
       </div>
