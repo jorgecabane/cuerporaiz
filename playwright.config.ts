@@ -114,8 +114,8 @@ export default defineConfig({
     // NODE_OPTIONS=--dns-result-order=ipv4first evita esperas largas a Sanity cuando IPv6 falla
     // intermitente desde la red local (típico). En CI no hace falta.
     command: process.env.CI
-      ? `NEXT_PUBLIC_DEFAULT_CENTER_SLUG=e2e-test PORT=${port} npm run start`
-      : `NODE_OPTIONS="--dns-result-order=ipv4first" NEXT_PUBLIC_DEFAULT_CENTER_SLUG=e2e-test npx prisma migrate deploy && npm run db:seed && NODE_OPTIONS="--dns-result-order=ipv4first" NEXT_PUBLIC_DEFAULT_CENTER_SLUG=e2e-test npm run build && NODE_OPTIONS="--dns-result-order=ipv4first" NEXT_PUBLIC_DEFAULT_CENTER_SLUG=e2e-test PORT=${port} npm run start`,
+      ? `E2E_TEST_ROUTES_ENABLED=1 NEXT_PUBLIC_DEFAULT_CENTER_SLUG=e2e-test PORT=${port} npm run start`
+      : `NODE_OPTIONS="--dns-result-order=ipv4first" NEXT_PUBLIC_DEFAULT_CENTER_SLUG=e2e-test npx prisma migrate deploy && npm run db:seed && NODE_OPTIONS="--dns-result-order=ipv4first" NEXT_PUBLIC_DEFAULT_CENTER_SLUG=e2e-test npm run build && NODE_OPTIONS="--dns-result-order=ipv4first" E2E_TEST_ROUTES_ENABLED=1 NEXT_PUBLIC_DEFAULT_CENTER_SLUG=e2e-test PORT=${port} npm run start`,
     url: `http://localhost:${port}`,
     reuseExistingServer: !process.env.CI,
     timeout: 300_000,

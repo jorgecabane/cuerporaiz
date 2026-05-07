@@ -375,3 +375,591 @@ export async function cleanupPendingTransferOrders(externalReferencePrefix: stri
     await prisma.order.delete({ where: { id: o.id } }).catch(() => {});
   }
 }
+
+// ─── Tier 2 + Tier 3 helpers ─────────────────────────────────────────────────
+
+/**
+ * Asegura un CenterMercadoPagoConfig habilitado para que el webhook pueda
+ * procesar suscripciones. Devuelve el webhookSecret a usar para firmar.
+ * Idempotente.
+ */
+async function ensureMercadoPagoConfig(centerId: string): Promise<string | null> {
+  const prisma = await getPrisma();
+  if (!prisma) return null;
+  const existing = await prisma.centerMercadoPagoConfig.findUnique({ where: { centerId } });
+  if (existing) {
+    if (!existing.enabled) {
+      await prisma.centerMercadoPagoConfig.update({
+        where: { centerId },
+        data: { enabled: true },
+      });
+    }
+    return existing.webhookSecret;
+  }
+  const webhookSecret = "tier2-mp-webhook-secret-e2e";
+  await prisma.centerMercadoPagoConfig.create({
+    data: {
+      centerId,
+      accessToken: "TEST-AT-tier2",
+      webhookSecret,
+      enabled: true,
+    },
+  });
+  return webhookSecret;
+}
+
+/**
+ * Crea un Plan recurrente + Subscription PENDING para el user dado, listo
+ * para que un webhook simulado de MercadoPago lo active.
+ *
+ * Retorna `{ subscriptionId, mpSubscriptionId, webhookSecret, planId, userId, centerId }`.
+ */
+export async function seedTier2PendingSubscription(opts: {
+  centerSlug: string;
+  userEmail: string;
+  planName: string;
+}): Promise<{
+  subscriptionId: string;
+  mpSubscriptionId: string;
+  webhookSecret: string;
+  planId: string;
+  userId: string;
+  centerId: string;
+} | null> {
+  const prisma = await getPrisma();
+  if (!prisma) return null;
+  const center = await prisma.center.findUnique({ where: { slug: opts.centerSlug } });
+  if (!center) return null;
+  const user = await prisma.user.findUnique({ where: { email: opts.userEmail } });
+  if (!user) return null;
+
+  const webhookSecret = await ensureMercadoPagoConfig(center.id);
+  if (!webhookSecret) return null;
+
+  const slug = opts.planName.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+  const plan = await prisma.plan.upsert({
+    where: { centerId_slug: { centerId: center.id, slug } },
+    update: {},
+    create: {
+      centerId: center.id,
+      name: opts.planName,
+      slug,
+      description: "Plan recurrente E2E (Tier2)",
+      type: "LIVE",
+      amountCents: 19900,
+      currency: "CLP",
+      maxReservations: 8,
+      validityDays: 30,
+      billingMode: "RECURRING",
+    },
+  });
+
+  const mpSubscriptionId = `tier2-mp-sub-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const now = new Date();
+  const sub = await prisma.subscription.create({
+    data: {
+      centerId: center.id,
+      userId: user.id,
+      planId: plan.id,
+      mpSubscriptionId,
+      status: "PENDING",
+      currentPeriodStart: now,
+      currentPeriodEnd: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000),
+    },
+  });
+
+  return {
+    subscriptionId: sub.id,
+    mpSubscriptionId,
+    webhookSecret,
+    planId: plan.id,
+    userId: user.id,
+    centerId: center.id,
+  };
+}
+
+/** Borra Subscriptions + UserPlans + Orders asociados a un mpSubscriptionId. */
+export async function cleanupTier2Subscription(mpSubscriptionId: string) {
+  const prisma = await getPrisma();
+  if (!prisma) return;
+  const sub = await prisma.subscription.findUnique({ where: { mpSubscriptionId } });
+  if (!sub) return;
+  await prisma.userPlan.deleteMany({ where: { subscriptionId: sub.id } }).catch(() => {});
+  await prisma.order.deleteMany({ where: { subscriptionId: sub.id } }).catch(() => {});
+  await prisma.subscription.delete({ where: { id: sub.id } }).catch(() => {});
+}
+
+/** Lee el estado de una Subscription por mpSubscriptionId. */
+export async function getTier2SubscriptionStatus(
+  mpSubscriptionId: string,
+): Promise<string | null> {
+  const prisma = await getPrisma();
+  if (!prisma) return null;
+  const sub = await prisma.subscription.findUnique({ where: { mpSubscriptionId } });
+  return sub?.status ?? null;
+}
+
+/** Lee el primer UserPlan no-CANCELLED asociado a una subscription. */
+export async function getTier2UserPlanForSubscription(
+  subscriptionId: string,
+): Promise<{ id: string; status: string; paymentStatus: string; planId: string } | null> {
+  const prisma = await getPrisma();
+  if (!prisma) return null;
+  const up = await prisma.userPlan.findFirst({ where: { subscriptionId } });
+  if (!up) return null;
+  return {
+    id: up.id,
+    status: up.status,
+    paymentStatus: up.paymentStatus,
+    planId: up.planId,
+  };
+}
+
+/**
+ * Lee el último PasswordResetToken creado para `userEmail`. Retorna `null` si
+ * no hay (o no hay DB en este worker).
+ */
+export async function getLatestPasswordResetToken(
+  userEmail: string,
+): Promise<{ id: string; token: string; expiresAt: Date; usedAt: Date | null } | null> {
+  const prisma = await getPrisma();
+  if (!prisma) return null;
+  const user = await prisma.user.findUnique({ where: { email: userEmail } });
+  if (!user) return null;
+  const t = await prisma.passwordResetToken.findFirst({
+    where: { userId: user.id },
+    orderBy: { createdAt: "desc" },
+  });
+  if (!t) return null;
+  return { id: t.id, token: t.token, expiresAt: t.expiresAt, usedAt: t.usedAt };
+}
+
+/**
+ * Crea un PasswordResetToken arbitrario (token y expiresAt provistos) para
+ * testear flujos de "expirado" o "ya usado". Usa `markUsed=true` para
+ * setear `usedAt = new Date()`.
+ */
+export async function seedTier2PasswordResetToken(opts: {
+  userEmail: string;
+  token: string;
+  expiresAt: Date;
+  markUsed?: boolean;
+}): Promise<{ id: string } | null> {
+  const prisma = await getPrisma();
+  if (!prisma) return null;
+  const user = await prisma.user.findUnique({ where: { email: opts.userEmail } });
+  if (!user) return null;
+  const created = await prisma.passwordResetToken.create({
+    data: {
+      userId: user.id,
+      token: opts.token,
+      expiresAt: opts.expiresAt,
+      usedAt: opts.markUsed ? new Date() : null,
+    },
+  });
+  return { id: created.id };
+}
+
+/**
+ * Borra PasswordResetTokens + LoginAttempts asociados a `userEmail`. Útil
+ * para no contaminar otros tests con rate-limit residual o tokens viejos.
+ */
+export async function cleanupTier2PasswordResetData(userEmail: string) {
+  const prisma = await getPrisma();
+  if (!prisma) return;
+  const user = await prisma.user.findUnique({ where: { email: userEmail } });
+  if (!user) return;
+  await prisma.passwordResetToken.deleteMany({ where: { userId: user.id } }).catch(() => {});
+  await prisma.loginAttempt.deleteMany({ where: { email: userEmail } }).catch(() => {});
+}
+
+/**
+ * Borra TODOS los LoginAttempts del centro `centerSlug`. Útil para resetear
+ * el rate limit de auth (5 attempts/15min) entre runs de tests que loguean
+ * múltiples veces como el mismo usuario (auth.setup, auth.spec, panel-mi-cuenta).
+ * El seed.ts ya hace esto al inicio del e2e, pero conviene exponerlo para
+ * tests específicos que lo necesiten.
+ */
+export async function clearTier2LoginAttempts(centerSlug: string) {
+  const prisma = await getPrisma();
+  if (!prisma) return;
+  const center = await prisma.center.findUnique({ where: { slug: centerSlug } });
+  if (!center) return;
+  await prisma.loginAttempt.deleteMany({ where: { centerId: center.id } }).catch(() => {});
+}
+
+/**
+ * Restaura el passwordHash del usuario al hash de la contraseña dada. Útil
+ * en afterAll para no romper el storageState compartido.
+ */
+export async function setUserPassword(userEmail: string, plainPassword: string) {
+  const prisma = await getPrisma();
+  if (!prisma) return;
+  const bcrypt = await import("bcryptjs");
+  const hash = await bcrypt.hash(plainPassword, 12);
+  await prisma.user.update({
+    where: { email: userEmail },
+    data: { passwordHash: hash, tokenVersion: { increment: 1 } },
+  });
+}
+
+/**
+ * Crea (idempotente) un usuario STUDENT dedicado para tests de password
+ * reset, con email único. Devuelve `{ email, password }`.
+ */
+export async function seedTier2ResetUser(opts: {
+  centerSlug: string;
+  emailPrefix: string;
+  initialPassword: string;
+}): Promise<{ email: string; password: string; userId: string } | null> {
+  const prisma = await getPrisma();
+  if (!prisma) return null;
+  const center = await prisma.center.findUnique({ where: { slug: opts.centerSlug } });
+  if (!center) return null;
+  const bcrypt = await import("bcryptjs");
+  const hash = await bcrypt.hash(opts.initialPassword, 12);
+  const email = `${opts.emailPrefix}@e2e.test`;
+  const user = await prisma.user.upsert({
+    where: { email },
+    create: { email, passwordHash: hash, name: "Reset E2E" },
+    update: { passwordHash: hash, tokenVersion: { increment: 1 } },
+  });
+  await prisma.userCenterRole.upsert({
+    where: { userId_centerId: { userId: user.id, centerId: center.id } },
+    create: { userId: user.id, centerId: center.id, role: "STUDENT" },
+    update: { role: "STUDENT" },
+  });
+  return { email, password: opts.initialPassword, userId: user.id };
+}
+
+/** Borra un usuario y sus dependientes. */
+export async function cleanupTier2User(userEmail: string) {
+  const prisma = await getPrisma();
+  if (!prisma) return;
+  const user = await prisma.user.findUnique({ where: { email: userEmail } });
+  if (!user) return;
+  // userCenterRole y derivados se borran via cascade FK.
+  await prisma.passwordResetToken.deleteMany({ where: { userId: user.id } }).catch(() => {});
+  await prisma.loginAttempt.deleteMany({ where: { email: userEmail } }).catch(() => {});
+  await prisma.user.delete({ where: { id: user.id } }).catch(() => {});
+}
+
+/**
+ * Crea un UserPlan EXPIRADO (status="EXPIRED", validUntil en el pasado) para
+ * `userEmail` en `centerSlug`. Usa el primer plan existente o crea uno con
+ * `planName`. Retorna `{ userPlanId, planId }`.
+ */
+export async function seedTier2ExpiredUserPlan(opts: {
+  centerSlug: string;
+  userEmail: string;
+  planName: string;
+}): Promise<{ userPlanId: string; planId: string } | null> {
+  const prisma = await getPrisma();
+  if (!prisma) return null;
+  const center = await prisma.center.findUnique({ where: { slug: opts.centerSlug } });
+  if (!center) return null;
+  const user = await prisma.user.findUnique({ where: { email: opts.userEmail } });
+  if (!user) return null;
+
+  const slug = opts.planName.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+  const plan = await prisma.plan.upsert({
+    where: { centerId_slug: { centerId: center.id, slug } },
+    update: {},
+    create: {
+      centerId: center.id,
+      name: opts.planName,
+      slug,
+      description: "Plan E2E (expirado)",
+      type: "LIVE",
+      amountCents: 19900,
+      currency: "CLP",
+      maxReservations: 4,
+      validityDays: 30,
+      billingMode: "ONE_TIME",
+    },
+  });
+
+  const validFrom = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000);
+  const validUntil = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000);
+  const userPlan = await prisma.userPlan.create({
+    data: {
+      userId: user.id,
+      planId: plan.id,
+      centerId: center.id,
+      status: "EXPIRED",
+      paymentStatus: "PAID",
+      classesTotal: plan.maxReservations,
+      classesUsed: 0,
+      validFrom,
+      validUntil,
+    },
+  });
+  return { userPlanId: userPlan.id, planId: plan.id };
+}
+
+/** Borra un UserPlan por id. */
+export async function cleanupTier2UserPlan(userPlanId: string) {
+  const prisma = await getPrisma();
+  if (!prisma) return;
+  await prisma.reservation.deleteMany({ where: { userPlanId } }).catch(() => {});
+  await prisma.userPlan.delete({ where: { id: userPlanId } }).catch(() => {});
+}
+
+/**
+ * Crea un feriado para el centro. Idempotente por (centerId, date).
+ * `dateYmd` formato `YYYY-MM-DD`.
+ */
+export async function seedTier2Holiday(opts: {
+  centerSlug: string;
+  dateYmd: string;
+  label?: string;
+}): Promise<{ id: string } | null> {
+  const prisma = await getPrisma();
+  if (!prisma) return null;
+  const center = await prisma.center.findUnique({ where: { slug: opts.centerSlug } });
+  if (!center) return null;
+  const [y, m, d] = opts.dateYmd.split("-").map((s) => parseInt(s, 10));
+  const date = new Date(Date.UTC(y, m - 1, d));
+  const h = await prisma.centerHoliday.upsert({
+    where: { centerId_date: { centerId: center.id, date } },
+    update: { label: opts.label ?? "Feriado E2E" },
+    create: { centerId: center.id, date, label: opts.label ?? "Feriado E2E" },
+  });
+  return { id: h.id };
+}
+
+/** Borra holidays cuyo label matchea `labelPattern`. */
+export async function cleanupTier2Holidays(labelPattern: string) {
+  const prisma = await getPrisma();
+  if (!prisma) return;
+  await prisma.centerHoliday.deleteMany({
+    where: { label: { contains: labelPattern } },
+  }).catch(() => {});
+}
+
+/**
+ * Snapshot completo del CenterSiteConfig, para restaurar en afterAll luego de
+ * un test que muta colores/textos.
+ */
+export type SiteConfigSnapshot = {
+  colorPrimary: string | null;
+  colorSecondary: string | null;
+  colorAccent: string | null;
+  heroTitle: string | null;
+  heroSubtitle: string | null;
+  heroEyebrow: string | null;
+  seoTitle: string | null;
+  seoDescription: string | null;
+  logoUrl: string | null;
+  faviconUrl: string | null;
+  heroImageUrl: string | null;
+  heroOverlayEnabled: boolean;
+};
+
+export async function snapshotTier2SiteConfig(
+  centerSlug: string,
+): Promise<SiteConfigSnapshot | null> {
+  const prisma = await getPrisma();
+  if (!prisma) return null;
+  const center = await prisma.center.findUnique({ where: { slug: centerSlug } });
+  if (!center) return null;
+  const cfg = await prisma.centerSiteConfig.findUnique({ where: { centerId: center.id } });
+  if (!cfg) return null;
+  return {
+    colorPrimary: cfg.colorPrimary,
+    colorSecondary: cfg.colorSecondary,
+    colorAccent: cfg.colorAccent,
+    heroTitle: cfg.heroTitle,
+    heroSubtitle: cfg.heroSubtitle,
+    heroEyebrow: cfg.heroEyebrow,
+    seoTitle: cfg.seoTitle,
+    seoDescription: cfg.seoDescription,
+    logoUrl: cfg.logoUrl,
+    faviconUrl: cfg.faviconUrl,
+    heroImageUrl: cfg.heroImageUrl,
+    heroOverlayEnabled: cfg.heroOverlayEnabled,
+  };
+}
+
+export async function restoreTier2SiteConfig(
+  centerSlug: string,
+  snap: SiteConfigSnapshot,
+) {
+  const prisma = await getPrisma();
+  if (!prisma) return;
+  const center = await prisma.center.findUnique({ where: { slug: centerSlug } });
+  if (!center) return;
+  await prisma.centerSiteConfig.update({
+    where: { centerId: center.id },
+    data: { ...snap },
+  }).catch(() => {});
+}
+
+/**
+ * Crea una LiveClass con `isTrialClass=true` que cumple la ventana de
+ * reserva (default: arranca en 48h, lejos del bookBeforeMinutes=1440).
+ * Retorna `{ id }`.
+ */
+export async function seedTier2TrialClass(opts: {
+  centerSlug: string;
+  title: string;
+  startsInHours?: number;
+  trialCapacity?: number;
+}): Promise<{ id: string } | null> {
+  const prisma = await getPrisma();
+  if (!prisma) return null;
+  const center = await prisma.center.findUnique({ where: { slug: opts.centerSlug } });
+  if (!center) return null;
+  const startsAt = new Date(Date.now() + (opts.startsInHours ?? 48) * 60 * 60 * 1000);
+  const lc = await prisma.liveClass.create({
+    data: {
+      centerId: center.id,
+      title: opts.title,
+      startsAt,
+      durationMinutes: 60,
+      maxCapacity: 10,
+      isTrialClass: true,
+      trialCapacity: opts.trialCapacity ?? 10,
+    },
+  });
+  return { id: lc.id };
+}
+
+/**
+ * Crea una LiveClass dentro de la ventana de bloqueo (default: arranca en
+ * 12h, dentro del bookBeforeMinutes=1440). Útil para verificar el bloqueo
+ * por ventana cerrada. Retorna `{ id }`.
+ */
+export async function seedTier2ClassWithinBookingWindow(opts: {
+  centerSlug: string;
+  title: string;
+  startsInHours?: number;
+}): Promise<{ id: string } | null> {
+  const prisma = await getPrisma();
+  if (!prisma) return null;
+  const center = await prisma.center.findUnique({ where: { slug: opts.centerSlug } });
+  if (!center) return null;
+  const startsAt = new Date(Date.now() + (opts.startsInHours ?? 12) * 60 * 60 * 1000);
+  const lc = await prisma.liveClass.create({
+    data: {
+      centerId: center.id,
+      title: opts.title,
+      startsAt,
+      durationMinutes: 60,
+      maxCapacity: 10,
+    },
+  });
+  return { id: lc.id };
+}
+
+/**
+ * Borra todas las reservas (cualquier estado) que un usuario tenga en el
+ * centro. Útil antes de testear "trial limit" para empezar limpio.
+ */
+export async function cleanupTier2UserReservations(opts: {
+  centerSlug: string;
+  userEmail: string;
+}) {
+  const prisma = await getPrisma();
+  if (!prisma) return;
+  const center = await prisma.center.findUnique({ where: { slug: opts.centerSlug } });
+  if (!center) return;
+  const user = await prisma.user.findUnique({ where: { email: opts.userEmail } });
+  if (!user) return;
+  await prisma.reservation.deleteMany({
+    where: { userId: user.id, liveClass: { centerId: center.id } },
+  }).catch(() => {});
+}
+
+/**
+ * Borra todos los UserPlan que tenga un usuario en un centro. Útil para
+ * arrancar "sin plan" en escenarios de trial/booking-window.
+ */
+export async function cleanupTier2UserPlansForUser(opts: {
+  centerSlug: string;
+  userEmail: string;
+}) {
+  const prisma = await getPrisma();
+  if (!prisma) return;
+  const center = await prisma.center.findUnique({ where: { slug: opts.centerSlug } });
+  if (!center) return;
+  const user = await prisma.user.findUnique({ where: { email: opts.userEmail } });
+  if (!user) return;
+  const ups = await prisma.userPlan.findMany({
+    where: { userId: user.id, centerId: center.id },
+  });
+  for (const up of ups) {
+    await prisma.reservation.deleteMany({ where: { userPlanId: up.id } }).catch(() => {});
+    await prisma.userPlan.delete({ where: { id: up.id } }).catch(() => {});
+  }
+}
+
+/** Borra ManualPayment por nota. */
+export async function cleanupTier2ManualPayments(notePattern: string) {
+  const prisma = await getPrisma();
+  if (!prisma) return;
+  await prisma.manualPayment.deleteMany({
+    where: { note: { contains: notePattern } },
+  }).catch(() => {});
+}
+
+/**
+ * Crea una LiveClass pasada + Reservation CONFIRMED para `userEmail`. Útil
+ * para testear el flujo de no-show (mark NO_SHOW por admin/instructor).
+ * Devuelve `{ liveClassId, reservationId }`.
+ */
+export async function seedTier2PastReservation(opts: {
+  centerSlug: string;
+  userEmail: string;
+  title: string;
+  hoursAgo?: number;
+}): Promise<{ liveClassId: string; reservationId: string } | null> {
+  const prisma = await getPrisma();
+  if (!prisma) return null;
+  const center = await prisma.center.findUnique({ where: { slug: opts.centerSlug } });
+  if (!center) return null;
+  const user = await prisma.user.findUnique({ where: { email: opts.userEmail } });
+  if (!user) return null;
+  const startsAt = new Date(Date.now() - (opts.hoursAgo ?? 2) * 60 * 60 * 1000);
+  const lc = await prisma.liveClass.create({
+    data: {
+      centerId: center.id,
+      title: opts.title,
+      startsAt,
+      durationMinutes: 60,
+      maxCapacity: 10,
+    },
+  });
+  const r = await prisma.reservation.create({
+    data: {
+      userId: user.id,
+      liveClassId: lc.id,
+      status: "CONFIRMED",
+    },
+  });
+  return { liveClassId: lc.id, reservationId: r.id };
+}
+
+/** Cuenta reservas NO_SHOW de un user en un centro en el mes corriente. */
+export async function countTier2NoShowsThisMonth(opts: {
+  centerSlug: string;
+  userEmail: string;
+}): Promise<number | null> {
+  const prisma = await getPrisma();
+  if (!prisma) return null;
+  const center = await prisma.center.findUnique({ where: { slug: opts.centerSlug } });
+  if (!center) return null;
+  const user = await prisma.user.findUnique({ where: { email: opts.userEmail } });
+  if (!user) return null;
+  const startOfMonth = new Date();
+  startOfMonth.setDate(1);
+  startOfMonth.setHours(0, 0, 0, 0);
+  return prisma.reservation.count({
+    where: {
+      userId: user.id,
+      status: "NO_SHOW",
+      liveClass: { centerId: center.id },
+      updatedAt: { gte: startOfMonth },
+    },
+  });
+}
