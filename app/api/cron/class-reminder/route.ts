@@ -6,13 +6,22 @@ import { shouldSendEmail } from "@/lib/application/check-email-preference";
 import { getEmailBranding } from "@/lib/email/branding";
 
 const REMINDER_HOURS_BEFORE = 2;
-/** Ventana de búsqueda: corremos cada hora; cubrimos 1h alrededor del target. */
-const WINDOW_MINUTES = 30;
 
 /**
- * Recordatorio 2h antes de cada clase activa con reservas confirmadas.
- * Idempotencia: la ventana de 1h alrededor del target evita doble envío
- * mientras el cron corra cada hora exacta.
+ * Recordatorio ~2h antes de cada clase.
+ *
+ * En Vercel Hobby los crons tienen precisión ±59 min y solo pueden correr
+ * 1 vez por día. Para cubrir el día entero usamos múltiples entradas en
+ * vercel.json (cada hora desde 06:00 hasta 22:00). Cada disparo cubre una
+ * ventana de 2h adelante (1h–3h) y se apoya en `Reservation.reminderSentAt`
+ * para evitar duplicados.
+ *
+ * Lógica:
+ *  1. Buscamos reservas CONFIRMED con clase en [now+1h, now+3h] y
+ *     reminderSentAt = null.
+ *  2. Para cada una, claim atómico vía updateMany (filtra reminderSentAt: null
+ *     en la condición). Si dos crons se solapan, solo uno gana el claim.
+ *  3. El que gana el claim manda el correo (si la pref del usuario lo permite).
  */
 export async function GET(request: Request) {
   const authHeader = request.headers.get("authorization");
@@ -21,13 +30,13 @@ export async function GET(request: Request) {
   }
 
   const now = new Date();
-  const target = new Date(now.getTime() + REMINDER_HOURS_BEFORE * 60 * 60 * 1000);
-  const from = new Date(target.getTime() - WINDOW_MINUTES * 60 * 1000);
-  const to = new Date(target.getTime() + WINDOW_MINUTES * 60 * 1000);
+  const from = new Date(now.getTime() + 60 * 60 * 1000); // +1h
+  const to = new Date(now.getTime() + 3 * 60 * 60 * 1000); // +3h
 
   const reservations = await prisma.reservation.findMany({
     where: {
       status: "CONFIRMED",
+      reminderSentAt: null,
       liveClass: { startsAt: { gte: from, lte: to }, status: "ACTIVE" },
     },
     include: {
@@ -47,11 +56,27 @@ export async function GET(request: Request) {
   });
 
   let sent = 0;
+  let skippedByPref = 0;
+  let raceLost = 0;
   const brandingCache = new Map<string, Awaited<ReturnType<typeof getEmailBranding>>>();
 
   for (const r of reservations) {
+    // Claim atómico: marca reminderSentAt solo si sigue null. Si otro cron
+    // ya la tomó (precisión ±59min), claimed.count === 0 y la salteamos.
+    const claimed = await prisma.reservation.updateMany({
+      where: { id: r.id, reminderSentAt: null },
+      data: { reminderSentAt: now },
+    });
+    if (claimed.count === 0) {
+      raceLost++;
+      continue;
+    }
+
     const canSend = await shouldSendEmail(r.userId, r.liveClass.centerId, "classReminder");
-    if (!canSend) continue;
+    if (!canSend) {
+      skippedByPref++;
+      continue;
+    }
 
     let branding = brandingCache.get(r.liveClass.centerId);
     if (!branding) {
@@ -77,5 +102,11 @@ export async function GET(request: Request) {
     sent++;
   }
 
-  return NextResponse.json({ ok: true, sent, total: reservations.length });
+  return NextResponse.json({
+    ok: true,
+    sent,
+    skippedByPref,
+    raceLost,
+    candidates: reservations.length,
+  });
 }
