@@ -326,6 +326,10 @@ model Reservation {
   liveClassId String
   userPlanId  String?          // plan con el que se hizo la reserva (null = reservas legacy)
   status     ReservationStatus @default(CONFIRMED)
+  /** Marca cuándo se mandó el recordatorio "2h antes". Null = aún no enviado.
+   *  Hace idempotente al cron de class-reminder (necesario en Hobby por la
+   *  precisión ±59min de los schedules diarios). */
+  reminderSentAt DateTime?
   createdAt  DateTime         @default(now())
   updatedAt  DateTime         @updatedAt
 
