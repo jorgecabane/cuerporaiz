@@ -7,11 +7,20 @@ import {
   mercadopagoConfigRepository,
   userPlanRepository,
   planRepository,
+  userRepository,
 } from "@/lib/adapters/db";
 import { mercadoPagoSubscriptionAdapter } from "@/lib/adapters/payment";
 import { computeValidUntil } from "./activate-plan";
 import type { SubscriptionStatus } from "@/lib/domain/subscription";
 import type { UserPlanStatus } from "@/lib/domain/user-plan";
+import { sendEmailSafe } from "./send-email";
+import {
+  buildSubscriptionConfirmedEmail,
+  buildSubscriptionRenewalEmail,
+  buildSubscriptionCancelledEmail,
+} from "@/lib/email";
+import { getEmailBranding } from "@/lib/email/branding";
+import { formatLongDate } from "@/lib/email/format-datetime";
 
 /** Maps MP preapproval status → our SubscriptionStatus */
 export function mapMpStatusToSubscription(mpStatus: string): SubscriptionStatus {
@@ -60,6 +69,7 @@ export async function processPreapprovalWebhook(
   }
 
   if (subscription.status !== newStatus) {
+    const previousStatus = subscription.status;
     subscription = await subscriptionRepository.updateStatus(subscription.id, newStatus);
 
     const activeUserPlan = await userPlanRepository.findActiveBySubscriptionId(subscription.id);
@@ -72,6 +82,27 @@ export async function processPreapprovalWebhook(
         await userPlanRepository.unfreeze(activeUserPlan.id);
       } else {
         await userPlanRepository.updateStatus(activeUserPlan.id, userPlanStatus);
+      }
+    }
+
+    // Email de cancelación: solo cuando transiciona a CANCELLED.
+    if (newStatus === "CANCELLED" && previousStatus !== "CANCELLED") {
+      const [user, plan] = await Promise.all([
+        userRepository.findById(subscription.userId),
+        planRepository.findById(subscription.planId),
+      ]);
+      if (user && plan) {
+        const branding = await getEmailBranding(subscription.centerId);
+        const accessUntil = activeUserPlan?.validUntil
+          ? formatLongDate(activeUserPlan.validUntil, branding.timezone)
+          : formatLongDate(subscription.currentPeriodEnd, branding.timezone);
+        sendEmailSafe(buildSubscriptionCancelledEmail({
+          toEmail: user.email,
+          userName: user.name ?? user.email.split("@")[0],
+          planName: plan.name,
+          accessUntil,
+          branding,
+        }));
       }
     }
   }
@@ -142,6 +173,24 @@ export async function processAuthorizedPaymentWebhook(
     validUntil,
   });
 
+  // Email de renovación (no es el primer pago: ya había UserPlan, solo expirado).
+  const user = await userRepository.findById(subscription.userId);
+  if (user) {
+    const branding = await getEmailBranding(subscription.centerId);
+    const nextChargeDate = formatLongDate(
+      validUntil ?? new Date(now.getFullYear() + 1, now.getMonth(), now.getDate()),
+      branding.timezone,
+    );
+    sendEmailSafe(buildSubscriptionRenewalEmail({
+      toEmail: user.email,
+      userName: user.name ?? user.email.split("@")[0],
+      planName: plan.name,
+      amountFormatted: `$${payment.transactionAmount.toLocaleString("es-CL")}`,
+      nextChargeDate,
+      branding,
+    }));
+  }
+
   return { success: true };
 }
 
@@ -173,6 +222,24 @@ async function handleFirstAuthorizedPayment(
     validFrom: now,
     validUntil,
   });
+
+  // Email de bienvenida a la suscripción (primer pago aprobado).
+  const user = await userRepository.findById(subscription.userId);
+  if (user) {
+    const branding = await getEmailBranding(subscription.centerId);
+    const nextChargeDate = formatLongDate(
+      validUntil ?? new Date(now.getFullYear() + 1, now.getMonth(), now.getDate()),
+      branding.timezone,
+    );
+    sendEmailSafe(buildSubscriptionConfirmedEmail({
+      toEmail: user.email,
+      userName: user.name ?? user.email.split("@")[0],
+      planName: plan.name,
+      amountFormatted: `$${payment.transactionAmount.toLocaleString("es-CL")}`,
+      nextChargeDate,
+      branding,
+    }));
+  }
 
   return { success: true };
 }

@@ -7,12 +7,24 @@
  * Tras commit dispara mail con el motivo literal al estudiante.
  */
 import { prisma } from "@/lib/adapters/db/prisma";
-import { centerRepository, planRepository, userRepository } from "@/lib/adapters/db";
+import { centerRepository, planRepository, userRepository, siteConfigRepository } from "@/lib/adapters/db";
 import { sendEmailSafe } from "./send-email";
 import { buildTransferRejectedEmail } from "@/lib/email";
+import { getEmailBranding } from "@/lib/email/branding";
+import { getBaseUrl } from "@/lib/utils/base-url";
 
 const MIN_REASON_LENGTH = 10;
 const SUPPORT_FALLBACK = process.env.NEXT_PUBLIC_SUPPORT_EMAIL ?? "cuerporaiztrinidad@gmail.com";
+
+/**
+ * Resuelve el email de contacto a mostrar al usuario.
+ * Prioridad: bankAccountEmail (plugin transferencia) → site.contactEmail → fallback global.
+ */
+async function resolveContactEmail(centerId: string, bankAccountEmail: string | null): Promise<string> {
+  if (bankAccountEmail) return bankAccountEmail;
+  const site = await siteConfigRepository.findByCenterId(centerId);
+  return site?.contactEmail ?? SUPPORT_FALLBACK;
+}
 
 export type RejectTransferErrorCode =
   | "NOT_FOUND"
@@ -85,16 +97,20 @@ export async function rejectTransferOrder(input: RejectTransferOrderInput): Prom
     centerRepository.findById(order.centerId),
   ]);
   if (buyer && plan && center) {
+    const [branding, contactEmail] = await Promise.all([
+      getEmailBranding(center.id),
+      resolveContactEmail(center.id, center.bankAccountEmail),
+    ]);
     sendEmailSafe(
       buildTransferRejectedEmail({
         toEmail: buyer.email,
         userName: buyer.name ?? buyer.email.split("@")[0],
-        centerName: center.name,
         itemName: plan.name,
         amountFormatted: `$${order.amountCents.toLocaleString("es-CL")}`,
         reason,
-        contactEmail: center.bankAccountEmail ?? SUPPORT_FALLBACK,
-        tiendaUrl: `${process.env.NEXTAUTH_URL ?? ""}/panel/tienda`,
+        contactEmail,
+        tiendaUrl: `${getBaseUrl()}/panel/tienda`,
+        branding,
       }),
     );
   }
@@ -155,16 +171,20 @@ export async function rejectTransferEventTicket(
     centerRepository.findById(ticket.event.centerId),
   ]);
   if (buyer && center) {
+    const [branding, contactEmail] = await Promise.all([
+      getEmailBranding(center.id),
+      resolveContactEmail(center.id, center.bankAccountEmail),
+    ]);
     sendEmailSafe(
       buildTransferRejectedEmail({
         toEmail: buyer.email,
         userName: buyer.name ?? buyer.email.split("@")[0],
-        centerName: center.name,
         itemName: ticket.event.title,
         amountFormatted: `$${ticket.amountCents.toLocaleString("es-CL")}`,
         reason,
-        contactEmail: center.bankAccountEmail ?? SUPPORT_FALLBACK,
-        tiendaUrl: `${process.env.NEXTAUTH_URL ?? ""}/panel/eventos`,
+        contactEmail,
+        tiendaUrl: `${getBaseUrl()}/panel/eventos`,
+        branding,
       }),
     );
   }

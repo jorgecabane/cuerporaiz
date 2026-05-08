@@ -75,6 +75,14 @@ export async function createEventCheckout(
       currency: event.currency,
     });
     const paid = await eventTicketRepository.updateStatus(ticket.id, "PAID", { paidAt: new Date() });
+    const { notifyEventTicketConfirmation } = await import("./notify-event-ticket-confirmation");
+    notifyEventTicketConfirmation({
+      eventId: event.id,
+      userId: input.userId,
+      centerId: input.centerId,
+      amountCents: 0,
+      currency: event.currency,
+    }).catch((err) => console.error("[event-checkout] confirm email", err));
     return { success: true, ticket: paid ?? ticket };
   }
 

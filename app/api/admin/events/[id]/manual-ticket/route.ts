@@ -68,6 +68,15 @@ export async function POST(
     });
     const paid = await eventTicketRepository.updateStatus(ticket.id, "PAID", { paidAt: new Date() });
 
+    const { notifyEventTicketConfirmation } = await import("@/lib/application/notify-event-ticket-confirmation");
+    notifyEventTicketConfirmation({
+      eventId: event.id,
+      userId,
+      centerId: event.centerId,
+      amountCents: event.amountCents,
+      currency: event.currency,
+    }).catch((err) => console.error("[manual-ticket] confirm email", err));
+
     return NextResponse.json(paid ?? ticket, { status: 201 });
   } catch (err) {
     console.error("[admin events manual-ticket POST]", err);

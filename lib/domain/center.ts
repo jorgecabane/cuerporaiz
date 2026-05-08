@@ -9,6 +9,8 @@ export interface Center {
   name: string;
   slug: string;
   currency: string; // moneda del centro (ej. CLP); usada en planes
+  /** IANA timezone para mostrar fechas en correos / UI cliente */
+  timezone: string;
   /** Minutos antes del inicio para poder cancelar sin consumir clase */
   cancelBeforeMinutes: number;
   maxNoShowsPerMonth: number;

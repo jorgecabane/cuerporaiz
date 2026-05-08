@@ -14,6 +14,8 @@ import { prisma } from "@/lib/adapters/db/prisma";
 import { centerRepository, planRepository, eventRepository, userRepository } from "@/lib/adapters/db";
 import { sendEmailSafe } from "./send-email";
 import { buildTransferReceivedEmail } from "@/lib/email";
+import { getEmailBranding } from "@/lib/email/branding";
+import { getBaseUrl } from "@/lib/utils/base-url";
 
 export type ClaimTransferErrorCode =
   | "NOT_FOUND"
@@ -98,14 +100,15 @@ export async function claimTransferForOrder(
     planRepository.findById(order.planId),
   ]);
   if (buyer && plan) {
+    const branding = await getEmailBranding(center.id);
     sendEmailSafe(
       buildTransferReceivedEmail({
         toEmail: buyer.email,
         userName: buyer.name ?? buyer.email.split("@")[0],
-        centerName: center.name,
         itemName: plan.name,
         amountFormatted: `$${order.amountCents.toLocaleString("es-CL")}`,
-        misPagosUrl: `${process.env.NEXTAUTH_URL ?? ""}/panel/mis-pagos`,
+        misPagosUrl: `${getBaseUrl()}/panel/mis-pagos`,
+        branding,
       }),
     );
   }
@@ -206,14 +209,15 @@ export async function claimTransferForEventTicket(
     eventRepository.findById(ticket.event.id),
   ]);
   if (buyer && eventDoc) {
+    const branding = await getEmailBranding(center.id);
     sendEmailSafe(
       buildTransferReceivedEmail({
         toEmail: buyer.email,
         userName: buyer.name ?? buyer.email.split("@")[0],
-        centerName: center.name,
         itemName: eventDoc.title,
         amountFormatted: `$${ticket.amountCents.toLocaleString("es-CL")}`,
-        misPagosUrl: `${process.env.NEXTAUTH_URL ?? ""}/panel/mis-pagos`,
+        misPagosUrl: `${getBaseUrl()}/panel/mis-pagos`,
+        branding,
       }),
     );
   }

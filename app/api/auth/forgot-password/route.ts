@@ -5,6 +5,8 @@ import { checkRateLimit } from "@/lib/application/check-rate-limit";
 import { authTokenRepository, loginAttemptRepository, userRepository, centerRepository } from "@/lib/adapters/db";
 import { buildForgotPasswordEmail } from "@/lib/email/auth";
 import { sendEmailSafe } from "@/lib/application/send-email";
+import { getEmailBranding, defaultBranding } from "@/lib/email/branding";
+import { getBaseUrl } from "@/lib/utils/base-url";
 
 export async function POST(request: Request) {
   try {
@@ -40,18 +42,19 @@ export async function POST(request: Request) {
     });
 
     if (result.token) {
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+      const baseUrl = getBaseUrl();
       const center =
         (await centerRepository.findBySlug(centerId)) ??
         (await centerRepository.findById(centerId));
       const user = result.userId ? await userRepository.findById(result.userId) : null;
+      const branding = center ? await getEmailBranding(center.id) : defaultBranding();
 
       sendEmailSafe(
         buildForgotPasswordEmail({
           toEmail: email,
           userName: user?.name ?? undefined,
-          centerName: center?.name ?? "Cuerpo Raíz",
           resetUrl: `${baseUrl}/auth/reset-password?token=${result.token}`,
+          branding,
         })
       );
     }

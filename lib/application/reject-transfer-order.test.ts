@@ -18,6 +18,7 @@ vi.mock("@/lib/adapters/db", () => ({
   centerRepository: { findById: vi.fn() },
   planRepository: { findById: vi.fn() },
   userRepository: { findById: vi.fn() },
+  siteConfigRepository: { findByCenterId: vi.fn().mockResolvedValue(null) },
 }));
 
 vi.mock("./send-email", () => ({

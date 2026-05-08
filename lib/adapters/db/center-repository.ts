@@ -6,6 +6,7 @@ function toDomainCenter(c: {
   name: string;
   slug: string;
   currency: string;
+  timezone: string;
   cancelBeforeMinutes: number;
   maxNoShowsPerMonth: number;
   bookBeforeMinutes: number;
@@ -35,6 +36,7 @@ function toDomainCenter(c: {
     name: c.name,
     slug: c.slug,
     currency: c.currency ?? "CLP",
+    timezone: c.timezone ?? "America/Santiago",
     cancelBeforeMinutes: c.cancelBeforeMinutes,
     maxNoShowsPerMonth: c.maxNoShowsPerMonth,
     bookBeforeMinutes: c.bookBeforeMinutes,

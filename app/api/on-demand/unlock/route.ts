@@ -14,6 +14,8 @@ import {
 import { sendEmailSafe } from "@/lib/application/send-email";
 import { buildLessonUnlockedEmail, buildQuotaExhaustedEmail } from "@/lib/email/on-demand";
 import { prisma } from "@/lib/adapters/db/prisma";
+import { getEmailBranding } from "@/lib/email/branding";
+import { getBaseUrl } from "@/lib/utils/base-url";
 
 export async function POST(request: Request) {
   try {
@@ -54,32 +56,41 @@ export async function POST(request: Request) {
     }
 
     // Send emails asynchronously — use data from use case result to avoid re-fetching lesson/practice
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+    const baseUrl = getBaseUrl();
     const category = await onDemandCategoryRepository.findById(result.categoryId!);
 
     const pref = await prisma.emailPreference.findUnique({
       where: { userId_centerId: { userId, centerId } },
     });
 
-    if (category && (!pref || pref.lessonUnlocked)) {
-      sendEmailSafe(buildLessonUnlockedEmail({
-        toEmail: session.user.email!,
-        userName: session.user.name ?? undefined,
-        lessonTitle: result.lessonTitle!,
-        practiceName: result.practiceName!,
-        categoryName: category.name,
-        remainingLessons: result.remainingLessons ?? null,
-        onDemandUrl: `${baseUrl}/panel/on-demand`,
-      }));
-    }
+    if (category && (!pref || pref.lessonUnlocked || pref.quotaExhausted)) {
+      const branding = await getEmailBranding(centerId);
+      const preferencesUrl = `${baseUrl}/panel/mi-perfil?tab=correos`;
 
-    if (result.remainingLessons === 0 && category && (!pref || pref.quotaExhausted)) {
-      sendEmailSafe(buildQuotaExhaustedEmail({
-        toEmail: session.user.email!,
-        userName: session.user.name ?? undefined,
-        categoryName: category.name,
-        storeUrl: `${baseUrl}/panel/tienda`,
-      }));
+      if (!pref || pref.lessonUnlocked) {
+        sendEmailSafe(buildLessonUnlockedEmail({
+          toEmail: session.user.email!,
+          userName: session.user.name ?? undefined,
+          lessonTitle: result.lessonTitle!,
+          practiceName: result.practiceName!,
+          categoryName: category.name,
+          remainingLessons: result.remainingLessons ?? null,
+          onDemandUrl: `${baseUrl}/panel/on-demand`,
+          preferencesUrl,
+          branding,
+        }));
+      }
+
+      if (result.remainingLessons === 0 && (!pref || pref.quotaExhausted)) {
+        sendEmailSafe(buildQuotaExhaustedEmail({
+          toEmail: session.user.email!,
+          userName: session.user.name ?? undefined,
+          categoryName: category.name,
+          storeUrl: `${baseUrl}/panel/tienda`,
+          preferencesUrl,
+          branding,
+        }));
+      }
     }
 
     return NextResponse.json({ success: true, unlock: result.unlock, remainingLessons: result.remainingLessons });
