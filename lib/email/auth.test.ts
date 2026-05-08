@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   buildForgotPasswordEmail,
   buildEmailVerificationEmail,
+  buildSetPasswordEmail,
 } from "./auth";
 import { defaultBranding } from "./branding";
 
@@ -97,6 +98,57 @@ describe("buildEmailVerificationEmail", () => {
     });
     expect(dto.html).not.toContain("<b>Evil</b>");
     expect(dto.html).toContain("&lt;b&gt;Evil&lt;/b&gt;");
+    expect(dto.html).toContain("Centro &amp; Co");
+  });
+});
+
+describe("buildSetPasswordEmail", () => {
+  it("incluye link tokenizado, copy de invitación y URL para copiar", () => {
+    const dto = buildSetPasswordEmail({
+      ...BASE,
+      userName: "Andrea",
+      setPasswordUrl: "https://x/auth/reset-password?token=abc&invite=1",
+      roleLabel: "profesor/a",
+    });
+    expect(dto.subject).toContain("Activá tu cuenta");
+    expect(dto.subject).toContain("Cuerpo Raíz");
+    expect(dto.html).toContain("Hola Andrea");
+    expect(dto.html).toContain("profesor/a");
+    expect(dto.html).toContain("https://x/auth/reset-password?token=abc&invite=1");
+    expect(dto.html).toContain("Este enlace expira en 7 días");
+    expect(dto.text).toContain("https://x/auth/reset-password?token=abc&invite=1");
+    expect(dto.text).toContain("expira en 7 días");
+  });
+
+  it("usa copy genérico cuando no hay roleLabel", () => {
+    const dto = buildSetPasswordEmail({
+      ...BASE,
+      setPasswordUrl: "https://x/set",
+    });
+    expect(dto.html).toContain("El equipo te creó una cuenta");
+    expect(dto.text).toContain("El equipo te creó una cuenta");
+  });
+
+  it("saluda genérico cuando no hay userName", () => {
+    const dto = buildSetPasswordEmail({
+      ...BASE,
+      setPasswordUrl: "https://x/set",
+    });
+    expect(dto.html).toContain("<p>Hola,</p>");
+    expect(dto.text!.split("\n")[0]).toBe("Hola,");
+  });
+
+  it("escapa HTML en userName, centerName y roleLabel", () => {
+    const dto = buildSetPasswordEmail({
+      toEmail: "x@example.com",
+      userName: "<b>X</b>",
+      roleLabel: "<rol>",
+      branding: { ...BRANDING, centerName: "Centro & Co" },
+      setPasswordUrl: "https://x/set",
+    });
+    expect(dto.html).not.toContain("<b>X</b>");
+    expect(dto.html).toContain("&lt;b&gt;X&lt;/b&gt;");
+    expect(dto.html).toContain("&lt;rol&gt;");
     expect(dto.html).toContain("Centro &amp; Co");
   });
 });

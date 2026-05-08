@@ -68,4 +68,49 @@ describe("emailBaseLayout", () => {
     expect(html).toContain("mi-perfil?tab=correos");
     expect(html).toContain("Preferencias de correo");
   });
+
+  it("omits preferences block when not provided", () => {
+    const html = emailBaseLayout({ body: "<p>x</p>", branding });
+    expect(html).not.toContain("Preferencias de correo");
+  });
+
+  it("renders contact phone in footer when present", () => {
+    const html = emailBaseLayout({
+      body: "<p>x</p>",
+      branding: { ...branding, contactPhone: "+56 9 1234 5678" },
+    });
+    expect(html).toContain("+56 9 1234 5678");
+  });
+
+  it("renders Instagram and WhatsApp links when present", () => {
+    const html = emailBaseLayout({
+      body: "<p>x</p>",
+      branding: {
+        ...branding,
+        instagramUrl: "https://instagram.com/x",
+        whatsappUrl: "https://wa.me/56...",
+      },
+    });
+    expect(html).toContain('href="https://instagram.com/x"');
+    expect(html).toContain("Instagram");
+    expect(html).toContain('href="https://wa.me/56..."');
+    expect(html).toContain("WhatsApp");
+  });
+
+  it("omits contact and social blocks when fully empty", () => {
+    const html = emailBaseLayout({ body: "<p>x</p>", branding });
+    // Sin contact info ni redes, no aparecen secciones extra del footer.
+    expect(html).not.toContain("Instagram");
+    expect(html).not.toContain("WhatsApp");
+    expect(html).not.toContain("mailto:");
+  });
+
+  it("falls back to defaultBranding when branding is null at runtime", () => {
+    // Type-cast porque el tipo requiere branding, pero el runtime tiene `?? defaultBranding()` por seguridad.
+    const html = emailBaseLayout({
+      body: "<p>x</p>",
+      branding: null as unknown as ReturnType<typeof defaultBranding>,
+    });
+    expect(html).toContain("Cuerpo Raíz");
+  });
 });
