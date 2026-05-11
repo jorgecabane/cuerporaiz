@@ -62,7 +62,6 @@ test.describe("Auth — password reset flow", () => {
     // 1. Solicitar reset.
     await page.goto("/auth/forgot-password");
     await expect(page.getByRole("heading", { name: /recuperar contraseña/i })).toBeVisible();
-    await page.getByLabel(/centro/i).fill("e2e-test");
     await page.getByLabel(/email/i).fill(testUser!.email);
     await page.getByRole("button", { name: /enviar enlace/i }).click();
     await expect(page.getByText(/si el email existe/i)).toBeVisible({ timeout: 10000 });

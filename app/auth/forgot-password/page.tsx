@@ -2,10 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { SITE_NAME } from "@/lib/constants/copy";
 
 export default function ForgotPasswordPage() {
-  const [centerId, setCenterId] = useState("cuerporaiz");
+  const centerId = process.env.NEXT_PUBLIC_DEFAULT_CENTER_SLUG ?? "cuerporaiz";
   const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -45,17 +44,6 @@ export default function ForgotPasswordPage() {
           </p>
         ) : (
           <form onSubmit={handleSubmit} className="flex flex-col gap-[var(--space-5)]">
-            <label className="flex flex-col gap-1">
-              <span className="text-sm font-medium text-[var(--color-text-muted)]">Centro (slug)</span>
-              <input
-                type="text"
-                value={centerId}
-                onChange={(e) => setCenterId(e.target.value)}
-                placeholder="cuerporaiz"
-                className="rounded-[var(--radius-md)] border border-[var(--color-border)] px-3 py-2 text-[var(--color-text)]"
-                required
-              />
-            </label>
             <label className="flex flex-col gap-1">
               <span className="text-sm font-medium text-[var(--color-text-muted)]">Email</span>
               <input
