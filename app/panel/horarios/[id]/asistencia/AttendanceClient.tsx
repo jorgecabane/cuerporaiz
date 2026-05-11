@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
+import { Hourglass } from "lucide-react";
 import type { ReservationStatus } from "@/lib/domain";
+import type { WaitlistEntryWithUserDto } from "@/lib/dto/waitlist-dto";
 import { toast } from "@/components/ui/Toast";
 import { AttendanceListSkeleton } from "@/components/ui/PanelSkeletons";
 
@@ -36,17 +38,73 @@ export function AttendanceClient({
   const [attendees, setAttendees] = useState<Attendee[]>(initialAttendees);
   const [loading, setLoading] = useState(false);
   const [updating, setUpdating] = useState<string | null>(null);
+  const [waitlist, setWaitlist] = useState<WaitlistEntryWithUserDto[]>([]);
+  const [waitlistActionId, setWaitlistActionId] = useState<string | null>(null);
+
+  const loadWaitlist = useCallback(async () => {
+    const res = await fetch(
+      `/api/admin/waitlist?liveClassId=${encodeURIComponent(liveClassId)}`
+    );
+    if (!res.ok) {
+      setWaitlist([]);
+      return;
+    }
+    const data = await res.json();
+    setWaitlist(Array.isArray(data.entries) ? data.entries : []);
+  }, [liveClassId]);
+
+  useEffect(() => {
+    loadWaitlist();
+  }, [loadWaitlist]);
 
   async function reload() {
     setLoading(true);
     try {
-      const res = await fetch(`/api/admin/attendance?liveClassId=${encodeURIComponent(liveClassId)}`);
-      if (res.ok) {
-        const data = await res.json();
+      const [resAtt] = await Promise.all([
+        fetch(`/api/admin/attendance?liveClassId=${encodeURIComponent(liveClassId)}`),
+        loadWaitlist(),
+      ]);
+      if (resAtt.ok) {
+        const data = await resAtt.json();
         setAttendees(Array.isArray(data) ? data : []);
       }
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleWaitlistRemove(entryId: string) {
+    setWaitlistActionId(entryId);
+    try {
+      const res = await fetch(`/api/admin/waitlist/${entryId}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        toast.error("Error al quitar de la lista de espera");
+        return;
+      }
+      toast("Quitado de la lista de espera");
+      await loadWaitlist();
+    } finally {
+      setWaitlistActionId(null);
+    }
+  }
+
+  async function handleWaitlistPromote(entryId: string) {
+    setWaitlistActionId(entryId);
+    try {
+      const res = await fetch(`/api/admin/waitlist/${entryId}/promote`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.message ?? "No se pudo promover");
+        return;
+      }
+      toast.success("Estudiante promovido a reserva");
+      await reload();
+    } finally {
+      setWaitlistActionId(null);
     }
   }
 
@@ -139,6 +197,64 @@ export function AttendanceClient({
           ))}
         </ul>
       )}
+
+      <section className="mt-10">
+        <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold text-[var(--color-text)]">
+          <Hourglass className="h-4 w-4 text-[var(--color-primary)]" aria-hidden />
+          Lista de espera
+          <span className="text-sm font-normal text-[var(--color-text-muted)]">
+            ({waitlist.length})
+          </span>
+        </h2>
+        {waitlist.length === 0 ? (
+          <div className="rounded-[var(--radius-md)] border border-dashed border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-center">
+            <p className="text-sm text-[var(--color-text-muted)]">
+              Nadie está en lista de espera para esta clase.
+            </p>
+          </div>
+        ) : (
+          <ul className="space-y-2">
+            {waitlist.map((e) => (
+              <li
+                key={e.id}
+                className="flex items-center justify-between gap-3 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3"
+              >
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-[var(--color-text)] truncate">
+                    <span className="mr-2 inline-block w-6 text-center text-xs text-[var(--color-text-muted)]">
+                      #{e.position}
+                    </span>
+                    {e.user.name ?? e.user.email}
+                  </p>
+                  {e.user.name && (
+                    <p className="ml-8 text-xs text-[var(--color-text-muted)] truncate">
+                      {e.user.email}
+                    </p>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => handleWaitlistPromote(e.id)}
+                    disabled={waitlistActionId !== null}
+                    className="text-xs px-2.5 py-1 rounded-[var(--radius-md)] border border-[var(--color-primary)] text-[var(--color-primary)] hover:bg-[var(--color-primary-light)] disabled:opacity-30 transition-colors cursor-pointer"
+                  >
+                    {waitlistActionId === e.id ? "…" : "Promover"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleWaitlistRemove(e.id)}
+                    disabled={waitlistActionId !== null}
+                    className="text-xs px-2.5 py-1 rounded-[var(--radius-md)] border border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[var(--color-border)]/30 disabled:opacity-30 transition-colors cursor-pointer"
+                  >
+                    Quitar
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </div>
   );
 }

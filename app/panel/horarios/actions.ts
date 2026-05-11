@@ -14,7 +14,9 @@ import { isAdminRole } from "@/lib/domain/role";
 import { generateSeriesInstances } from "@/lib/application/generate-series-instances";
 import { createZoomMeeting } from "@/lib/application/create-zoom-meeting";
 import { createGoogleMeetMeeting } from "@/lib/application/create-google-meet-meeting";
+import { runAfterResponse } from "@/lib/utils/run-after-response";
 import { sendEmailSafe } from "@/lib/application/send-email";
+import { closeWaitlistForCancelledClassUseCase } from "@/lib/application/close-waitlist-for-cancelled-class";
 import { buildClassCancelledEmail } from "@/lib/email";
 import { getEmailBranding } from "@/lib/email/branding";
 import { getBaseUrl } from "@/lib/utils/base-url";
@@ -240,6 +242,16 @@ export async function batchCancelLiveClasses(ids: string[]): Promise<BatchCancel
       })
     );
     notifiedCount++;
+  }
+
+  // Cierra la waitlist de cada clase cancelada y notifica a los en cola.
+  // after() ejecuta en background tras devolver la respuesta al admin.
+  for (const classId of classIds) {
+    runAfterResponse(
+      closeWaitlistForCancelledClassUseCase(classId).catch((err) =>
+        console.error("[waitlist] close on class cancel failed", err, { classId })
+      )
+    );
   }
 
   revalidatePath("/panel/horarios");

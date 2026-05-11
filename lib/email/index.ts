@@ -15,7 +15,6 @@ export { formatLongDateTime, formatLongDate, formatTime } from "./format-datetim
 export {
   buildReservationConfirmationEmail,
   buildClassReminderEmail,
-  buildSpotFreedEmail,
   buildTrialClassNoticeToTeacherEmail,
   buildPaymentFailedEmail,
   buildWelcomeStudentEmail,
@@ -31,7 +30,6 @@ export {
   buildSubscriptionCancelledEmail,
   type ReservationConfirmationData,
   type ClassReminderData,
-  type SpotFreedData,
   type TrialClassNoticeToTeacherData,
   type PaymentFailedData,
   type WelcomeStudentData,
@@ -46,3 +44,9 @@ export {
   type SubscriptionRenewalData,
   type SubscriptionCancelledData,
 } from "./transactional";
+export {
+  buildSpotFreedEmail,
+  buildWaitlistClassCancelledEmail,
+  type SpotFreedData,
+  type WaitlistClassCancelledData,
+} from "./waitlist";

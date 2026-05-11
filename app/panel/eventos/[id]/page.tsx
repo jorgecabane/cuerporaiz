@@ -2,13 +2,16 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { isAdminRole } from "@/lib/domain/role";
 import Link from "next/link";
-import { eventRepository, eventTicketRepository, prisma } from "@/lib/adapters/db";
+import { eventRepository, eventTicketRepository, prisma, waitlistRepository } from "@/lib/adapters/db";
 import { EVENT_STATUS_LABELS } from "@/lib/domain/event";
 import { InlineEditToggle } from "@/components/panel/on-demand/InlineEditToggle";
 import { EventForm } from "@/app/panel/eventos/nuevo/EventForm";
 import { ManualTicketForm } from "./ManualTicketForm";
 import { ComprarEventoButton } from "./ComprarEventoButton";
 import { getCenterTimezone } from "@/lib/datetime/center-timezone";
+import { EventWaitlistButton } from "./EventWaitlistButton";
+import { AdminEventWaitlist } from "./AdminEventWaitlist";
+import { isActiveWaitlistStatus } from "@/lib/domain/waitlist";
 
 function formatDate(date: Date, tz: string): string {
   return date.toLocaleDateString("es-CL", {
@@ -64,9 +67,10 @@ export default async function EventDetailPage({
   // Gate: students only see PUBLISHED events
   if (!isAdmin && event.status !== "PUBLISHED") redirect("/panel/eventos");
 
-  const [paidCount, userTicket, tz] = await Promise.all([
+  const [paidCount, userTicket, userWaitlistEntry, tz] = await Promise.all([
     eventTicketRepository.countPaidByEventId(id),
     eventTicketRepository.findByEventAndUser(id, userId),
+    waitlistRepository.findByUserAndItem(userId, "event", id),
     getCenterTimezone(centerId),
   ]);
 
@@ -74,6 +78,10 @@ export default async function EventDetailPage({
   const isFull = event.maxCapacity !== null && paidCount >= event.maxCapacity;
   const userHasTicket = userTicket?.status === "PAID";
   const hasEnded = hasEventEnded(event.startsAt, event.endsAt);
+  const userActiveWaitlistEntry =
+    userWaitlistEntry !== null && isActiveWaitlistStatus(userWaitlistEntry.status)
+      ? userWaitlistEntry
+      : null;
 
   /* ── Admin: fetch attendees with user info ── */
   type Attendee = {
@@ -206,6 +214,11 @@ export default async function EventDetailPage({
           )}
         </section>
 
+        {/* Lista de espera */}
+        <section className="mb-8">
+          <AdminEventWaitlist eventId={id} />
+        </section>
+
         {/* Registro manual */}
         <section>
           <h2 className="text-lg font-semibold text-[var(--color-text)] mb-3">
@@ -334,9 +347,11 @@ export default async function EventDetailPage({
             Este evento ya finalizó
           </div>
         ) : isFull ? (
-          <div className="inline-flex items-center rounded-[var(--radius-md)] bg-[var(--color-tertiary)] px-4 py-2.5 text-sm font-medium text-[var(--color-text-muted)]">
-            Evento agotado
-          </div>
+          <EventWaitlistButton
+            eventId={id}
+            waitlistEntryId={userActiveWaitlistEntry?.id ?? null}
+            waitlistPosition={userActiveWaitlistEntry?.position}
+          />
         ) : (
           <ComprarEventoButton
             eventId={id}
