@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Cormorant_Garamond, DM_Sans } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import { LayoutWithPanel } from "@/components/shared/LayoutWithPanel";
@@ -64,6 +65,7 @@ export default async function RootLayout({
         </LayoutWithPanel>
         </AuthProvider>
         <Toaster />
+        <Analytics />
       </body>
     </html>
   );
