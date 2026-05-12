@@ -169,7 +169,7 @@ export async function createMpPreferenceForOrder(
       failure: `${base}/api/checkout/failure?centerId=${center.id}`,
       pending: `${base}/api/checkout/pending?centerId=${center.id}`,
     },
-    notificationUrl: `${base}/api/webhooks/mercadopago/${center.id}`,
+    notificationUrl: `${base}/api/webhooks/mercadopago`,
     autoReturn,
     payerEmail: input.payerEmail,
     payerFirstName: input.payerFirstName,
@@ -198,26 +198,24 @@ export async function createMpPreferenceForOrder(
 }
 
 export interface ProcessWebhookInput {
-  centerId: string;
   bodyRaw: string;
   xSignature: string | null;
   xRequestId: string | null;
 }
 
 /**
- * Valida firma, idempotencia, re-consulta el pago en MP y actualiza la orden.
+ * Valida firma, resuelve el centro vía `user_id` del body, chequea idempotencia,
+ * re-consulta el pago en MP y actualiza la orden.
+ *
+ * El secret se lee de `MP_WEBHOOK_SECRET` (env), no por-centro: MercadoPago firma
+ * todos los webhooks de la app con un único secret configurado en su panel.
  */
 export async function processWebhookUseCase(
   input: ProcessWebhookInput
 ): Promise<WebhookProcessResultDto> {
-  const config = await mercadopagoConfigRepository.findByCenterId(input.centerId);
-  if (!config || !config.enabled) {
-    return { success: false, error: "MercadoPago no configurado para este centro" };
-  }
-
-  let body: { type?: string; data?: { id?: string }; id?: string };
+  let body: { type?: string; data?: { id?: string }; id?: string; user_id?: number | string };
   try {
-    body = JSON.parse(input.bodyRaw) as { type?: string; data?: { id?: string }; id?: string };
+    body = JSON.parse(input.bodyRaw) as typeof body;
   } catch {
     return { success: false, error: "Body JSON inválido" };
   }
@@ -232,18 +230,34 @@ export async function processWebhookUseCase(
     return { success: false, error: "Falta x-request-id" };
   }
 
+  const webhookSecret = process.env.MP_WEBHOOK_SECRET ?? "";
+  if (!webhookSecret) {
+    console.error("[mp webhook] MP_WEBHOOK_SECRET no configurado");
+    return { success: false, error: "MP_WEBHOOK_SECRET no configurado" };
+  }
+
   const valid = verifyMercadoPagoWebhookSignature({
     body: input.bodyRaw,
     xSignature: input.xSignature,
     xRequestId: input.xRequestId,
     resourceId: String(resourceId),
-    webhookSecret: config.webhookSecret,
+    webhookSecret,
   });
   if (!valid) {
     return { success: false, error: "Firma del webhook inválida" };
   }
 
-  const already = await webhookEventRepository.wasProcessed(input.centerId, requestId);
+  const mpUserId = body.user_id != null ? String(body.user_id) : null;
+  if (!mpUserId) {
+    return { success: false, error: "Falta user_id en la notificación" };
+  }
+  const config = await mercadopagoConfigRepository.findByMpUserId(mpUserId);
+  if (!config) {
+    return { success: false, error: "Centro no encontrado para este merchant MP" };
+  }
+  const centerId = config.centerId;
+
+  const already = await webhookEventRepository.wasProcessed(centerId, requestId);
   if (already) {
     return { success: true, alreadyProcessed: true };
   }
@@ -252,14 +266,14 @@ export async function processWebhookUseCase(
   const type = body.type as string | undefined;
 
   if (type === "subscription_preapproval") {
-    const result = await processPreapprovalWebhook(input.centerId, String(resourceId));
-    await webhookEventRepository.markProcessed(input.centerId, requestId);
+    const result = await processPreapprovalWebhook(centerId, String(resourceId));
+    await webhookEventRepository.markProcessed(centerId, requestId);
     return { success: result.success, alreadyProcessed: false, error: result.error };
   }
 
   if (type === "subscription_authorized_payment") {
-    const result = await processAuthorizedPaymentWebhook(input.centerId, String(resourceId));
-    await webhookEventRepository.markProcessed(input.centerId, requestId);
+    const result = await processAuthorizedPaymentWebhook(centerId, String(resourceId));
+    await webhookEventRepository.markProcessed(centerId, requestId);
     return { success: result.success, alreadyProcessed: false, error: result.error };
   }
   // ── End subscription routing ────────────────────────────────────────
@@ -276,7 +290,7 @@ export async function processWebhookUseCase(
   const order = await orderRepository.findByExternalReference(payment.externalReference ?? "")
     ?? await orderRepository.findByMpPaymentId(payment.id);
   if (!order) {
-    await webhookEventRepository.markProcessed(input.centerId, requestId);
+    await webhookEventRepository.markProcessed(centerId, requestId);
     return { success: true, alreadyProcessed: false };
   }
 
@@ -312,7 +326,7 @@ export async function processWebhookUseCase(
     }
   }
 
-  await webhookEventRepository.markProcessed(input.centerId, requestId);
+  await webhookEventRepository.markProcessed(centerId, requestId);
 
   return { success: true, alreadyProcessed: false };
 }

@@ -368,14 +368,16 @@ model UserCenterRole {
 }
 
 // ─── MercadoPago por centro (plugin activo + credenciales) ──────────────────
+// Nota: el secret del webhook es global (`MP_WEBHOOK_SECRET` env), no por centro.
+// `webhookSecret` quedó como columna deprecada y se eliminará en una migración futura.
 model CenterMercadoPagoConfig {
   id              String    @id @default(cuid())
   centerId        String    @unique
   accessToken     String
   refreshToken    String?
-  mpUserId        String?
+  mpUserId        String?   @unique
   publicKey       String?
-  webhookSecret   String
+  webhookSecret   String?
   tokenExpiresAt  DateTime?
   enabled         Boolean   @default(true)
   createdAt       DateTime  @default(now())

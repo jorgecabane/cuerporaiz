@@ -20,7 +20,7 @@ import {
  *
  * Setup:
  * - Order PENDING método MERCADOPAGO con `mpPreferenceId` simulado (vía Prisma).
- * - Plugin MP del centro habilitado con `webhookSecret` (creado por el helper).
+ * - Plugin MP del centro habilitado (creado por el helper).
  * - Plan E2E con `maxReservations` y `validityDays` definidos.
  *
  * Verifica:

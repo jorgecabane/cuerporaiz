@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { isAdminRole } from "@/lib/domain";
 import { prisma } from "@/lib/adapters/db/prisma";
-import { randomUUID } from "crypto";
 
 /**
  * GET /api/admin/mercadopago/oauth/callback?code=xxx&state=centerId
@@ -99,7 +98,6 @@ export async function GET(request: Request) {
       refreshToken: tokenData.refresh_token ?? null,
       mpUserId: tokenData.user_id?.toString() ?? null,
       publicKey: tokenData.public_key ?? null,
-      webhookSecret: randomUUID(),
       tokenExpiresAt: expiresAt,
       enabled: true,
     },

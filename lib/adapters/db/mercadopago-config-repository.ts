@@ -4,13 +4,13 @@ import { prisma } from "./prisma";
 function toDomain(c: {
   centerId: string;
   accessToken: string;
-  webhookSecret: string;
+  mpUserId: string | null;
   enabled: boolean;
 }): MercadoPagoConfig {
   return {
     centerId: c.centerId,
     accessToken: c.accessToken,
-    webhookSecret: c.webhookSecret,
+    mpUserId: c.mpUserId,
     enabled: c.enabled,
   };
 }
@@ -19,6 +19,13 @@ export const mercadopagoConfigRepository: IMercadoPagoConfigRepository = {
   async findByCenterId(centerId: string) {
     const config = await prisma.centerMercadoPagoConfig.findUnique({
       where: { centerId },
+    });
+    return config && config.enabled ? toDomain(config) : null;
+  },
+
+  async findByMpUserId(mpUserId: string) {
+    const config = await prisma.centerMercadoPagoConfig.findUnique({
+      where: { mpUserId },
     });
     return config && config.enabled ? toDomain(config) : null;
   },

@@ -4,12 +4,14 @@
 export interface MercadoPagoConfig {
   centerId: string;
   accessToken: string;
-  webhookSecret: string;
+  mpUserId: string | null;
   enabled: boolean;
 }
 
 export interface IMercadoPagoConfigRepository {
   findByCenterId(centerId: string): Promise<MercadoPagoConfig | null>;
+  /** Resuelve el centro a partir del merchant MP. Usado por el webhook genérico. */
+  findByMpUserId(mpUserId: string): Promise<MercadoPagoConfig | null>;
   /** Para panel admin: estado del plugin sin requerir enabled. No expone secretos. */
   findStatusByCenterId(centerId: string): Promise<{ enabled: boolean; hasCredentials: boolean } | null>;
   updateEnabled(centerId: string, enabled: boolean): Promise<void>;

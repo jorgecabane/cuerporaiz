@@ -381,9 +381,8 @@ export async function cleanupPendingTransferOrders(externalReferencePrefix: stri
 
 /**
  * Crea una Order PENDING vía MERCADOPAGO con `mpPreferenceId` simulado.
- * Asegura que el plugin de MP esté configurado con `webhookSecret` retornado
- * (creándolo si no existe). Útil para tests de webhook MP / aprobación manual
- * del path APPROVED → UserPlan ACTIVE.
+ * Asegura que el plugin MP del centro esté habilitado. Útil para tests de
+ * aprobación manual del path APPROVED → UserPlan ACTIVE.
  */
 export async function seedTier1PendingMpOrder(opts: {
   centerSlug: string;
@@ -395,7 +394,6 @@ export async function seedTier1PendingMpOrder(opts: {
   orderId: string;
   externalReference: string;
   mpPreferenceId: string;
-  webhookSecret: string;
   planId: string;
   userId: string;
 } | null> {
@@ -407,13 +405,11 @@ export async function seedTier1PendingMpOrder(opts: {
   if (!user) return null;
   const amountCents = opts.amountCents ?? 29900;
 
-  // Asegurar plugin MP con webhookSecret estable.
-  const mpConfig = await prisma.centerMercadoPagoConfig.upsert({
+  await prisma.centerMercadoPagoConfig.upsert({
     where: { centerId: center.id },
     create: {
       centerId: center.id,
       accessToken: "TEST-mp-access-token",
-      webhookSecret: "tier1-webhook-secret-" + center.id.slice(0, 8),
       enabled: true,
     },
     update: {},
@@ -457,7 +453,6 @@ export async function seedTier1PendingMpOrder(opts: {
     orderId: order.id,
     externalReference,
     mpPreferenceId,
-    webhookSecret: mpConfig.webhookSecret,
     planId: plan.id,
     userId: user.id,
   };
@@ -843,12 +838,11 @@ export async function cleanupTier1LiveClasses(liveClassIds: string[]) {
 
 /**
  * Asegura un CenterMercadoPagoConfig habilitado para que el webhook pueda
- * procesar suscripciones. Devuelve el webhookSecret a usar para firmar.
- * Idempotente.
+ * procesar suscripciones. Idempotente.
  */
-async function ensureMercadoPagoConfig(centerId: string): Promise<string | null> {
+async function ensureMercadoPagoConfig(centerId: string): Promise<boolean> {
   const prisma = await getPrisma();
-  if (!prisma) return null;
+  if (!prisma) return false;
   const existing = await prisma.centerMercadoPagoConfig.findUnique({ where: { centerId } });
   if (existing) {
     if (!existing.enabled) {
@@ -857,25 +851,21 @@ async function ensureMercadoPagoConfig(centerId: string): Promise<string | null>
         data: { enabled: true },
       });
     }
-    return existing.webhookSecret;
+    return true;
   }
-  const webhookSecret = "tier2-mp-webhook-secret-e2e";
   await prisma.centerMercadoPagoConfig.create({
     data: {
       centerId,
       accessToken: "TEST-AT-tier2",
-      webhookSecret,
       enabled: true,
     },
   });
-  return webhookSecret;
+  return true;
 }
 
 /**
  * Crea un Plan recurrente + Subscription PENDING para el user dado, listo
  * para que un webhook simulado de MercadoPago lo active.
- *
- * Retorna `{ subscriptionId, mpSubscriptionId, webhookSecret, planId, userId, centerId }`.
  */
 export async function seedTier2PendingSubscription(opts: {
   centerSlug: string;
@@ -884,7 +874,6 @@ export async function seedTier2PendingSubscription(opts: {
 }): Promise<{
   subscriptionId: string;
   mpSubscriptionId: string;
-  webhookSecret: string;
   planId: string;
   userId: string;
   centerId: string;
@@ -896,8 +885,8 @@ export async function seedTier2PendingSubscription(opts: {
   const user = await prisma.user.findUnique({ where: { email: opts.userEmail } });
   if (!user) return null;
 
-  const webhookSecret = await ensureMercadoPagoConfig(center.id);
-  if (!webhookSecret) return null;
+  const ok = await ensureMercadoPagoConfig(center.id);
+  if (!ok) return null;
 
   const slug = opts.planName.toLowerCase().replace(/[^a-z0-9]+/g, "-");
   const plan = await prisma.plan.upsert({
@@ -934,7 +923,6 @@ export async function seedTier2PendingSubscription(opts: {
   return {
     subscriptionId: sub.id,
     mpSubscriptionId,
-    webhookSecret,
     planId: plan.id,
     userId: user.id,
     centerId: center.id,
