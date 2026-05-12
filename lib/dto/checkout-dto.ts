@@ -101,7 +101,7 @@ export interface WebhookVerifySignatureDto {
   xRequestId: string | null;
   /** ID del recurso (data.id para payment, o id para merchant_order) */
   resourceId: string;
-  /** Secret del webhook del centro */
+  /** Secret del webhook (env-level, configurado en `MP_WEBHOOK_SECRET`). */
   webhookSecret: string;
 }
 

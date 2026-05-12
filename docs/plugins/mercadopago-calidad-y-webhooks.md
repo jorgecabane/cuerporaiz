@@ -60,18 +60,15 @@ Tienes dos opciones:
 **Opción A – Desde el MCP de Mercado Pago (recomendado)**  
 Si tienes el MCP de Mercado Pago conectado en Cursor, puedes pedirle al asistente que ejecute la tool **`save_webhook`** con:
 
-- **callback_sandbox**: `https://TU_URL_DE_NGROK/api/webhooks/mercadopago/TU_CENTER_ID`
+- **callback_sandbox**: `https://TU_URL_DE_NGROK/api/webhooks/mercadopago`
 - **topics**: `["payment"]`
 - **application_id**: `2762435779232350` (app CuerpoRaiz)
 
-Reemplaza:
-
-- `TU_URL_DE_NGROK` por la URL que te dio ngrok (ej. `abc123.ngrok-free.app`).
-- `TU_CENTER_ID` por el ID del centro con el que estás probando (mismo que en la URL del panel; si usaste el seed, está en la base de datos).
+Reemplaza `TU_URL_DE_NGROK` por la URL que te dio ngrok (ej. `abc123.ngrok-free.app`).
 
 **Opción B – Manual en Mercado Pago**  
-En [Tus integraciones](https://www.mercadopago.com.ar/developers/panel/app) → aplicación CuerpoRaiz → Notificaciones / Webhooks, configura la URL de prueba con la misma forma:  
-`https://TU_TUNNEL/api/webhooks/mercadopago/TU_CENTER_ID`
+En [Tus integraciones](https://www.mercadopago.com.ar/developers/panel/app) → aplicación CuerpoRaiz → Notificaciones / Webhooks, configura la URL de prueba:  
+`https://TU_TUNNEL/api/webhooks/mercadopago`
 
 ### Paso 3: Probar el flujo
 
@@ -79,7 +76,7 @@ En [Tus integraciones](https://www.mercadopago.com.ar/developers/panel/app) → 
 2. Entra a tu app usando la URL de ngrok (ej. `https://abc123.ngrok-free.app`) para que las `back_urls` y el origen del checkout coincidan con el dominio que MP ve.
 3. Conecta Mercado Pago para ese centro (Panel → Plugins → Mercado Pago) si aún no está conectado.
 4. Haz una compra de prueba (credenciales de prueba y [tarjetas de prueba](https://www.mercadopago.com.ar/developers/es/docs/checkout-api/additional-content/test-cards)).
-5. Cuando MP procese el pago, enviará el webhook a `https://tu-ngrok.../api/webhooks/mercadopago/{centerId}` y tu endpoint local lo recibirá.
+5. Cuando MP procese el pago, enviará el webhook a `https://tu-ngrok.../api/webhooks/mercadopago` y tu endpoint local lo recibirá.
 
 ### Simular un webhook sin pagar
 
@@ -87,15 +84,15 @@ Si en el MCP de Mercado Pago tienes la tool **`simulate_webhook`**, puedes simul
 
 - **topic**: `payment`
 - **resource_id**: un `payment_id` de prueba o uno real si lo tienes
-- **url_callback**: `https://TU_NGROK/api/webhooks/mercadopago/TU_CENTER_ID`
+- **url_callback**: `https://TU_NGROK/api/webhooks/mercadopago`
 - **callback_env_production**: `false` (sandbox)
 
 Así verificas que tu endpoint responde bien y que la firma y el procesamiento son correctos.
 
 ### Importante
 
-- La URL registrada en MP (sandbox o producción) debe ser **exactamente** la que recibe el webhook, incluido el `centerId` en el path.
-- Cada centro tiene su propio `webhookSecret` en la base de datos (generado al conectar OAuth). La validación de `x-signature` usa ese secret; no hace falta configurarlo en el panel de MP.
+- La URL del webhook es **única para toda la app** (no lleva `centerId` en el path). El centro se resuelve internamente desde `user_id` del body, contra el `mpUserId` que guardamos al conectar OAuth.
+- La **clave secreta** del webhook es por-aplicación, no por-centro: se genera al guardar la configuración en el panel de MP (Webhooks → "Clave secreta") y se setea como `MP_WEBHOOK_SECRET` en el env. La validación de `x-signature` usa ese valor para todos los centros.
 - Si cambias de túnel (otra URL de ngrok), vuelve a registrar la nueva URL en `save_webhook` (callback_sandbox).
 
 ---

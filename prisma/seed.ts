@@ -480,16 +480,14 @@ async function main() {
   });
   if (!existingConfig) {
     const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN ?? "TEST-xxx";
-    const webhookSecret = process.env.MERCADOPAGO_WEBHOOK_SECRET ?? "whsec-xxx";
     await prisma.centerMercadoPagoConfig.create({
       data: {
         centerId: center.id,
         accessToken,
-        webhookSecret,
         enabled: true,
       },
     });
-    console.log("MercadoPago config creada (usa MERCADOPAGO_ACCESS_TOKEN y MERCADOPAGO_WEBHOOK_SECRET en .env para producción)");
+    console.log("MercadoPago config creada (usa MERCADOPAGO_ACCESS_TOKEN en .env para producción; el secret del webhook es global vía MP_WEBHOOK_SECRET).");
   }
 
   const existingPlan = await prisma.plan.findFirst({ where: { centerId: center.id } });

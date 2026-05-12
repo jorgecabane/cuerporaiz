@@ -89,9 +89,10 @@ describe("createEventCheckout", () => {
     mocks.eventTicketRepository.countPaidByEventId.mockResolvedValue(0);
     mocks.eventTicketRepository.create.mockResolvedValue(makeTicket());
     mocks.mercadopagoConfigRepository.findByCenterId.mockResolvedValue({
+      centerId: "center-1",
       accessToken: "TEST_TOKEN",
       enabled: true,
-      webhookSecret: "secret",
+      mpUserId: null,
     });
     // Centro sin transferencia para eventos por default → camino MP tradicional.
     mocks.centerRepository.findById.mockResolvedValue({
@@ -269,9 +270,10 @@ describe("createEventCheckout", () => {
 
   it("MP deshabilitado → MP_NOT_CONFIGURED", async () => {
     mocks.mercadopagoConfigRepository.findByCenterId.mockResolvedValue({
+      centerId: "center-1",
       accessToken: "TOKEN",
       enabled: false,
-      webhookSecret: "s",
+      mpUserId: null,
     });
 
     const result = await createEventCheckout(BASE_INPUT);

@@ -89,10 +89,12 @@ Después de eso, ese centro puede cobrar planes (checkout) con Mercado Pago. Los
 La app ya registra la **URL de notificación** por cada preferencia de pago (`notification_url`). Mercado Pago enviará notificaciones a:
 
 ```text
-https://tudominio.com/api/webhooks/mercadopago/{centerId}
+https://tudominio.com/api/webhooks/mercadopago
 ```
 
-No hace falta configurar esta URL manualmente en el panel de Mercado Pago; se envía al crear cada preferencia. El **secret** con el que se verifica la firma `x-signature` se genera y guarda por centro al conectar la cuenta (OAuth).
+La URL es única para todos los centros: el centro se resuelve internamente desde `user_id` del body, contra el `mpUserId` que guardamos al conectar OAuth.
+
+Además hay que **configurar esta URL una sola vez en el panel de MP** (Tus integraciones → app → Webhooks → "Configurar notificaciones") para que MP genere la **Clave secreta** que firma los webhooks. Esa clave se setea como `MP_WEBHOOK_SECRET` en el env (es por-aplicación, no por-centro).
 
 **Importante:** La `notification_url` se arma con la misma base URL que usa el request (cuando hay proxy tipo ngrok se usan los headers `x-forwarded-proto` y `x-forwarded-host`). Si creás el checkout entrando por ngrok, la URL de notificación será la de ngrok y MP podrá llamarla. Si en cambio la base quedara en `localhost`, MP no podría alcanzar tu servidor y no recibirías el webhook de pago aprobado.
 

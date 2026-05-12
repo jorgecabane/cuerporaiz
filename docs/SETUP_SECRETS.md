@@ -89,27 +89,32 @@ Solo hace falta si vas a ejecutar el seed; no son obligatorios para arrancar la 
 
 ---
 
-## 4. MercadoPago (checkout por centro)
+## 4. MercadoPago (checkout multi-tenant)
 
-Cada **centro (tenant)** que tenga el plugin MercadoPago activo tiene sus propias credenciales, guardadas en la tabla `CenterMercadoPagoConfig`. No hay una sola config global.
+Hay **una sola aplicación MercadoPago** registrada en el panel de developers; cada centro (tenant) conecta su cuenta vía OAuth y guarda sus credenciales en `CenterMercadoPagoConfig` (accessToken, refreshToken, mpUserId). El webhook, en cambio, **se firma con un único secret por-app**, que vive en env y se valida globalmente.
 
 ### Para desarrollo / seed
 
-Si ejecutás `npm run db:seed` y querés que el centro de ejemplo tenga MercadoPago configurado:
+- **`MERCADOPAGO_ACCESS_TOKEN`**: Access Token de la aplicación de MercadoPago (modo prueba o producción), usado por el seed para crear el `CenterMercadoPagoConfig` del centro de ejemplo. En producción real el access token lo guarda OAuth por centro.
 
-- **`MERCADOPAGO_ACCESS_TOKEN`**: Access Token de la aplicación de MercadoPago (modo prueba o producción). Lo creás en [Tus integraciones](https://www.mercadopago.com.ar/developers/panel/app).
-- **`MERCADOPAGO_WEBHOOK_SECRET`**: Secret para validar la firma de los webhooks. Se genera al configurar la URL de notificaciones en el panel de MP.
+### Webhook genérico
 
-El seed crea un registro de config con estos valores si existen en `.env`. Si no, usa placeholders y podés editar la fila en la BD o volver a ejecutar el seed después de configurar las variables.
+La URL de webhook es única para toda la plataforma: `https://tu-dominio.com/api/webhooks/mercadopago` (sin `centerId` en el path). El handler resuelve el centro a partir del `user_id` que MP incluye en el body, matcheando contra el `mpUserId` que guardamos al conectar OAuth.
 
-### Webhook por centro
+En el panel de MercadoPago → Tus integraciones → CuerpoRaiz → **Webhooks** → "Configurar notificaciones":
+- URL de producción: `https://tu-dominio.com/api/webhooks/mercadopago`
+- Eventos: **Pagos** (y "Planes y suscripciones" si vas a usar suscripciones recurrentes).
+- Al guardar, MP genera una **Clave secreta**. Esa es la que se setea como **`MP_WEBHOOK_SECRET`** en el env (Vercel: production + preview + development).
 
-La URL de webhook es por centro: `https://tu-dominio.com/api/webhooks/mercadopago/[centerId]`. En el panel de MercadoPago, configurá esta URL y el evento "Pagos" para recibir notificaciones. El `centerId` es el ID (cuid) del centro en la BD.
+### Variables de entorno relacionadas
+
+- **`MP_APP_ID`** / **`MP_CLIENT_SECRET`**: credenciales OAuth de la aplicación (intercambio del `code` por access/refresh tokens).
+- **`MP_WEBHOOK_SECRET`**: clave secreta que emite MP al guardar la configuración de webhooks. Es por-app (no por-centro) y se usa para validar `x-signature` en todos los webhooks.
 
 ### Seguridad
 
 - Nunca se almacenan ni manejan datos de tarjeta; el pago se realiza en la página de MercadoPago (Checkout Pro).
-- Los webhooks validan la firma `x-signature` con el secret del centro y usan idempotencia por `x-request-id`.
+- Los webhooks validan la firma `x-signature` con `MP_WEBHOOK_SECRET` y usan idempotencia por `x-request-id`.
 
 ---
 
