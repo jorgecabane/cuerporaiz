@@ -253,7 +253,10 @@ export async function processWebhookUseCase(
   }
   const config = await mercadopagoConfigRepository.findByMpUserId(mpUserId);
   if (!config) {
-    return { success: false, error: "Centro no encontrado para este merchant MP" };
+    // Merchant que no tenemos conectado: pasa con el simulador del panel de MP
+    // (usa user_id de prueba). Devolvemos OK para que MP no reintente.
+    console.log("[mp webhook] merchant desconocido, ignorando", { mpUserId });
+    return { success: true, alreadyProcessed: false };
   }
   const centerId = config.centerId;
 
