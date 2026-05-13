@@ -105,7 +105,7 @@ export function ClientsListInfinite({ pageSize = 25 }: { pageSize?: number }) {
                   </p>
                   {user.isLegacyClient && (
                     <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-[var(--color-surface-alt,#f3f4f6)] text-[var(--color-text-muted)] border border-[var(--color-border)]">
-                      Migrada
+                      Migrado
                     </span>
                   )}
                 </div>

@@ -158,7 +158,7 @@ export function EditClientForm({
           className="mt-0.5 h-4 w-4 rounded border-[var(--color-border)] text-[var(--color-primary)] focus:ring-[var(--color-primary)]"
         />
         <label htmlFor="edit-isLegacyClient" className="text-xs text-[var(--color-text)]">
-          Cliente antigua (migrada de otra plataforma)
+          Cliente antiguo (migrado de otra plataforma)
           <span className="block text-[var(--color-text-muted)] mt-0.5">
             No recibe clase de prueba gratis. Debe comprar un plan para agendar.
           </span>
