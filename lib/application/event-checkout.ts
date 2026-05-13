@@ -3,7 +3,7 @@
  *
  * Soporta:
  * - Compra inicial con N cupos.
- * - Re-compra ("Agregar más cupos") cuando la alumna ya tiene un ticket PAID:
+ * - Re-compra ("Agregar más cupos") cuando el usuario ya tiene un ticket PAID:
  *   - Free → incrementa quantity directo + email kind=addition.
  *   - Pagado → crea preferencia MP por el delta y deja
  *     `pendingAdditionQuantity` seteado; el webhook lo confirma.

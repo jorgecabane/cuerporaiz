@@ -31,7 +31,7 @@ export interface EventTicketConfirmationEmailData {
   location: string | null;
   amountCents: number;
   currency: string;
-  /** Total de cupos de la alumna luego de esta operación. Default 1. */
+  /** Total de cupos del usuario luego de esta operación. Default 1. */
   quantity?: number;
   /** "purchase" = compra inicial; "addition" = re-compra de cupos extra. */
   kind?: EventTicketConfirmationKind;

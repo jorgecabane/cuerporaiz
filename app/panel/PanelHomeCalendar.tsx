@@ -568,8 +568,8 @@ export function PanelHomeCalendar({
               {ev.hasTicket && (
                 <span className="shrink-0 rounded-full bg-[var(--color-primary-light)] px-2 py-0.5 text-xs font-medium text-[var(--color-primary)]">
                   {ev.ticketQuantity > 1
-                    ? `Ya inscrita · ${ev.ticketQuantity} cupos`
-                    : "Ya inscrita"}
+                    ? `Ya inscrito · ${ev.ticketQuantity} cupos`
+                    : "Ya inscrito"}
                 </span>
               )}
             </a>
