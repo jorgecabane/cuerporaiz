@@ -45,6 +45,8 @@ interface PendingTransferRow {
   planId?: string;
   /** Para tickets: title del evento */
   eventTitle?: string;
+  /** Para tickets: cantidad de cupos comprados (default 1). */
+  quantity?: number;
 }
 
 async function loadPendingTransfers(centerId: string): Promise<PendingTransferRow[]> {
@@ -69,6 +71,7 @@ async function loadPendingTransfers(centerId: string): Promise<PendingTransferRo
       include: { event: { select: { title: true } } },
       orderBy: { transferClaimedAt: "asc" },
       take: 100,
+      // Necesitamos `quantity` para que el admin vea cuántos cupos paga la transferencia.
     }),
   ]);
   const orderRows: PendingTransferRow[] = orders.map((o) => ({
@@ -92,6 +95,7 @@ async function loadPendingTransfers(centerId: string): Promise<PendingTransferRo
     claimedAt: t.transferClaimedAt!,
     receiptDocId: t.transferReceiptSanityId,
     eventTitle: t.event?.title,
+    quantity: t.quantity,
   }));
   return [...orderRows, ...ticketRows].sort(
     (a, b) => a.claimedAt.getTime() - b.claimedAt.getTime(),
@@ -366,6 +370,10 @@ export default async function PanelPagosPage({
                 row.kind === "order"
                   ? planMap[row.planId ?? ""]?.name ?? "Plan"
                   : row.eventTitle ?? "Evento";
+              const ticketQuantitySuffix =
+                row.kind === "ticket" && row.quantity != null && row.quantity > 1
+                  ? ` · ${row.quantity} cupos`
+                  : "";
               const buyerName = buyer?.email ?? row.userId;
               const amountFormatted = formatPrice(row.amountCents, row.currency);
               const receiptInfo = receiptByTransferId[row.id];
@@ -388,6 +396,7 @@ export default async function PanelPagosPage({
                         </span>
                         <h3 className="font-semibold text-[var(--color-text)] truncate">
                           {itemName}
+                          {ticketQuantitySuffix}
                         </h3>
                         <span className="text-[var(--color-text)]">{amountFormatted}</span>
                       </div>

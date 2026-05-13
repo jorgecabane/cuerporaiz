@@ -107,4 +107,42 @@ describe("buildEventTicketConfirmationEmail", () => {
     expect(result.text).toContain("Tu entrada");
     expect(result.text).not.toContain("cupos");
   });
+
+  it("kind=addition usa subject de cupos adicionales", () => {
+    const result = buildEventTicketConfirmationEmail({
+      ...BASE_DATA,
+      quantity: 5,
+      kind: "addition",
+      addedQuantity: 2,
+    });
+
+    expect(result.subject).toBe("Cupos adicionales confirmados: Retiro de Yoga");
+  });
+
+  it("kind=addition menciona cupos agregados y total nuevo", () => {
+    const result = buildEventTicketConfirmationEmail({
+      ...BASE_DATA,
+      quantity: 5,
+      kind: "addition",
+      addedQuantity: 2,
+    });
+
+    expect(result.html).toContain("Agregaste");
+    expect(result.html).toContain("<strong>2</strong>");
+    expect(result.html).toContain("<strong style=\"color:#2A2A2A;\">5</strong>");
+    expect(result.text).toContain("Agregaste 2 cupos");
+    expect(result.text).toContain("5 entradas");
+  });
+
+  it("kind=addition con 1 cupo agregado usa singular", () => {
+    const result = buildEventTicketConfirmationEmail({
+      ...BASE_DATA,
+      quantity: 4,
+      kind: "addition",
+      addedQuantity: 1,
+    });
+
+    expect(result.text).toContain("Agregaste 1 cupo a");
+    expect(result.text).toContain("4 entradas");
+  });
 });

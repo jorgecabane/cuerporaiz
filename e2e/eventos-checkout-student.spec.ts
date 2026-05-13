@@ -127,11 +127,11 @@ test.describe("Eventos — compra de tickets", () => {
     await expect(page.getByText(/agotado|lleno/i).first()).toBeVisible({ timeout: 10000 });
   });
 
-  test("multi-cupos: selector envía quantity al backend", async ({ page }) => {
+  test("multi-cupos: stepper +/- envía quantity al backend", async ({ page }) => {
     test.skip(!paidEvent, "Seed del evento pago no disponible (sin DB en este worker)");
     if (!paidEvent) return;
 
-    let capturedBody: { quantity?: number } | null = null;
+    let capturedBody: { quantity?: number; mode?: string } | null = null;
     await page.route(`**/api/events/${paidEvent.id}/checkout`, async (route) => {
       const reqBody = route.request().postDataJSON();
       capturedBody = reqBody;
@@ -152,14 +152,18 @@ test.describe("Eventos — compra de tickets", () => {
     });
 
     await page.goto(`/panel/eventos/${paidEvent.id}`);
-    const selector = page.getByRole("combobox", { name: /Cantidad de cupos/i });
-    await expect(selector).toBeVisible();
-    await selector.selectOption("3");
+    const stepper = page.getByRole("group", { name: /Cantidad de cupos/i });
+    await expect(stepper).toBeVisible();
+    // Subir a 3: click + dos veces (arranca en 1).
+    const inc = stepper.getByRole("button", { name: /Aumentar/i });
+    await inc.click();
+    await inc.click();
     await page.getByRole("button", { name: /Comprar/i }).click();
 
     await page.waitForURL(/mercadopago\.cl/, { timeout: 15000 });
     expect(capturedBody).not.toBeNull();
     expect(capturedBody!.quantity).toBe(3);
+    expect(capturedBody!.mode ?? "purchase").toBe("purchase");
   });
 
   test("regresión: ticket PENDING previo no rompe el siguiente checkout (P2002)", async ({ page }) => {
@@ -193,6 +197,42 @@ test.describe("Eventos — compra de tickets", () => {
     ).toBeVisible({ timeout: 10000 });
 
     // Cleanup: borrar el ticket creado/reusado.
+    await cleanupEventTickets(freeEvent.id);
+  });
+
+  test("re-compra free: 'Agregar más cupos' incrementa quantity del ticket PAID", async ({ page }) => {
+    test.skip(!freeEvent, "Seed del evento gratis no disponible (sin DB en este worker)");
+    if (!freeEvent) return;
+
+    // Seed: ticket PAID con quantity=1.
+    const seeded = await seedEventTicket({
+      eventId: freeEvent.id,
+      userEmail: "student@e2e.test",
+      status: "PAID",
+      amountCents: 0,
+      quantity: 1,
+    });
+    test.skip(!seeded, "No se pudo seedear ticket PAID (sin DB)");
+
+    await page.goto(`/panel/eventos/${freeEvent.id}`);
+    // El badge inicial debe decir "Tienes tu entrada" (quantity=1, singular).
+    await expect(page.getByText(/Tienes tu entrada/i)).toBeVisible({ timeout: 15000 });
+
+    // CTA secundario "Agregar más cupos" usa el stepper y manda mode="addition".
+    const agregar = page.getByRole("button", { name: /Agregar/i });
+    await expect(agregar).toBeVisible();
+
+    // Sumar 2 cupos via stepper.
+    const stepper = page.getByRole("group", { name: /Cantidad de cupos/i });
+    const inc = stepper.getByRole("button", { name: /Aumentar/i });
+    await inc.click(); // 2
+    await inc.click(); // 3
+    // El botón "Agregar 3 cupos" envía la request.
+    await page.getByRole("button", { name: /Agregar 3 cupos/i }).click();
+
+    // Tras refresh el badge debe decir "Tienes 4 entradas" (1 inicial + 3 nuevos).
+    await expect(page.getByText(/Tienes 4 entradas/i)).toBeVisible({ timeout: 15000 });
+
     await cleanupEventTickets(freeEvent.id);
   });
 });

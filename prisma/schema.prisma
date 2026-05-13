@@ -685,6 +685,14 @@ model EventTicket {
   status        EventTicketStatus @default(PENDING)
   paymentMethod PaymentMethod     @default(MERCADOPAGO)
   mpPaymentId   String?
+  // external_reference enviado a MP al crear la preferencia inicial; el webhook
+  // lo usa para mapear payment → ticket cuando no hay Order.
+  externalReference String? @unique
+  // Re-compra: cupos extra iniciados via "Agregar más cupos" que aún esperan
+  // confirmación MP (webhook approved los suma a quantity y limpia estos
+  // campos). En eventos gratuitos siempre son 0 / null (incremento directo).
+  pendingAdditionQuantity          Int     @default(0)
+  pendingAdditionExternalReference String? @unique
   orderId       String?
   // Transferencia bancaria (sólo cuando paymentMethod = TRANSFER)
   transferClaimedAt       DateTime?

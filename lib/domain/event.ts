@@ -28,9 +28,17 @@ export interface EventTicket {
   currency: string;
   status: EventTicketStatus;
   mpPaymentId: string | null;
+  externalReference: string | null;
+  pendingAdditionQuantity: number;
+  pendingAdditionExternalReference: string | null;
   orderId: string | null;
   paidAt: Date | null;
   createdAt: Date;
+}
+
+export interface EventTicketReferenceMatch {
+  ticket: EventTicket;
+  isAddition: boolean;
 }
 
 export const EVENT_STATUS_LABELS: Record<EventStatus, string> = {

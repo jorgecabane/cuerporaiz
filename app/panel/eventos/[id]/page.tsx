@@ -73,18 +73,30 @@ export default async function EventDetailPage({
   const hasEnded = hasEventEnded(event.startsAt, event.endsAt);
 
   /* ── Admin: fetch attendees with user info ── */
-  type Attendee = { id: string; name: string | null; email: string; paidAt: Date | null };
+  type Attendee = {
+    id: string;
+    name: string | null;
+    email: string;
+    quantity: number;
+    paidAt: Date | null;
+  };
   let attendees: Attendee[] = [];
   if (isAdmin) {
     const tickets = await prisma.eventTicket.findMany({
       where: { eventId: id, status: "PAID" },
-      select: { id: true, paidAt: true, user: { select: { name: true, email: true } } },
+      select: {
+        id: true,
+        paidAt: true,
+        quantity: true,
+        user: { select: { name: true, email: true } },
+      },
       orderBy: { paidAt: "asc" },
     });
     attendees = tickets.map((t) => ({
       id: t.id,
       name: t.user.name,
       email: t.user.email,
+      quantity: t.quantity,
       paidAt: t.paidAt,
     }));
   }
@@ -147,7 +159,8 @@ export default async function EventDetailPage({
           <h2 className="text-lg font-semibold text-[var(--color-text)] mb-3">
             Asistentes
             <span className="ml-2 text-sm font-normal text-[var(--color-text-muted)]">
-              ({paidCount}{event.maxCapacity != null ? ` / ${event.maxCapacity}` : ""})
+              · {paidCount} {paidCount === 1 ? "cupo vendido" : "cupos vendidos"}
+              {event.maxCapacity != null ? ` / ${event.maxCapacity}` : ""}
             </span>
           </h2>
 
@@ -164,10 +177,17 @@ export default async function EventDetailPage({
                   key={a.id}
                   className="flex items-center justify-between gap-3 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3"
                 >
-                  <div>
-                    <p className="text-sm font-medium text-[var(--color-text)]">
-                      {a.name ?? a.email}
-                    </p>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-sm font-medium text-[var(--color-text)]">
+                        {a.name ?? a.email}
+                      </p>
+                      {a.quantity > 1 && (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--color-secondary)]/15 text-[var(--color-secondary)] font-medium">
+                          {a.quantity} cupos
+                        </span>
+                      )}
+                    </div>
                     {a.name && (
                       <p className="text-xs text-[var(--color-text-muted)]">{a.email}</p>
                     )}
@@ -275,9 +295,36 @@ export default async function EventDetailPage({
       {/* CTA */}
       <div className="mt-4">
         {userHasTicket ? (
-          <div className="inline-flex items-center gap-2 rounded-[var(--radius-md)] bg-green-100 px-4 py-2.5 text-sm font-medium text-green-800">
-            <span>✓</span>
-            Ya tienes tu entrada
+          <div className="space-y-3">
+            <div className="inline-flex items-center gap-2 rounded-[var(--radius-md)] bg-green-100 px-4 py-2.5 text-sm font-medium text-green-800">
+              <span>✓</span>
+              {userTicket!.quantity === 1
+                ? "Tienes tu entrada"
+                : `Tienes ${userTicket!.quantity} entradas para este evento`}
+            </div>
+            {userTicket!.pendingAdditionQuantity > 0 ? (
+              <p className="text-sm text-[var(--color-text-muted)]">
+                Pago pendiente de {userTicket!.pendingAdditionQuantity}{" "}
+                {userTicket!.pendingAdditionQuantity === 1 ? "cupo adicional" : "cupos adicionales"}.
+              </p>
+            ) : (
+              !hasEnded &&
+              !isFull && (
+                <div>
+                  <p className="text-sm text-[var(--color-text-muted)] mb-2">
+                    ¿Vas con más personas?
+                  </p>
+                  <ComprarEventoButton
+                    eventId={id}
+                    amountCents={event.amountCents}
+                    currency={event.currency}
+                    isFree={isFree}
+                    availableSeats={event.maxCapacity != null ? event.maxCapacity - paidCount : null}
+                    mode="addition"
+                  />
+                </div>
+              )
+            )}
           </div>
         ) : hasEnded ? (
           <div className="inline-flex items-center rounded-[var(--radius-md)] bg-[var(--color-tertiary)] px-4 py-2.5 text-sm font-medium text-[var(--color-text-muted)]">

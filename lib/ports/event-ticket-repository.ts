@@ -1,10 +1,18 @@
-import type { EventTicket, EventTicketStatus } from "@/lib/domain/event";
+import type { EventTicket, EventTicketReferenceMatch, EventTicketStatus } from "@/lib/domain/event";
 
 export interface IEventTicketRepository {
   findById(id: string): Promise<EventTicket | null>;
   findByEventId(eventId: string): Promise<EventTicket[]>;
   findByUserId(userId: string): Promise<EventTicket[]>;
   findByEventAndUser(eventId: string, userId: string): Promise<EventTicket | null>;
+  /**
+   * Busca un ticket por external_reference de MP. Matchea contra
+   * `externalReference` (compra inicial) o `pendingAdditionExternalReference`
+   * (re-compra). Devuelve también qué tipo de match fue.
+   */
+  findByExternalReference(reference: string): Promise<EventTicketReferenceMatch | null>;
+  /** Fallback por mpPaymentId ya persistido (por si el webhook reintenta). */
+  findByMpPaymentId(mpPaymentId: string): Promise<EventTicket | null>;
   create(data: {
     eventId: string;
     userId: string;
@@ -20,6 +28,38 @@ export interface IEventTicketRepository {
     id: string,
     data: { amountCents: number; quantity: number; currency: string }
   ): Promise<EventTicket | null>;
+  /** Setea `externalReference` para mapear webhook → ticket. */
+  setExternalReference(id: string, reference: string): Promise<EventTicket | null>;
+  /**
+   * Setea los campos de re-compra (`pendingAdditionQuantity` y
+   * `pendingAdditionExternalReference`). Se llama al crear la preferencia MP
+   * de la addition para que el webhook pueda confirmar después.
+   */
+  setPendingAdditionReference(
+    id: string,
+    data: { reference: string; quantity: number }
+  ): Promise<EventTicket | null>;
+  /**
+   * Re-compra free: suma `delta` al `quantity` sin pasar por MP. Usado por
+   * createEventCheckout cuando event.amountCents === 0.
+   */
+  incrementQuantity(id: string, delta: number): Promise<EventTicket | null>;
+  /**
+   * Transacción atómica para webhook approved:
+   * - Setea status=PAID, paidAt, mpPaymentId.
+   * - Si `isAddition`, suma `pendingAdditionQuantity` a `quantity` y limpia
+   *   los campos `pendingAdditionQuantity` / `pendingAdditionExternalReference`.
+   * Devuelve `{ ticket, addedQuantity }` (addedQuantity es 0 si no era addition).
+   */
+  applyApprovedPayment(
+    id: string,
+    data: { mpPaymentId: string; isAddition: boolean }
+  ): Promise<{ ticket: EventTicket; addedQuantity: number } | null>;
+  /**
+   * Webhook rejected addition: descarta los cupos pendientes (quantity intacto,
+   * limpia pendingAdditionQuantity y pendingAdditionExternalReference).
+   */
+  clearPendingAddition(id: string): Promise<EventTicket | null>;
   updateStatus(
     id: string,
     status: EventTicketStatus,

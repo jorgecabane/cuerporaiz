@@ -31,22 +31,28 @@ export async function GET(request: Request) {
   ]);
 
   const published = events.filter((e) => e.status === "PUBLISHED");
-  const paidTicketEventIds = new Set(
-    userTickets.filter((t) => t.status === "PAID").map((t) => t.eventId)
+  const paidTicketsByEvent = new Map(
+    userTickets
+      .filter((t) => t.status === "PAID")
+      .map((t) => [t.eventId, t] as const)
   );
 
-  const result = published.map((e) => ({
-    id: e.id,
-    title: e.title,
-    startsAt: e.startsAt,
-    endsAt: e.endsAt,
-    color: e.color,
-    status: e.status,
-    amountCents: e.amountCents,
-    currency: e.currency,
-    maxCapacity: e.maxCapacity,
-    hasTicket: paidTicketEventIds.has(e.id),
-  }));
+  const result = published.map((e) => {
+    const paid = paidTicketsByEvent.get(e.id);
+    return {
+      id: e.id,
+      title: e.title,
+      startsAt: e.startsAt,
+      endsAt: e.endsAt,
+      color: e.color,
+      status: e.status,
+      amountCents: e.amountCents,
+      currency: e.currency,
+      maxCapacity: e.maxCapacity,
+      hasTicket: paid != null,
+      ticketQuantity: paid?.quantity ?? 0,
+    };
+  });
 
   return NextResponse.json(result);
 }

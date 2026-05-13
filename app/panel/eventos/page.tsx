@@ -4,7 +4,7 @@ import { isAdminRole } from "@/lib/domain/role";
 import Link from "next/link";
 import { eventRepository, eventTicketRepository } from "@/lib/adapters/db";
 import { EVENT_STATUS_LABELS } from "@/lib/domain/event";
-import type { Event } from "@/lib/domain/event";
+import type { Event, EventTicket } from "@/lib/domain/event";
 
 function formatDateShort(date: Date): string {
   return date.toLocaleDateString("es-CL", {
@@ -78,7 +78,9 @@ async function AdminEventCard({ event, hasEnded }: { event: Event; hasEnded: boo
 }
 
 /* ── Student event card ── */
-function StudentEventCard({ event }: { event: Event }) {
+function StudentEventCard({ event, userTicket }: { event: Event; userTicket?: EventTicket }) {
+  const hasPaidTicket = userTicket?.status === "PAID";
+  const quantity = userTicket?.quantity ?? 0;
   return (
     <li>
       <Link
@@ -94,7 +96,14 @@ function StudentEventCard({ event }: { event: Event }) {
           />
         )}
         <div>
-          <p className="font-semibold text-[var(--color-text)] mb-1">{event.title}</p>
+          <div className="flex flex-wrap items-center gap-2 mb-1">
+            <p className="font-semibold text-[var(--color-text)]">{event.title}</p>
+            {hasPaidTicket && (
+              <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800 font-medium">
+                {quantity === 1 ? "Tu entrada" : `Tu entrada · ${quantity} cupos`}
+              </span>
+            )}
+          </div>
           {event.description && (
             <p className="text-sm text-[var(--color-text-muted)] line-clamp-2 mb-2">
               {event.description}
@@ -109,7 +118,11 @@ function StudentEventCard({ event }: { event: Event }) {
             {formatPrice(event.amountCents, event.currency)}
           </span>
           <span className="rounded-[var(--radius-md)] bg-[var(--color-primary)] px-3 py-1.5 text-xs font-medium text-white">
-            {event.amountCents === 0 ? "Reservar" : "Comprar entrada"}
+            {hasPaidTicket
+              ? "Ver evento"
+              : event.amountCents === 0
+                ? "Reservar"
+                : "Comprar entrada"}
           </span>
         </div>
       </Link>
@@ -177,6 +190,16 @@ export default async function EventosPage() {
   }
 
   /* ── Student layout ── */
+  // Cargar los tickets PAID del alumno para los eventos visibles, así
+  // mostramos el badge "Tu entrada · N cupos" inline en cada card.
+  const visibleEventIds = new Set(events.map((e) => e.id));
+  const userTickets = await eventTicketRepository.findByUserId(session.user.id);
+  const ticketByEventId = new Map(
+    userTickets
+      .filter((t) => t.status === "PAID" && visibleEventIds.has(t.eventId))
+      .map((t) => [t.eventId, t] as const)
+  );
+
   return (
     <div className="mx-auto w-full max-w-3xl px-[var(--space-4)] py-[var(--space-8)] md:py-[var(--space-12)]">
       <h1 className="font-display text-section text-[var(--color-primary)] mb-2">
@@ -204,7 +227,11 @@ export default async function EventosPage() {
         <>
           <ul className="grid gap-4 sm:grid-cols-2">
             {events.map((event) => (
-              <StudentEventCard key={event.id} event={event} />
+              <StudentEventCard
+                key={event.id}
+                event={event}
+                userTicket={ticketByEventId.get(event.id)}
+              />
             ))}
           </ul>
           <div className="mt-8">

@@ -3,18 +3,21 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
+import { QuantityStepper } from "@/components/ui/QuantityStepper";
 import { toast } from "@/components/ui/Toast";
+
+type Mode = "purchase" | "addition";
 
 type Props = {
   eventId: string;
   amountCents: number;
   currency: string;
   isFree: boolean;
-  /** Cupos disponibles. `null` = sin límite. */
+  /** Cupos disponibles. `null` = sin límite definido por el admin. */
   availableSeats: number | null;
+  /** "purchase" (default) o "addition" para re-compra. */
+  mode?: Mode;
 };
-
-const MAX_SEATS_PER_PURCHASE = 10;
 
 function formatPrice(cents: number, currency: string): string {
   if (currency === "CLP") return `$${cents.toLocaleString("es-CL")}`;
@@ -27,13 +30,16 @@ export function ComprarEventoButton({
   currency,
   isFree,
   availableSeats,
+  mode = "purchase",
 }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [quantity, setQuantity] = useState(1);
 
   const maxQuantity = useMemo(() => {
-    const limit = availableSeats == null ? MAX_SEATS_PER_PURCHASE : Math.min(availableSeats, MAX_SEATS_PER_PURCHASE);
+    // Si el admin no puso maxCapacity dejamos un techo razonable de 200 para
+    // evitar overflows accidentales del stepper, igual el backend revalida.
+    const limit = availableSeats == null ? 200 : availableSeats;
     return Math.max(1, limit);
   }, [availableSeats]);
 
@@ -45,7 +51,7 @@ export function ComprarEventoButton({
       const res = await fetch(`/api/events/${eventId}/checkout`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ quantity }),
+        body: JSON.stringify({ quantity, mode }),
       });
       const data = await res.json();
 
@@ -56,13 +62,14 @@ export function ComprarEventoButton({
           toast.error(data.message ?? "El evento está agotado");
         } else if (data.code === "INVALID_QUANTITY") {
           toast.error(data.message ?? "Cantidad de cupos inválida");
+        } else if (data.code === "INVALID_MODE") {
+          toast.error(data.message ?? "No se pueden agregar cupos en este momento");
         } else {
           toast.error(data.message ?? "Error al procesar");
         }
         return;
       }
 
-      // Centro acepta transferencia para eventos → selector inline.
       if (data.redirectTo) {
         window.location.href = data.redirectTo;
         return;
@@ -72,8 +79,12 @@ export function ComprarEventoButton({
         return;
       }
 
-      // Free event — ticket created directly
-      toast.success(quantity > 1 ? "¡Inscripción confirmada!" : "¡Inscripción confirmada!");
+      // Free event (compra inicial o addition free): éxito inline.
+      toast.success(
+        mode === "addition"
+          ? `¡Agregaste ${quantity} ${quantity === 1 ? "cupo" : "cupos"}!`
+          : "¡Inscripción confirmada!"
+      );
       router.refresh();
     } catch {
       toast.error("Error de conexión");
@@ -82,36 +93,31 @@ export function ComprarEventoButton({
     }
   }
 
-  const label = loading
-    ? isFree
-      ? "Reservando…"
-      : "Procesando…"
-    : isFree
-      ? quantity > 1
-        ? `Reservar ${quantity} cupos`
-        : "Reservar (gratis)"
-      : `Comprar — ${formatPrice(total, currency)}`;
+  function getLabel(): string {
+    if (loading) return isFree ? "Reservando…" : "Procesando…";
+    if (mode === "addition") {
+      if (isFree) return quantity === 1 ? "Agregar 1 cupo" : `Agregar ${quantity} cupos`;
+      return `Agregar ${quantity} ${quantity === 1 ? "cupo" : "cupos"} — ${formatPrice(total, currency)}`;
+    }
+    if (isFree) return quantity > 1 ? `Reservar ${quantity} cupos` : "Reservar (gratis)";
+    return `Comprar — ${formatPrice(total, currency)}`;
+  }
 
-  const showSelector = maxQuantity > 1;
+  const showStepper = maxQuantity > 1;
 
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-      {showSelector && (
-        <label className="flex items-center gap-2 text-sm text-[var(--color-text)]">
+      {showStepper && (
+        <label className="flex items-center gap-3 text-sm text-[var(--color-text)]">
           <span>Cupos</span>
-          <select
-            aria-label="Cantidad de cupos"
+          <QuantityStepper
             value={quantity}
-            onChange={(e) => setQuantity(Number(e.target.value))}
+            onChange={setQuantity}
+            min={1}
+            max={maxQuantity}
             disabled={loading}
-            className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm min-h-[44px]"
-          >
-            {Array.from({ length: maxQuantity }, (_, i) => i + 1).map((n) => (
-              <option key={n} value={n}>
-                {n}
-              </option>
-            ))}
-          </select>
+            ariaLabel="Cantidad de cupos"
+          />
         </label>
       )}
       <Button
@@ -121,7 +127,7 @@ export function ComprarEventoButton({
         onClick={handleClick}
         className="w-full sm:w-auto min-h-[44px]"
       >
-        {label}
+        {getLabel()}
       </Button>
     </div>
   );

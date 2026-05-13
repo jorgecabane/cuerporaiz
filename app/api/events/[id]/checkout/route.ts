@@ -15,14 +15,20 @@ function getBaseUrl(request: Request): string {
 
 const checkoutBodySchema = z
   .object({
-    quantity: z.number().int().min(1).max(50).optional(),
+    quantity: z.number().int().min(1).max(200).optional(),
+    mode: z.enum(["purchase", "addition"]).optional(),
   })
   .optional();
 
 /**
  * POST /api/events/[id]/checkout — Iniciar checkout de evento para el usuario autenticado.
- * Body opcional: `{ quantity?: number }` (1..50). Default 1.
- * Responde con { checkoutUrl } para eventos de pago, o { ticket } para eventos gratuitos.
+ * Body opcional: `{ quantity?: number; mode?: "purchase" | "addition" }`.
+ *  - mode "purchase" (default): compra inicial.
+ *  - mode "addition": re-compra ("Agregar más cupos"). Requiere ticket PAID existente.
+ * Respuesta:
+ *  - { checkoutUrl } para eventos de pago (también para addition pagada).
+ *  - { ticket, redirectTo } cuando el centro acepta transferencia.
+ *  - { ticket } para eventos gratuitos (creación o addition free incrementa quantity).
  */
 export async function POST(
   request: Request,
@@ -32,6 +38,7 @@ export async function POST(
   let userId: string | undefined;
   let centerId: string | undefined;
   let quantity: number | undefined;
+  let mode: "purchase" | "addition" | undefined;
   try {
     const session = await auth();
     if (!session?.user?.id || !session.user.centerId) {
@@ -54,7 +61,7 @@ export async function POST(
           return NextResponse.json(
             {
               code: "INVALID_QUANTITY",
-              message: "La cantidad de cupos debe ser un entero entre 1 y 50",
+              message: "Cantidad o modo inválido",
             },
             { status: 400 }
           );
@@ -63,6 +70,7 @@ export async function POST(
       }
     }
     quantity = parsedBody?.quantity;
+    mode = parsedBody?.mode;
 
     const baseUrl = getBaseUrl(request);
 
@@ -76,6 +84,7 @@ export async function POST(
       userId,
       baseUrl,
       quantity,
+      mode,
       payerEmail: session.user.email ?? undefined,
       payerFirstName: payerFirstName || undefined,
       payerLastName: payerLastName || undefined,
@@ -89,6 +98,7 @@ export async function POST(
         ALREADY_PURCHASED: 409,
         EVENT_FULL: 409,
         INVALID_QUANTITY: 400,
+        INVALID_MODE: 409,
         MP_NOT_CONFIGURED: 400,
         MP_PREFERENCE_FAILED: 502,
       };
@@ -105,13 +115,12 @@ export async function POST(
 
     return NextResponse.json({ ticket: result.ticket });
   } catch (err) {
-    // Logging detallado: el error genérico "Error al procesar el checkout"
-    // ahora sí queda con stack + contexto para diagnóstico (sin PII).
     console.error("[events checkout POST]", {
       eventId: id,
       userId,
       centerId,
       quantity,
+      mode,
       error: err instanceof Error ? err.message : String(err),
       stack: err instanceof Error ? err.stack : undefined,
     });
