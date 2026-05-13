@@ -93,9 +93,24 @@ export const userRepository: IUserRepository = {
     }));
   },
 
+  async findMembership(userId: string, centerId: CenterId) {
+    const m = await prisma.userCenterRole.findUnique({
+      where: { userId_centerId: { userId, centerId } },
+      select: { role: true, isLegacyClient: true },
+    });
+    return m ? { role: toDomainRole(m.role), isLegacyClient: m.isLegacyClient } : null;
+  },
+
   async addRole(userId: string, centerId: CenterId, role: Role) {
     await prisma.userCenterRole.create({
       data: { userId, centerId, role: role as unknown as PrismaRole },
+    });
+  },
+
+  async setLegacyClient(userId: string, centerId: CenterId, isLegacyClient: boolean) {
+    await prisma.userCenterRole.update({
+      where: { userId_centerId: { userId, centerId } },
+      data: { isLegacyClient },
     });
   },
 };

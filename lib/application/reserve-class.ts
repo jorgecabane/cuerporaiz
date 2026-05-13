@@ -136,7 +136,16 @@ export async function reserveClassUseCase(
 
     // Política: allowTrialClassPerPerson (1 clase de prueba por persona por centro)
     // Si la clase es de prueba y el usuario aún no la usó, permite reservar sin plan activo.
+    // Excepción: clientes marcados como migrados de otra plataforma no tienen derecho a clase de prueba.
     if (liveClass.isTrialClass && center.allowTrialClassPerPerson) {
+      const membership = await userRepository.findMembership(userId, centerId);
+      if (membership?.isLegacyClient) {
+        return {
+          success: false,
+          code: "TRIAL_NOT_AVAILABLE",
+          message: "Esta opción no está disponible para tu cuenta",
+        };
+      }
       const hasTrial = await reservationRepository.hasTrialReservation(userId, centerId);
       if (hasTrial) {
         return {
@@ -688,6 +697,10 @@ export async function canShowTrialCta(
 ): Promise<boolean> {
   const center = await centerRepository.findById(centerId);
   if (!center?.allowTrialClassPerPerson) return false;
+
+  // Clientes migrados de otra plataforma no ven el CTA de clase de prueba.
+  const membership = await userRepository.findMembership(userId, centerId);
+  if (membership?.isLegacyClient) return false;
 
   const { total: reservationCount } =
     await reservationRepository.findByUserIdAndCenterPaginated(userId, {

@@ -78,6 +78,7 @@ export async function updateClient(data: {
   birthday: string;
   sex: string;
   notes: string;
+  isLegacyClient: boolean;
 }): Promise<{ error?: string }> {
   const session = await auth();
   if (!session?.user || !isAdminRole(session.user.role)) {
@@ -105,6 +106,12 @@ export async function updateClient(data: {
       notes: data.notes || null,
     },
   });
+  if (membership.isLegacyClient !== data.isLegacyClient) {
+    await prisma.userCenterRole.update({
+      where: { userId_centerId: { userId: data.userId, centerId } },
+      data: { isLegacyClient: data.isLegacyClient },
+    });
+  }
   revalidatePath("/panel/clientes");
   revalidatePath(`/panel/clientes/${data.userId}`);
   return {};

@@ -14,6 +14,7 @@ interface Props {
   currentBirthday: string | null;
   currentSex: string | null;
   currentNotes: string | null;
+  currentIsLegacyClient: boolean;
 }
 
 export function EditClientForm({
@@ -26,6 +27,7 @@ export function EditClientForm({
   currentBirthday,
   currentSex,
   currentNotes,
+  currentIsLegacyClient,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -47,6 +49,7 @@ export function EditClientForm({
         birthday: (fd.get("birthday") as string)?.trim(),
         sex: (fd.get("sex") as string)?.trim(),
         notes: (fd.get("notes") as string)?.trim(),
+        isLegacyClient: fd.get("isLegacyClient") === "on",
       });
       if (result.error) {
         setError(result.error);
@@ -144,6 +147,22 @@ export function EditClientForm({
           defaultValue={currentNotes ?? ""}
           className={inputCls}
         />
+      </div>
+
+      <div className="flex items-start gap-2 pt-1">
+        <input
+          id="edit-isLegacyClient"
+          name="isLegacyClient"
+          type="checkbox"
+          defaultChecked={currentIsLegacyClient}
+          className="mt-0.5 h-4 w-4 rounded border-[var(--color-border)] text-[var(--color-primary)] focus:ring-[var(--color-primary)]"
+        />
+        <label htmlFor="edit-isLegacyClient" className="text-xs text-[var(--color-text)]">
+          Cliente antigua (migrada de otra plataforma)
+          <span className="block text-[var(--color-text-muted)] mt-0.5">
+            No recibe clase de prueba gratis. Debe comprar un plan para agendar.
+          </span>
+        </label>
       </div>
 
       {error && <p className="text-xs text-[var(--color-error,#dc2626)]">{error}</p>}

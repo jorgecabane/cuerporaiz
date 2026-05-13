@@ -352,11 +352,13 @@ enum Role {
 }
 
 model UserCenterRole {
-  id        String   @id @default(cuid())
-  userId    String
-  centerId  String
-  role      Role
-  createdAt DateTime @default(now())
+  id             String   @id @default(cuid())
+  userId         String
+  centerId       String
+  role           Role
+  // Cliente migrado desde otra plataforma: no recibe clase de prueba gratis en este centro.
+  isLegacyClient Boolean  @default(false)
+  createdAt      DateTime @default(now())
 
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   center Center @relation(fields: [centerId], references: [id], onDelete: Cascade)

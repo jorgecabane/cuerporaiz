@@ -8,6 +8,7 @@ import {
   cleanupLiveClasses,
   cleanupTier2UserReservations,
   cleanupTier2UserPlansForUser,
+  setTier2UserLegacyClient,
 } from "./helpers/cleanup";
 
 /**
@@ -130,6 +131,78 @@ test.describe("Plan lifecycle — EXPIRED + trial limit + booking window", () =>
       expect(r2.status()).toBe(400);
       const data = await r2.json();
       expect(data.code).toBe("TRIAL_ALREADY_USED");
+    });
+  });
+
+  test.describe("Trial bloqueado para cliente migrado (isLegacyClient)", () => {
+    test.describe.configure({ mode: "serial" });
+
+    let runId: string;
+    let title: string;
+    let trial: Awaited<ReturnType<typeof seedTier2TrialClass>>;
+    let prevLegacy: Awaited<ReturnType<typeof setTier2UserLegacyClient>>;
+
+    test.beforeAll(async () => {
+      runId = Date.now().toString(36);
+      title = `E2E TrialLegacy ${runId}`;
+      // Estado limpio: sin trial previo ni planes que abran otras rutas de elegibilidad.
+      await cleanupTier2UserReservations({
+        centerSlug: "e2e-test",
+        userEmail: ADMIN_EMAIL,
+      });
+      await cleanupTier2UserPlansForUser({
+        centerSlug: "e2e-test",
+        userEmail: ADMIN_EMAIL,
+      });
+      trial = await seedTier2TrialClass({
+        centerSlug: "e2e-test",
+        title,
+        startsInHours: 48,
+      });
+      prevLegacy = await setTier2UserLegacyClient({
+        centerSlug: "e2e-test",
+        userEmail: ADMIN_EMAIL,
+        isLegacyClient: true,
+      });
+    });
+
+    test.afterAll(async () => {
+      if (prevLegacy) {
+        await setTier2UserLegacyClient({
+          centerSlug: "e2e-test",
+          userEmail: ADMIN_EMAIL,
+          isLegacyClient: prevLegacy.previous,
+        });
+      }
+      await cleanupTier2UserReservations({
+        centerSlug: "e2e-test",
+        userEmail: ADMIN_EMAIL,
+      });
+      await cleanupLiveClasses(title);
+    });
+
+    test("reservar clase de prueba retorna TRIAL_NOT_AVAILABLE", async ({
+      request,
+    }) => {
+      test.skip(!trial || !prevLegacy, "Sin DB en este worker");
+
+      const res = await request.post("/api/reservations", {
+        data: { liveClassId: trial!.id },
+      });
+      expect(res.status()).toBe(400);
+      const data = await res.json();
+      expect(data.code).toBe("TRIAL_NOT_AVAILABLE");
+    });
+
+    test("GET /api/reservations/can-show-trial-cta retorna showTrialCta=false", async ({
+      request,
+    }) => {
+      test.skip(!trial || !prevLegacy, "Sin DB en este worker");
+
+      const res = await request.get("/api/reservations/can-show-trial-cta");
+      expect(res.status()).toBe(200);
+      const data = await res.json();
+      expect(data.showTrialCta).toBe(false);
     });
   });
 
