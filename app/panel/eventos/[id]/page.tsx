@@ -293,6 +293,7 @@ export default async function EventDetailPage({
             amountCents={event.amountCents}
             currency={event.currency}
             isFree={isFree}
+            availableSeats={event.maxCapacity != null ? event.maxCapacity - paidCount : null}
           />
         )}
       </div>

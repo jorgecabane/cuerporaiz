@@ -24,6 +24,7 @@ export interface EventTicket {
   eventId: string;
   userId: string;
   amountCents: number;
+  quantity: number;
   currency: string;
   status: EventTicketStatus;
   mpPaymentId: string | null;

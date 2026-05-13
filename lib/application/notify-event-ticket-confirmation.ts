@@ -17,6 +17,7 @@ export async function notifyEventTicketConfirmation(input: {
   centerId: string;
   amountCents: number;
   currency: string;
+  quantity?: number;
 }): Promise<void> {
   const [event, user, branding] = await Promise.all([
     eventRepository.findById(input.eventId),
@@ -35,6 +36,7 @@ export async function notifyEventTicketConfirmation(input: {
       location: event.location ?? branding.contactAddress,
       amountCents: input.amountCents,
       currency: input.currency,
+      quantity: input.quantity ?? 1,
       eventUrl: `${getBaseUrl()}/eventos/${event.id}`,
       preferencesUrl: `${getBaseUrl()}/panel/mi-perfil?tab=correos`,
       branding,

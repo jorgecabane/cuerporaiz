@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { seedEvent, cleanupEvents } from "./helpers/cleanup";
+import { seedEvent, cleanupEvents, seedEventTicket, cleanupEventTickets } from "./helpers/cleanup";
 
 /**
  * Compra de tickets de eventos. Cubre:
@@ -125,5 +125,74 @@ test.describe("Eventos — compra de tickets", () => {
     await page.goto(`/panel/eventos/${paidEvent.id}`);
     await page.getByRole("button", { name: /Comprar/i }).click();
     await expect(page.getByText(/agotado|lleno/i).first()).toBeVisible({ timeout: 10000 });
+  });
+
+  test("multi-cupos: selector envía quantity al backend", async ({ page }) => {
+    test.skip(!paidEvent, "Seed del evento pago no disponible (sin DB en este worker)");
+    if (!paidEvent) return;
+
+    let capturedBody: { quantity?: number } | null = null;
+    await page.route(`**/api/events/${paidEvent.id}/checkout`, async (route) => {
+      const reqBody = route.request().postDataJSON();
+      capturedBody = reqBody;
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          checkoutUrl: "https://www.mercadopago.cl/checkout/v1/redirect?pref_id=E2E_QTY",
+        }),
+      });
+    });
+    await page.route("**://www.mercadopago.cl/**", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "text/html",
+        body: "<html><head><title>MercadoPago</title></head><body>MP</body></html>",
+      });
+    });
+
+    await page.goto(`/panel/eventos/${paidEvent.id}`);
+    const selector = page.getByRole("combobox", { name: /Cantidad de cupos/i });
+    await expect(selector).toBeVisible();
+    await selector.selectOption("3");
+    await page.getByRole("button", { name: /Comprar/i }).click();
+
+    await page.waitForURL(/mercadopago\.cl/, { timeout: 15000 });
+    expect(capturedBody).not.toBeNull();
+    expect(capturedBody!.quantity).toBe(3);
+  });
+
+  test("regresión: ticket PENDING previo no rompe el siguiente checkout (P2002)", async ({ page }) => {
+    test.skip(!freeEvent, "Seed del evento gratis no disponible (sin DB en este worker)");
+    if (!freeEvent) return;
+
+    // Sembramos un ticket PENDING previo del mismo usuario sobre el evento gratis.
+    // Antes del fix esto reventaba con SERVER_ERROR (unique constraint P2002).
+    const seeded = await seedEventTicket({
+      eventId: freeEvent.id,
+      userEmail: "student@e2e.test",
+      status: "PENDING",
+      amountCents: 0,
+      quantity: 1,
+    });
+    test.skip(!seeded, "No se pudo seedear ticket PENDING (sin DB)");
+
+    await page.goto(`/panel/eventos/${freeEvent.id}`);
+    await expect(
+      page.getByRole("heading", { name: new RegExp(freeEvent.title, "i") })
+    ).toBeVisible({ timeout: 15000 });
+
+    const reservar = page.getByRole("button", { name: /Reservar/i });
+    await expect(reservar).toBeVisible();
+    await reservar.click();
+
+    // Debe completar reserva (toast OK), NO mostrar el error genérico.
+    await expect(page.getByText(/Error al procesar el checkout/i)).toHaveCount(0);
+    await expect(
+      page.getByText(/inscripción confirmada|reserva|confirmad/i).first()
+    ).toBeVisible({ timeout: 10000 });
+
+    // Cleanup: borrar el ticket creado/reusado.
+    await cleanupEventTickets(freeEvent.id);
   });
 });

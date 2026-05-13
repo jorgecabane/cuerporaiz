@@ -680,6 +680,7 @@ model EventTicket {
   eventId       String
   userId        String
   amountCents   Int
+  quantity      Int               @default(1)
   currency      String            @default("CLP")
   status        EventTicketStatus @default(PENDING)
   paymentMethod PaymentMethod     @default(MERCADOPAGO)

@@ -86,4 +86,25 @@ describe("buildEventTicketConfirmationEmail", () => {
 
     expect(result.html).toContain("Cuerpo Raíz");
   });
+
+  it("quantity > 1 menciona la cantidad de cupos comprados", () => {
+    const result = buildEventTicketConfirmationEmail({
+      ...BASE_DATA,
+      quantity: 3,
+    });
+
+    expect(result.html).toContain("3");
+    expect(result.html).toContain("cupos");
+    expect(result.text).toContain("3 cupos");
+  });
+
+  it("quantity = 1 no menciona cupos en plural", () => {
+    const result = buildEventTicketConfirmationEmail({
+      ...BASE_DATA,
+      quantity: 1,
+    });
+
+    expect(result.text).toContain("Tu entrada");
+    expect(result.text).not.toContain("cupos");
+  });
 });

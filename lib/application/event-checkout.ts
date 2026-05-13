@@ -1,5 +1,9 @@
 /**
  * Caso de uso: checkout de eventos (entrada libre o con pago MercadoPago).
+ *
+ * Soporta múltiples cupos por compra (`quantity`) y reusa tickets previos
+ * PENDING/CANCELLED del mismo usuario para evitar romper el unique
+ * `(eventId, userId)` cuando el alumno reintenta el flujo.
  */
 import * as crypto from "node:crypto";
 import {
@@ -17,6 +21,7 @@ export type EventCheckoutErrorCode =
   | "EVENT_ENDED"
   | "ALREADY_PURCHASED"
   | "EVENT_FULL"
+  | "INVALID_QUANTITY"
   | "MP_NOT_CONFIGURED"
   | "MP_PREFERENCE_FAILED";
 
@@ -29,9 +34,39 @@ export interface CreateEventCheckoutInput {
   centerId: string;
   userId: string;
   baseUrl: string;
+  quantity?: number;
   payerEmail?: string;
   payerFirstName?: string;
   payerLastName?: string;
+}
+
+/**
+ * Reusa un ticket PENDING/CANCELLED existente o crea uno nuevo. Mantiene la
+ * unicidad `(eventId, userId)` evitando P2002 cuando el alumno reintenta.
+ */
+async function upsertTicket(input: {
+  existing: EventTicket | null;
+  eventId: string;
+  userId: string;
+  amountCents: number;
+  currency: string;
+  quantity: number;
+}): Promise<EventTicket> {
+  if (input.existing) {
+    const reset = await eventTicketRepository.resetPending(input.existing.id, {
+      amountCents: input.amountCents,
+      quantity: input.quantity,
+      currency: input.currency,
+    });
+    if (reset) return reset;
+  }
+  return eventTicketRepository.create({
+    eventId: input.eventId,
+    userId: input.userId,
+    amountCents: input.amountCents,
+    currency: input.currency,
+    quantity: input.quantity,
+  });
 }
 
 /**
@@ -40,6 +75,15 @@ export interface CreateEventCheckoutInput {
 export async function createEventCheckout(
   input: CreateEventCheckoutInput
 ): Promise<EventCheckoutResult> {
+  const quantity = input.quantity ?? 1;
+  if (!Number.isInteger(quantity) || quantity < 1) {
+    return {
+      success: false,
+      code: "INVALID_QUANTITY",
+      message: "La cantidad de cupos debe ser un entero mayor o igual a 1",
+    };
+  }
+
   const event = await eventRepository.findById(input.eventId);
   if (!event || event.centerId !== input.centerId) {
     return { success: false, code: "EVENT_NOT_FOUND", message: "Evento no encontrado" };
@@ -55,26 +99,38 @@ export async function createEventCheckout(
   }
 
   const existing = await eventTicketRepository.findByEventAndUser(event.id, input.userId);
-  if (existing && existing.status === "PAID") {
+  if (existing && (existing.status === "PAID" || existing.status === "REFUNDED")) {
     return { success: false, code: "ALREADY_PURCHASED", message: "Ya tienes una entrada para este evento" };
   }
 
   if (event.maxCapacity !== null) {
-    const paidCount = await eventTicketRepository.countPaidByEventId(event.id);
-    if (paidCount >= event.maxCapacity) {
-      return { success: false, code: "EVENT_FULL", message: "El evento está lleno" };
+    const paidSeats = await eventTicketRepository.countPaidByEventId(event.id);
+    const available = event.maxCapacity - paidSeats;
+    if (available < quantity) {
+      return {
+        success: false,
+        code: "EVENT_FULL",
+        message:
+          available <= 0
+            ? "El evento está lleno"
+            : `Sólo quedan ${available} cupos disponibles`,
+      };
     }
   }
 
-  // Evento gratuito: crear ticket PAID directamente
+  const totalAmountCents = event.amountCents * quantity;
+
+  // Evento gratuito: crear ticket PAID directamente.
   if (event.amountCents === 0) {
-    const ticket = await eventTicketRepository.create({
+    const pending = await upsertTicket({
+      existing,
       eventId: event.id,
       userId: input.userId,
       amountCents: 0,
       currency: event.currency,
+      quantity,
     });
-    const paid = await eventTicketRepository.updateStatus(ticket.id, "PAID", { paidAt: new Date() });
+    const paid = await eventTicketRepository.updateStatus(pending.id, "PAID", { paidAt: new Date() });
     const { notifyEventTicketConfirmation } = await import("./notify-event-ticket-confirmation");
     notifyEventTicketConfirmation({
       eventId: event.id,
@@ -82,8 +138,9 @@ export async function createEventCheckout(
       centerId: input.centerId,
       amountCents: 0,
       currency: event.currency,
+      quantity,
     }).catch((err) => console.error("[event-checkout] confirm email", err));
-    return { success: true, ticket: paid ?? ticket };
+    return { success: true, ticket: paid ?? pending };
   }
 
   // Evento de pago: si el centro permite transferencia, devolvemos sólo el
@@ -94,11 +151,13 @@ export async function createEventCheckout(
     !!center && center.bankTransferEnabled && center.bankTransferAcceptEvents;
 
   if (transferAllowed) {
-    const ticket = await eventTicketRepository.create({
+    const ticket = await upsertTicket({
+      existing,
       eventId: event.id,
       userId: input.userId,
-      amountCents: event.amountCents,
+      amountCents: totalAmountCents,
       currency: event.currency,
+      quantity,
     });
     return {
       success: true,
@@ -113,11 +172,13 @@ export async function createEventCheckout(
     return { success: false, code: "MP_NOT_CONFIGURED", message: "MercadoPago no está configurado para este centro" };
   }
 
-  const ticket = await eventTicketRepository.create({
+  const ticket = await upsertTicket({
+    existing,
     eventId: event.id,
     userId: input.userId,
-    amountCents: event.amountCents,
+    amountCents: totalAmountCents,
     currency: event.currency,
+    quantity,
   });
 
   const externalRef = `evt_${crypto.randomUUID()}`;
@@ -128,7 +189,7 @@ export async function createEventCheckout(
   const result = await mercadoPagoPaymentAdapter.createPreference({
     accessToken: mpConfig.accessToken,
     title: event.title,
-    quantity: 1,
+    quantity,
     unitPrice: event.amountCents,
     externalReference: externalRef,
     backUrls: {
@@ -203,11 +264,14 @@ export async function createMpPreferenceForTicket(
   const isHttps = base.startsWith("https://");
   const autoReturn = isHttps ? ("approved" as const) : undefined;
 
+  const quantity = ticket.quantity > 0 ? ticket.quantity : 1;
+  const unitPrice = Math.round(ticket.amountCents / quantity);
+
   const result = await mercadoPagoPaymentAdapter.createPreference({
     accessToken: mpConfig.accessToken,
     title: event.title,
-    quantity: 1,
-    unitPrice: event.amountCents,
+    quantity,
+    unitPrice,
     externalReference: externalRef,
     backUrls: {
       success: `${base}/api/events/checkout/success?centerId=${event.centerId}&ticketId=${ticket.id}`,

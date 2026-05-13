@@ -8,6 +8,7 @@ function toDomain(r: {
   eventId: string;
   userId: string;
   amountCents: number;
+  quantity: number;
   currency: string;
   status: PrismaEventTicketStatus;
   mpPaymentId: string | null;
@@ -20,6 +21,7 @@ function toDomain(r: {
     eventId: r.eventId,
     userId: r.userId,
     amountCents: r.amountCents,
+    quantity: r.quantity,
     currency: r.currency,
     status: r.status as unknown as EventTicketStatus,
     mpPaymentId: r.mpPaymentId,
@@ -58,13 +60,43 @@ export const eventTicketRepository: IEventTicketRepository = {
     return r ? toDomain(r) : null;
   },
 
-  async create(data: { eventId: string; userId: string; amountCents: number; currency: string }) {
+  async create(data: {
+    eventId: string;
+    userId: string;
+    amountCents: number;
+    currency: string;
+    quantity?: number;
+  }) {
     const r = await prisma.eventTicket.create({
       data: {
         eventId: data.eventId,
         userId: data.userId,
         amountCents: data.amountCents,
         currency: data.currency,
+        quantity: data.quantity ?? 1,
+      },
+    });
+    return toDomain(r);
+  },
+
+  async resetPending(
+    id: string,
+    data: { amountCents: number; quantity: number; currency: string }
+  ) {
+    const existing = await prisma.eventTicket.findUnique({ where: { id } });
+    if (!existing) return null;
+    const r = await prisma.eventTicket.update({
+      where: { id },
+      data: {
+        amountCents: data.amountCents,
+        quantity: data.quantity,
+        currency: data.currency,
+        status: "PENDING",
+        mpPaymentId: null,
+        paidAt: null,
+        transferClaimedAt: null,
+        transferReceiptSanityId: null,
+        transferRejectedReason: null,
       },
     });
     return toDomain(r);
@@ -89,8 +121,10 @@ export const eventTicketRepository: IEventTicketRepository = {
   },
 
   async countPaidByEventId(eventId: string) {
-    return prisma.eventTicket.count({
+    const result = await prisma.eventTicket.aggregate({
       where: { eventId, status: "PAID" },
+      _sum: { quantity: true },
     });
+    return result._sum.quantity ?? 0;
   },
 };
