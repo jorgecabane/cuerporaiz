@@ -263,23 +263,13 @@ export function PanelHomeCalendar({
   }
 
   async function handleReserve(liveClassId: string, userPlanId?: string) {
+    // El listing del calendario ya oculta `isTrialClass` para usuarios que no
+    // deben ver el flujo de prueba (con plan, legacy, o trial ya usado), por
+    // lo que llegar acá con isTrialClass=true significa "el usuario no tiene
+    // plan y debería quemar su clase de prueba" → pedir confirmación.
     if (!userPlanId && isStudentRole(role)) {
       const target = liveClasses.find((c) => c.id === liveClassId);
       if (target?.isTrialClass) {
-        // Pre-check: si el usuario no es elegible (legacy, ya usó trial, o el
-        // centro deshabilitó trial) le ofrecemos comprar un plan en vez de
-        // preguntarle si quiere "quemar" un trial que no tiene.
-        setActionLoading(liveClassId);
-        try {
-          const res = await fetch("/api/reservations/trial-eligibility");
-          const data = (await res.json().catch(() => ({}))) as { eligible?: boolean };
-          if (data.eligible === false) {
-            setNeedsPlanModalOpen(true);
-            return;
-          }
-        } finally {
-          setActionLoading(null);
-        }
         setTrialConfirmFor(liveClassId);
         return;
       }
@@ -305,6 +295,19 @@ export function PanelHomeCalendar({
           data.plans.length > 0
         ) {
           setPlanSelectionFor({ liveClassId, plans: data.plans });
+          return;
+        }
+        // NO_ACTIVE_PLAN: usuario sin plan reservando cualquier clase.
+        // TRIAL_NOT_AVAILABLE / TRIAL_ALREADY_USED: el server solo devuelve
+        // estos códigos cuando el usuario tampoco tiene plan (ver
+        // reserveClassUseCase), así que el remedio para los tres es comprar
+        // un plan.
+        if (
+          data.code === "NO_ACTIVE_PLAN" ||
+          data.code === "TRIAL_NOT_AVAILABLE" ||
+          data.code === "TRIAL_ALREADY_USED"
+        ) {
+          setNeedsPlanModalOpen(true);
           return;
         }
         toast.error(data.message ?? "Error al reservar");

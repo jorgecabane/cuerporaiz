@@ -397,7 +397,7 @@ describe("reserveClassUseCase — clase de prueba (trial)", () => {
     expect(mocks.reservationRepository.create).not.toHaveBeenCalled();
   });
 
-  it("rechaza con TRIAL_NOT_AVAILABLE si el cliente está marcado como migrado", async () => {
+  it("rechaza con TRIAL_NOT_AVAILABLE si el cliente está marcado como migrado y no tiene plan", async () => {
     mocks.liveClassRepository.findById.mockResolvedValue(
       makeLiveClass({ startsAt: new Date("2026-06-10T14:00:00Z"), centerId, isTrialClass: true })
     );
@@ -413,6 +413,48 @@ describe("reserveClassUseCase — clase de prueba (trial)", () => {
     if (!result.success) expect(result.code).toBe("TRIAL_NOT_AVAILABLE");
     expect(mocks.reservationRepository.hasTrialReservation).not.toHaveBeenCalled();
     expect(mocks.reservationRepository.create).not.toHaveBeenCalled();
+  });
+
+  it("permite reservar trial class usando plan activo aunque cliente sea legacy", async () => {
+    mocks.liveClassRepository.findById.mockResolvedValue(
+      makeLiveClass({ startsAt: new Date("2026-06-10T14:00:00Z"), centerId, isTrialClass: true })
+    );
+    mocks.userRepository.findMembership.mockResolvedValue({
+      role: "STUDENT",
+      isLegacyClient: true,
+    });
+    mocks.userPlanRepository.findActiveByUserAndCenter.mockResolvedValue([
+      { id: "up-1", planId: "p-1", classesTotal: 10, classesUsed: 0, validUntil: null, status: "ACTIVE", validFrom: new Date("2026-01-01") },
+    ]);
+    mocks.planRepository.findById.mockResolvedValue({ id: "p-1", type: "LIVE" });
+
+    const result = await reserveClassUseCase(userId, centerId, "lc-1");
+
+    expect(result.success).toBe(true);
+    expect(mocks.reservationRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({ userId, liveClassId: "lc-1", userPlanId: "up-1" })
+    );
+    expect(mocks.userPlanRepository.incrementClassesUsed).toHaveBeenCalledWith("up-1");
+  });
+
+  it("permite reservar trial class usando plan activo aunque ya usó trial antes", async () => {
+    mocks.liveClassRepository.findById.mockResolvedValue(
+      makeLiveClass({ startsAt: new Date("2026-06-10T14:00:00Z"), centerId, isTrialClass: true })
+    );
+    mocks.reservationRepository.hasTrialReservation.mockResolvedValue(true);
+    mocks.userPlanRepository.findActiveByUserAndCenter.mockResolvedValue([
+      { id: "up-1", planId: "p-1", classesTotal: 10, classesUsed: 0, validUntil: null, status: "ACTIVE", validFrom: new Date("2026-01-01") },
+    ]);
+    mocks.planRepository.findById.mockResolvedValue({ id: "p-1", type: "LIVE" });
+
+    const result = await reserveClassUseCase(userId, centerId, "lc-1");
+
+    expect(result.success).toBe(true);
+    expect(mocks.reservationRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({ userId, liveClassId: "lc-1", userPlanId: "up-1" })
+    );
+    // Si tiene plan, ni siquiera consulta el historial de trial
+    expect(mocks.userRepository.findMembership).not.toHaveBeenCalled();
   });
 
 });
@@ -448,9 +490,10 @@ describe("isUserTrialEligible", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.userPlanRepository.findActiveByUserAndCenter.mockResolvedValue([]);
   });
 
-  it("retorna true cuando centro permite trial, no es legacy y no usó el trial", async () => {
+  it("retorna true cuando centro permite trial, no es legacy, no usó el trial y no tiene plan", async () => {
     mocks.centerRepository.findById.mockResolvedValue({
       id: centerId,
       allowTrialClassPerPerson: true,
@@ -498,6 +541,24 @@ describe("isUserTrialEligible", () => {
       isLegacyClient: false,
     });
     mocks.reservationRepository.hasTrialReservation.mockResolvedValue(true);
+
+    expect(await isUserTrialEligible(userId, centerId)).toBe(false);
+  });
+
+  it("retorna false si el cliente ya tiene un plan LIVE activo (no necesita trial)", async () => {
+    mocks.centerRepository.findById.mockResolvedValue({
+      id: centerId,
+      allowTrialClassPerPerson: true,
+    });
+    mocks.userRepository.findMembership.mockResolvedValue({
+      role: "STUDENT",
+      isLegacyClient: false,
+    });
+    mocks.reservationRepository.hasTrialReservation.mockResolvedValue(false);
+    mocks.userPlanRepository.findActiveByUserAndCenter.mockResolvedValue([
+      { id: "up-1", planId: "p-1", classesTotal: 10, classesUsed: 0, validUntil: null, status: "ACTIVE", validFrom: new Date("2026-01-01") },
+    ]);
+    mocks.planRepository.findById.mockResolvedValue({ id: "p-1", type: "LIVE" });
 
     expect(await isUserTrialEligible(userId, centerId)).toBe(false);
   });

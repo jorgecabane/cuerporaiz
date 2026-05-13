@@ -1392,6 +1392,122 @@ export async function seedTier2PastReservation(opts: {
 }
 
 /**
+ * Crea (idempotente) un usuario STUDENT dedicado para tests específicos.
+ * Reusa email/password si ya existe. Devuelve `{ email, password, userId }`.
+ */
+export async function ensureTier2DedicatedStudent(opts: {
+  centerSlug: string;
+  email: string;
+  password: string;
+}): Promise<{ email: string; password: string; userId: string } | null> {
+  const prisma = await getPrisma();
+  if (!prisma) return null;
+  const center = await prisma.center.findUnique({ where: { slug: opts.centerSlug } });
+  if (!center) return null;
+  const bcrypt = await import("bcryptjs");
+  const hash = await bcrypt.hash(opts.password, 12);
+  const user = await prisma.user.upsert({
+    where: { email: opts.email },
+    create: { email: opts.email, passwordHash: hash, name: "PvT Runner E2E" },
+    update: { passwordHash: hash, tokenVersion: { increment: 1 } },
+  });
+  await prisma.userCenterRole.upsert({
+    where: { userId_centerId: { userId: user.id, centerId: center.id } },
+    create: { userId: user.id, centerId: center.id, role: "STUDENT" },
+    update: { role: "STUDENT" },
+  });
+  return { email: opts.email, password: opts.password, userId: user.id };
+}
+
+/**
+ * Borra todas las reservas del usuario en las clases dadas. Más quirúrgico
+ * que `cleanupTier2UserReservations` para evitar colisiones entre specs que
+ * comparten admin@e2e.test.
+ */
+export async function cleanupTier2UserReservationsOnClasses(opts: {
+  userEmail: string;
+  liveClassIds: string[];
+}) {
+  const prisma = await getPrisma();
+  if (!prisma || opts.liveClassIds.length === 0) return;
+  const user = await prisma.user.findUnique({ where: { email: opts.userEmail } });
+  if (!user) return;
+  await prisma.reservation
+    .deleteMany({ where: { userId: user.id, liveClassId: { in: opts.liveClassIds } } })
+    .catch(() => {});
+}
+
+/**
+ * Toggle `allowTrialClassPerPerson` del centro. Devuelve el valor previo
+ * para restaurarlo en afterAll.
+ */
+export async function setTier2CenterAllowTrial(opts: {
+  centerSlug: string;
+  allow: boolean;
+}): Promise<{ previous: boolean } | null> {
+  const prisma = await getPrisma();
+  if (!prisma) return null;
+  const center = await prisma.center.findUnique({ where: { slug: opts.centerSlug } });
+  if (!center) return null;
+  const previous = center.allowTrialClassPerPerson;
+  await prisma.center.update({
+    where: { id: center.id },
+    data: { allowTrialClassPerPerson: opts.allow },
+  });
+  return { previous };
+}
+
+/**
+ * Asigna un UserPlan ACTIVE de tipo ON_DEMAND a un usuario existente.
+ * Útil para verificar que ON_DEMAND no satisface la elegibilidad de clases
+ * en vivo (LIVE). Devuelve el id del userPlan creado.
+ */
+export async function seedTier2OnDemandUserPlanForExistingUser(opts: {
+  centerSlug: string;
+  userEmail: string;
+  planName?: string;
+}): Promise<{ userId: string; userPlanId: string; planId: string } | null> {
+  const prisma = await getPrisma();
+  if (!prisma) return null;
+  const center = await prisma.center.findUnique({ where: { slug: opts.centerSlug } });
+  if (!center) return null;
+  const user = await prisma.user.findUnique({ where: { email: opts.userEmail } });
+  if (!user) return null;
+
+  const planName = opts.planName ?? `OnDemand E2E ${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+  const planSlug = planName.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+  const plan = await prisma.plan.upsert({
+    where: { centerId_slug: { centerId: center.id, slug: planSlug } },
+    create: {
+      centerId: center.id,
+      name: planName,
+      slug: planSlug,
+      description: "Plan ON_DEMAND E2E",
+      type: "ON_DEMAND",
+      amountCents: 9900,
+      currency: "CLP",
+      validityDays: 30,
+      billingMode: "ONE_TIME",
+    },
+    update: {},
+  });
+  const up = await prisma.userPlan.create({
+    data: {
+      userId: user.id,
+      planId: plan.id,
+      centerId: center.id,
+      status: "ACTIVE",
+      paymentStatus: "PAID",
+      classesTotal: null,
+      classesUsed: 0,
+      validFrom: new Date(),
+      validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    },
+  });
+  return { userId: user.id, userPlanId: up.id, planId: plan.id };
+}
+
+/**
  * Marca o desmarca la membresía (UserCenterRole) de un usuario como
  * `isLegacyClient`. Devuelve el valor previo para restaurarlo en afterAll.
  */

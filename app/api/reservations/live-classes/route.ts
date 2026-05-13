@@ -30,12 +30,22 @@ export async function GET(request: Request) {
           { status: 400 }
         );
       }
-      const items = await listLiveClassesByRange(session.user.centerId, from, to);
+      const items = await listLiveClassesByRange(
+        session.user.centerId,
+        from,
+        to,
+        undefined,
+        session.user.id
+      );
       return NextResponse.json({ items, total: items.length, page: 1, pageSize: items.length });
     }
     const page = searchParams.get("page") ? Number(searchParams.get("page")) : undefined;
     const pageSize = searchParams.get("pageSize") ? Number(searchParams.get("pageSize")) : undefined;
-    const result = await listLiveClassesPaginated(session.user.centerId, { page, pageSize });
+    const result = await listLiveClassesPaginated(session.user.centerId, {
+      page,
+      pageSize,
+      viewerUserId: session.user.id,
+    });
     return NextResponse.json(result);
   } catch (err) {
     console.error("[reservations live-classes]", err);
