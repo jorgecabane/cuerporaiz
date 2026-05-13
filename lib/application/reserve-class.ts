@@ -719,3 +719,22 @@ export async function canShowTrialCta(
   }
   return false;
 }
+
+/**
+ * Indica si el usuario es elegible para reservar una clase de prueba en este
+ * centro. Mirror exacto de los checks que hace `reserveClassUseCase` antes de
+ * permitir una trial: política del centro, flag migrado, y si ya consumió el
+ * trial. No considera disponibilidad de cupos (eso se evalúa por clase).
+ */
+export async function isUserTrialEligible(
+  userId: string,
+  centerId: string
+): Promise<boolean> {
+  const center = await centerRepository.findById(centerId);
+  if (!center?.allowTrialClassPerPerson) return false;
+  const membership = await userRepository.findMembership(userId, centerId);
+  if (membership?.isLegacyClient) return false;
+  const hasTrial = await reservationRepository.hasTrialReservation(userId, centerId);
+  if (hasTrial) return false;
+  return true;
+}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import type { Role } from "@/lib/domain/role";
 import { isAdminRole, isStudentRole } from "@/lib/domain";
 import { toast } from "@/components/ui/Toast";
@@ -63,6 +64,8 @@ export function PanelHomeCalendar({
   } | null>(null);
   const [attendanceLoadingId, setAttendanceLoadingId] = useState<string | null>(null);
   const [trialConfirmFor, setTrialConfirmFor] = useState<string | null>(null);
+  const [needsPlanModalOpen, setNeedsPlanModalOpen] = useState(false);
+  const router = useRouter();
 
   const loadReservations = useCallback(async () => {
     const res = await fetch(`/api/reservations?page=1&pageSize=${RESERVATIONS_PAGE_SIZE}`);
@@ -260,11 +263,23 @@ export function PanelHomeCalendar({
   }
 
   async function handleReserve(liveClassId: string, userPlanId?: string) {
-    // Si la clase es de prueba y el usuario no eligió un plan específico,
-    // pedimos confirmación explícita: la clase de prueba es única por centro.
     if (!userPlanId && isStudentRole(role)) {
       const target = liveClasses.find((c) => c.id === liveClassId);
       if (target?.isTrialClass) {
+        // Pre-check: si el usuario no es elegible (legacy, ya usó trial, o el
+        // centro deshabilitó trial) le ofrecemos comprar un plan en vez de
+        // preguntarle si quiere "quemar" un trial que no tiene.
+        setActionLoading(liveClassId);
+        try {
+          const res = await fetch("/api/reservations/trial-eligibility");
+          const data = (await res.json().catch(() => ({}))) as { eligible?: boolean };
+          if (data.eligible === false) {
+            setNeedsPlanModalOpen(true);
+            return;
+          }
+        } finally {
+          setActionLoading(null);
+        }
         setTrialConfirmFor(liveClassId);
         return;
       }
@@ -413,6 +428,19 @@ export function PanelHomeCalendar({
           if (id) await doReserve(id);
         }}
         onCancel={() => setTrialConfirmFor(null)}
+      />
+      <ConfirmDialog
+        open={needsPlanModalOpen}
+        title="Necesitas un plan para reservar"
+        description="Para agendar clases necesitas tener un plan activo. ¿Vamos a la tienda?"
+        confirmLabel="Ver planes"
+        cancelLabel="Cancelar"
+        variant="warning"
+        onConfirm={() => {
+          setNeedsPlanModalOpen(false);
+          router.push("/panel/tienda");
+        }}
+        onCancel={() => setNeedsPlanModalOpen(false)}
       />
       <WeekNav
         weekAnchor={weekAnchor}
