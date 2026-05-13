@@ -5,6 +5,7 @@ import {
   cancelReservationByStaffUseCase,
   listMyReservationsPaginated,
   canShowTrialCta,
+  isUserTrialEligible,
 } from "./reserve-class";
 import type { Reservation, LiveClass } from "@/lib/domain";
 
@@ -438,5 +439,66 @@ describe("canShowTrialCta — cliente migrado", () => {
 
     expect(result).toBe(false);
     expect(mocks.reservationRepository.findByUserIdAndCenterPaginated).not.toHaveBeenCalled();
+  });
+});
+
+describe("isUserTrialEligible", () => {
+  const userId = "user-1";
+  const centerId = "center-1";
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("retorna true cuando centro permite trial, no es legacy y no usó el trial", async () => {
+    mocks.centerRepository.findById.mockResolvedValue({
+      id: centerId,
+      allowTrialClassPerPerson: true,
+    });
+    mocks.userRepository.findMembership.mockResolvedValue({
+      role: "STUDENT",
+      isLegacyClient: false,
+    });
+    mocks.reservationRepository.hasTrialReservation.mockResolvedValue(false);
+
+    expect(await isUserTrialEligible(userId, centerId)).toBe(true);
+  });
+
+  it("retorna false si el centro tiene trial deshabilitado", async () => {
+    mocks.centerRepository.findById.mockResolvedValue({
+      id: centerId,
+      allowTrialClassPerPerson: false,
+    });
+
+    expect(await isUserTrialEligible(userId, centerId)).toBe(false);
+    expect(mocks.userRepository.findMembership).not.toHaveBeenCalled();
+  });
+
+  it("retorna false si el cliente está marcado como migrado", async () => {
+    mocks.centerRepository.findById.mockResolvedValue({
+      id: centerId,
+      allowTrialClassPerPerson: true,
+    });
+    mocks.userRepository.findMembership.mockResolvedValue({
+      role: "STUDENT",
+      isLegacyClient: true,
+    });
+
+    expect(await isUserTrialEligible(userId, centerId)).toBe(false);
+    expect(mocks.reservationRepository.hasTrialReservation).not.toHaveBeenCalled();
+  });
+
+  it("retorna false si el cliente ya consumió el trial", async () => {
+    mocks.centerRepository.findById.mockResolvedValue({
+      id: centerId,
+      allowTrialClassPerPerson: true,
+    });
+    mocks.userRepository.findMembership.mockResolvedValue({
+      role: "STUDENT",
+      isLegacyClient: false,
+    });
+    mocks.reservationRepository.hasTrialReservation.mockResolvedValue(true);
+
+    expect(await isUserTrialEligible(userId, centerId)).toBe(false);
   });
 });
