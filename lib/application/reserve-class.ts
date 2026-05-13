@@ -137,24 +137,28 @@ export async function reserveClassUseCase(
     // Política: allowTrialClassPerPerson (1 clase de prueba por persona por centro)
     // Si la clase es de prueba y el usuario aún no la usó, permite reservar sin plan activo.
     // Excepción: clientes marcados como migrados de otra plataforma no tienen derecho a clase de prueba.
+    // Si el usuario ya tiene un plan LIVE activo, prefiere usarlo en vez del trial.
     if (liveClass.isTrialClass && center.allowTrialClassPerPerson) {
-      const membership = await userRepository.findMembership(userId, centerId);
-      if (membership?.isLegacyClient) {
-        return {
-          success: false,
-          code: "TRIAL_NOT_AVAILABLE",
-          message: "Esta opción no está disponible para tu cuenta",
-        };
+      const hasUsableLive = await hasUsableLivePlan(userId, centerId);
+      if (!hasUsableLive) {
+        const membership = await userRepository.findMembership(userId, centerId);
+        if (membership?.isLegacyClient) {
+          return {
+            success: false,
+            code: "TRIAL_NOT_AVAILABLE",
+            message: "Esta opción no está disponible para tu cuenta",
+          };
+        }
+        const hasTrial = await reservationRepository.hasTrialReservation(userId, centerId);
+        if (hasTrial) {
+          return {
+            success: false,
+            code: "TRIAL_ALREADY_USED",
+            message: "Ya utilizaste tu clase de prueba en este centro",
+          };
+        }
+        isTrialEligible = true;
       }
-      const hasTrial = await reservationRepository.hasTrialReservation(userId, centerId);
-      if (hasTrial) {
-        return {
-          success: false,
-          code: "TRIAL_ALREADY_USED",
-          message: "Ya utilizaste tu clase de prueba en este centro",
-        };
-      }
-      isTrialEligible = true;
     }
   }
 
@@ -515,18 +519,22 @@ export interface ListLiveClassesPaginatedResult {
 
 /**
  * Listar clases en vivo del centro con paginación.
+ * Si se pasa `viewerUserId`, oculta el flag `isTrialClass` en las clases
+ * cuando ese usuario no debe ver el flujo de prueba (ya tiene plan, es
+ * cliente migrado, ya consumió el trial, o el centro lo deshabilitó).
  */
 export async function listLiveClassesPaginated(
   centerId: string,
-  opts: { page?: number; pageSize?: number }
+  opts: { page?: number; pageSize?: number; viewerUserId?: string }
 ): Promise<ListLiveClassesPaginatedResult> {
   const from = new Date();
   const page = Math.max(1, opts.page ?? 1);
   const pageSize = Math.min(50, Math.max(1, opts.pageSize ?? DEFAULT_PAGE_SIZE));
   const offset = (page - 1) * pageSize;
-  const [result, instructors] = await Promise.all([
+  const [result, instructors, showTrialForViewer] = await Promise.all([
     liveClassRepository.findByCenterIdPaginated(centerId, from, { limit: pageSize, offset }),
     instructorRepository.findByCenterId(centerId),
+    opts.viewerUserId ? isUserTrialEligible(opts.viewerUserId, centerId) : Promise.resolve(true),
   ]);
   const { items: classes, total } = result;
   const nameByUserId = new Map(instructors.map((i) => [i.userId, i.name ?? null]));
@@ -544,7 +552,7 @@ export async function listLiveClassesPaginated(
         c.maxCapacity,
         c.maxCapacity - confirmed,
         {
-          isTrialClass: c.isTrialClass,
+          isTrialClass: c.isTrialClass && showTrialForViewer,
           isOnline: c.isOnline,
           instructorName: c.instructorId ? nameByUserId.get(c.instructorId) ?? null : null,
           instructorImageUrl: c.instructorId ? imageUrlByUserId.get(c.instructorId) ?? null : null,
@@ -558,16 +566,20 @@ export async function listLiveClassesPaginated(
 /**
  * Listar clases en vivo del centro en un rango de fechas (ej. una semana).
  * Si instructorId se pasa, solo se devuelven las clases de ese profesor.
+ * Si `viewerUserId` se pasa, oculta `isTrialClass` cuando ese usuario no
+ * debería ver el flujo de prueba (ver `isUserTrialEligible`).
  */
 export async function listLiveClassesByRange(
   centerId: string,
   from: Date,
   to: Date,
-  instructorId?: string
+  instructorId?: string,
+  viewerUserId?: string
 ): Promise<LiveClassDto[]> {
-  const [classes, instructors] = await Promise.all([
+  const [classes, instructors, showTrialForViewer] = await Promise.all([
     liveClassRepository.findByCenterIdAndRange(centerId, from, to, instructorId),
     instructorRepository.findByCenterId(centerId),
+    viewerUserId ? isUserTrialEligible(viewerUserId, centerId) : Promise.resolve(true),
   ]);
   // LiveClass.instructorId en BD es User.id (userId), no el id del rol
   const nameByUserId = new Map(instructors.map((i) => [i.userId, i.name ?? null]));
@@ -585,7 +597,7 @@ export async function listLiveClassesByRange(
         c.maxCapacity,
         c.maxCapacity - confirmed,
         {
-          isTrialClass: c.isTrialClass,
+          isTrialClass: c.isTrialClass && showTrialForViewer,
           isOnline: c.isOnline,
           instructorName: c.instructorId ? nameByUserId.get(c.instructorId) ?? null : null,
           instructorImageUrl: c.instructorId ? imageUrlByUserId.get(c.instructorId) ?? null : null,
@@ -721,10 +733,10 @@ export async function canShowTrialCta(
 }
 
 /**
- * Indica si el usuario es elegible para reservar una clase de prueba en este
- * centro. Mirror exacto de los checks que hace `reserveClassUseCase` antes de
- * permitir una trial: política del centro, flag migrado, y si ya consumió el
- * trial. No considera disponibilidad de cupos (eso se evalúa por clase).
+ * Indica si el usuario debe ver el flujo de clase de prueba en este centro.
+ * No se ofrece trial si: el centro lo deshabilitó, el cliente está marcado
+ * como migrado, ya consumió su trial, o ya tiene un plan LIVE activo (en cuyo
+ * caso reserva con su plan, no con trial).
  */
 export async function isUserTrialEligible(
   userId: string,
@@ -736,5 +748,20 @@ export async function isUserTrialEligible(
   if (membership?.isLegacyClient) return false;
   const hasTrial = await reservationRepository.hasTrialReservation(userId, centerId);
   if (hasTrial) return false;
+  if (await hasUsableLivePlan(userId, centerId)) return false;
   return true;
+}
+
+/**
+ * True si el usuario tiene al menos un UserPlan ACTIVE usable de tipo LIVE en
+ * el centro. "Usable" según `isUserPlanUsable` (activo, vigente, con cupo).
+ */
+async function hasUsableLivePlan(userId: string, centerId: string): Promise<boolean> {
+  const activePlans = await userPlanRepository.findActiveByUserAndCenter(userId, centerId);
+  for (const up of activePlans) {
+    if (!isUserPlanUsable(up)) continue;
+    const plan = await planRepository.findById(up.planId);
+    if (plan?.type === "LIVE") return true;
+  }
+  return false;
 }
