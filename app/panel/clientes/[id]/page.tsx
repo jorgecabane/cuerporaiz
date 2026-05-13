@@ -140,6 +140,7 @@ export default async function ClientDetailPage({
               currentBirthday={birthdayStr}
               currentSex={client.sex ?? null}
               currentNotes={client.notes ?? null}
+              currentIsLegacyClient={membership.isLegacyClient}
             />
           </div>
         </div>

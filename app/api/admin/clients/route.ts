@@ -37,6 +37,7 @@ export async function GET(request: Request) {
         where: { centerId, role: "STUDENT" },
         select: {
           userId: true,
+          isLegacyClient: true,
           user: { select: { name: true, email: true } },
         },
         orderBy: { user: { email: "asc" } },
@@ -53,6 +54,7 @@ export async function GET(request: Request) {
         id: m.userId,
         name: m.user.name ?? null,
         email: m.user.email,
+        isLegacyClient: m.isLegacyClient,
       })),
       total,
       page,

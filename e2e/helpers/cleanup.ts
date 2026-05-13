@@ -1391,6 +1391,33 @@ export async function seedTier2PastReservation(opts: {
   return { liveClassId: lc.id, reservationId: r.id };
 }
 
+/**
+ * Marca o desmarca la membresía (UserCenterRole) de un usuario como
+ * `isLegacyClient`. Devuelve el valor previo para restaurarlo en afterAll.
+ */
+export async function setTier2UserLegacyClient(opts: {
+  centerSlug: string;
+  userEmail: string;
+  isLegacyClient: boolean;
+}): Promise<{ previous: boolean } | null> {
+  const prisma = await getPrisma();
+  if (!prisma) return null;
+  const center = await prisma.center.findUnique({ where: { slug: opts.centerSlug } });
+  if (!center) return null;
+  const user = await prisma.user.findUnique({ where: { email: opts.userEmail } });
+  if (!user) return null;
+  const membership = await prisma.userCenterRole.findUnique({
+    where: { userId_centerId: { userId: user.id, centerId: center.id } },
+    select: { isLegacyClient: true },
+  });
+  if (!membership) return null;
+  await prisma.userCenterRole.update({
+    where: { userId_centerId: { userId: user.id, centerId: center.id } },
+    data: { isLegacyClient: opts.isLegacyClient },
+  });
+  return { previous: membership.isLegacyClient };
+}
+
 /** Cuenta reservas NO_SHOW de un user en un centro en el mes corriente. */
 export async function countTier2NoShowsThisMonth(opts: {
   centerSlug: string;

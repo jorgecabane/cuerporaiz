@@ -4,6 +4,7 @@ import {
   cancelReservationUseCase,
   cancelReservationByStaffUseCase,
   listMyReservationsPaginated,
+  canShowTrialCta,
 } from "./reserve-class";
 import type { Reservation, LiveClass } from "@/lib/domain";
 
@@ -31,7 +32,7 @@ const mocks = vi.hoisted(() => ({
   centerHolidayRepository: {
     findByCenterIdAndDate: vi.fn(),
   },
-  userRepository: { findById: vi.fn() },
+  userRepository: { findById: vi.fn(), findMembership: vi.fn() },
   planRepository: { findById: vi.fn() },
 }));
 
@@ -395,4 +396,47 @@ describe("reserveClassUseCase — clase de prueba (trial)", () => {
     expect(mocks.reservationRepository.create).not.toHaveBeenCalled();
   });
 
+  it("rechaza con TRIAL_NOT_AVAILABLE si el cliente está marcado como migrado", async () => {
+    mocks.liveClassRepository.findById.mockResolvedValue(
+      makeLiveClass({ startsAt: new Date("2026-06-10T14:00:00Z"), centerId, isTrialClass: true })
+    );
+    mocks.userRepository.findMembership.mockResolvedValue({
+      role: "STUDENT",
+      isLegacyClient: true,
+    });
+    mocks.userPlanRepository.findActiveByUserAndCenter.mockResolvedValue([]);
+
+    const result = await reserveClassUseCase(userId, centerId, "lc-1");
+
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.code).toBe("TRIAL_NOT_AVAILABLE");
+    expect(mocks.reservationRepository.hasTrialReservation).not.toHaveBeenCalled();
+    expect(mocks.reservationRepository.create).not.toHaveBeenCalled();
+  });
+
+});
+
+describe("canShowTrialCta — cliente migrado", () => {
+  const userId = "user-1";
+  const centerId = "center-1";
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.centerRepository.findById.mockResolvedValue({
+      id: centerId,
+      allowTrialClassPerPerson: true,
+    });
+  });
+
+  it("retorna false cuando la membresía está marcada como cliente migrado", async () => {
+    mocks.userRepository.findMembership.mockResolvedValue({
+      role: "STUDENT",
+      isLegacyClient: true,
+    });
+
+    const result = await canShowTrialCta(userId, centerId);
+
+    expect(result).toBe(false);
+    expect(mocks.reservationRepository.findByUserIdAndCenterPaginated).not.toHaveBeenCalled();
+  });
 });

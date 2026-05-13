@@ -4,7 +4,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { ClientListSkeleton } from "@/components/ui/PanelSkeletons";
 
-type ClientItem = { id: string; name: string | null; email: string };
+type ClientItem = {
+  id: string;
+  name: string | null;
+  email: string;
+  isLegacyClient: boolean;
+};
 
 type ApiResponse = {
   items: ClientItem[];
@@ -94,9 +99,16 @@ export function ClientsListInfinite({ pageSize = 25 }: { pageSize?: number }) {
               className="rounded-[var(--radius-lg)] bg-[var(--color-surface)] p-4 shadow-[var(--shadow-md)] hover:shadow-[var(--shadow-lg)] transition-shadow"
             >
               <Link href={`/panel/clientes/${user.id}`} className="block">
-                <p className="font-medium text-[var(--color-primary)]">
-                  {user.name || user.email}
-                </p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="font-medium text-[var(--color-primary)]">
+                    {user.name || user.email}
+                  </p>
+                  {user.isLegacyClient && (
+                    <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-[var(--color-surface-alt,#f3f4f6)] text-[var(--color-text-muted)] border border-[var(--color-border)]">
+                      Migrada
+                    </span>
+                  )}
+                </div>
                 {user.name && (
                   <p className="text-sm text-[var(--color-text-muted)] mt-0.5">
                     {user.email}

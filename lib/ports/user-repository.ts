@@ -12,6 +12,11 @@ export interface UserWithCenterRole extends User {
   role: Role;
 }
 
+export interface UserMembership {
+  role: Role;
+  isLegacyClient: boolean;
+}
+
 export interface IUserRepository {
   create(data: CreateUserInput): Promise<User>;
   findByEmail(email: string): Promise<User | null>;
@@ -19,5 +24,7 @@ export interface IUserRepository {
   findManyByIds(ids: string[]): Promise<User[]>;
   findByIdWithMemberships(id: string): Promise<UserWithMemberships | null>;
   findManyByCenterId(centerId: CenterId): Promise<UserWithCenterRole[]>;
+  findMembership(userId: string, centerId: CenterId): Promise<UserMembership | null>;
   addRole(userId: string, centerId: CenterId, role: Role): Promise<void>;
+  setLegacyClient(userId: string, centerId: CenterId, isLegacyClient: boolean): Promise<void>;
 }
