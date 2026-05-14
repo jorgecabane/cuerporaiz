@@ -159,6 +159,15 @@ describe("createEventCheckout", () => {
     expect(mocks.eventTicketRepository.updateStatus).not.toHaveBeenCalled();
   });
 
+  it("usa la URL canónica del webhook MP (sin centerId en el path)", async () => {
+    await createEventCheckout(BASE_INPUT);
+    expect(mocks.mercadoPagoPaymentAdapter.createPreference).toHaveBeenCalledWith(
+      expect.objectContaining({
+        notificationUrl: "https://example.com/api/webhooks/mercadopago",
+      })
+    );
+  });
+
   it("evento gratuito: crea ticket PAID directamente, sin MP", async () => {
     mocks.eventRepository.findById.mockResolvedValue(makeEvent({ amountCents: 0 }));
     const freeTicket = makeTicket({ amountCents: 0, status: "PENDING" });
