@@ -83,7 +83,7 @@ export async function createSubscriptionCheckoutUseCase(
     frequencyType: "months",
     payerEmail,
     externalReference: externalRef,
-    notificationUrl: `${base}/api/webhooks/mercadopago/${center.id}`,
+    notificationUrl: `${base}/api/webhooks/mercadopago`,
     backUrl: `${base}/panel/tienda`,
   });
 
