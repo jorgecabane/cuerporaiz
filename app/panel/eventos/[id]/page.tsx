@@ -11,6 +11,7 @@ import { ComprarEventoButton } from "./ComprarEventoButton";
 
 function formatDate(date: Date): string {
   return date.toLocaleDateString("es-CL", {
+    timeZone: "America/Santiago",
     weekday: "long",
     year: "numeric",
     month: "long",

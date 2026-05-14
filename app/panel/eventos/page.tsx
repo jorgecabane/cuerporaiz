@@ -8,6 +8,7 @@ import type { Event, EventTicket } from "@/lib/domain/event";
 
 function formatDateShort(date: Date): string {
   return date.toLocaleDateString("es-CL", {
+    timeZone: "America/Santiago",
     weekday: "short",
     day: "numeric",
     month: "short",
