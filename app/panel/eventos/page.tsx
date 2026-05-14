@@ -5,10 +5,11 @@ import Link from "next/link";
 import { eventRepository, eventTicketRepository } from "@/lib/adapters/db";
 import { EVENT_STATUS_LABELS } from "@/lib/domain/event";
 import type { Event, EventTicket } from "@/lib/domain/event";
+import { getCenterTimezone } from "@/lib/datetime/center-timezone";
 
-function formatDateShort(date: Date): string {
+function formatDateShort(date: Date, tz: string): string {
   return date.toLocaleDateString("es-CL", {
-    timeZone: "America/Santiago",
+    timeZone: tz,
     weekday: "short",
     day: "numeric",
     month: "short",
@@ -41,7 +42,7 @@ function EventStatusBadge({ status }: { status: string }) {
 }
 
 /* ── Admin list card ── */
-async function AdminEventCard({ event, hasEnded }: { event: Event; hasEnded: boolean }) {
+async function AdminEventCard({ event, hasEnded, tz }: { event: Event; hasEnded: boolean; tz: string }) {
   const paidCount = await eventTicketRepository.countPaidByEventId(event.id);
 
   return (
@@ -61,9 +62,9 @@ async function AdminEventCard({ event, hasEnded }: { event: Event; hasEnded: boo
             )}
           </div>
           <p className="text-xs text-[var(--color-text-muted)]">
-            {formatDateShort(event.startsAt)}
+            {formatDateShort(event.startsAt, tz)}
             {" → "}
-            {formatDateShort(event.endsAt)}
+            {formatDateShort(event.endsAt, tz)}
           </p>
           <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
             {formatPrice(event.amountCents, event.currency)}
@@ -79,7 +80,7 @@ async function AdminEventCard({ event, hasEnded }: { event: Event; hasEnded: boo
 }
 
 /* ── Student event card ── */
-function StudentEventCard({ event, userTicket }: { event: Event; userTicket?: EventTicket }) {
+function StudentEventCard({ event, userTicket, tz }: { event: Event; userTicket?: EventTicket; tz: string }) {
   const hasPaidTicket = userTicket?.status === "PAID";
   const quantity = userTicket?.quantity ?? 0;
   return (
@@ -111,7 +112,7 @@ function StudentEventCard({ event, userTicket }: { event: Event; userTicket?: Ev
             </p>
           )}
           <p className="text-xs text-[var(--color-text-muted)]">
-            {formatDateShort(event.startsAt)}
+            {formatDateShort(event.startsAt, tz)}
           </p>
         </div>
         <div className="flex items-center justify-between gap-2 mt-auto">
@@ -137,6 +138,7 @@ export default async function EventosPage() {
 
   const centerId = session.user.centerId;
   const isAdmin = isAdminRole(session.user.role);
+  const tz = await getCenterTimezone(centerId);
 
   const allEvents = await eventRepository.findByCenterId(centerId);
 
@@ -173,7 +175,7 @@ export default async function EventosPage() {
         ) : (
           <ul className="space-y-3">
             {events.map((event) => (
-              <AdminEventCard key={event.id} event={event} hasEnded={hasEventEnded(event)} />
+              <AdminEventCard key={event.id} event={event} hasEnded={hasEventEnded(event)} tz={tz} />
             ))}
           </ul>
         )}
@@ -232,6 +234,7 @@ export default async function EventosPage() {
                 key={event.id}
                 event={event}
                 userTicket={ticketByEventId.get(event.id)}
+                tz={tz}
               />
             ))}
           </ul>

@@ -12,6 +12,7 @@ import { BlogHero } from "@/components/blog/BlogHero";
 import { CategoryFilter } from "@/components/blog/CategoryFilter";
 import { PostGrid } from "@/components/blog/PostGrid";
 import { centerRepository, siteConfigRepository } from "@/lib/adapters/db";
+import { getPublicCenterTimezone } from "@/lib/datetime/center-timezone";
 
 export const revalidate = 60;
 
@@ -39,11 +40,12 @@ export default async function BlogIndexPage() {
 
   // Si Sanity está temporalmente inalcanzable en build/SSR, devolvemos página vacía
   // en lugar de romper el build entero. ISR (revalidate=60) lo recuperará al volver.
-  const [featured, posts, categories, siteConfig] = await Promise.all([
+  const [featured, posts, categories, siteConfig, tz] = await Promise.all([
     sanityFetch<PostSummary | null>(QUERY_FEATURED_POST, {}, { tags: ["posts"] }).catch(() => null),
     sanityFetch<PostSummary[]>(QUERY_ALL_POSTS, {}, { tags: ["posts"] }).catch(() => [] as PostSummary[]),
     sanityFetch<PostCategoryRef[]>(QUERY_ALL_CATEGORIES, {}, { tags: ["categories"] }).catch(() => [] as PostCategoryRef[]),
     loadHeroCopy(),
+    getPublicCenterTimezone(),
   ]);
 
   const heroTitle = siteConfig?.blogHeroTitle ?? DEFAULT_HERO_TITLE;
@@ -67,7 +69,7 @@ export default async function BlogIndexPage() {
         </p>
       </header>
 
-      {featured ? <BlogHero featured={featured} /> : null}
+      {featured ? <BlogHero featured={featured} tz={tz} /> : null}
 
       <section className="mt-[var(--space-8)]">
         <div className="mb-[var(--space-5)] flex items-center justify-between">
@@ -85,7 +87,7 @@ export default async function BlogIndexPage() {
           </div>
         ) : null}
 
-        <PostGrid posts={restPosts} />
+        <PostGrid posts={restPosts} tz={tz} />
       </section>
     </div>
   );

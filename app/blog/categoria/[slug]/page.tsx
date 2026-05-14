@@ -10,6 +10,7 @@ import {
 import type { PostCategoryRef, PostSummary } from "@/lib/sanity/types";
 import { CategoryFilter } from "@/components/blog/CategoryFilter";
 import { PostGrid } from "@/components/blog/PostGrid";
+import { getPublicCenterTimezone } from "@/lib/datetime/center-timezone";
 
 export const revalidate = 60;
 
@@ -42,7 +43,7 @@ export default async function BlogCategoryPage({
   const { slug } = await params;
 
   // Sanity caído en build/SSR: 404 para que ISR (revalidate=60) lo recupere al volver.
-  const [category, posts, categories] = await Promise.all([
+  const [category, posts, categories, tz] = await Promise.all([
     sanityFetch<PostCategoryRef | null>(QUERY_CATEGORY_BY_SLUG, { slug }).catch(() => null),
     sanityFetch<PostSummary[]>(QUERY_POSTS_BY_CATEGORY, { slug }, { tags: ["posts"] }).catch(
       () => [] as PostSummary[]
@@ -50,6 +51,7 @@ export default async function BlogCategoryPage({
     sanityFetch<PostCategoryRef[]>(QUERY_ALL_CATEGORIES, {}, { tags: ["categories"] }).catch(
       () => [] as PostCategoryRef[]
     ),
+    getPublicCenterTimezone(),
   ]);
 
   if (!category) notFound();
@@ -76,7 +78,7 @@ export default async function BlogCategoryPage({
         </div>
       ) : null}
 
-      <PostGrid posts={posts ?? []} />
+      <PostGrid posts={posts ?? []} tz={tz} />
     </div>
   );
 }

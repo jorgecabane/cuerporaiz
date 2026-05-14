@@ -8,10 +8,11 @@ import { InlineEditToggle } from "@/components/panel/on-demand/InlineEditToggle"
 import { EventForm } from "@/app/panel/eventos/nuevo/EventForm";
 import { ManualTicketForm } from "./ManualTicketForm";
 import { ComprarEventoButton } from "./ComprarEventoButton";
+import { getCenterTimezone } from "@/lib/datetime/center-timezone";
 
-function formatDate(date: Date): string {
+function formatDate(date: Date, tz: string): string {
   return date.toLocaleDateString("es-CL", {
-    timeZone: "America/Santiago",
+    timeZone: tz,
     weekday: "long",
     year: "numeric",
     month: "long",
@@ -63,9 +64,10 @@ export default async function EventDetailPage({
   // Gate: students only see PUBLISHED events
   if (!isAdmin && event.status !== "PUBLISHED") redirect("/panel/eventos");
 
-  const [paidCount, userTicket] = await Promise.all([
+  const [paidCount, userTicket, tz] = await Promise.all([
     eventTicketRepository.countPaidByEventId(id),
     eventTicketRepository.findByEventAndUser(id, userId),
+    getCenterTimezone(centerId),
   ]);
 
   const isFree = event.amountCents === 0;
@@ -138,8 +140,8 @@ export default async function EventDetailPage({
                   <p className="text-sm text-[var(--color-text-muted)]">{event.description}</p>
                 )}
                 <div className="space-y-0.5 text-sm text-[var(--color-text-muted)]">
-                  <p>Inicio: {formatDate(event.startsAt)}</p>
-                  <p>Fin: {formatDate(event.endsAt)}</p>
+                  <p>Inicio: {formatDate(event.startsAt, tz)}</p>
+                  <p>Fin: {formatDate(event.endsAt, tz)}</p>
                   {event.location && <p>Lugar: {event.location}</p>}
                   {!isFree && <p>Precio: {formatPrice(event.amountCents, event.currency)}</p>}
                   <p>
@@ -195,7 +197,7 @@ export default async function EventDetailPage({
                   </div>
                   {a.paidAt && (
                     <p className="text-xs text-[var(--color-text-muted)] shrink-0">
-                      {a.paidAt.toLocaleDateString("es-CL")}
+                      {a.paidAt.toLocaleDateString("es-CL", { timeZone: tz })}
                     </p>
                   )}
                 </li>
@@ -263,11 +265,11 @@ export default async function EventDetailPage({
       <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-5 mb-6 space-y-3">
         <div className="flex gap-3">
           <span className="text-[var(--color-text-muted)] text-sm w-16 shrink-0">Inicio</span>
-          <span className="text-sm text-[var(--color-text)]">{formatDate(event.startsAt)}</span>
+          <span className="text-sm text-[var(--color-text)]">{formatDate(event.startsAt, tz)}</span>
         </div>
         <div className="flex gap-3">
           <span className="text-[var(--color-text-muted)] text-sm w-16 shrink-0">Fin</span>
-          <span className="text-sm text-[var(--color-text)]">{formatDate(event.endsAt)}</span>
+          <span className="text-sm text-[var(--color-text)]">{formatDate(event.endsAt, tz)}</span>
         </div>
         {event.location && (
           <div className="flex gap-3">

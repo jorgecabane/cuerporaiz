@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { ArchiveRestore, ChevronDown, ChevronUp } from "lucide-react";
 import { unarchivePlan } from "./actions";
+import { useTimezone } from "@/components/providers/TimezoneProvider";
 
 type ArchivedPlan = {
   id: string;
@@ -12,6 +13,7 @@ type ArchivedPlan = {
 };
 
 export function ArchivedPlansList({ plans }: { plans: ArchivedPlan[] }) {
+  const tz = useTimezone();
   const [open, setOpen] = useState(false);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [, startTransition] = useTransition();
@@ -45,7 +47,7 @@ export function ArchivedPlansList({ plans }: { plans: ArchivedPlan[] }) {
                 <p className="font-medium text-[var(--color-text)]">{plan.name}</p>
                 <p className="text-xs text-[var(--color-text-muted)]">
                   {plan.slug} · deshabilitado el{" "}
-                  {new Date(plan.archivedAt).toLocaleDateString("es-CL")}
+                  {new Date(plan.archivedAt).toLocaleDateString("es-CL", { timeZone: tz })}
                 </p>
               </div>
               <button

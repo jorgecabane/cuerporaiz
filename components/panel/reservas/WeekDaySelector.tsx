@@ -2,6 +2,7 @@
 
 import { localYmdFromDate, localYmdFromIso } from "@/lib/datetime/local-ymd";
 import { getWeekBounds } from "./WeekNav";
+import { useTimezone } from "@/components/providers/TimezoneProvider";
 
 export interface WeekDaySelectorProps {
   weekAnchor: Date;
@@ -24,6 +25,7 @@ export function WeekDaySelector({
   classCountByDay = {},
   className = "",
 }: WeekDaySelectorProps) {
+  const tz = useTimezone();
   const { start } = getWeekBounds(weekAnchor, weekStartDay);
   const days: Date[] = [];
   for (let i = 0; i < 7; i++) {
@@ -46,9 +48,9 @@ export function WeekDaySelector({
         const isToday = dateKey === todayKey;
         const isPast = dateKey < todayKey;
         const count = classCountByDay[dateKey] ?? 0;
-        const weekday = d.toLocaleDateString("es-CL", { weekday: "short" }).replace(/^\./, "");
+        const weekday = d.toLocaleDateString("es-CL", { timeZone: tz, weekday: "short" }).replace(/^\./, "");
         const dayNum = d.getDate();
-        const month = d.toLocaleDateString("es-CL", { month: "short" });
+        const month = d.toLocaleDateString("es-CL", { timeZone: tz, month: "short" });
         return (
           <button
             key={dateKey}

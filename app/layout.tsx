@@ -3,12 +3,14 @@ import { Cormorant_Garamond, DM_Sans } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { AuthProvider } from "@/components/providers/AuthProvider";
+import { TimezoneProvider } from "@/components/providers/TimezoneProvider";
 import { LayoutWithPanel } from "@/components/shared/LayoutWithPanel";
 import DynamicTheme from "@/components/shared/DynamicTheme";
 import { FooterServer } from "@/components/shared/FooterServer";
 import { Toaster } from "@/components/ui/Toast";
 import { getPublicNavLinks } from "@/lib/server/public-nav";
 import { getPublicSiteBranding } from "@/lib/server/site-branding";
+import { getPublicCenterTimezone } from "@/lib/datetime/center-timezone";
 import { buildSiteMetadata } from "@/lib/seo/metadata";
 import { isProductionEnv } from "@/lib/seo/urls";
 
@@ -39,9 +41,10 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [navLinks, branding] = await Promise.all([
+  const [navLinks, branding, timezone] = await Promise.all([
     getPublicNavLinks(),
     getPublicSiteBranding(),
+    getPublicCenterTimezone(),
   ]);
 
   return (
@@ -49,6 +52,7 @@ export default async function RootLayout({
       <body className={`${fontDisplay.variable} ${fontSans.variable}`}>
         <DynamicTheme />
         <AuthProvider>
+        <TimezoneProvider value={timezone}>
         <a
           href="#main"
           className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[200] focus:rounded-md focus:bg-[var(--color-primary)] focus:px-4 focus:py-2 focus:text-white"
@@ -63,6 +67,7 @@ export default async function RootLayout({
         >
           {children}
         </LayoutWithPanel>
+        </TimezoneProvider>
         </AuthProvider>
         <Toaster />
         <Analytics />

@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/Button";
 import type { OrderStatus } from "@/lib/ports";
 import { ORDER_STATUS_LABELS } from "@/lib/ports";
 import { computeDateRangeUtc, parsePaymentsSearchParams } from "@/lib/panel/payments-query";
+import { getCenterTimezone } from "@/lib/datetime/center-timezone";
 
 function formatPrice(cents: number, currency: string): string {
   if (currency === "CLP") return `$${cents.toLocaleString("es-CL")}`;
@@ -27,7 +28,8 @@ function EventTicketCard({
   ticket,
   event,
   isPast,
-}: TicketWithEvent & { isPast: boolean }) {
+  tz,
+}: TicketWithEvent & { isPast: boolean; tz: string }) {
   return (
     <li>
       <Link
@@ -49,7 +51,7 @@ function EventTicketCard({
         </div>
         <p className="text-xs text-[var(--color-text-muted)]">
           {event.startsAt.toLocaleString("es-CL", {
-            timeZone: "America/Santiago",
+            timeZone: tz,
             weekday: "short",
             day: "numeric",
             month: "short",
@@ -107,6 +109,7 @@ export default async function PanelMisPagosPage({
   if (!session?.user) redirect("/auth/login?callbackUrl=/panel/mis-pagos");
   const centerId = session.user.centerId as string;
   const userId = session.user.id;
+  const tz = await getCenterTimezone(centerId);
   const raw = await searchParams;
   const parsed = parsePaymentsSearchParams({
     type: raw.type,
@@ -217,7 +220,7 @@ export default async function PanelMisPagosPage({
           </h2>
           <ul className="grid gap-3 sm:grid-cols-2">
             {sortedTickets.map(({ ticket, event, isPast }) => (
-              <EventTicketCard key={ticket.id} ticket={ticket} event={event} isPast={isPast} />
+              <EventTicketCard key={ticket.id} ticket={ticket} event={event} isPast={isPast} tz={tz} />
             ))}
           </ul>
         </section>
@@ -372,7 +375,7 @@ export default async function PanelMisPagosPage({
                   }`}
                 >
                   <td className="p-3 text-[var(--color-text-muted)]">
-                    {order.createdAt.toLocaleString("es-CL")}
+                    {order.createdAt.toLocaleString("es-CL", { timeZone: tz })}
                   </td>
                   <td className="p-3">
                     {planMap[order.planId]?.name ?? order.planId}
@@ -426,7 +429,7 @@ export default async function PanelMisPagosPage({
               {manualPayments.map((p) => (
                 <tr key={p.id} className="border-b border-[var(--color-border)] last:border-0">
                   <td className="p-3 text-[var(--color-text-muted)]">
-                    {p.paidAt.toLocaleString("es-CL")}
+                    {p.paidAt.toLocaleString("es-CL", { timeZone: tz })}
                   </td>
                   <td className="p-3">
                     {p.planName ?? (p.userPlanId ? p.userPlanId : "Pago suelto")}

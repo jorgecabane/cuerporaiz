@@ -6,9 +6,10 @@ import { formatPostDate } from "./utils";
 
 type PostCardProps = {
   post: PostSummary;
+  tz: string;
 };
 
-export function PostCard({ post }: PostCardProps) {
+export function PostCard({ post, tz }: PostCardProps) {
   const coverUrl = urlForImage(post.coverImage) ?? "";
   const coverAlt = post.coverImage.alt ?? post.title;
 
@@ -48,7 +49,7 @@ export function PostCard({ post }: PostCardProps) {
         </h3>
         <p className="mt-2 line-clamp-2 text-sm text-[var(--color-text-muted)]">{post.excerpt}</p>
         <p className="mt-[var(--space-4)] text-xs text-[var(--color-text-muted)]">
-          {formatPostDate(post.publishedAt)}
+          {formatPostDate(post.publishedAt, tz)}
         </p>
       </div>
     </Link>

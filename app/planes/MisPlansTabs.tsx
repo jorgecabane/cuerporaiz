@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Hourglass } from "lucide-react";
 import { USER_PLAN_STATUS_LABELS } from "@/lib/domain/user-plan";
 import type { UserPlanStatus } from "@/lib/domain/user-plan";
+import { useTimezone } from "@/components/providers/TimezoneProvider";
 
 export interface MisPlanItem {
   id: string;
@@ -28,8 +29,9 @@ export interface PendingTransferItem {
   claimedAt: string;
 }
 
-function formatDate(iso: string) {
-  return new Intl.DateTimeFormat("es-AR", {
+function formatDate(iso: string, tz: string) {
+  return new Intl.DateTimeFormat("es-CL", {
+    timeZone: tz,
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -49,6 +51,7 @@ export function MisPlansTabs({
   items: MisPlanItem[];
   pendingTransfers?: PendingTransferItem[];
 }) {
+  const tz = useTimezone();
   const hasPending = pendingTransfers.length > 0;
   const [tab, setTab] = useState<Tab>(hasPending ? "pending" : "active");
   const activeItems = items.filter((i) => i.status === "ACTIVE");
@@ -96,9 +99,9 @@ export function MisPlansTabs({
         role="tabpanel"
         aria-labelledby={`tab-${tab}`}
       >
-        {tab === "active" && <PlansList items={activeItems} kind="active" />}
-        {tab === "pending" && <PendingTransfersList items={pendingTransfers} />}
-        {tab === "history" && <PlansList items={historyItems} kind="history" />}
+        {tab === "active" && <PlansList items={activeItems} kind="active" tz={tz} />}
+        {tab === "pending" && <PendingTransfersList items={pendingTransfers} tz={tz} />}
+        {tab === "history" && <PlansList items={historyItems} kind="history" tz={tz} />}
       </div>
     </section>
   );
@@ -141,7 +144,7 @@ function TabButton({
   );
 }
 
-function PlansList({ items, kind }: { items: MisPlanItem[]; kind: "active" | "history" }) {
+function PlansList({ items, kind, tz }: { items: MisPlanItem[]; kind: "active" | "history"; tz: string }) {
   if (items.length === 0) {
     return (
       <div className="rounded-[var(--radius-lg)] bg-[var(--color-surface)] p-6 border border-[var(--color-border)]">
@@ -166,7 +169,7 @@ function PlansList({ items, kind }: { items: MisPlanItem[]; kind: "active" | "hi
             ? Math.max(0, item.classesTotal - item.classesUsed)
             : null;
         const validUntilText = item.validUntil
-          ? formatDate(item.validUntil)
+          ? formatDate(item.validUntil, tz)
           : "Sin vencimiento";
         return (
           <li
@@ -183,7 +186,7 @@ function PlansList({ items, kind }: { items: MisPlanItem[]; kind: "active" | "hi
             </div>
             <p className="mt-1 text-sm text-[var(--color-text-muted)]">{statusLabel}</p>
             <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-              Válido desde {formatDate(item.validFrom)} hasta {validUntilText}
+              Válido desde {formatDate(item.validFrom, tz)} hasta {validUntilText}
             </p>
 
             {item.classesTotal != null ? (
@@ -223,7 +226,7 @@ function PlansList({ items, kind }: { items: MisPlanItem[]; kind: "active" | "hi
   );
 }
 
-function PendingTransfersList({ items }: { items: PendingTransferItem[] }) {
+function PendingTransfersList({ items, tz }: { items: PendingTransferItem[]; tz: string }) {
   return (
     <ul className="space-y-3">
       {items.map((item) => (
@@ -240,7 +243,7 @@ function PendingTransfersList({ items }: { items: PendingTransferItem[] }) {
               </span>
             </div>
             <p className="mt-1 text-sm text-[#92400E]">
-              {formatAmount(item.amountCents)} · enviada {formatDate(item.claimedAt)}
+              {formatAmount(item.amountCents)} · enviada {formatDate(item.claimedAt, tz)}
             </p>
           </div>
           <Link

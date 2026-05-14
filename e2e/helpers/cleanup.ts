@@ -335,16 +335,26 @@ export async function seedEvent(opts: {
   title: string;
   amountCents: number;
   maxCapacity?: number | null;
+  /** Si se pasa, overridea el default (7 días, 10:00 local del server). */
+  startsAt?: Date;
+  endsAt?: Date;
 }): Promise<{ id: string; title: string } | null> {
   const prisma = await getPrisma();
   if (!prisma) return null;
   const center = await prisma.center.findUnique({ where: { slug: opts.centerSlug } });
   if (!center) return null;
-  const startsAt = new Date();
-  startsAt.setDate(startsAt.getDate() + 7);
-  startsAt.setHours(10, 0, 0, 0);
-  const endsAt = new Date(startsAt);
-  endsAt.setHours(12, 0, 0, 0);
+  let startsAt: Date;
+  let endsAt: Date;
+  if (opts.startsAt && opts.endsAt) {
+    startsAt = opts.startsAt;
+    endsAt = opts.endsAt;
+  } else {
+    startsAt = new Date();
+    startsAt.setDate(startsAt.getDate() + 7);
+    startsAt.setHours(10, 0, 0, 0);
+    endsAt = new Date(startsAt);
+    endsAt.setHours(12, 0, 0, 0);
+  }
   const event = await prisma.event.create({
     data: {
       centerId: center.id,

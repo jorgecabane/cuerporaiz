@@ -6,9 +6,10 @@ import { formatPostDate } from "./utils";
 
 type BlogHeroProps = {
   featured: PostSummary;
+  tz: string;
 };
 
-export function BlogHero({ featured }: BlogHeroProps) {
+export function BlogHero({ featured, tz }: BlogHeroProps) {
   const coverUrl = urlForImage(featured.coverImage) ?? "";
   const coverAlt = featured.coverImage.alt ?? featured.title;
 
@@ -46,7 +47,7 @@ export function BlogHero({ featured }: BlogHeroProps) {
               </>
             ) : null}
             <span aria-hidden="true">·</span>
-            <span>{formatPostDate(featured.publishedAt)}</span>
+            <span>{formatPostDate(featured.publishedAt, tz)}</span>
           </div>
 
           <h2 className="mt-4 font-display text-3xl leading-tight tracking-tight text-[var(--color-primary)] md:text-4xl lg:text-5xl">

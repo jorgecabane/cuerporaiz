@@ -5,6 +5,7 @@ import type { LiveClassDto } from "@/lib/dto/reservation-dto";
 import { AdaptiveSheet } from "@/components/ui/AdaptiveSheet";
 import { TabsRoot, TabsList, TabsTrigger, TabsContent } from "./Tabs";
 import { ReservationListSkeleton } from "@/components/ui/PanelSkeletons";
+import { useTimezone } from "@/components/providers/TimezoneProvider";
 
 const TAB_HOY = "hoy";
 const TAB_PROXIMAS = "proximas";
@@ -46,10 +47,10 @@ function segmentClasses(items: LiveClassDto[]): {
   return { hoy, proximas, historicas };
 }
 
-function ClassRow({ c }: { c: LiveClassDto }) {
+function ClassRow({ c, tz }: { c: LiveClassDto; tz: string }) {
   const start = new Date(c.startsAt);
-  const dateStr = start.toLocaleDateString("es-CL", { weekday: "short", day: "numeric", month: "short" });
-  const timeStr = start.toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" });
+  const dateStr = start.toLocaleDateString("es-CL", { timeZone: tz, weekday: "short", day: "numeric", month: "short" });
+  const timeStr = start.toLocaleTimeString("es-CL", { timeZone: tz, hour: "2-digit", minute: "2-digit" });
   return (
     <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] p-3">
       <p className="font-medium text-[var(--color-text)]">{c.title}</p>
@@ -67,6 +68,7 @@ export interface MisClasesSheetProps {
 }
 
 export function MisClasesSheet({ open, onOpenChange }: MisClasesSheetProps) {
+  const tz = useTimezone();
   const [items, setItems] = useState<LiveClassDto[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -123,21 +125,21 @@ export function MisClasesSheet({ open, onOpenChange }: MisClasesSheetProps) {
               {segmented.hoy.length === 0 ? (
                 <p className="text-sm text-[var(--color-text-muted)]">No tienes clases hoy.</p>
               ) : (
-                segmented.hoy.map((c) => <ClassRow key={c.id} c={c} />)
+                segmented.hoy.map((c) => <ClassRow key={c.id} c={c} tz={tz} />)
               )}
             </TabsContent>
             <TabsContent value={TAB_PROXIMAS} className="pt-2 space-y-2">
               {segmented.proximas.length === 0 ? (
                 <p className="text-sm text-[var(--color-text-muted)]">No tienes próximas clases.</p>
               ) : (
-                segmented.proximas.map((c) => <ClassRow key={c.id} c={c} />)
+                segmented.proximas.map((c) => <ClassRow key={c.id} c={c} tz={tz} />)
               )}
             </TabsContent>
             <TabsContent value={TAB_HISTORICAS} className="pt-2 space-y-2">
               {segmented.historicas.length === 0 ? (
                 <p className="text-sm text-[var(--color-text-muted)]">No hay historial de clases.</p>
               ) : (
-                segmented.historicas.map((c) => <ClassRow key={c.id} c={c} />)
+                segmented.historicas.map((c) => <ClassRow key={c.id} c={c} tz={tz} />)
               )}
             </TabsContent>
           </TabsRoot>

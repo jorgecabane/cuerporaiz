@@ -3,17 +3,19 @@
 import Link from "next/link";
 import type { LiveClass } from "@/lib/domain";
 import type { CalendarEvent } from "./WeekCalendar";
+import { useTimezone } from "@/components/providers/TimezoneProvider";
 
-function formatDate(d: Date): string {
+function formatDate(d: Date, tz: string): string {
   return new Date(d).toLocaleDateString("es-CL", {
+    timeZone: tz,
     weekday: "short",
     day: "numeric",
     month: "short",
   });
 }
 
-function formatTime(d: Date): string {
-  return new Date(d).toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" });
+function formatTime(d: Date, tz: string): string {
+  return new Date(d).toLocaleTimeString("es-CL", { timeZone: tz, hour: "2-digit", minute: "2-digit" });
 }
 
 function formatDateKey(d: Date): string {
@@ -38,6 +40,7 @@ export function ListCalendar({
   selectedIds,
   onToggleSelect,
 }: ListCalendarProps) {
+  const tz = useTimezone();
   const grouped = new Map<string, LiveClass[]>();
   for (const c of classes) {
     const key = formatDateKey(c.startsAt);
@@ -107,7 +110,7 @@ export function ListCalendar({
           <div key={dateKey} className="rounded-[var(--radius-lg)] bg-[var(--color-surface)] shadow-[var(--shadow-md)] overflow-hidden">
             <div className="px-4 py-2 border-b border-[var(--color-border)] bg-[var(--color-bg)]/30">
               <h3 className="text-sm font-semibold text-[var(--color-text)] capitalize">
-                {formatDate(headlineDate)}
+                {formatDate(headlineDate, tz)}
               </h3>
             </div>
             <ul className="divide-y divide-[var(--color-border)]">
@@ -126,7 +129,7 @@ export function ListCalendar({
                         {ev.title}
                       </p>
                       <p className="text-xs text-[var(--color-text-muted)]">
-                        Evento · {formatTime(new Date(ev.startsAt))}
+                        Evento · {formatTime(new Date(ev.startsAt), tz)}
                       </p>
                     </div>
                     <span className="text-xs text-[var(--color-text-muted)]">→</span>
@@ -161,7 +164,7 @@ export function ListCalendar({
                             {c.title}
                           </p>
                           <p className="text-xs text-[var(--color-text-muted)]">
-                            {formatTime(c.startsAt)} · {c.durationMinutes} min · {c.maxCapacity} cupos
+                            {formatTime(c.startsAt, tz)} · {c.durationMinutes} min · {c.maxCapacity} cupos
                             {c.seriesId ? " · de serie" : ""}
                           </p>
                         </div>
@@ -184,7 +187,7 @@ export function ListCalendar({
                           {c.title}
                         </p>
                         <p className="text-xs text-[var(--color-text-muted)]">
-                          {formatTime(c.startsAt)} · {c.durationMinutes} min · {c.maxCapacity} cupos
+                          {formatTime(c.startsAt, tz)} · {c.durationMinutes} min · {c.maxCapacity} cupos
                         </p>
                       </div>
                       <span className="text-xs text-[var(--color-text-muted)]">→</span>

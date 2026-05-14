@@ -7,21 +7,27 @@ import {
   mercadopagoConfigRepository,
 } from "@/lib/adapters/db";
 import { CheckoutEventClient } from "./CheckoutEventClient";
+import { getCenterTimezone } from "@/lib/datetime/center-timezone";
 
 interface Props {
   params: Promise<{ ticketId: string }>;
 }
 
-const DATE_FMT = new Intl.DateTimeFormat("es-CL", {
-  day: "numeric",
-  month: "short",
-  hour: "2-digit",
-  minute: "2-digit",
-  timeZone: "America/Santiago",
-});
+function buildDateFmt(tz: string): Intl.DateTimeFormat {
+  return new Intl.DateTimeFormat("es-CL", {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: tz,
+  });
+}
 
-function eventMetaText(event: { startsAt: Date; location: string | null }): string {
-  const parts: string[] = [DATE_FMT.format(event.startsAt)];
+function eventMetaText(
+  event: { startsAt: Date; location: string | null },
+  tz: string,
+): string {
+  const parts: string[] = [buildDateFmt(tz).format(event.startsAt)];
   if (event.location) parts.push(event.location);
   return parts.join(" · ");
 }
@@ -49,6 +55,8 @@ export default async function CheckoutEventPage({ params }: Props) {
     mercadopagoConfigRepository.findStatusByCenterId(event.centerId),
   ]);
   if (!center) notFound();
+
+  const tz = await getCenterTimezone(event.centerId);
 
   // Si el ticket ya fue claimado por transferencia, redirigir a mis-pagos.
   // Para detectarlo necesitamos el campo en la BD; el ticket del repo aún
@@ -79,7 +87,7 @@ export default async function CheckoutEventPage({ params }: Props) {
     <CheckoutEventClient
       ticketId={ticket.id}
       eventTitle={event.title}
-      eventMeta={eventMetaText(event)}
+      eventMeta={eventMetaText(event, tz)}
       amountCents={ticket.amountCents}
       centerName={center.name}
       bank={{

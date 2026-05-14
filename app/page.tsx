@@ -24,6 +24,7 @@ import {
   type UpcomingEvent,
 } from "@/components/sections/home";
 import type { SiteSectionWithItems } from "@/lib/domain/site-config";
+import { getPublicCenterTimezone } from "@/lib/datetime/center-timezone";
 
 export const revalidate = 60;
 
@@ -79,6 +80,8 @@ export default async function HomePage() {
   const center = await centerRepository.findBySlug(slug);
   if (!center) return <FallbackHome />;
 
+  const tz = await getPublicCenterTimezone();
+
   // Parallel queries
   const [siteConfig, sections, plans, disciplines] = await Promise.all([
     siteConfigRepository.findByCenterId(center.id),
@@ -109,12 +112,12 @@ export default async function HomePage() {
   });
 
   const scheduleClasses = upcomingClasses.map((c) => ({
-    time: c.startsAt.toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "America/Santiago" }),
+    time: c.startsAt.toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: tz }),
     type: c.discipline?.name ?? c.title,
     duration: `${c.durationMinutes} min`,
     spotsUsed: c.reservations.length,
     spotsTotal: c.maxCapacity,
-    dayOfWeek: new Date(c.startsAt.toLocaleString("en-US", { timeZone: "America/Santiago" })).getDay(),
+    dayOfWeek: new Date(c.startsAt.toLocaleString("en-US", { timeZone: tz })).getDay(),
   }));
 
   // Prepare live plans for AgendaSection
@@ -255,6 +258,7 @@ export default async function HomePage() {
                 title={section.title ?? undefined}
                 subtitle={section.subtitle ?? undefined}
                 events={upcomingEvents}
+                tz={tz}
               />
             );
 
