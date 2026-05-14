@@ -42,7 +42,7 @@ export function PanelHomeCalendar({
   const [staffClassesOnly, setStaffClassesOnly] = useState<LiveClassDto[]>([]);
   const [staffAttendeesByClass, setStaffAttendeesByClass] = useState<Record<string, ClassAttendanceDto[]>>({});
   const [reservations, setReservations] = useState<ReservationDto[]>([]);
-  const [weekEvents, setWeekEvents] = useState<Array<{ id: string; title: string; startsAt: string; endsAt: string; color: string | null; amountCents: number; currency: string; hasTicket: boolean }>>([]);
+  const [weekEvents, setWeekEvents] = useState<Array<{ id: string; title: string; startsAt: string; endsAt: string; color: string | null; amountCents: number; currency: string; hasTicket: boolean; ticketQuantity: number }>>([]);
   const [weekAnchor, setWeekAnchor] = useState<Date>(() => new Date());
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -567,7 +567,9 @@ export function PanelHomeCalendar({
               </div>
               {ev.hasTicket && (
                 <span className="shrink-0 rounded-full bg-[var(--color-primary-light)] px-2 py-0.5 text-xs font-medium text-[var(--color-primary)]">
-                  Ya inscrito
+                  {ev.ticketQuantity > 1
+                    ? `Ya inscrito · ${ev.ticketQuantity} cupos`
+                    : "Ya inscrito"}
                 </span>
               )}
             </a>

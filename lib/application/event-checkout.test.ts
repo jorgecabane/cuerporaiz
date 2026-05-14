@@ -10,7 +10,12 @@ const mocks = vi.hoisted(() => ({
     findByEventAndUser: vi.fn(),
     countPaidByEventId: vi.fn(),
     create: vi.fn(),
+    resetPending: vi.fn(),
     updateStatus: vi.fn(),
+    setExternalReference: vi.fn(),
+    setPendingAdditionReference: vi.fn(),
+    incrementQuantity: vi.fn(),
+    clearPendingAddition: vi.fn(),
   },
   mercadopagoConfigRepository: {
     findByCenterId: vi.fn(),
@@ -69,9 +74,13 @@ function makeTicket(overrides: Partial<EventTicket> = {}): EventTicket {
     eventId: "event-1",
     userId: "user-1",
     amountCents: 10000,
+    quantity: 1,
     currency: "CLP",
     status: "PENDING",
     mpPaymentId: null,
+    externalReference: null,
+    pendingAdditionQuantity: 0,
+    pendingAdditionExternalReference: null,
     orderId: null,
     paidAt: null,
     createdAt: new Date(),
@@ -88,6 +97,24 @@ describe("createEventCheckout", () => {
     mocks.eventTicketRepository.findByEventAndUser.mockResolvedValue(null);
     mocks.eventTicketRepository.countPaidByEventId.mockResolvedValue(0);
     mocks.eventTicketRepository.create.mockResolvedValue(makeTicket());
+    mocks.eventTicketRepository.resetPending.mockResolvedValue(makeTicket());
+    mocks.eventTicketRepository.setExternalReference.mockImplementation((id) =>
+      Promise.resolve(makeTicket({ id, externalReference: "evt_xxx" }))
+    );
+    mocks.eventTicketRepository.setPendingAdditionReference.mockImplementation((id, data) =>
+      Promise.resolve(
+        makeTicket({
+          id,
+          status: "PAID",
+          pendingAdditionExternalReference: data.reference,
+          pendingAdditionQuantity: data.quantity,
+        })
+      )
+    );
+    mocks.eventTicketRepository.incrementQuantity.mockImplementation((id, delta) =>
+      Promise.resolve(makeTicket({ id, status: "PAID", quantity: 1 + delta }))
+    );
+    mocks.eventTicketRepository.clearPendingAddition.mockResolvedValue(makeTicket({ status: "PAID" }));
     mocks.mercadopagoConfigRepository.findByCenterId.mockResolvedValue({
       centerId: "center-1",
       accessToken: "TEST_TOKEN",
@@ -120,8 +147,14 @@ describe("createEventCheckout", () => {
       expect(result.checkoutUrl).toBe("https://mp.com/checkout");
     }
     expect(mocks.eventTicketRepository.create).toHaveBeenCalledWith(
-      expect.objectContaining({ eventId: "event-1", userId: "user-1", amountCents: 10000 })
+      expect.objectContaining({
+        eventId: "event-1",
+        userId: "user-1",
+        amountCents: 10000,
+        quantity: 1,
+      })
     );
+    expect(mocks.eventTicketRepository.resetPending).not.toHaveBeenCalled();
     expect(mocks.mercadoPagoPaymentAdapter.createPreference).toHaveBeenCalledOnce();
     expect(mocks.eventTicketRepository.updateStatus).not.toHaveBeenCalled();
   });
@@ -160,16 +193,54 @@ describe("createEventCheckout", () => {
       expect(result.code).toBe("ALREADY_PURCHASED");
     }
     expect(mocks.eventTicketRepository.create).not.toHaveBeenCalled();
+    expect(mocks.eventTicketRepository.resetPending).not.toHaveBeenCalled();
   });
 
-  it("ticket previo PENDING (no PAID) → puede continuar", async () => {
+  it("ticket REFUNDED → ALREADY_PURCHASED (admin-only re-emisión)", async () => {
     mocks.eventTicketRepository.findByEventAndUser.mockResolvedValue(
-      makeTicket({ status: "PENDING" })
+      makeTicket({ status: "REFUNDED" })
+    );
+
+    const result = await createEventCheckout(BASE_INPUT);
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.code).toBe("ALREADY_PURCHASED");
+    }
+  });
+
+  it("ticket previo PENDING → reusa el mismo registro (fix P2002)", async () => {
+    const existingPending = makeTicket({ id: "existing-1", status: "PENDING" });
+    mocks.eventTicketRepository.findByEventAndUser.mockResolvedValue(existingPending);
+    mocks.eventTicketRepository.resetPending.mockResolvedValue(
+      makeTicket({ id: "existing-1", status: "PENDING" })
     );
 
     const result = await createEventCheckout(BASE_INPUT);
 
     expect(result.success).toBe(true);
+    expect(mocks.eventTicketRepository.resetPending).toHaveBeenCalledWith(
+      "existing-1",
+      expect.objectContaining({ amountCents: 10000, quantity: 1, currency: "CLP" })
+    );
+    expect(mocks.eventTicketRepository.create).not.toHaveBeenCalled();
+  });
+
+  it("ticket previo CANCELLED → reusa el mismo registro (no rompe @@unique)", async () => {
+    const existingCancelled = makeTicket({ id: "existing-2", status: "CANCELLED" });
+    mocks.eventTicketRepository.findByEventAndUser.mockResolvedValue(existingCancelled);
+    mocks.eventTicketRepository.resetPending.mockResolvedValue(
+      makeTicket({ id: "existing-2", status: "PENDING" })
+    );
+
+    const result = await createEventCheckout(BASE_INPUT);
+
+    expect(result.success).toBe(true);
+    expect(mocks.eventTicketRepository.resetPending).toHaveBeenCalledWith(
+      "existing-2",
+      expect.any(Object)
+    );
+    expect(mocks.eventTicketRepository.create).not.toHaveBeenCalled();
   });
 
   it("evento lleno → EVENT_FULL", async () => {
@@ -296,5 +367,194 @@ describe("createEventCheckout", () => {
     if (!result.success) {
       expect(result.code).toBe("MP_PREFERENCE_FAILED");
     }
+  });
+
+  // ── Multi-cupos ────────────────────────────────────────────────────────
+
+  it("quantity > 1: crea ticket con amount = unit * quantity y envía quantity a MP", async () => {
+    mocks.eventTicketRepository.create.mockResolvedValue(
+      makeTicket({ amountCents: 30000, quantity: 3 })
+    );
+
+    const result = await createEventCheckout({ ...BASE_INPUT, quantity: 3 });
+
+    expect(result.success).toBe(true);
+    expect(mocks.eventTicketRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({ amountCents: 30000, quantity: 3 })
+    );
+    expect(mocks.mercadoPagoPaymentAdapter.createPreference).toHaveBeenCalledWith(
+      expect.objectContaining({ unitPrice: 10000, quantity: 3 })
+    );
+  });
+
+  it("quantity 0 o negativo → INVALID_QUANTITY", async () => {
+    const r1 = await createEventCheckout({ ...BASE_INPUT, quantity: 0 });
+    expect(r1.success).toBe(false);
+    if (!r1.success) expect(r1.code).toBe("INVALID_QUANTITY");
+
+    const r2 = await createEventCheckout({ ...BASE_INPUT, quantity: -1 });
+    expect(r2.success).toBe(false);
+    if (!r2.success) expect(r2.code).toBe("INVALID_QUANTITY");
+
+    expect(mocks.eventTicketRepository.create).not.toHaveBeenCalled();
+  });
+
+  it("quantity supera cupos disponibles → EVENT_FULL con mensaje accionable", async () => {
+    mocks.eventRepository.findById.mockResolvedValue(makeEvent({ maxCapacity: 10 }));
+    mocks.eventTicketRepository.countPaidByEventId.mockResolvedValue(8);
+
+    const result = await createEventCheckout({ ...BASE_INPUT, quantity: 3 });
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.code).toBe("EVENT_FULL");
+      expect(result.message).toContain("2");
+    }
+    expect(mocks.eventTicketRepository.create).not.toHaveBeenCalled();
+  });
+
+  it("evento gratuito multi-cupos: crea ticket PAID con quantity > 1", async () => {
+    mocks.eventRepository.findById.mockResolvedValue(makeEvent({ amountCents: 0 }));
+    const freeTicket = makeTicket({ amountCents: 0, status: "PENDING", quantity: 2 });
+    const paidTicket = makeTicket({ amountCents: 0, status: "PAID", quantity: 2, paidAt: new Date() });
+    mocks.eventTicketRepository.create.mockResolvedValue(freeTicket);
+    mocks.eventTicketRepository.updateStatus.mockResolvedValue(paidTicket);
+
+    const result = await createEventCheckout({ ...BASE_INPUT, quantity: 2 });
+
+    expect(result.success).toBe(true);
+    expect(mocks.eventTicketRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({ quantity: 2, amountCents: 0 })
+    );
+  });
+
+  it("compra inicial pagada: persiste externalReference en el ticket", async () => {
+    const result = await createEventCheckout(BASE_INPUT);
+
+    expect(result.success).toBe(true);
+    expect(mocks.eventTicketRepository.setExternalReference).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.stringMatching(/^evt_/)
+    );
+    // El externalReference enviado a MP debe coincidir con el persistido.
+    const setRefCall = mocks.eventTicketRepository.setExternalReference.mock.calls[0];
+    const mpCall = mocks.mercadoPagoPaymentAdapter.createPreference.mock.calls[0][0];
+    expect(setRefCall[1]).toBe(mpCall.externalReference);
+  });
+
+  // ── Re-compra (mode: "addition") ─────────────────────────────────────
+
+  it("addition sin ticket previo → INVALID_MODE", async () => {
+    mocks.eventTicketRepository.findByEventAndUser.mockResolvedValue(null);
+
+    const result = await createEventCheckout({ ...BASE_INPUT, quantity: 2, mode: "addition" });
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.code).toBe("INVALID_MODE");
+    }
+  });
+
+  it("addition con ticket PENDING (no PAID) → INVALID_MODE", async () => {
+    mocks.eventTicketRepository.findByEventAndUser.mockResolvedValue(
+      makeTicket({ status: "PENDING" })
+    );
+
+    const result = await createEventCheckout({ ...BASE_INPUT, quantity: 2, mode: "addition" });
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.code).toBe("INVALID_MODE");
+    }
+  });
+
+  it("addition con pendingAdditionQuantity > 0 → INVALID_MODE (ya hay otra pendiente)", async () => {
+    mocks.eventTicketRepository.findByEventAndUser.mockResolvedValue(
+      makeTicket({ status: "PAID", pendingAdditionQuantity: 1 })
+    );
+
+    const result = await createEventCheckout({ ...BASE_INPUT, quantity: 2, mode: "addition" });
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.code).toBe("INVALID_MODE");
+      expect(result.message).toContain("pendientes");
+    }
+  });
+
+  it("addition free: incrementa quantity directo, sin MP, email kind=addition", async () => {
+    mocks.eventRepository.findById.mockResolvedValue(makeEvent({ amountCents: 0 }));
+    mocks.eventTicketRepository.findByEventAndUser.mockResolvedValue(
+      makeTicket({ status: "PAID", quantity: 1, amountCents: 0 })
+    );
+    mocks.eventTicketRepository.incrementQuantity.mockResolvedValue(
+      makeTicket({ status: "PAID", quantity: 3, amountCents: 0 })
+    );
+
+    const result = await createEventCheckout({ ...BASE_INPUT, quantity: 2, mode: "addition" });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.ticket.quantity).toBe(3);
+      expect(result.checkoutUrl).toBeUndefined();
+    }
+    expect(mocks.eventTicketRepository.incrementQuantity).toHaveBeenCalledWith(
+      expect.any(String),
+      2
+    );
+    expect(mocks.mercadoPagoPaymentAdapter.createPreference).not.toHaveBeenCalled();
+    expect(mocks.eventTicketRepository.setPendingAdditionReference).not.toHaveBeenCalled();
+  });
+
+  it("addition pagada: setea pendingAdditionReference y devuelve checkoutUrl", async () => {
+    mocks.eventTicketRepository.findByEventAndUser.mockResolvedValue(
+      makeTicket({ status: "PAID", quantity: 1 })
+    );
+
+    const result = await createEventCheckout({ ...BASE_INPUT, quantity: 2, mode: "addition" });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.checkoutUrl).toBe("https://mp.com/checkout");
+    }
+    expect(mocks.eventTicketRepository.setPendingAdditionReference).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ quantity: 2, reference: expect.stringMatching(/^evt_/) })
+    );
+    expect(mocks.mercadoPagoPaymentAdapter.createPreference).toHaveBeenCalledWith(
+      expect.objectContaining({ quantity: 2, unitPrice: 10000 })
+    );
+    expect(mocks.eventTicketRepository.incrementQuantity).not.toHaveBeenCalled();
+  });
+
+  it("addition: capacidad excedida → EVENT_FULL", async () => {
+    mocks.eventRepository.findById.mockResolvedValue(makeEvent({ maxCapacity: 10 }));
+    mocks.eventTicketRepository.findByEventAndUser.mockResolvedValue(
+      makeTicket({ status: "PAID", quantity: 3 })
+    );
+    mocks.eventTicketRepository.countPaidByEventId.mockResolvedValue(9);
+
+    const result = await createEventCheckout({ ...BASE_INPUT, quantity: 5, mode: "addition" });
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.code).toBe("EVENT_FULL");
+      expect(result.message).toContain("1");
+    }
+  });
+
+  it("addition pagada: si MP falla, hace rollback del pendingAddition", async () => {
+    mocks.eventTicketRepository.findByEventAndUser.mockResolvedValue(
+      makeTicket({ status: "PAID", quantity: 1 })
+    );
+    mocks.mercadoPagoPaymentAdapter.createPreference.mockResolvedValue({
+      success: false,
+      error: "MP timeout",
+    });
+
+    const result = await createEventCheckout({ ...BASE_INPUT, quantity: 2, mode: "addition" });
+
+    expect(result.success).toBe(false);
+    expect(mocks.eventTicketRepository.clearPendingAddition).toHaveBeenCalled();
   });
 });

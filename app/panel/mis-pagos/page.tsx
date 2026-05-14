@@ -1,7 +1,13 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { manualPaymentRepository, orderRepository, planRepository } from "@/lib/adapters/db";
+import {
+  eventRepository,
+  eventTicketRepository,
+  manualPaymentRepository,
+  orderRepository,
+  planRepository,
+} from "@/lib/adapters/db";
 import { Button } from "@/components/ui/Button";
 import type { OrderStatus } from "@/lib/ports";
 import { ORDER_STATUS_LABELS } from "@/lib/ports";
@@ -11,6 +17,71 @@ function formatPrice(cents: number, currency: string): string {
   if (currency === "CLP") return `$${cents.toLocaleString("es-CL")}`;
   return `${cents / 100} ${currency}`;
 }
+
+type TicketWithEvent = {
+  ticket: import("@/lib/domain/event").EventTicket;
+  event: import("@/lib/domain/event").Event;
+};
+
+function EventTicketCard({
+  ticket,
+  event,
+  isPast,
+}: TicketWithEvent & { isPast: boolean }) {
+  return (
+    <li>
+      <Link
+        href={`/panel/eventos/${event.id}`}
+        className={`flex flex-col gap-1 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 hover:border-[var(--color-primary)] transition-colors ${
+          isPast ? "opacity-70" : ""
+        }`}
+      >
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="font-semibold text-[var(--color-text)]">{event.title}</p>
+          <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800 font-medium">
+            {ticket.quantity === 1 ? "1 cupo" : `${ticket.quantity} cupos`}
+          </span>
+          {isPast && (
+            <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 font-medium">
+              Finalizado
+            </span>
+          )}
+        </div>
+        <p className="text-xs text-[var(--color-text-muted)]">
+          {event.startsAt.toLocaleString("es-CL", {
+            weekday: "short",
+            day: "numeric",
+            month: "short",
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
+        </p>
+        <p className="text-xs text-[var(--color-text-muted)]">
+          Total pagado: {formatPrice(ticket.amountCents, ticket.currency)}
+        </p>
+        {ticket.pendingAdditionQuantity > 0 && (
+          <p className="text-xs text-[var(--color-text-muted)]">
+            + {ticket.pendingAdditionQuantity} cupo(s) pendiente(s) de pago
+          </p>
+        )}
+      </Link>
+    </li>
+  );
+}
+
+function sortTicketsByEvent(tickets: TicketWithEvent[], nowMs: number): TicketWithEvent[] {
+  return [...tickets].sort((a, b) => {
+    const aFuture = a.event.startsAt.getTime() >= nowMs;
+    const bFuture = b.event.startsAt.getTime() >= nowMs;
+    if (aFuture && !bFuture) return -1;
+    if (!aFuture && bFuture) return 1;
+    return aFuture
+      ? a.event.startsAt.getTime() - b.event.startsAt.getTime()
+      : b.event.startsAt.getTime() - a.event.startsAt.getTime();
+  });
+}
+
+
 
 function buildQuery(
   base: Record<string, string | undefined>,
@@ -93,6 +164,23 @@ export default async function PanelMisPagosPage({
   const plans = await (parsed.type === "checkout" ? planRepository.findManyByIds(planIds) : Promise.resolve([]));
   const planMap = Object.fromEntries(plans.map((p) => [p.id, p]));
 
+  // ── Entradas a eventos (sección informativa siempre visible arriba) ──
+  const userTickets = await eventTicketRepository.findByUserId(userId);
+  const paidEventTickets = userTickets.filter((t) => t.status === "PAID");
+  const eventIds = [...new Set(paidEventTickets.map((t) => t.eventId))];
+  const events = await Promise.all(eventIds.map((id) => eventRepository.findById(id)));
+  const eventMap = new Map(events.filter((e) => e != null).map((e) => [e!.id, e!]));
+  const ticketsWithEvents: TicketWithEvent[] = paidEventTickets.flatMap((ticket) => {
+    const event = eventMap.get(ticket.eventId);
+    return event ? [{ ticket, event }] : [];
+  });
+  // eslint-disable-next-line react-hooks/purity -- server component runs once per request
+  const nowMs = Date.now();
+  const sortedTickets = sortTicketsByEvent(ticketsWithEvents, nowMs).map((tw) => ({
+    ...tw,
+    isPast: tw.event.startsAt.getTime() < nowMs,
+  }));
+
   return (
     <div className="mx-auto max-w-4xl px-4 py-12">
       <div className="mb-6 flex items-center gap-4">
@@ -119,6 +207,19 @@ export default async function PanelMisPagosPage({
             Te avisaremos por mail apenas el centro la apruebe.
           </p>
         </div>
+      )}
+
+      {sortedTickets.length > 0 && (
+        <section className="mb-8">
+          <h2 className="text-lg font-semibold text-[var(--color-text)] mb-3">
+            Entradas a eventos
+          </h2>
+          <ul className="grid gap-3 sm:grid-cols-2">
+            {sortedTickets.map(({ ticket, event, isPast }) => (
+              <EventTicketCard key={ticket.id} ticket={ticket} event={event} isPast={isPast} />
+            ))}
+          </ul>
+        </section>
       )}
 
       <div className="mb-5 space-y-3">

@@ -362,6 +362,63 @@ export async function seedEvent(opts: {
   return { id: event.id, title: event.title };
 }
 
+/**
+ * Crea un EventTicket en estado arbitrario para el usuario por email. Útil
+ * para tests de regresión del flujo de checkout (p.ej. reuso de PENDING).
+ * Devuelve `{ id }` o null si la BD no está disponible.
+ */
+export async function seedEventTicket(opts: {
+  eventId: string;
+  userEmail: string;
+  status: "PENDING" | "PAID" | "CANCELLED" | "REFUNDED";
+  amountCents: number;
+  quantity?: number;
+}): Promise<{ id: string } | null> {
+  const prisma = await getPrisma();
+  if (!prisma) return null;
+  const user = await prisma.user.findUnique({ where: { email: opts.userEmail } });
+  if (!user) return null;
+  // Si ya existe (unique en eventId+userId), lo reusamos seteándolo al estado pedido.
+  const existing = await prisma.eventTicket.findUnique({
+    where: { eventId_userId: { eventId: opts.eventId, userId: user.id } },
+  });
+  if (existing) {
+    const updated = await prisma.eventTicket.update({
+      where: { id: existing.id },
+      data: {
+        status: opts.status,
+        amountCents: opts.amountCents,
+        quantity: opts.quantity ?? 1,
+        paidAt: opts.status === "PAID" ? new Date() : null,
+        transferClaimedAt: null,
+        transferReceiptSanityId: null,
+        transferRejectedReason: null,
+        mpPaymentId: null,
+      },
+    });
+    return { id: updated.id };
+  }
+  const ticket = await prisma.eventTicket.create({
+    data: {
+      eventId: opts.eventId,
+      userId: user.id,
+      amountCents: opts.amountCents,
+      currency: "CLP",
+      status: opts.status,
+      quantity: opts.quantity ?? 1,
+      paidAt: opts.status === "PAID" ? new Date() : null,
+    },
+  });
+  return { id: ticket.id };
+}
+
+/** Borra todos los EventTickets de un evento. */
+export async function cleanupEventTickets(eventId: string): Promise<void> {
+  const prisma = await getPrisma();
+  if (!prisma) return;
+  await prisma.eventTicket.deleteMany({ where: { eventId } });
+}
+
 /** Limpia la Order y el plan de test creados por seedPendingTransferOrder. */
 export async function cleanupPendingTransferOrders(externalReferencePrefix: string) {
   const prisma = await getPrisma();

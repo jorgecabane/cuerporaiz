@@ -166,8 +166,8 @@ export async function claimTransferForEventTicket(
   try {
     await prisma.$transaction(async (tx) => {
       if (ticket.event.maxCapacity !== null) {
-        // Contamos tickets vivos: PAID + PENDING con transferencia claimed (ocupan cupo).
-        const occupying = await tx.eventTicket.count({
+        // Sumamos cupos vivos: PAID + PENDING con transferencia claimed (ocupan cupo).
+        const occupying = await tx.eventTicket.aggregate({
           where: {
             eventId: ticket.event.id,
             OR: [
@@ -179,8 +179,10 @@ export async function claimTransferForEventTicket(
             ],
             NOT: { id: ticket.id },
           },
+          _sum: { quantity: true },
         });
-        if (occupying >= ticket.event.maxCapacity) {
+        const seatsTaken = occupying._sum.quantity ?? 0;
+        if (seatsTaken + ticket.quantity > ticket.event.maxCapacity) {
           throw new Error("EVENT_FULL");
         }
       }

@@ -79,7 +79,7 @@ export async function approveEventTicketManually(formData: FormData): Promise<vo
 
   // Re-chequear cupo por si se llenó mientras esta transferencia esperaba
   if (ticket.event.maxCapacity !== null) {
-    const occupying = await prisma.eventTicket.count({
+    const occupying = await prisma.eventTicket.aggregate({
       where: {
         eventId: ticket.eventId,
         OR: [
@@ -88,8 +88,10 @@ export async function approveEventTicketManually(formData: FormData): Promise<vo
         ],
         NOT: { id: ticket.id },
       },
+      _sum: { quantity: true },
     });
-    if (occupying >= ticket.event.maxCapacity) {
+    const seatsTaken = occupying._sum.quantity ?? 0;
+    if (seatsTaken + ticket.quantity > ticket.event.maxCapacity) {
       redirect("/panel/pagos?error=event-full");
     }
   }
@@ -119,6 +121,7 @@ export async function approveEventTicketManually(formData: FormData): Promise<vo
     centerId,
     amountCents: ticket.amountCents,
     currency: ticket.currency,
+    quantity: ticket.quantity,
   }).catch((err) => console.error("[approve-event-ticket] confirm email", err));
 
   redirect("/panel/pagos");

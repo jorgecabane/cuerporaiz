@@ -61,8 +61,13 @@ docs/          → Architecture, design guidelines, setup docs
 ## Language & Copy Conventions
 
 - **Code** is written in English (variables, functions, types, commits).
-- **UI copy** is in Spanish (Chilean tú form): "tienes", "puedes", "agrega" — never voseo ("tenés", "podés").
-- **Labels** are gender-neutral: "Estudiantes", "Profesores", "Administración".
+- **UI copy** is in **español chileno con tú** — NUNCA voseo argentino. Sí: "tienes / puedes / agrega". No: "tenés / podés / agregá".
+- **Género**: usar **masculino genérico** (gender-neutral vía formas masculinas). Sí: "Ya inscrito", "el usuario", "los estudiantes". No: "Ya inscrita", "la alumna", "las estudiantes". Aplica a UI copy, emails y comentarios (los comments también, para no sembrar mala copy a futuro).
+- **Plurales colectivos** ya neutros se mantienen: "Estudiantes", "Profesores", "Administración".
+- Checklist al agregar copy nuevo:
+  1. ¿Es chileno con tú (no voseo)?
+  2. ¿Cada adjetivo/participio es masculino (o invariable)?
+  3. ¿Las formas verbales en plural son neutras ("te esperamos", "los esperamos")?
 - **Roles:** Never compare with string literals. Use helpers from `@/lib/domain/role`:
   ```ts
   import { isAdminRole, isStudentRole, isInstructorRole } from "@/lib/domain/role";

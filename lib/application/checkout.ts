@@ -11,6 +11,8 @@ import {
   planRepository,
   orderRepository,
   webhookEventRepository,
+  eventTicketRepository,
+  eventRepository,
 } from "@/lib/adapters/db";
 import { mercadoPagoPaymentAdapter } from "@/lib/adapters/payment";
 import { verifyMercadoPagoWebhookSignature } from "./verify-webhook-signature";
@@ -289,8 +291,20 @@ export async function processWebhookUseCase(
 
   const order = await orderRepository.findByExternalReference(payment.externalReference ?? "")
     ?? await orderRepository.findByMpPaymentId(payment.id);
+
+  // Si no hay Order, puede ser un pago de EventTicket. Caemos al fallback.
   if (!order) {
+    const ticketHandled = await tryProcessEventTicketPayment({
+      externalReference: payment.externalReference ?? "",
+      mpPaymentId: payment.id,
+      mpStatus: payment.status,
+    });
     await webhookEventRepository.markProcessed(centerId, requestId);
+    if (ticketHandled) {
+      return { success: true, alreadyProcessed: false };
+    }
+    // Ni Order ni EventTicket: probablemente sea un pago de otro flujo. No
+    // crasheamos para no devolver 4xx/5xx a MP (reintentaría infinitamente).
     return { success: true, alreadyProcessed: false };
   }
 
@@ -329,4 +343,80 @@ export async function processWebhookUseCase(
   await webhookEventRepository.markProcessed(centerId, requestId);
 
   return { success: true, alreadyProcessed: false };
+}
+
+/**
+ * Fallback del webhook MP para EventTicket: cuando el payment no corresponde
+ * a un Order (plan/suscripción), buscamos un EventTicket por external_reference
+ * y aplicamos el cambio de estado.
+ *
+ * Devuelve `true` si encontró y procesó un ticket; `false` si no lo encontró
+ * (no es error — puede ser un pago de otro flujo).
+ *
+ * Exportado para testing — no debería usarse fuera del webhook.
+ */
+export async function tryProcessEventTicketPayment(args: {
+  externalReference: string;
+  mpPaymentId: string;
+  mpStatus: string;
+}): Promise<boolean> {
+  let match = args.externalReference
+    ? await eventTicketRepository.findByExternalReference(args.externalReference)
+    : null;
+
+  // Fallback por mpPaymentId (reintentos del webhook después de un approve).
+  if (!match && args.mpPaymentId) {
+    const byPayment = await eventTicketRepository.findByMpPaymentId(args.mpPaymentId);
+    if (byPayment) {
+      match = { ticket: byPayment, isAddition: false };
+    }
+  }
+
+  if (!match) return false;
+
+  const { ticket, isAddition } = match;
+  const status = ORDER_STATUS_BY_MP[args.mpStatus] ?? "PENDING";
+
+  if (status === "APPROVED") {
+    const result = await eventTicketRepository.applyApprovedPayment(ticket.id, {
+      mpPaymentId: args.mpPaymentId,
+      isAddition,
+    });
+    if (result) {
+      const event = await eventRepository.findById(result.ticket.eventId);
+      if (event) {
+        const { notifyEventTicketConfirmation } = await import("./notify-event-ticket-confirmation");
+        const totalQuantity = result.ticket.quantity;
+        const addedQuantity = isAddition ? result.addedQuantity : totalQuantity;
+        notifyEventTicketConfirmation({
+          eventId: event.id,
+          userId: result.ticket.userId,
+          centerId: event.centerId,
+          amountCents: result.ticket.amountCents,
+          currency: result.ticket.currency,
+          quantity: totalQuantity,
+          kind: isAddition ? "addition" : "purchase",
+          addedQuantity,
+        }).catch((err) => console.error("[webhook event ticket] confirm email", err));
+      }
+    }
+    return true;
+  }
+
+  if (status === "REJECTED" || status === "CANCELLED") {
+    if (isAddition) {
+      // Re-compra rechazada: no cambiamos el status del ticket (sigue PAID por
+      // la compra original), pero limpiamos los pending fields para que pueda
+      // reintentar.
+      await eventTicketRepository.clearPendingAddition(ticket.id);
+    } else {
+      // Compra inicial rechazada: el ticket pasa a CANCELLED.
+      await eventTicketRepository.updateStatus(ticket.id, "CANCELLED");
+    }
+    return true;
+  }
+
+  // pending / in_mediation / refunded: no hacemos nada. El próximo webhook
+  // resolverá; en refunded el admin maneja vía /panel/pagos.
+  return true;
 }
