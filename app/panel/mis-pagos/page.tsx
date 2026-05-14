@@ -49,6 +49,7 @@ function EventTicketCard({
         </div>
         <p className="text-xs text-[var(--color-text-muted)]">
           {event.startsAt.toLocaleString("es-CL", {
+            timeZone: "America/Santiago",
             weekday: "short",
             day: "numeric",
             month: "short",
