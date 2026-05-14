@@ -19,6 +19,7 @@ import {
   TAB_HISTORICAS,
 } from "@/components/panel/reservas";
 import { ReservationListSkeleton } from "@/components/ui/PanelSkeletons";
+import { useTimezone } from "@/components/providers/TimezoneProvider";
 
 const RESERVATIONS_PAGE_SIZE = 50;
 
@@ -35,6 +36,7 @@ export function ReservasPanel({
   centerId,
   weekStartDay: _weekStartDay,
 }: ReservasPanelProps) {
+  const tz = useTimezone();
   const [reservations, setReservations] = useState<ReservationDto[]>([]);
   const [reservationsTotal, setReservationsTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -261,7 +263,7 @@ export function ReservasPanel({
                     {p.classesTotal != null
                       ? `${p.classesUsed}/${p.classesTotal} clases`
                       : "Ilimitado"}
-                    {p.validUntil ? ` · Vence ${new Date(p.validUntil).toLocaleDateString("es-CL")}` : ""}
+                    {p.validUntil ? ` · Vence ${new Date(p.validUntil).toLocaleDateString("es-CL", { timeZone: tz })}` : ""}
                   </span>
                 </button>
               </li>

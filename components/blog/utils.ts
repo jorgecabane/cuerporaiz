@@ -1,14 +1,13 @@
 import type { PortableTextBlock } from "@portabletext/types";
 
-const DATE_FORMATTER = new Intl.DateTimeFormat("es-CL", {
-  day: "numeric",
-  month: "short",
-  year: "numeric",
-});
-
-export function formatPostDate(iso: string): string {
+export function formatPostDate(iso: string, tz: string): string {
   try {
-    return DATE_FORMATTER.format(new Date(iso));
+    return new Intl.DateTimeFormat("es-CL", {
+      timeZone: tz,
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    }).format(new Date(iso));
   } catch {
     return iso;
   }

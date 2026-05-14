@@ -5,16 +5,18 @@ import Image from "next/image";
 import { ChevronDown, ChevronUp, Clock, Users } from "lucide-react";
 import type { LiveClassDto } from "@/lib/dto/reservation-dto";
 import { Button } from "@/components/ui/Button";
+import { useTimezone } from "@/components/providers/TimezoneProvider";
 
-function formatDateAndTime(startsAtIso: string, durationMinutes: number): string {
+function formatDateAndTime(startsAtIso: string, durationMinutes: number, tz: string): string {
   const start = new Date(startsAtIso);
   const end = new Date(start.getTime() + durationMinutes * 60 * 1000);
   const datePart = start.toLocaleDateString("es-CL", {
+    timeZone: tz,
     weekday: "short",
     day: "numeric",
     month: "short",
   });
-  const timePart = `${start.toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" })} a ${end.toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" })}`;
+  const timePart = `${start.toLocaleTimeString("es-CL", { timeZone: tz, hour: "2-digit", minute: "2-digit" })} a ${end.toLocaleTimeString("es-CL", { timeZone: tz, hour: "2-digit", minute: "2-digit" })}`;
   return `${datePart} ${timePart}`;
 }
 
@@ -86,6 +88,7 @@ export function ClassCard({
   onReserveForStudentSubmit,
   onCloseReserveForStudent,
 }: ClassCardProps) {
+  const tz = useTimezone();
   const noSpots = c.spotsLeft <= 0;
   const canReserve = !isPast && !alreadyReserved && !noSpots && onReserve;
   const isStaff = Array.isArray(attendees);
@@ -113,7 +116,7 @@ export function ClassCard({
               )}
             </div>
             <span className="text-xs text-[var(--color-text-muted)] shrink-0">
-              {formatDateAndTime(c.startsAt, c.durationMinutes)}
+              {formatDateAndTime(c.startsAt, c.durationMinutes, tz)}
             </span>
           </div>
           {/* Fila 2: título */}

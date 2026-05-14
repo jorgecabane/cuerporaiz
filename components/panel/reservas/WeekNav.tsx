@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback } from "react";
+import { useTimezone } from "@/components/providers/TimezoneProvider";
 
 function getWeekBounds(date: Date, weekStartDay: number): { start: Date; end: Date } {
   const d = new Date(date);
@@ -15,8 +16,8 @@ function getWeekBounds(date: Date, weekStartDay: number): { start: Date; end: Da
   return { start, end };
 }
 
-function formatWeekLabel(start: Date, end: Date): string {
-  return `${start.getDate()}–${end.getDate()} ${end.toLocaleDateString("es-CL", { month: "short" })}`;
+function formatWeekLabel(start: Date, end: Date, tz: string): string {
+  return `${start.getDate()}–${end.getDate()} ${end.toLocaleDateString("es-CL", { timeZone: tz, month: "short" })}`;
 }
 
 export interface WeekNavProps {
@@ -37,6 +38,7 @@ export function WeekNav({
   allowPastWeeks = true,
   className = "",
 }: WeekNavProps) {
+  const tz = useTimezone();
   const { start, end } = getWeekBounds(weekAnchor, weekStartDay);
 
   const goPrev = useCallback(() => {
@@ -74,7 +76,7 @@ export function WeekNav({
         Semana anterior
       </button>
       <span className="text-sm font-medium text-[var(--color-text)] tabular-nums">
-        Semana {formatWeekLabel(start, end)}
+        Semana {formatWeekLabel(start, end, tz)}
       </span>
       <button
         type="button"

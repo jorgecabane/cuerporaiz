@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/adapters/db/prisma";
+import { getCenterTimezone } from "@/lib/datetime/center-timezone";
 
 interface PlanSummaryCardProps {
   userId: string;
@@ -14,6 +15,7 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 export default async function PlanSummaryCard({ userId, centerId }: PlanSummaryCardProps) {
+  const tz = await getCenterTimezone(centerId);
   const userPlan = await prisma.userPlan.findFirst({
     where: { userId, centerId, status: "ACTIVE" },
     include: { plan: true, subscription: { select: { id: true, status: true } } },
@@ -39,7 +41,7 @@ export default async function PlanSummaryCard({ userId, centerId }: PlanSummaryC
     : "Clases ilimitadas";
 
   const validUntilLabel = userPlan.validUntil
-    ? userPlan.validUntil.toLocaleDateString("es-CL", { timeZone: "America/Santiago" })
+    ? userPlan.validUntil.toLocaleDateString("es-CL", { timeZone: tz })
     : "Sin vencimiento";
 
   return (

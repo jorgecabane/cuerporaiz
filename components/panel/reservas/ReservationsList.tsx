@@ -3,10 +3,12 @@
 import type { ReservationDto } from "@/lib/dto/reservation-dto";
 import { RESERVATION_STATUS_LABELS } from "@/lib/domain/reservation";
 import { Button } from "@/components/ui/Button";
+import { useTimezone } from "@/components/providers/TimezoneProvider";
 
-function formatDate(iso: string) {
+function formatDate(iso: string, tz: string) {
   const d = new Date(iso);
   return d.toLocaleDateString("es-CL", {
+    timeZone: tz,
     weekday: "short",
     day: "numeric",
     month: "short",
@@ -17,11 +19,11 @@ function formatDate(iso: string) {
 }
 
 /** Formato compacto: "dd/mm" y "HH:mm" por separado */
-function formatCompact(iso: string) {
+function formatCompact(iso: string, tz: string) {
   const d = new Date(iso);
   return {
-    date: d.toLocaleDateString("es-CL", { day: "2-digit", month: "2-digit" }),
-    time: d.toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" }),
+    date: d.toLocaleDateString("es-CL", { timeZone: tz, day: "2-digit", month: "2-digit" }),
+    time: d.toLocaleTimeString("es-CL", { timeZone: tz, hour: "2-digit", minute: "2-digit" }),
   };
 }
 
@@ -47,6 +49,7 @@ export function ReservationsList({
   showCancelBadge = false,
   canCancelIds,
 }: ReservationsListProps) {
+  const tz = useTimezone();
   if (reservations.length === 0) {
     return (
       <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 animate-fade-in">
@@ -74,10 +77,10 @@ export function ReservationsList({
                 {compact && r.liveClass?.startsAt ? (
                   <>
                     <p className="font-medium text-[var(--color-text)]">
-                      {r.liveClass?.title ?? "Clase"} · {formatCompact(r.liveClass.startsAt).time}
+                      {r.liveClass?.title ?? "Clase"} · {formatCompact(r.liveClass.startsAt, tz).time}
                     </p>
                     <p className="text-sm text-[var(--color-text-muted)]">
-                      {formatCompact(r.liveClass.startsAt).date} ·{" "}
+                      {formatCompact(r.liveClass.startsAt, tz).date} ·{" "}
                       {r.liveClass?.instructorName ?? "Presencial"}
                     </p>
                   </>
@@ -87,7 +90,7 @@ export function ReservationsList({
                       {r.liveClass?.title ?? "Clase"}
                     </p>
                     <p className="text-sm text-[var(--color-text-muted)]">
-                      {r.liveClass?.startsAt ? formatDate(r.liveClass.startsAt) : ""} ·{" "}
+                      {r.liveClass?.startsAt ? formatDate(r.liveClass.startsAt, tz) : ""} ·{" "}
                       {RESERVATION_STATUS_LABELS[r.status as keyof typeof RESERVATION_STATUS_LABELS] ?? r.status}
                     </p>
                   </>

@@ -14,6 +14,7 @@ import { DayCalendar } from "./DayCalendar";
 import { MonthCalendar } from "./MonthCalendar";
 import { ListCalendar } from "./ListCalendar";
 import { batchCancelLiveClasses } from "./actions";
+import { useTimezone } from "@/components/providers/TimezoneProvider";
 
 type ViewMode = "day" | "week" | "month" | "list";
 
@@ -58,12 +59,12 @@ function addDays(d: Date, n: number): Date {
   return copy;
 }
 
-function formatShortDate(d: Date): string {
-  return d.toLocaleDateString("es-CL", { day: "numeric", month: "short" });
+function formatShortDate(d: Date, tz: string): string {
+  return d.toLocaleDateString("es-CL", { timeZone: tz, day: "numeric", month: "short" });
 }
 
-function formatMonthYear(d: Date): string {
-  return d.toLocaleDateString("es-CL", { month: "long", year: "numeric" });
+function formatMonthYear(d: Date, tz: string): string {
+  return d.toLocaleDateString("es-CL", { timeZone: tz, month: "long", year: "numeric" });
 }
 
 export function CalendarShell({
@@ -74,6 +75,7 @@ export function CalendarShell({
   instructors,
 }: Props) {
   const router = useRouter();
+  const tz = useTimezone();
   const [view, setView] = useState<ViewMode>("week");
   const [currentDate, setCurrentDate] = useState(new Date());
   const [classes, setClasses] = useState<LiveClass[]>([]);
@@ -209,13 +211,13 @@ export function CalendarShell({
   function getDateLabel(): string {
     switch (view) {
       case "day":
-        return currentDate.toLocaleDateString("es-CL", { weekday: "long", day: "numeric", month: "long" });
+        return currentDate.toLocaleDateString("es-CL", { timeZone: tz, weekday: "long", day: "numeric", month: "long" });
       case "week": {
         const ws = startOfWeek(currentDate, weekStartDay);
-        return `${formatShortDate(ws)} — ${formatShortDate(addDays(ws, 6))}`;
+        return `${formatShortDate(ws, tz)} — ${formatShortDate(addDays(ws, 6), tz)}`;
       }
       case "month":
-        return formatMonthYear(currentDate);
+        return formatMonthYear(currentDate, tz);
       case "list":
         return "Próximos 30 días";
     }

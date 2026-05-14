@@ -18,26 +18,27 @@ type EventsSectionProps = {
   subtitle?: string;
   events: UpcomingEvent[];
   href?: string;
+  tz: string;
 };
 
 const FALLBACK_IMAGE =
   "https://images.unsplash.com/photo-1528319725582-ddc096101511?w=800&q=80";
 
-function formatDay(iso: string): string {
+function formatDay(iso: string, tz: string): string {
   return new Date(iso)
-    .toLocaleDateString("es-CL", { day: "numeric", month: "short", timeZone: "America/Santiago" })
+    .toLocaleDateString("es-CL", { day: "numeric", month: "short", timeZone: tz })
     .replace(".", "");
 }
 
-function formatHour(iso: string): string {
+function formatHour(iso: string, tz: string): string {
   return new Date(iso).toLocaleTimeString("es-CL", {
     hour: "2-digit",
     minute: "2-digit",
-    timeZone: "America/Santiago",
+    timeZone: tz,
   });
 }
 
-export function EventsSection({ title, subtitle, events, href = "/panel/eventos" }: EventsSectionProps) {
+export function EventsSection({ title, subtitle, events, href = "/panel/eventos", tz }: EventsSectionProps) {
   if (events.length === 0) return null;
 
   return (
@@ -101,7 +102,7 @@ export function EventsSection({ title, subtitle, events, href = "/panel/eventos"
                 </div>
                 <div className="flex flex-1 flex-col p-[var(--space-5)]">
                   <p className="text-xs font-medium uppercase tracking-[0.15em] text-[var(--color-secondary)]">
-                    {formatDay(ev.startsAt)} · {formatHour(ev.startsAt)}
+                    {formatDay(ev.startsAt, tz)} · {formatHour(ev.startsAt, tz)}
                   </p>
                   <h3 className="mt-[var(--space-2)] font-display text-xl font-semibold leading-tight text-[var(--color-primary)]">
                     {ev.title}

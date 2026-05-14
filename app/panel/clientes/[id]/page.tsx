@@ -17,6 +17,7 @@ import { AssignPlanForm } from "./AssignPlanForm";
 import { EditClientForm } from "./EditClientForm";
 import { PlanActions } from "./PlanActions";
 import { RegisterManualPayment } from "./RegisterManualPayment";
+import { getCenterTimezone } from "@/lib/datetime/center-timezone";
 
 const ORDER_STATUS_LABELS: Record<string, string> = {
   PENDING: "Pendiente",
@@ -47,6 +48,7 @@ export default async function ClientDetailPage({
   if (!isAdminRole(session.user.role)) redirect("/panel");
   const centerId = session.user.centerId as string;
   const { id: userId } = await params;
+  const tz = await getCenterTimezone(centerId);
 
   const membership = await prisma.userCenterRole.findFirst({
     where: { userId, centerId },
@@ -263,7 +265,7 @@ export default async function ClientDetailPage({
                     </div>
                     <div className="flex items-center gap-2 text-xs text-[var(--color-text-muted)]">
                       <span className="capitalize">{mp.method}</span>
-                      <span>{mp.paidAt.toLocaleDateString("es-CL")}</span>
+                      <span>{mp.paidAt.toLocaleDateString("es-CL", { timeZone: tz })}</span>
                     </div>
                   </li>
                 );
@@ -301,7 +303,7 @@ export default async function ClientDetailPage({
                       {ORDER_STATUS_LABELS[order.status] ?? order.status}
                     </span>
                     <span className="text-xs text-[var(--color-text-muted)]">
-                      {order.createdAt.toLocaleDateString("es-CL")}
+                      {order.createdAt.toLocaleDateString("es-CL", { timeZone: tz })}
                     </span>
                   </div>
                 </li>
@@ -341,8 +343,8 @@ export default async function ClientDetailPage({
                 <div>
                   <span className="font-medium">{r.liveClass.title}</span>
                   <span className="ml-2 text-xs text-[var(--color-text-muted)]">
-                    {r.liveClass.startsAt.toLocaleDateString("es-CL")}{" "}
-                    {r.liveClass.startsAt.toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" })}
+                    {r.liveClass.startsAt.toLocaleDateString("es-CL", { timeZone: tz })}{" "}
+                    {r.liveClass.startsAt.toLocaleTimeString("es-CL", { timeZone: tz, hour: "2-digit", minute: "2-digit" })}
                   </span>
                 </div>
                 <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
@@ -374,7 +376,7 @@ export default async function ClientDetailPage({
                 <div>
                   <span className="font-medium">{r.liveClass.title}</span>
                   <span className="ml-2 text-xs text-[var(--color-text-muted)]">
-                    {r.liveClass.startsAt.toLocaleDateString("es-CL")}
+                    {r.liveClass.startsAt.toLocaleDateString("es-CL", { timeZone: tz })}
                   </span>
                 </div>
                 <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${

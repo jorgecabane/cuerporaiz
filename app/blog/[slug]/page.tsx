@@ -19,6 +19,7 @@ import { AuthorCard } from "@/components/blog/AuthorCard";
 import { PostCard } from "@/components/blog/PostCard";
 import { DraftModeBanner } from "@/components/blog/DraftModeBanner";
 import { formatPostDate, estimateReadingMinutes } from "@/components/blog/utils";
+import { getPublicCenterTimezone } from "@/lib/datetime/center-timezone";
 
 export const revalidate = 60;
 
@@ -93,6 +94,7 @@ export default async function BlogPostPage({ params }: { params: Promise<Params>
 
   const coverUrl = urlForImage(post.coverImage) ?? "";
   const minutes = estimateReadingMinutes(post.body, post.readingMinutes);
+  const tz = await getPublicCenterTimezone();
 
   return (
     <article className="pb-[var(--space-20)]">
@@ -115,7 +117,7 @@ export default async function BlogPostPage({ params }: { params: Promise<Params>
           <span aria-hidden="true">·</span>
           <span>{minutes} min de lectura</span>
           <span aria-hidden="true">·</span>
-          <span>{formatPostDate(post.publishedAt)}</span>
+          <span>{formatPostDate(post.publishedAt, tz)}</span>
         </div>
 
         <h1 className="font-display text-4xl leading-[1.05] tracking-tight text-[var(--color-primary)] md:text-5xl lg:text-6xl">
@@ -163,7 +165,7 @@ export default async function BlogPostPage({ params }: { params: Promise<Params>
           </h3>
           <div className="grid grid-cols-1 gap-[var(--space-6)] md:grid-cols-3">
             {relatedPosts.map((p) => (
-              <PostCard key={p._id} post={p} />
+              <PostCard key={p._id} post={p} tz={tz} />
             ))}
           </div>
         </section>

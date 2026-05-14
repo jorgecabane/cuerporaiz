@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
 import type { Discipline } from "@/lib/domain";
 import type { Instructor } from "@/lib/ports/instructor-repository";
+import { useTimezone } from "@/components/providers/TimezoneProvider";
 
 const DAY_LABELS = [
   { value: 1, label: "L" },
@@ -29,18 +30,18 @@ function nowLocalISO(): string {
   return now.toISOString().slice(0, 16);
 }
 
-function getDayName(date: Date): string {
-  return date.toLocaleDateString("es-CL", { weekday: "long" });
+function getDayName(date: Date, tz: string): string {
+  return date.toLocaleDateString("es-CL", { timeZone: tz, weekday: "long" });
 }
 
 function getWeekdayOrdinal(date: Date): number {
   return Math.ceil(date.getDate() / 7);
 }
 
-function getMonthlyOrdinalLabel(date: Date): string {
+function getMonthlyOrdinalLabel(date: Date, tz: string): string {
   const ordinals = ["primer", "segundo", "tercer", "cuarto", "quinto"];
   const weekNum = getWeekdayOrdinal(date);
-  const dayName = getDayName(date);
+  const dayName = getDayName(date, tz);
   return `${ordinals[weekNum - 1]} ${dayName}`;
 }
 
@@ -56,6 +57,7 @@ interface Props {
 }
 
 export function CreateClassForm({ disciplines, instructors, defaultDate, defaultHour, defaultDuration = 60, videoProviders = { zoom: false, meet: false } }: Props) {
+  const tz = useTimezone();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
@@ -110,9 +112,9 @@ export function CreateClassForm({ disciplines, instructors, defaultDate, default
       { value: "daily", label: "Cada día" },
     ];
     if (selectedDate) {
-      const dayName = getDayName(selectedDate);
+      const dayName = getDayName(selectedDate, tz);
       opts.push({ value: "weekly", label: `Cada semana el ${dayName}` });
-      const ordLabel = getMonthlyOrdinalLabel(selectedDate);
+      const ordLabel = getMonthlyOrdinalLabel(selectedDate, tz);
       opts.push({ value: "monthly-ordinal", label: `Cada mes el ${ordLabel}` });
     } else {
       opts.push({ value: "weekly", label: "Cada semana" });
@@ -121,7 +123,7 @@ export function CreateClassForm({ disciplines, instructors, defaultDate, default
     opts.push({ value: "weekdays", label: "Todos los días laborables (lun a vie)" });
     opts.push({ value: "custom", label: "Personalizar…" });
     return opts;
-  }, [selectedDate]);
+  }, [selectedDate, tz]);
 
   function getRecurrenceLabel(): string {
     if (recurrencePreset !== "custom") {
@@ -638,7 +640,7 @@ export function CreateClassForm({ disciplines, instructors, defaultDate, default
                     className="rounded-full"
                   />
                   <span className="text-sm text-[var(--color-text)]">
-                    Cada mes el {getMonthlyOrdinalLabel(selectedDate)}
+                    Cada mes el {getMonthlyOrdinalLabel(selectedDate, tz)}
                   </span>
                 </label>
               </div>

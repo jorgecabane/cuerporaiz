@@ -3,6 +3,7 @@
 import Link from "next/link";
 import type { LiveClass } from "@/lib/domain";
 import { layoutBlocks, type LayoutBlock } from "./calendar-layout";
+import { useTimezone } from "@/components/providers/TimezoneProvider";
 
 export interface CalendarEvent {
   id: string;
@@ -28,8 +29,8 @@ function addDays(d: Date, n: number): Date {
   return copy;
 }
 
-function formatTime(d: Date): string {
-  return d.toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" });
+function formatTime(d: Date, tz: string): string {
+  return d.toLocaleTimeString("es-CL", { timeZone: tz, hour: "2-digit", minute: "2-digit" });
 }
 
 function formatDateParam(d: Date): string {
@@ -39,12 +40,12 @@ function formatDateParam(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
-function formatShortDate(d: Date): string {
-  return d.toLocaleDateString("es-CL", { day: "numeric", month: "short" });
+function formatShortDate(d: Date, tz: string): string {
+  return d.toLocaleDateString("es-CL", { timeZone: tz, day: "numeric", month: "short" });
 }
 
-function dayLabel(d: Date): string {
-  const label = d.toLocaleDateString("es-CL", { weekday: "short" });
+function dayLabel(d: Date, tz: string): string {
+  const label = d.toLocaleDateString("es-CL", { timeZone: tz, weekday: "short" });
   return label.charAt(0).toUpperCase() + label.slice(1).replace(".", "");
 }
 
@@ -85,6 +86,7 @@ export function WeekCalendar({
   loading,
   onSlotClick,
 }: WeekCalendarProps) {
+  const tz = useTimezone();
   const totalHours = calendarEndHour - calendarStartHour;
   const HOURS = Array.from({ length: totalHours }, (_, i) => i + calendarStartHour);
 
@@ -205,7 +207,7 @@ export function WeekCalendar({
                         : "text-[var(--color-text-muted)]"
                 }`}
               >
-                <div>{dayLabel(d)}</div>
+                <div>{dayLabel(d, tz)}</div>
                 <div className="text-lg font-semibold">{d.getDate()}</div>
                 {holiday && <div className="text-[0.6rem] leading-tight mt-0.5">Feriado</div>}
               </div>
@@ -272,7 +274,7 @@ export function WeekCalendar({
                       }`}
                       style={{ top: `${((h - calendarStartHour) / totalHours) * 100}%`, height: `${(1 / totalHours) * 100}%` }}
                       onClick={blocked ? undefined : () => onSlotClick(dayDate, h)}
-                      title={holiday ? "Feriado — no se pueden crear clases" : blocked ? undefined : `Crear clase el ${formatShortDate(dayDate)} a las ${h}:00`}
+                      title={holiday ? "Feriado — no se pueden crear clases" : blocked ? undefined : `Crear clase el ${formatShortDate(dayDate, tz)} a las ${h}:00`}
                     />
                   );
                 })}
@@ -291,11 +293,11 @@ export function WeekCalendar({
                         width: `calc(${widthPercent}% - 2px)`,
                         backgroundColor: b.liveClass.color || "var(--color-primary)",
                       }}
-                      title={`${b.liveClass.title} — ${formatTime(new Date(b.liveClass.startsAt))}`}
+                      title={`${b.liveClass.title} — ${formatTime(new Date(b.liveClass.startsAt), tz)}`}
                     >
                       <span className="font-medium">{b.liveClass.title}</span>
                       <br />
-                      <span className="opacity-80">{formatTime(new Date(b.liveClass.startsAt))}</span>
+                      <span className="opacity-80">{formatTime(new Date(b.liveClass.startsAt), tz)}</span>
                     </Link>
                   );
                 })}

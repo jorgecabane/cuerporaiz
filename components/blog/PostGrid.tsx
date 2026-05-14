@@ -4,9 +4,10 @@ import { PostCard } from "./PostCard";
 type PostGridProps = {
   posts: PostSummary[];
   emptyMessage?: string;
+  tz: string;
 };
 
-export function PostGrid({ posts, emptyMessage }: PostGridProps) {
+export function PostGrid({ posts, emptyMessage, tz }: PostGridProps) {
   if (posts.length === 0) {
     return (
       <div className="rounded-[var(--radius-md)] border border-dashed border-[var(--color-border)] px-[var(--space-6)] py-[var(--space-12)] text-center text-sm text-[var(--color-text-muted)]">
@@ -18,7 +19,7 @@ export function PostGrid({ posts, emptyMessage }: PostGridProps) {
   return (
     <div className="grid grid-cols-1 gap-[var(--space-8)] sm:grid-cols-2 lg:grid-cols-3">
       {posts.map((post) => (
-        <PostCard key={post._id} post={post} />
+        <PostCard key={post._id} post={post} tz={tz} />
       ))}
     </div>
   );

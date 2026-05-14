@@ -3,6 +3,7 @@
 import Link from "next/link";
 import type { LiveClass } from "@/lib/domain";
 import type { CalendarEvent } from "./WeekCalendar";
+import { useTimezone } from "@/components/providers/TimezoneProvider";
 
 const ALL_DAY_LABELS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
 
@@ -10,8 +11,8 @@ function orderedDayLabels(weekStartDay: number): string[] {
   return Array.from({ length: 7 }, (_, i) => ALL_DAY_LABELS[(weekStartDay + i) % 7]);
 }
 
-function formatTime(d: Date): string {
-  return d.toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" });
+function formatTime(d: Date, tz: string): string {
+  return d.toLocaleTimeString("es-CL", { timeZone: tz, hour: "2-digit", minute: "2-digit" });
 }
 
 function formatDateKey(d: Date): string {
@@ -64,6 +65,7 @@ export function MonthCalendar({
   loading,
   onDayClick,
 }: MonthCalendarProps) {
+  const tz = useTimezone();
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
   const weeks = getMonthGrid(year, month, weekStartDay);
@@ -170,7 +172,7 @@ export function MonthCalendar({
                         className="block rounded-sm px-1 py-0.5 text-[0.6rem] leading-tight text-white truncate hover:opacity-90"
                         style={{ backgroundColor: c.color || "var(--color-primary)" }}
                       >
-                        {formatTime(new Date(c.startsAt))} {c.title}
+                        {formatTime(new Date(c.startsAt), tz)} {c.title}
                       </Link>
                     ))}
                     {dayClasses.length + dayEvents.length > 3 && (

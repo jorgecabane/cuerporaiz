@@ -113,9 +113,12 @@ export default defineConfig({
     // las páginas públicas (home, sobre, sitemap) lo resuelvan en E2E sin depender del .env local.
     // NODE_OPTIONS=--dns-result-order=ipv4first evita esperas largas a Sanity cuando IPv6 falla
     // intermitente desde la red local (típico). En CI no hace falta.
+    // TZ=UTC fuerza al server a comportarse como Vercel (que corre en UTC).
+    // Esto expone bugs de display de fechas que no usan `timeZone` explícito —
+    // localmente todo el mundo está en Chile y el bug se enmascara.
     command: process.env.CI
-      ? `E2E_TEST_ROUTES_ENABLED=1 NEXT_PUBLIC_DEFAULT_CENTER_SLUG=e2e-test PORT=${port} npm run start`
-      : `NODE_OPTIONS="--dns-result-order=ipv4first" NEXT_PUBLIC_DEFAULT_CENTER_SLUG=e2e-test npx prisma migrate deploy && npm run db:seed && NODE_OPTIONS="--dns-result-order=ipv4first" NEXT_PUBLIC_DEFAULT_CENTER_SLUG=e2e-test npm run build && NODE_OPTIONS="--dns-result-order=ipv4first" E2E_TEST_ROUTES_ENABLED=1 NEXT_PUBLIC_DEFAULT_CENTER_SLUG=e2e-test PORT=${port} npm run start`,
+      ? `TZ=UTC E2E_TEST_ROUTES_ENABLED=1 NEXT_PUBLIC_DEFAULT_CENTER_SLUG=e2e-test PORT=${port} npm run start`
+      : `NODE_OPTIONS="--dns-result-order=ipv4first" NEXT_PUBLIC_DEFAULT_CENTER_SLUG=e2e-test npx prisma migrate deploy && npm run db:seed && NODE_OPTIONS="--dns-result-order=ipv4first" NEXT_PUBLIC_DEFAULT_CENTER_SLUG=e2e-test npm run build && TZ=UTC NODE_OPTIONS="--dns-result-order=ipv4first" E2E_TEST_ROUTES_ENABLED=1 NEXT_PUBLIC_DEFAULT_CENTER_SLUG=e2e-test PORT=${port} npm run start`,
     url: `http://localhost:${port}`,
     reuseExistingServer: !process.env.CI,
     timeout: 300_000,

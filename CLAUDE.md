@@ -93,6 +93,40 @@ All in `app/globals.css` as CSS variables. Always use tokens, never hardcode:
 - Spacing: base-8 system (`--space-4`, `--space-8`)
 - Radii, shadows, durations, typography scales
 
+## Timezone (mostrar fechas)
+
+**Regla:** cualquier `toLocaleDateString` / `toLocaleTimeString` / `toLocaleString` / `Intl.DateTimeFormat` que muestre una fecha o hora **DEBE** pasar `timeZone` explícito. Nunca dejar que el runtime lo infiera — Vercel corre en UTC y los displays sin TZ se corren horas (ej.: 10am Chile se ve como 2pm en panel admin).
+
+La TZ a usar es `Center.timezone` (IANA, default `"America/Santiago"`). No hardcodear `"America/Santiago"` en componentes: tomá la TZ del centro y caé al default sólo en el helper central.
+
+- **Server components / server actions:** importar de `@/lib/datetime/center-timezone`:
+  ```ts
+  import { getCenterTimezone, getPublicCenterTimezone, DEFAULT_TIMEZONE } from "@/lib/datetime/center-timezone";
+
+  const tz = await getCenterTimezone(centerId);   // panel (tenés session.user.centerId)
+  // o
+  const tz = await getPublicCenterTimezone();      // páginas públicas (resuelve via env NEXT_PUBLIC_DEFAULT_CENTER_SLUG)
+  ```
+  Pasá `tz` a los formatters (signature `formatX(d: Date, tz: string)`) y a child server components vía prop.
+
+- **Client components:** usar el hook:
+  ```tsx
+  import { useTimezone } from "@/components/providers/TimezoneProvider";
+
+  const tz = useTimezone();
+  d.toLocaleTimeString("es-CL", { timeZone: tz, hour: "2-digit", minute: "2-digit" });
+  ```
+  El provider está wired en `app/layout.tsx` (TZ del centro público) y en `app/panel/layout.tsx` (TZ del centro logueado — override del panel).
+
+- **Correos:** `getEmailBranding(centerId).timezone` ya resuelve la TZ del centro. Pasala a `formatLongDateTime / formatLongDate / formatTime` de `lib/email/format-datetime.ts` y a `buildGoogleCalendarUrl({ timeZone })`.
+
+- **Excepciones legítimas (mantener `timeZone: "UTC"`):** campos que se guardan como UTC midnight semánticamente (no son timestamps reales). Ejemplos actuales: `client.birthday`, `Holiday.date`, `UserPlan.validFrom/validUntil/frozenUntil` (ver `formatDateOnlyUtc` en `app/panel/clientes/[id]/page.tsx` y `formatHolidayDateDisplay` en `lib/domain/holiday-date.ts`). Cuando dudes, mirá cómo se guarda el campo: si la app hizo `new Date(Date.UTC(y, m, d))`, es UTC; si fue `new Date()` o `validUntil = now + N días`, es timestamp y va con la TZ del centro.
+
+Checklist al agregar un display de fecha nuevo:
+1. ¿Pasaste `timeZone`?
+2. ¿La TZ viene de `getCenterTimezone`/`useTimezone`, no de un literal?
+3. Si es un "día civil" UTC-midnight, ¿pusiste `timeZone: "UTC"` explícito (no lo dejaste sin TZ)?
+
 ## Git Workflow
 
 - Branch naming: `feature/nombre-descriptivo`, `fix/nombre`, `docs/nombre`

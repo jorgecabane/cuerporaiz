@@ -12,6 +12,7 @@ import type { OrderStatus } from "@/lib/ports";
 import { ORDER_STATUS_LABELS } from "@/lib/ports";
 import { isAdminRole } from "@/lib/domain";
 import { computeDateRangeUtc, parsePaymentsSearchParams } from "@/lib/panel/payments-query";
+import { getCenterTimezone } from "@/lib/datetime/center-timezone";
 
 function formatPrice(cents: number, currency: string): string {
   if (currency === "CLP") return `$${cents.toLocaleString("es-CL")}`;
@@ -111,6 +112,7 @@ export default async function PanelPagosPage({
   if (!session?.user) redirect("/auth/login?callbackUrl=/panel/pagos");
   if (!isAdminRole(session.user.role)) redirect("/panel");
   const centerId = session.user.centerId as string;
+  const tz = await getCenterTimezone(centerId);
   const raw = await searchParams;
   const parsed = parsePaymentsSearchParams({
     type: raw.type,
@@ -408,7 +410,7 @@ export default async function PanelPagosPage({
                           {buyerName}
                         </Link>
                         {" · "}
-                        Transferida {row.claimedAt.toLocaleString("es-CL")}
+                        Transferida {row.claimedAt.toLocaleString("es-CL", { timeZone: tz })}
                       </p>
                       <div className="mt-3">
                         <TransferReceiptViewer info={receiptInfo} />
@@ -478,7 +480,7 @@ export default async function PanelPagosPage({
                 return (
                 <tr key={order.id} className="border-b border-[var(--color-border)] last:border-0">
                   <td className="p-3 text-[var(--color-text-muted)]">
-                    {order.createdAt.toLocaleString("es-CL")}
+                    {order.createdAt.toLocaleString("es-CL", { timeZone: tz })}
                   </td>
                   <td className="p-3">
                     <Link
@@ -533,7 +535,7 @@ export default async function PanelPagosPage({
               {manualPayments.map((p) => (
                 <tr key={p.id} className="border-b border-[var(--color-border)] last:border-0">
                   <td className="p-3 text-[var(--color-text-muted)]">
-                    {p.paidAt.toLocaleString("es-CL")}
+                    {p.paidAt.toLocaleString("es-CL", { timeZone: tz })}
                   </td>
                   <td className="p-3">
                     <Link

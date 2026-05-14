@@ -4,9 +4,10 @@ import Link from "next/link";
 import type { LiveClass } from "@/lib/domain";
 import { layoutBlocks } from "./calendar-layout";
 import type { CalendarEvent } from "./WeekCalendar";
+import { useTimezone } from "@/components/providers/TimezoneProvider";
 
-function formatTime(d: Date): string {
-  return d.toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" });
+function formatTime(d: Date, tz: string): string {
+  return d.toLocaleTimeString("es-CL", { timeZone: tz, hour: "2-digit", minute: "2-digit" });
 }
 
 function formatDateParam(d: Date): string {
@@ -37,6 +38,7 @@ export function DayCalendar({
   loading,
   onSlotClick,
 }: DayCalendarProps) {
+  const tz = useTimezone();
   const totalHours = calendarEndHour - calendarStartHour;
   const HOURS = Array.from({ length: totalHours }, (_, i) => i + calendarStartHour);
   const now = new Date();
@@ -142,7 +144,7 @@ export function DayCalendar({
                   }}
                 >
                   <span className="font-medium">{b.liveClass.title}</span>
-                  <span className="ml-2 opacity-80">{formatTime(new Date(b.liveClass.startsAt))}</span>
+                  <span className="ml-2 opacity-80">{formatTime(new Date(b.liveClass.startsAt), tz)}</span>
                   {b.totalColumns === 1 && (
                     <span className="ml-2 opacity-60">{b.liveClass.durationMinutes} min</span>
                   )}
