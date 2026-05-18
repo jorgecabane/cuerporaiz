@@ -20,6 +20,7 @@ import { closeWaitlistForCancelledClassUseCase } from "@/lib/application/close-w
 import { buildClassCancelledEmail } from "@/lib/email";
 import { getEmailBranding } from "@/lib/email/branding";
 import { getBaseUrl } from "@/lib/utils/base-url";
+import { getCenterTimezone } from "@/lib/datetime/center-timezone";
 import type { LiveClass, RepeatFrequency } from "@/lib/domain";
 import type { UpdateSeriesInput } from "@/lib/ports";
 
@@ -129,12 +130,15 @@ export async function createLiveClass(data: CreateClassFormData): Promise<void> 
       monthlyMode: data.repeat === "MONTHLY" ? (data.monthlyMode ?? "dayOfMonth") : null,
     });
 
-    const holidays = await centerHolidayRepository.findByCenterId(centerId);
+    const [holidays, tz] = await Promise.all([
+      centerHolidayRepository.findByCenterId(centerId),
+      getCenterTimezone(centerId),
+    ]);
     const holidayDates = new Set(
       holidays.map((h) => h.date.toISOString().slice(0, 10))
     );
 
-    const instances = generateSeriesInstances(series, holidayDates);
+    const instances = generateSeriesInstances(series, holidayDates, tz);
     if (instances.length > 0) {
       await liveClassRepository.createMany(centerId, instances);
     }
@@ -337,7 +341,15 @@ export async function updateSeriesClasses(data: EditSeriesFormData): Promise<voi
       monthlyMode: series.monthlyMode,
     });
 
-    const instances = generateSeriesInstances(newSeries);
+    const [holidays, tz] = await Promise.all([
+      centerHolidayRepository.findByCenterId(centerId),
+      getCenterTimezone(centerId),
+    ]);
+    const holidayDates = new Set(
+      holidays.map((h) => h.date.toISOString().slice(0, 10))
+    );
+
+    const instances = generateSeriesInstances(newSeries, holidayDates, tz);
     if (instances.length > 0) {
       await liveClassRepository.createMany(centerId, instances);
     }

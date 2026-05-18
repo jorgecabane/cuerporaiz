@@ -1,5 +1,6 @@
 import type { LiveClassSeries } from "@/lib/domain";
 import type { CreateLiveClassInput } from "@/lib/ports";
+import { civilDayKeyInTz } from "@/lib/datetime/civil-day";
 
 const MAX_INSTANCES = 365;
 const DEFAULT_HORIZON_DAYS = 180;
@@ -8,10 +9,16 @@ const DEFAULT_HORIZON_DAYS = 180;
  * Given a series definition, generate the list of LiveClass inputs
  * (dates/times) that should be created.
  * Does NOT persist; the caller is responsible for createMany.
+ *
+ * `timeZone` se usa para comparar el día civil de cada instancia contra
+ * el set de feriados (que están en clave YYYY-MM-DD del día civil en TZ
+ * del centro). Default "UTC" preserva compatibilidad con tests existentes;
+ * los callers en producción deben pasar la TZ del centro.
  */
 export function generateSeriesInstances(
   series: LiveClassSeries,
   holidayDates?: Set<string>,
+  timeZone: string = "UTC",
 ): CreateLiveClassInput[] {
   const instances: CreateLiveClassInput[] = [];
   const holidays = holidayDates ?? new Set<string>();
@@ -28,7 +35,7 @@ export function generateSeriesInstances(
   const cursor = new Date(series.startsAt);
 
   function dateKey(d: Date): string {
-    return d.toISOString().slice(0, 10);
+    return civilDayKeyInTz(d, timeZone);
   }
 
   function makeInput(date: Date): CreateLiveClassInput {
