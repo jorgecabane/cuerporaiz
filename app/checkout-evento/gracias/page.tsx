@@ -17,7 +17,7 @@ const MESSAGES: Record<
   },
   failure: {
     title: "Pago no realizado",
-    body: "El pago fue rechazado o cancelado. Podés intentarlo de nuevo desde el evento cuando quieras.",
+    body: "El pago fue rechazado o cancelado. Puedes intentarlo de nuevo desde el evento cuando quieras.",
     icon: XCircle,
     iconClassName: "text-[var(--color-error)]",
   },

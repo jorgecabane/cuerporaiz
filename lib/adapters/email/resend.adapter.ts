@@ -6,7 +6,7 @@ const apiKey = process.env.RESEND_API_KEY;
 
 function getClient(): Resend {
   if (!apiKey) {
-    throw new Error("RESEND_API_KEY no está definida. Configurá la variable de entorno.");
+    throw new Error("RESEND_API_KEY no está definida. Configura la variable de entorno.");
   }
   return new Resend(apiKey);
 }

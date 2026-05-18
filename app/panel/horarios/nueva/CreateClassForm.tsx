@@ -214,7 +214,7 @@ export function CreateClassForm({ disciplines, instructors, defaultDate, default
 
     const meetingUrlToUse: string | null = manualMeetingUrl?.trim() || meetingUrl || null;
     if (isOnline && hasVideoProvider && !meetingUrlToUse) {
-      setMeetingError("Generá el link con el botón de abajo o pegá uno manualmente.");
+      setMeetingError("Genera el link con el botón de abajo o pega uno manualmente.");
       return;
     }
 
@@ -255,7 +255,7 @@ export function CreateClassForm({ disciplines, instructors, defaultDate, default
     const startsAt = fd.get("startsAt") as string;
     const durationMinutes = Number(fd.get("durationMinutes")) || defaultDuration;
     if (!title || !startsAt) {
-      setMeetingError("Completá nombre y fecha/hora para generar el link.");
+      setMeetingError("Completa nombre y fecha/hora para generar el link.");
       return;
     }
     setMeetingError(null);
@@ -502,7 +502,7 @@ export function CreateClassForm({ disciplines, instructors, defaultDate, default
           {meetingError && meetingFailCount >= 3 && (
             <div>
               <label htmlFor="manualMeetingUrl" className="block text-sm font-medium text-[var(--color-text)] mb-1">
-                Pegá el link de la reunión manualmente
+                Pega el link de la reunión manualmente
               </label>
               <input
                 id="manualMeetingUrl"

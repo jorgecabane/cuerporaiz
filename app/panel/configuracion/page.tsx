@@ -20,7 +20,7 @@ export default async function PanelConfiguracionPage() {
         Configuración del centro
       </h1>
       <p className="text-[var(--color-text-muted)] mb-6">
-        Configurá las políticas de reserva, no-show, y las preferencias del calendario.
+        Configura las políticas de reserva, no-show, y las preferencias del calendario.
       </p>
       <div className="rounded-[var(--radius-lg)] bg-[var(--color-surface)] p-6 shadow-[var(--shadow-md)]">
         <PoliticasForm center={center} />

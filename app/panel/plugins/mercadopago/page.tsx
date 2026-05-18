@@ -51,7 +51,7 @@ export default async function MercadoPagoPluginPage() {
               </a>
             ) : (
               <div className="rounded-[var(--radius-md)] bg-[var(--color-surface-alt,#f9fafb)] p-4 text-sm text-[var(--color-text-muted)]">
-                OAuth no disponible. Contactá al administrador de la plataforma para configurar las credenciales (MP_APP_ID / MP_CLIENT_SECRET).
+                OAuth no disponible. Contacta al administrador de la plataforma para configurar las credenciales (MP_APP_ID / MP_CLIENT_SECRET).
               </div>
             )}
           </div>

@@ -215,7 +215,7 @@ export default async function PanelPage() {
             user.role,
             center?.cancelBeforeMinutes ?? 720,
             center
-              ? `Cancelación sin cargo si cancelás con al menos ${formatMinutesAsShortSpanish(center.cancelBeforeMinutes)} de anticipación`
+              ? `Cancelación sin cargo si cancelas con al menos ${formatMinutesAsShortSpanish(center.cancelBeforeMinutes)} de anticipación`
               : undefined
           ).map((item) => {
             const baseClass =

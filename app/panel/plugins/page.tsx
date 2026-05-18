@@ -54,7 +54,7 @@ export default async function PanelPluginsPage({
     {
       slug: "zoom",
       name: "Zoom",
-      description: "Generá links de Zoom automáticamente para clases online.",
+      description: "Genera links de Zoom automáticamente para clases online.",
       category: "Videoconferencia",
       active: (zoomStatus?.enabled && zoomStatus?.hasCredentials) ?? false,
       iconBg: "bg-[#2D8CFF]",
@@ -63,7 +63,7 @@ export default async function PanelPluginsPage({
     {
       slug: "meet",
       name: "Google Meet",
-      description: "Integrá Google Meet para clases online.",
+      description: "Integra Google Meet para clases online.",
       category: "Videoconferencia",
       active: (meetStatus?.enabled && meetStatus?.hasCredentials) ?? false,
       iconBg: "bg-[#00897B]",
@@ -77,7 +77,7 @@ export default async function PanelPluginsPage({
         Plugins
       </h1>
       <p className="text-[var(--color-text-muted)] mb-8">
-        Activá y configurá integraciones para tu centro.
+        Activa y configura integraciones para tu centro.
       </p>
 
       {sp.success === "mp_connected" && (

@@ -29,7 +29,7 @@ export function buildForgotPasswordEmail(data: ForgotPasswordEmailData): SendEma
     <p>${greeting},</p>
     <p>Solicitaste recuperar tu contraseña en <strong>${escapeHtml(branding.centerName)}</strong>.</p>
     <p style="text-align:center;margin:28px 0;"><a href="${data.resetUrl}" style="${cta}">Crear nueva contraseña</a></p>
-    <p style="font-size:12px;color:#5C5A56;">¿No funciona el botón? Copiá y pegá este link en tu navegador:</p>
+    <p style="font-size:12px;color:#5C5A56;">¿No funciona el botón? Copia y pega este link en tu navegador:</p>
     <p style="font-size:12px;word-break:break-all;background:#F5F0E9;padding:10px;border-radius:6px;color:#2A2A2A;">${data.resetUrl}</p>
     <p style="font-size:13px;color:#5C5A56;">Este enlace expira en 1 hora. Si no solicitaste esto, ignora el correo.</p>`;
   const html = emailBaseLayout({ body, branding });
@@ -67,7 +67,7 @@ export function buildEmailVerificationEmail(data: EmailVerificationData): SendEm
     <p>${greeting},</p>
     <p>Confirma tu email para acceder a todas las funciones de <strong>${escapeHtml(branding.centerName)}</strong>.</p>
     <p style="text-align:center;margin:28px 0;"><a href="${data.verifyUrl}" style="${cta}">Verificar email</a></p>
-    <p style="font-size:12px;color:#5C5A56;">¿No funciona el botón? Copiá y pegá este link en tu navegador:</p>
+    <p style="font-size:12px;color:#5C5A56;">¿No funciona el botón? Copia y pega este link en tu navegador:</p>
     <p style="font-size:12px;word-break:break-all;background:#F5F0E9;padding:10px;border-radius:6px;color:#2A2A2A;">${data.verifyUrl}</p>
     <p style="font-size:13px;color:#5C5A56;">Este enlace expira en 24 horas.</p>`;
   const html = emailBaseLayout({ body, branding });
@@ -110,7 +110,7 @@ export function buildSetPasswordEmail(data: SetPasswordEmailData): SendEmailDto 
     <p>Te damos la bienvenida a <strong>${escapeHtml(branding.centerName)}</strong>. ${roleLine}</p>
     <p>Para entrar al panel, define tu contraseña:</p>
     <p style="text-align:center;margin:28px 0;"><a href="${data.setPasswordUrl}" style="${cta}">Crear mi contraseña</a></p>
-    <p style="font-size:12px;color:#5C5A56;">¿No funciona el botón? Copiá y pegá este link en tu navegador:</p>
+    <p style="font-size:12px;color:#5C5A56;">¿No funciona el botón? Copia y pega este link en tu navegador:</p>
     <p style="font-size:12px;word-break:break-all;background:#F5F0E9;padding:10px;border-radius:6px;color:#2A2A2A;">${data.setPasswordUrl}</p>
     <p style="font-size:13px;color:#5C5A56;">Este enlace expira en 7 días.</p>`;
   const html = emailBaseLayout({ body, branding });
@@ -125,7 +125,7 @@ export function buildSetPasswordEmail(data: SetPasswordEmailData): SendEmailDto 
   return {
     from: fromForBranding(branding),
     to: [data.toEmail],
-    subject: `Activá tu cuenta — ${branding.centerName}`,
+    subject: `Activa tu cuenta — ${branding.centerName}`,
     html,
     text,
   };
