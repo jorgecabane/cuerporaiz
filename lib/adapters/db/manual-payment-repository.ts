@@ -14,6 +14,8 @@ export const manualPaymentRepository: IManualPaymentRepository = {
       where: {
         centerId,
         ...(filters.userId != null && { userId: filters.userId }),
+        ...(filters.paymentKind === "plan" && { userPlanId: { not: null } }),
+        ...(filters.paymentKind === "event" && { eventTicketId: { not: null } }),
         ...(filters.from || filters.to
           ? {
               paidAt: {
@@ -36,6 +38,11 @@ export const manualPaymentRepository: IManualPaymentRepository = {
             plan: true,
           },
         },
+        eventTicket: {
+          include: {
+            event: { select: { title: true } },
+          },
+        },
       },
       orderBy: [{ paidAt: "desc" }, { id: "desc" }],
       skip,
@@ -49,6 +56,8 @@ export const manualPaymentRepository: IManualPaymentRepository = {
       userId: p.userId,
       userPlanId: p.userPlanId,
       planName: p.userPlan?.plan?.name ?? null,
+      eventTicketId: p.eventTicketId,
+      eventTitle: p.eventTicket?.event?.title ?? null,
       amountCents: p.amountCents,
       currency: p.currency,
       method: p.method,
