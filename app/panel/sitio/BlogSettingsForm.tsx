@@ -62,11 +62,11 @@ export default function BlogSettingsForm({ config }: BlogSettingsFormProps) {
         <div className="rounded-[var(--radius-md)] border border-dashed border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-sm text-[var(--color-text-muted)]">
           <p className="font-medium text-[var(--color-text)]">Sanity no está configurado todavía.</p>
           <p className="mt-1">
-            Para activar el blog, seguí los pasos en{" "}
+            Para activar el blog, sigue los pasos en{" "}
             <code className="rounded bg-[color-mix(in_srgb,var(--color-primary)_8%,transparent)] px-1.5 py-0.5 font-mono text-xs">
               docs/sanity-setup.md
             </code>{" "}
-            y agregá las variables{" "}
+            y agrega las variables{" "}
             <code className="rounded bg-[color-mix(in_srgb,var(--color-primary)_8%,transparent)] px-1.5 py-0.5 font-mono text-xs">
               NEXT_PUBLIC_SANITY_PROJECT_ID
             </code>{" "}

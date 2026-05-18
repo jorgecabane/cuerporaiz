@@ -38,7 +38,7 @@ export default async function ZoomPluginPage({
             Zoom
           </h1>
           <p className="text-sm text-[var(--color-text-muted)]">
-            Generá links de videollamada automáticamente para clases online.
+            Genera links de videollamada automáticamente para clases online.
           </p>
         </div>
       </div>
@@ -73,7 +73,7 @@ export default async function ZoomPluginPage({
               </a>
             ) : (
               <div className="rounded-[var(--radius-md)] bg-[var(--color-surface-alt,#f9fafb)] p-4 text-sm text-[var(--color-text-muted)]">
-                OAuth no disponible. Contactá al administrador de la plataforma para configurar las credenciales (ZOOM_CLIENT_ID / ZOOM_CLIENT_SECRET). Ver la sección &quot;Cómo obtener credenciales&quot; más abajo.
+                OAuth no disponible. Contacta al administrador de la plataforma para configurar las credenciales (ZOOM_CLIENT_ID / ZOOM_CLIENT_SECRET). Ver la sección &quot;Cómo obtener credenciales&quot; más abajo.
               </div>
             )}
           </div>

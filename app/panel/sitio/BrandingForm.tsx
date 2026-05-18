@@ -133,7 +133,7 @@ export default function BrandingForm({ config }: BrandingFormProps) {
           </span>
         </label>
         <p className="text-xs text-[var(--color-text-muted)] -mt-2 ml-7">
-          Mejora la legibilidad del texto. Desactivá si la imagen ya es oscura o si querés que se vea
+          Mejora la legibilidad del texto. Desactiva si la imagen ya es oscura o si quieres que se vea
           tal cual.
         </p>
       </fieldset>

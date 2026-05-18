@@ -38,7 +38,7 @@ export default async function GoogleMeetPluginPage({
             Google Meet
           </h1>
           <p className="text-sm text-[var(--color-text-muted)]">
-            Integrá Google Meet para generar links de videollamada en clases online.
+            Integra Google Meet para generar links de videollamada en clases online.
           </p>
         </div>
       </div>
@@ -73,7 +73,7 @@ export default async function GoogleMeetPluginPage({
               </a>
             ) : (
               <div className="rounded-[var(--radius-md)] bg-[var(--color-surface-alt,#f9fafb)] p-4 text-sm text-[var(--color-text-muted)]">
-                OAuth no disponible. Contactá al administrador para configurar GOOGLE_CLIENT_ID y GOOGLE_CLIENT_SECRET. Ver la sección &quot;Cómo obtener credenciales&quot; más abajo.
+                OAuth no disponible. Contacta al administrador para configurar GOOGLE_CLIENT_ID y GOOGLE_CLIENT_SECRET. Ver la sección &quot;Cómo obtener credenciales&quot; más abajo.
               </div>
             )}
           </div>
