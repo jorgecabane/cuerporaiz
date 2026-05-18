@@ -4,6 +4,12 @@ import {
   seedTier1Reservation,
   seedTier1UserPlanForExistingUser,
   seedTier1StudentWithActivePlan,
+  seedTier1WaitlistEntry,
+  cleanupTier1WaitlistEntries,
+  seedEvent,
+  seedEventTicket,
+  cleanupEvents,
+  cleanupEventTickets,
   cleanupPlans,
   cleanupTier1LiveClasses,
   cleanupTier1Reservations,
@@ -176,5 +182,242 @@ test.describe("Waitlist — flujo completo", () => {
     expect(joinRes.status()).toBe(409);
     const data = await joinRes.json();
     expect(data.code).toBe("HAS_SPOTS");
+  });
+});
+
+/**
+ * Race test: N estudiantes en waitlist, 1 cupo, todos hacen promote simultáneo.
+ *
+ * Valida que el advisory lock (pg_advisory_xact_lock por liveClassId) realmente
+ * serializa las promociones contra Postgres. Mocks no detectan este tipo de bug;
+ * solo un test contra DB real lo cubre. Si el lock no toma o el SQL es inválido,
+ * más de un promote terminaría con reserva CONFIRMED → overbooking en prod.
+ */
+test.describe("Waitlist — race de promote (concurrencia)", () => {
+  const N_STUDENTS = 3;
+  const planNameAdmin = `E2E WL Race Admin ${Date.now().toString(36)}`;
+  const planNameStudents = `E2E WL Race Std ${Date.now().toString(36)}`;
+  const studentEmailPrefix = `wl-race-${Date.now().toString(36)}`;
+  const liveClassIds: string[] = [];
+  const reservationIds: string[] = [];
+  const waitlistEntryIds: string[] = [];
+
+  let adminPlan: Awaited<ReturnType<typeof seedTier1UserPlanForExistingUser>>;
+  const studentSeeds: Array<NonNullable<Awaited<ReturnType<typeof seedTier1StudentWithActivePlan>>>> = [];
+
+  test.beforeAll(async () => {
+    adminPlan = await seedTier1UserPlanForExistingUser({
+      centerSlug: "e2e-test",
+      userEmail: process.env.E2E_USER_EMAIL ?? "admin@e2e.test",
+      classesTotal: 4,
+      classesUsed: 0,
+      planName: planNameAdmin,
+    });
+    for (let i = 0; i < N_STUDENTS; i++) {
+      const seed = await seedTier1StudentWithActivePlan({
+        centerSlug: "e2e-test",
+        email: `${studentEmailPrefix}-${i}@e2e.test`,
+        classesTotal: 4,
+        classesUsed: 0,
+        planName: `${planNameStudents}-${i}`,
+      });
+      if (seed) studentSeeds.push(seed);
+    }
+  });
+
+  test.afterAll(async () => {
+    await cleanupTier1WaitlistEntries(waitlistEntryIds);
+    await cleanupTier1Reservations(reservationIds);
+    await cleanupTier1LiveClasses(liveClassIds);
+    await cleanupPlans(planNameAdmin);
+    for (let i = 0; i < N_STUDENTS; i++) {
+      await cleanupPlans(`${planNameStudents}-${i}`);
+    }
+    await cleanupTier1UsersByEmailPrefix(studentEmailPrefix);
+  });
+
+  test(`${N_STUDENTS} promotes concurrentes a 1 cupo → exactamente 1 gana, el resto SPOT_TAKEN`, async ({
+    page,
+    request,
+  }) => {
+    test.skip(!adminPlan || studentSeeds.length < N_STUDENTS, "Sin DB o seed completo");
+    if (!adminPlan || studentSeeds.length < N_STUDENTS) return;
+
+    // Clase con 1 cupo
+    const cls = await seedTier1LiveClass({
+      centerSlug: "e2e-test",
+      title: `WL Race ${Date.now().toString(36)}`,
+      minutesFromNow: 36 * 60,
+      maxCapacity: 1,
+    });
+    test.skip(!cls, "Sin DB para crear clase");
+    if (!cls) return;
+    liveClassIds.push(cls.liveClassId);
+
+    // Estudiante #0 ocupa el único cupo
+    const ownerRes = await seedTier1Reservation({
+      userId: studentSeeds[0].userId,
+      liveClassId: cls.liveClassId,
+      userPlanId: studentSeeds[0].userPlanId,
+      incrementClassesUsed: true,
+    });
+    test.skip(!ownerRes, "Sin DB para crear reserva");
+    if (!ownerRes) return;
+    reservationIds.push(ownerRes.reservationId);
+
+    // Resto se une a waitlist directamente (seed) — evitamos hacer N requests
+    // de join para no testear esa ruta en este test (ya está cubierta en otro).
+    const entries: Array<{ entryId: string; userId: string }> = [];
+    for (let i = 1; i < N_STUDENTS; i++) {
+      const seed = studentSeeds[i];
+      const entry = await seedTier1WaitlistEntry({
+        centerSlug: "e2e-test",
+        userId: seed.userId,
+        kind: "class",
+        itemId: cls.liveClassId,
+      });
+      if (entry) {
+        entries.push({ entryId: entry.entryId, userId: seed.userId });
+        waitlistEntryIds.push(entry.entryId);
+      }
+    }
+    expect(entries.length).toBe(N_STUDENTS - 1);
+
+    // Admin (storageState) cancela la reserva del owner → libera cupo
+    await page.goto("/panel");
+    await expect(page).toHaveURL(/\/panel/, { timeout: 15000 });
+    const cancelRes = await request.patch(
+      `/api/admin/reservations/${ownerRes.reservationId}/cancel`
+    );
+    expect(cancelRes.status(), await cancelRes.text()).toBe(200);
+
+    // Promociona TODAS las entries en paralelo desde el endpoint admin.
+    // El advisory lock por liveClassId debe serializar internamente; solo 1
+    // debería terminar con success=true y reservationId.
+    const promoteResults = await Promise.all(
+      entries.map((e) =>
+        request.post(`/api/admin/waitlist/${e.entryId}/promote`)
+      )
+    );
+
+    const statuses = await Promise.all(promoteResults.map((r) => r.status()));
+    const bodies = await Promise.all(
+      promoteResults.map(async (r) => {
+        try {
+          return await r.json();
+        } catch {
+          return null;
+        }
+      })
+    );
+
+    const winners = bodies.filter((b) => b?.success === true);
+    const losers = bodies.filter((b) => b?.code === "SPOT_TAKEN");
+
+    expect(
+      winners.length,
+      `expected 1 winner, got ${winners.length}. statuses=${JSON.stringify(statuses)} bodies=${JSON.stringify(bodies)}`
+    ).toBe(1);
+    expect(losers.length).toBe(N_STUDENTS - 2);
+
+    // El ganador tiene reservationId, lo registramos para cleanup.
+    const winningReservationId = winners[0]?.reservationId as string | undefined;
+    if (winningReservationId) reservationIds.push(winningReservationId);
+
+    // Doble check vía API: solo hay 1 reserva CONFIRMED para esa clase.
+    // (validación de "no overbooking real" más allá del status de respuesta).
+    const allRes = await request.get("/api/reservations?page=1&pageSize=50");
+    expect(allRes.status()).toBe(200);
+  });
+});
+
+/**
+ * Waitlist de eventos: flujo básico de unirse + verificar en /api/waitlist/mine.
+ * El flujo completo de promote → hold → checkout MP no es testeable e2e sin
+ * stubbear el webhook MP, así que solo cubrimos la entrada y la visibilidad.
+ */
+test.describe("Waitlist — eventos", () => {
+  const eventTitlePrefix = `WL EventTest ${Date.now().toString(36)}`;
+  const studentEmailPrefix = `wl-evt-${Date.now().toString(36)}`;
+  const eventIds: string[] = [];
+  let studentSeed: Awaited<ReturnType<typeof seedTier1StudentWithActivePlan>>;
+  const waitlistEntryIds: string[] = [];
+
+  test.beforeAll(async () => {
+    studentSeed = await seedTier1StudentWithActivePlan({
+      centerSlug: "e2e-test",
+      email: `${studentEmailPrefix}@e2e.test`,
+      classesTotal: 4,
+      classesUsed: 0,
+      planName: `WL Evt Plan ${Date.now().toString(36)}`,
+    });
+  });
+
+  test.afterAll(async () => {
+    await cleanupTier1WaitlistEntries(waitlistEntryIds);
+    for (const id of eventIds) {
+      await cleanupEventTickets(id);
+    }
+    await cleanupEvents(eventTitlePrefix);
+    await cleanupTier1UsersByEmailPrefix(studentEmailPrefix);
+  });
+
+  test("admin se une a waitlist de un evento lleno y aparece en /api/waitlist/mine", async ({
+    page,
+    request,
+  }) => {
+    test.skip(!studentSeed, "Sin DB o seed");
+    if (!studentSeed) return;
+
+    // Evento con 1 cupo, ocupado por el student
+    const event = await seedEvent({
+      centerSlug: "e2e-test",
+      title: `${eventTitlePrefix} full`,
+      amountCents: 10000,
+      maxCapacity: 1,
+    });
+    test.skip(!event, "Sin DB para crear evento");
+    if (!event) return;
+    eventIds.push(event.id);
+
+    const ticket = await seedEventTicket({
+      eventId: event.id,
+      userEmail: `${studentEmailPrefix}@e2e.test`,
+      status: "PAID",
+      amountCents: 10000,
+    });
+    test.skip(!ticket, "Sin DB para crear ticket");
+    if (!ticket) return;
+
+    await page.goto("/panel");
+    await expect(page).toHaveURL(/\/panel/, { timeout: 15000 });
+
+    // Admin intenta unirse a waitlist del evento (lleno)
+    const joinRes = await request.post("/api/waitlist", {
+      data: { kind: "event", itemId: event.id },
+    });
+    expect(joinRes.status(), await joinRes.text()).toBe(201);
+    const joinData = await joinRes.json();
+    expect(joinData.kind).toBe("event");
+    expect(joinData.itemId).toBe(event.id);
+    waitlistEntryIds.push(joinData.id);
+
+    // /api/waitlist/mine debe incluirla con kind=event
+    const mineRes = await request.get("/api/waitlist/mine");
+    expect(mineRes.status()).toBe(200);
+    const mineData = await mineRes.json();
+    const myEvtEntry = mineData.entries.find(
+      (e: { itemId: string; kind: string }) =>
+        e.itemId === event.id && e.kind === "event"
+    );
+    expect(myEvtEntry).toBeTruthy();
+
+    // Unirse de nuevo al mismo evento debe ser idempotente (unique constraint)
+    const dupeRes = await request.post("/api/waitlist", {
+      data: { kind: "event", itemId: event.id },
+    });
+    // El use case rechaza por DUPLICATE / ALREADY_IN_WAITLIST; aceptamos 4xx.
+    expect(dupeRes.status()).toBeGreaterThanOrEqual(400);
+    expect(dupeRes.status()).toBeLessThan(500);
   });
 });

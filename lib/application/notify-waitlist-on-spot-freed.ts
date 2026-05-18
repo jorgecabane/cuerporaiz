@@ -73,6 +73,10 @@ async function notifyClass(liveClassId: string): Promise<void> {
     if (shouldThrottleNotification(entry.notifiedAt, now)) continue;
     const user = await userRepository.findById(entry.userId);
     if (user === null) continue;
+    // Marcar notificado ANTES de despachar el correo: si el envío falla, se pierde
+    // un email pero el próximo trigger respeta el throttle. Es preferible perder
+    // un aviso a inundar al usuario con duplicados si la lambda muere mid-batch.
+    await waitlistRepository.markNotified(entry.id, now);
     sendEmailSafe(
       buildSpotFreedEmail({
         toEmail: user.email,
@@ -87,7 +91,6 @@ async function notifyClass(liveClassId: string): Promise<void> {
         branding,
       })
     );
-    await waitlistRepository.markNotified(entry.id, now);
   }
 }
 
@@ -126,6 +129,8 @@ async function notifyEvent(eventId: string): Promise<void> {
     if (shouldThrottleNotification(entry.notifiedAt, nowIter)) continue;
     const user = await userRepository.findById(entry.userId);
     if (user === null) continue;
+    // Marcar notificado ANTES de despachar el correo (ver nota en notifyClass).
+    await waitlistRepository.markNotified(entry.id, nowIter);
     sendEmailSafe(
       buildSpotFreedEmail({
         toEmail: user.email,
@@ -140,6 +145,5 @@ async function notifyEvent(eventId: string): Promise<void> {
         branding,
       })
     );
-    await waitlistRepository.markNotified(entry.id, nowIter);
   }
 }

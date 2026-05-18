@@ -358,7 +358,9 @@ export async function cancelReservationUseCase(
     }
   }
 
-  if (newStatus === "CANCELLED") {
+  // LATE_CANCELLED también libera cupo: el cancelador pierde su clase pero el
+  // asiento queda disponible para la waitlist.
+  if (newStatus === "CANCELLED" || newStatus === "LATE_CANCELLED") {
     // Background: broadcast a la waitlist tras devolver la respuesta al cliente.
     runAfterResponse(
       notifyWaitlistOnSpotFreed("class", reservation.liveClassId).catch((err) =>
@@ -437,7 +439,7 @@ export async function cancelReservationByStaffUseCase(
     }
   }
 
-  if (newStatus === "CANCELLED") {
+  if (newStatus === "CANCELLED" || newStatus === "LATE_CANCELLED") {
     runAfterResponse(
       notifyWaitlistOnSpotFreed("class", reservation.liveClassId).catch((err) =>
         console.error("[waitlist] notify on spot freed (staff) failed", err)

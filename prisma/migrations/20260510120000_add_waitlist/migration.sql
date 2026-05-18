@@ -27,6 +27,9 @@ CREATE UNIQUE INDEX "WaitlistEntry_userId_liveClassId_key" ON "WaitlistEntry"("u
 CREATE UNIQUE INDEX "WaitlistEntry_userId_eventId_key" ON "WaitlistEntry"("userId", "eventId");
 CREATE INDEX "WaitlistEntry_liveClassId_status_idx" ON "WaitlistEntry"("liveClassId", "status");
 CREATE INDEX "WaitlistEntry_eventId_status_idx" ON "WaitlistEntry"("eventId", "status");
+-- Índices de FIFO ordering: notifyWaitlistOnSpotFreed y listados ordenan por position.
+CREATE INDEX "WaitlistEntry_liveClassId_position_idx" ON "WaitlistEntry"("liveClassId", "position");
+CREATE INDEX "WaitlistEntry_eventId_position_idx" ON "WaitlistEntry"("eventId", "position");
 CREATE INDEX "WaitlistEntry_centerId_idx" ON "WaitlistEntry"("centerId");
 CREATE INDEX "WaitlistEntry_userId_idx" ON "WaitlistEntry"("userId");
 

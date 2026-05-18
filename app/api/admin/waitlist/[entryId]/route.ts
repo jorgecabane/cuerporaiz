@@ -7,6 +7,8 @@ import {
   eventTicketRepository,
 } from "@/lib/adapters/db";
 import { isStaffRole } from "@/lib/domain/role";
+import { runAfterResponse } from "@/lib/utils/run-after-response";
+import { notifyWaitlistOnSpotFreed } from "@/lib/application/notify-waitlist-on-spot-freed";
 
 /**
  * Admin/instructor quita una entry de la waitlist (forzado).
@@ -75,6 +77,17 @@ export async function DELETE(
     }
 
     await waitlistRepository.updateStatus(entryId, "CANCELLED");
+
+    // Si liberamos un hold de evento, notificá al resto de la cola.
+    if (entry.status === "HELD" && entry.eventId !== null) {
+      const releasedEventId = entry.eventId;
+      runAfterResponse(
+        notifyWaitlistOnSpotFreed("event", releasedEventId).catch((err) =>
+          console.error("[waitlist] notify on admin-released hold failed", err)
+        )
+      );
+    }
+
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error("[admin/waitlist DELETE]", err);

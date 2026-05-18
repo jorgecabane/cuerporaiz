@@ -5,6 +5,8 @@
  */
 import { waitlistRepository, eventTicketRepository } from "@/lib/adapters/db";
 import { isActiveWaitlistStatus } from "@/lib/domain/waitlist";
+import { runAfterResponse } from "@/lib/utils/run-after-response";
+import { notifyWaitlistOnSpotFreed } from "./notify-waitlist-on-spot-freed";
 
 export interface LeaveWaitlistInput {
   userId: string;
@@ -34,6 +36,7 @@ export async function leaveWaitlistUseCase(
   }
 
   // Si tenía hold sobre evento, libera el ticket PENDING también.
+  let heldEventReleased: string | null = null;
   if (entry.status === "HELD" && entry.eventId !== null) {
     const ticket = await eventTicketRepository.findByEventAndUser(
       entry.eventId,
@@ -41,9 +44,20 @@ export async function leaveWaitlistUseCase(
     );
     if (ticket !== null && ticket.status === "PENDING") {
       await eventTicketRepository.updateStatus(ticket.id, "CANCELLED");
+      heldEventReleased = entry.eventId;
     }
   }
 
   await waitlistRepository.updateStatus(input.entryId, "CANCELLED");
+
+  // Si liberamos un hold de evento, notificá al resto de la cola.
+  if (heldEventReleased !== null) {
+    runAfterResponse(
+      notifyWaitlistOnSpotFreed("event", heldEventReleased).catch((err) =>
+        console.error("[waitlist] notify on hold released failed", err)
+      )
+    );
+  }
+
   return { success: true };
 }

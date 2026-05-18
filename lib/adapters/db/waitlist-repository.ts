@@ -49,19 +49,27 @@ export const waitlistRepository: IWaitlistRepository = {
   async create(input: CreateWaitlistEntryInput) {
     // FIFO position: cuenta total de entries (incluyendo terminales) para mantener
     // el orden histórico aún si alguien sale o gana cupo.
+    //
+    // Envuelto en transacción + advisory lock por itemId para serializar la
+    // asignación de position entre joins concurrentes; comparte el mismo lock
+    // que promoteToClassReservation/promoteToEventHold, así que un join no
+    // puede correr en paralelo a una promoción del mismo item.
     const itemFilter = whereForItem(input.kind, input.itemId);
-    const count = await prisma.waitlistEntry.count({ where: itemFilter });
-    const created = await prisma.waitlistEntry.create({
-      data: {
-        userId: input.userId,
-        centerId: input.centerId,
-        liveClassId: input.kind === "class" ? input.itemId : null,
-        eventId: input.kind === "event" ? input.itemId : null,
-        status: "QUEUED",
-        position: count + 1,
-      },
+    return prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${input.itemId}, 0))`;
+      const count = await tx.waitlistEntry.count({ where: itemFilter });
+      const created = await tx.waitlistEntry.create({
+        data: {
+          userId: input.userId,
+          centerId: input.centerId,
+          liveClassId: input.kind === "class" ? input.itemId : null,
+          eventId: input.kind === "event" ? input.itemId : null,
+          status: "QUEUED",
+          position: count + 1,
+        },
+      });
+      return toDomain(created);
     });
-    return toDomain(created);
   },
 
   async findById(id) {

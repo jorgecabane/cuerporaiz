@@ -51,6 +51,13 @@ vi.mock("./notify-event-ticket-confirmation", () => ({
   notifyEventTicketConfirmation: mocks.notifyEventTicketConfirmation,
 }));
 
+const waitlistMocks = vi.hoisted(() => ({
+  notifyWaitlistOnSpotFreed: vi.fn().mockResolvedValue(undefined),
+}));
+vi.mock("./notify-waitlist-on-spot-freed", () => ({
+  notifyWaitlistOnSpotFreed: waitlistMocks.notifyWaitlistOnSpotFreed,
+}));
+
 vi.mock("@/lib/adapters/payment", () => ({
   mercadoPagoPaymentAdapter: { createPreference: vi.fn(), getPayment: vi.fn() },
 }));
@@ -159,7 +166,7 @@ describe("tryProcessEventTicketPayment", () => {
     );
   });
 
-  it("rejected + ticket inicial: pasa a CANCELLED, sin email", async () => {
+  it("rejected + ticket inicial: pasa a CANCELLED, sin email, dispara waitlist", async () => {
     const ticket = makeTicket({ status: "PENDING" });
     mocks.eventTicketRepository.findByExternalReference.mockResolvedValue({
       ticket,
@@ -175,9 +182,11 @@ describe("tryProcessEventTicketPayment", () => {
     expect(handled).toBe(true);
     expect(mocks.eventTicketRepository.updateStatus).toHaveBeenCalledWith("ticket-1", "CANCELLED");
     expect(mocks.notifyEventTicketConfirmation).not.toHaveBeenCalled();
+    // El cupo liberado debe notificar a la cola del evento.
+    expect(waitlistMocks.notifyWaitlistOnSpotFreed).toHaveBeenCalledWith("event", "event-1");
   });
 
-  it("rejected + addition: limpia pendingAddition pero deja quantity intacto, sin email", async () => {
+  it("rejected + addition: limpia pendingAddition pero deja quantity intacto, sin email, sin waitlist", async () => {
     const ticket = makeTicket({
       status: "PAID",
       quantity: 3,
@@ -199,6 +208,8 @@ describe("tryProcessEventTicketPayment", () => {
     expect(mocks.eventTicketRepository.clearPendingAddition).toHaveBeenCalledWith("ticket-1");
     expect(mocks.eventTicketRepository.updateStatus).not.toHaveBeenCalled();
     expect(mocks.notifyEventTicketConfirmation).not.toHaveBeenCalled();
+    // Una addition rechazada NO libera cupo (la compra original sigue PAID).
+    expect(waitlistMocks.notifyWaitlistOnSpotFreed).not.toHaveBeenCalled();
   });
 
   it("pending: no hace nada, devuelve true (deja el ticket como está)", async () => {

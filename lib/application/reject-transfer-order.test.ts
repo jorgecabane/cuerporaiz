@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { rejectTransferOrder } from "./reject-transfer-order";
+import { rejectTransferOrder, rejectTransferEventTicket } from "./reject-transfer-order";
 
 vi.mock("@/lib/adapters/db/prisma", () => ({
   prisma: {
@@ -27,6 +27,13 @@ vi.mock("./send-email", () => ({
 
 vi.mock("@/lib/email", () => ({
   buildTransferRejectedEmail: vi.fn().mockReturnValue({ subject: "rejected" }),
+}));
+
+const waitlistMocks = vi.hoisted(() => ({
+  notifyWaitlistOnSpotFreed: vi.fn().mockResolvedValue(undefined),
+}));
+vi.mock("./notify-waitlist-on-spot-freed", () => ({
+  notifyWaitlistOnSpotFreed: waitlistMocks.notifyWaitlistOnSpotFreed,
 }));
 
 import { prisma } from "@/lib/adapters/db/prisma";
@@ -112,5 +119,57 @@ describe("rejectTransferOrder", () => {
       data: { status: "CANCELLED", transferRejectedReason: reason },
     });
     expect(sendEmailSafe).toHaveBeenCalled();
+  });
+});
+
+describe("rejectTransferEventTicket — trigger waitlist", () => {
+  const validTicket = {
+    id: "tk-1",
+    eventId: "evt-1",
+    userId: "user-1",
+    amountCents: 19900,
+    status: "PENDING" as const,
+    paymentMethod: "TRANSFER" as const,
+    transferClaimedAt: new Date("2026-05-01T10:00:00Z"),
+    event: { centerId: "center-1", title: "Yoga Retreat" },
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    (prisma.eventTicket.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
+      validTicket
+    );
+    (centerRepository.findById as ReturnType<typeof vi.fn>).mockResolvedValue({
+      id: "center-1",
+      name: "Cuerpo Raíz",
+      bankAccountEmail: "trini@example.com",
+    });
+    (userRepository.findById as ReturnType<typeof vi.fn>).mockResolvedValue({
+      id: "user-1",
+      email: "alumna@example.com",
+      name: "Ana",
+    });
+  });
+
+  it("rechaza el ticket y dispara notifyWaitlistOnSpotFreed('event', eventId)", async () => {
+    const result = await rejectTransferEventTicket({
+      ticketId: "tk-1",
+      reason: "comprobante ilegible totalmente",
+      adminCenterId: "center-1",
+    });
+    expect(result.success).toBe(true);
+    expect(prisma.eventTicket.update).toHaveBeenCalled();
+    expect(waitlistMocks.notifyWaitlistOnSpotFreed).toHaveBeenCalledTimes(1);
+    expect(waitlistMocks.notifyWaitlistOnSpotFreed).toHaveBeenCalledWith("event", "evt-1");
+  });
+
+  it("no dispara waitlist si rechaza por motivo corto (no llega a tocar BD)", async () => {
+    const result = await rejectTransferEventTicket({
+      ticketId: "tk-1",
+      reason: "corto",
+      adminCenterId: "center-1",
+    });
+    expect(result.success).toBe(false);
+    expect(waitlistMocks.notifyWaitlistOnSpotFreed).not.toHaveBeenCalled();
   });
 });

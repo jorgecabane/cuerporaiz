@@ -384,6 +384,9 @@ model WaitlistEntry {
   @@unique([userId, eventId])
   @@index([liveClassId, status])
   @@index([eventId, status])
+  // FIFO ordering: notifyWaitlistOnSpotFreed y listados ordenan por position.
+  @@index([liveClassId, position])
+  @@index([eventId, position])
   @@index([centerId])
   @@index([userId])
 }
