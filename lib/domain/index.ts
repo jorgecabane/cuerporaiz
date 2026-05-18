@@ -39,3 +39,16 @@ export type { UserPlan, UserPlanStatus, PlanPaymentStatus } from "./user-plan";
 export { USER_PLAN_STATUS_LABELS, PAYMENT_STATUS_LABELS, isUserPlanUsable, classesRemaining } from "./user-plan";
 export type { Event, EventTicket, EventStatus, EventTicketStatus } from "./event";
 export { EVENT_STATUS_LABELS } from "./event";
+export type { WaitlistStatus } from "./waitlist";
+export {
+  WAITLIST_STATUSES,
+  WAITLIST_STATUS_LABELS,
+  WAITLIST_NOTIFY_THROTTLE_MIN,
+  EVENT_HOLD_MINUTES,
+  isActiveWaitlistStatus,
+  isTerminalWaitlistStatus,
+  canPromoteWaitlistEntry,
+  validateWaitlistInvariant,
+  shouldThrottleNotification,
+} from "./waitlist";
+export type { WaitlistEntry } from "./waitlist-entry";

@@ -20,6 +20,7 @@ import {
   centerHolidayRepository,
 } from "@/lib/adapters/db";
 import { planRepository } from "@/lib/adapters/db";
+import { runAfterResponse } from "@/lib/utils/run-after-response";
 import { sendEmailSafe } from "@/lib/application/send-email";
 import {
   buildReservationConfirmationEmail,
@@ -28,6 +29,7 @@ import {
 import { getEmailBranding } from "@/lib/email/branding";
 import { getBaseUrl } from "@/lib/utils/base-url";
 import { formatMinutesAsShortSpanish } from "@/lib/domain/center-policy";
+import { notifyWaitlistOnSpotFreed } from "./notify-waitlist-on-spot-freed";
 
 function toReservationDto(r: Reservation, liveClassDto?: LiveClassDto): ReservationDto {
   return {
@@ -355,6 +357,18 @@ export async function cancelReservationUseCase(
       await userPlanRepository.decrementClassesUsed(reservation.userPlanId);
     }
   }
+
+  // LATE_CANCELLED también libera cupo: el cancelador pierde su clase pero el
+  // asiento queda disponible para la waitlist.
+  if (newStatus === "CANCELLED" || newStatus === "LATE_CANCELLED") {
+    // Background: broadcast a la waitlist tras devolver la respuesta al cliente.
+    runAfterResponse(
+      notifyWaitlistOnSpotFreed("class", reservation.liveClassId).catch((err) =>
+        console.error("[waitlist] notify on spot freed failed", err)
+      )
+    );
+  }
+
   const liveClassDto = toLiveClassDto(
     liveClass.id,
     liveClass.centerId,
@@ -424,6 +438,15 @@ export async function cancelReservationByStaffUseCase(
       await userPlanRepository.decrementClassesUsed(reservation.userPlanId);
     }
   }
+
+  if (newStatus === "CANCELLED" || newStatus === "LATE_CANCELLED") {
+    runAfterResponse(
+      notifyWaitlistOnSpotFreed("class", reservation.liveClassId).catch((err) =>
+        console.error("[waitlist] notify on spot freed (staff) failed", err)
+      )
+    );
+  }
+
   const liveClassDto = toLiveClassDto(
     liveClass.id,
     liveClass.centerId,

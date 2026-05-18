@@ -133,61 +133,6 @@ export function buildClassReminderEmail(data: ClassReminderData): SendEmailDto {
   };
 }
 
-// ─── Aviso de cupo liberado ───────────────────────────────────────────────
-export interface SpotFreedData {
-  toEmail: string;
-  userName?: string;
-  className: string;
-  startAt: string;
-  endAt: string;
-  location: string;
-  bookUrl: string;
-  branding: EmailBranding;
-}
-
-export function buildSpotFreedEmail(data: SpotFreedData): SendEmailDto {
-  const { branding } = data;
-  const calendarUrl = buildGoogleCalendarUrl({
-    title: data.className,
-    start: data.startAt,
-    end: data.endAt,
-    location: data.location,
-    details: `Reservar: ${data.bookUrl}`,
-    timeZone: branding.timezone,
-  });
-  const greeting = data.userName ? `Hola ${data.userName}` : "Hola";
-  const when = formatLongDateTime(data.startAt, branding.timezone);
-  const cta = emailCtaStyle(branding.colorSecondary);
-  const body = `
-    <p>${greeting},</p>
-    <p>Se liberó un cupo en la clase que tenías en lista de espera:</p>
-    <table role="presentation" width="100%" style="margin:16px 0;background:#F5F0E9;border-radius:10px;padding:16px;">
-      <tr><td>
-        <p style="margin:0;font-size:16px;font-weight:600;color:${branding.colorPrimary};">${data.className}</p>
-        <p style="margin:6px 0 0;font-size:14px;color:#5C5A56;">${when}</p>
-        <p style="margin:4px 0 0;font-size:14px;color:#5C5A56;">${data.location}</p>
-      </td></tr>
-    </table>
-    <p style="text-align:center;margin:24px 0;"><a href="${data.bookUrl}" style="${cta}">Reservar ahora</a></p>
-    <p style="text-align:center;font-size:13px;"><a href="${calendarUrl}" style="color:${branding.colorPrimary};">Añadir a Google Calendar</a></p>`;
-  const html = emailBaseLayout({ body, branding });
-  const text = [
-    `${greeting},`,
-    "Se liberó un cupo:",
-    `${data.className} | ${when} | ${data.location}`,
-    `Reservar ahora: ${data.bookUrl}`,
-    `— ${branding.centerName}`,
-  ].join("\n");
-
-  return {
-    from: fromForBranding(branding),
-    to: [data.toEmail],
-    subject: `Cupo liberado: ${data.className}`,
-    html,
-    text,
-  };
-}
-
 // ─── Aviso a profesor por clase de prueba ───────────────────────────────────
 export interface TrialClassNoticeToTeacherData {
   toEmail: string;

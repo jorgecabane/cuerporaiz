@@ -21,6 +21,8 @@ import {
   processPreapprovalWebhook,
   processAuthorizedPaymentWebhook,
 } from "./process-subscription-webhook";
+import { runAfterResponse } from "@/lib/utils/run-after-response";
+import { notifyWaitlistOnSpotFreed } from "./notify-waitlist-on-spot-freed";
 
 const paymentProvider: IPaymentProvider = mercadoPagoPaymentAdapter;
 
@@ -410,8 +412,14 @@ export async function tryProcessEventTicketPayment(args: {
       // reintentar.
       await eventTicketRepository.clearPendingAddition(ticket.id);
     } else {
-      // Compra inicial rechazada: el ticket pasa a CANCELLED.
+      // Compra inicial rechazada: el ticket pasa a CANCELLED y se libera cupo
+      // para la waitlist del evento.
       await eventTicketRepository.updateStatus(ticket.id, "CANCELLED");
+      runAfterResponse(
+        notifyWaitlistOnSpotFreed("event", ticket.eventId).catch((err) =>
+          console.error("[waitlist] notify on spot freed (event webhook) failed", err)
+        )
+      );
     }
     return true;
   }

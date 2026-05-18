@@ -33,3 +33,10 @@ export type { IAuthTokenRepository } from "./auth-token-repository";
 export type { ILoginAttemptRepository } from "./login-attempt-repository";
 export type { IEventRepository, EventCreateInput, EventUpdateInput } from "./event-repository";
 export type { IEventTicketRepository } from "./event-ticket-repository";
+export type {
+  IWaitlistRepository,
+  CreateWaitlistEntryInput,
+  WaitlistKind,
+  PromoteToReservationResult,
+  PromoteToEventHoldResult,
+} from "./waitlist-repository";

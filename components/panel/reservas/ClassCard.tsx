@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { ChevronDown, ChevronUp, Clock, Users } from "lucide-react";
+import { ChevronDown, ChevronUp, Clock, Hourglass, Users } from "lucide-react";
 import type { LiveClassDto } from "@/lib/dto/reservation-dto";
 import { Button } from "@/components/ui/Button";
 import { useTimezone } from "@/components/providers/TimezoneProvider";
@@ -62,6 +62,18 @@ export interface ClassCardProps {
   setReserveForUserId?: (id: string) => void;
   onReserveForStudentSubmit?: (userId: string, liveClassId: string, userPlanId?: string) => void;
   onCloseReserveForStudent?: () => void;
+  /** Solo para alumno: id de la entry de waitlist si ya está en cola */
+  waitlistEntryId?: string | null;
+  /** Solo para alumno: posición en la cola */
+  waitlistPosition?: number;
+  /** Solo para alumno: callback para unirse a la waitlist (clase llena) */
+  onJoinWaitlist?: (liveClassId: string) => void;
+  /** Solo para alumno: callback para salir de la waitlist */
+  onLeaveWaitlist?: (entryId: string) => void;
+  /** Solo para alumno: id en proceso para join */
+  joinWaitlistLoadingId?: string | null;
+  /** Solo para alumno: id en proceso para leave */
+  leaveWaitlistLoadingId?: string | null;
 }
 
 export function ClassCard({
@@ -87,6 +99,12 @@ export function ClassCard({
   setReserveForUserId,
   onReserveForStudentSubmit,
   onCloseReserveForStudent,
+  waitlistEntryId = null,
+  waitlistPosition,
+  onJoinWaitlist,
+  onLeaveWaitlist,
+  joinWaitlistLoadingId = null,
+  leaveWaitlistLoadingId = null,
 }: ClassCardProps) {
   const tz = useTimezone();
   const noSpots = c.spotsLeft <= 0;
@@ -352,7 +370,46 @@ export function ClassCard({
                   )}
               </div>
             )}
-            {noSpots && !alreadyReserved && (
+            {noSpots && !alreadyReserved && !isPast && (
+              <div className="flex flex-col items-end gap-2">
+                {waitlistEntryId !== null ? (
+                  <>
+                    <span
+                      className="inline-flex items-center gap-1.5 rounded-[var(--radius-md)] border border-[var(--color-primary)]/30 bg-[var(--color-primary-light)] px-3 py-1.5 text-xs font-medium text-[var(--color-primary)]"
+                      title="Te avisaremos cuando se libere un cupo"
+                    >
+                      <Hourglass className="h-3.5 w-3.5" aria-hidden />
+                      En lista de espera{waitlistPosition !== undefined ? ` · #${waitlistPosition}` : ""}
+                    </span>
+                    {onLeaveWaitlist !== undefined && (
+                      <button
+                        type="button"
+                        onClick={() => onLeaveWaitlist(waitlistEntryId)}
+                        disabled={leaveWaitlistLoadingId === waitlistEntryId}
+                        className="text-xs text-[var(--color-text-muted)] underline-offset-2 hover:text-[var(--color-text)] hover:underline disabled:opacity-50 cursor-pointer"
+                      >
+                        {leaveWaitlistLoadingId === waitlistEntryId ? "Saliendo…" : "Salir de la lista"}
+                      </button>
+                    )}
+                  </>
+                ) : onJoinWaitlist !== undefined ? (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    disabled={joinWaitlistLoadingId === c.id}
+                    onClick={() => onJoinWaitlist(c.id)}
+                  >
+                    <Hourglass className="h-4 w-4" aria-hidden />
+                    {joinWaitlistLoadingId === c.id
+                      ? "Uniendo…"
+                      : "Unirse a lista de espera"}
+                  </Button>
+                ) : (
+                  <span className="text-sm text-[var(--color-text-muted)]">Sin cupos</span>
+                )}
+              </div>
+            )}
+            {noSpots && !alreadyReserved && isPast && (
               <span className="text-sm text-[var(--color-text-muted)]">Sin cupos</span>
             )}
           </div>

@@ -1624,3 +1624,40 @@ export async function countTier2NoShowsThisMonth(opts: {
     },
   });
 }
+
+/**
+ * Crea una WaitlistEntry para un user/item de manera directa (sin pasar por
+ * el use case). Útil para tests de concurrencia: necesitamos N entries
+ * pre-existentes para racer los promotes.
+ */
+export async function seedTier1WaitlistEntry(opts: {
+  centerSlug: string;
+  userId: string;
+  kind: "class" | "event";
+  itemId: string;
+}): Promise<{ entryId: string; position: number } | null> {
+  const prisma = await getPrisma();
+  if (!prisma) return null;
+  const center = await prisma.center.findUnique({ where: { slug: opts.centerSlug } });
+  if (!center) return null;
+  const itemFilter =
+    opts.kind === "class" ? { liveClassId: opts.itemId } : { eventId: opts.itemId };
+  const count = await prisma.waitlistEntry.count({ where: itemFilter });
+  const entry = await prisma.waitlistEntry.create({
+    data: {
+      userId: opts.userId,
+      centerId: center.id,
+      liveClassId: opts.kind === "class" ? opts.itemId : null,
+      eventId: opts.kind === "event" ? opts.itemId : null,
+      status: "QUEUED",
+      position: count + 1,
+    },
+  });
+  return { entryId: entry.id, position: entry.position };
+}
+
+export async function cleanupTier1WaitlistEntries(entryIds: string[]): Promise<void> {
+  const prisma = await getPrisma();
+  if (!prisma || entryIds.length === 0) return;
+  await prisma.waitlistEntry.deleteMany({ where: { id: { in: entryIds } } });
+}

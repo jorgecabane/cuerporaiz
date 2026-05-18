@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import type { Role } from "@/lib/domain/role";
 import { isAdminRole, isStudentRole } from "@/lib/domain";
 import { toast } from "@/components/ui/Toast";
 import type { LiveClassDto, ReservationDto, UserPlanOptionDto } from "@/lib/dto/reservation-dto";
+import type { WaitlistEntryDto } from "@/lib/dto/waitlist-dto";
 import {
   WeekNav,
   getWeekBounds,
@@ -13,6 +14,7 @@ import {
   groupClassesByDay,
   ClassCard,
 } from "@/components/panel/reservas";
+import { WaitlistPromoteDialog } from "@/components/panel/reservas/WaitlistPromoteDialog";
 import { localYmdFromDate } from "@/lib/datetime/local-ymd";
 import { CalendarHomeSkeleton } from "@/components/ui/PanelSkeletons";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
@@ -65,6 +67,19 @@ export function PanelHomeCalendar({
   const [attendanceLoadingId, setAttendanceLoadingId] = useState<string | null>(null);
   const [trialConfirmFor, setTrialConfirmFor] = useState<string | null>(null);
   const [needsPlanModalOpen, setNeedsPlanModalOpen] = useState(false);
+  const [myWaitlist, setMyWaitlist] = useState<WaitlistEntryDto[]>([]);
+  const [joinWaitlistLoadingId, setJoinWaitlistLoadingId] = useState<string | null>(null);
+  const [leaveWaitlistLoadingId, setLeaveWaitlistLoadingId] = useState<string | null>(null);
+  const [promoteDialog, setPromoteDialog] = useState<
+    | {
+        entryId: string;
+        liveClass: LiveClassDto;
+        loading: boolean;
+        spotTaken: boolean;
+      }
+    | null
+  >(null);
+  const searchParams = useSearchParams();
   const router = useRouter();
 
   const loadReservations = useCallback(async () => {
@@ -72,6 +87,13 @@ export function PanelHomeCalendar({
     if (!res.ok) return;
     const data = await res.json();
     setReservations(Array.isArray(data.items) ? data.items : []);
+  }, []);
+
+  const loadMyWaitlist = useCallback(async () => {
+    const res = await fetch("/api/waitlist/mine");
+    if (!res.ok) return;
+    const data = await res.json();
+    setMyWaitlist(Array.isArray(data.entries) ? data.entries : []);
   }, []);
 
   const loadEventsForWeek = useCallback(async (anchor: Date) => {
@@ -136,7 +158,12 @@ export function PanelHomeCalendar({
     setLoading(true);
     try {
       if (isStudentRole(role)) {
-        await Promise.all([loadReservations(), loadClassesForWeek(weekAnchor), loadEventsForWeek(weekAnchor)]);
+        await Promise.all([
+          loadReservations(),
+          loadClassesForWeek(weekAnchor),
+          loadEventsForWeek(weekAnchor),
+          loadMyWaitlist(),
+        ]);
       } else {
         await Promise.all([loadStaffClassesForWeek(weekAnchor), loadEventsForWeek(weekAnchor)]);
       }
@@ -145,7 +172,7 @@ export function PanelHomeCalendar({
     } finally {
       setLoading(false);
     }
-  }, [role, loadReservations, loadClassesForWeek, loadStaffClassesForWeek, loadEventsForWeek, weekAnchor]);
+  }, [role, loadReservations, loadClassesForWeek, loadStaffClassesForWeek, loadEventsForWeek, loadMyWaitlist, weekAnchor]);
 
   useEffect(() => {
     load();
@@ -243,6 +270,111 @@ export function PanelHomeCalendar({
     }
     return map;
   }, [reservations]);
+
+  const myWaitlistByLiveClassId = useMemo(() => {
+    const map = new Map<string, WaitlistEntryDto>();
+    for (const e of myWaitlist) {
+      if (e.kind === "class") map.set(e.itemId, e);
+    }
+    return map;
+  }, [myWaitlist]);
+
+  async function handleJoinWaitlist(liveClassId: string) {
+    setJoinWaitlistLoadingId(liveClassId);
+    try {
+      const res = await fetch("/api/waitlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kind: "class", itemId: liveClassId }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.message ?? "No se pudo unir a la lista de espera");
+        return;
+      }
+      toast.success("Te avisaremos cuando se libere un cupo");
+      await loadMyWaitlist();
+    } finally {
+      setJoinWaitlistLoadingId(null);
+    }
+  }
+
+  async function handleLeaveWaitlist(entryId: string) {
+    setLeaveWaitlistLoadingId(entryId);
+    try {
+      const res = await fetch(`/api/waitlist/${entryId}`, { method: "DELETE" });
+      if (!res.ok) {
+        toast.error("Error al salir de la lista de espera");
+        return;
+      }
+      toast("Saliste de la lista de espera");
+      await loadMyWaitlist();
+    } finally {
+      setLeaveWaitlistLoadingId(null);
+    }
+  }
+
+  // Detecta si el usuario aterrizó desde el correo de waitlist:
+  // /panel/reservas?openClass=ID&fromWaitlist=1
+  useEffect(() => {
+    if (!isStudentRole(role)) return;
+    const openClass = searchParams.get("openClass");
+    const fromWaitlist = searchParams.get("fromWaitlist");
+    if (!openClass || fromWaitlist !== "1") return;
+    if (myWaitlist.length === 0) return;
+    if (liveClasses.length === 0) return;
+    const entry = myWaitlist.find(
+      (e) => e.kind === "class" && e.itemId === openClass
+    );
+    const lc = liveClasses.find((c) => c.id === openClass);
+    if (entry === undefined || lc === undefined) return;
+    if (promoteDialog !== null) return; // ya abierto
+    setPromoteDialog({
+      entryId: entry.id,
+      liveClass: lc,
+      loading: false,
+      spotTaken: false,
+    });
+  }, [role, searchParams, myWaitlist, liveClasses, promoteDialog]);
+
+  async function handlePromoteConfirm() {
+    if (promoteDialog === null) return;
+    setPromoteDialog({ ...promoteDialog, loading: true });
+    try {
+      const res = await fetch(
+        `/api/waitlist/${promoteDialog.entryId}/promote`,
+        { method: "POST" }
+      );
+      const data = await res.json();
+      if (!res.ok) {
+        if (data.code === "SPOT_TAKEN") {
+          setPromoteDialog((p) => (p ? { ...p, loading: false, spotTaken: true } : p));
+          return;
+        }
+        toast.error(data.message ?? "Error al confirmar");
+        setPromoteDialog((p) => (p ? { ...p, loading: false } : p));
+        return;
+      }
+      toast.success("¡Reserva confirmada!");
+      setPromoteDialog(null);
+      // Limpia query params
+      router.replace("/panel");
+      await Promise.all([
+        loadReservations(),
+        loadClassesForWeek(weekAnchor),
+        loadMyWaitlist(),
+      ]);
+    } catch {
+      toast.error("Error al confirmar");
+      setPromoteDialog((p) => (p ? { ...p, loading: false } : p));
+    }
+  }
+
+  function handlePromoteClose() {
+    setPromoteDialog(null);
+    // Limpia query params para no re-abrir al volver
+    router.replace("/panel");
+  }
 
   async function handleCancelMyReservation(reservationId: string) {
     setCancelMyReservationLoadingId(reservationId);
@@ -602,19 +734,28 @@ export function PanelHomeCalendar({
           </div>
         ) : isStudent ? (
           <ul className="space-y-3">
-            {(classesForSelectedDay as LiveClassDto[]).map((c) => (
-              <ClassCard
-                key={c.id}
-                class={c}
-                isPast={new Date(c.startsAt) < new Date()}
-                alreadyReserved={myConfirmedLiveClassIds.has(c.id)}
-                myReservationId={myReservationIdByLiveClassId.get(c.id) ?? null}
-                onReserve={handleReserve}
-                onCancelMyReservation={handleCancelMyReservation}
-                cancelMyReservationLoadingId={cancelMyReservationLoadingId}
-                actionLoadingId={actionLoading}
-              />
-            ))}
+            {(classesForSelectedDay as LiveClassDto[]).map((c) => {
+              const wl = myWaitlistByLiveClassId.get(c.id);
+              return (
+                <ClassCard
+                  key={c.id}
+                  class={c}
+                  isPast={new Date(c.startsAt) < new Date()}
+                  alreadyReserved={myConfirmedLiveClassIds.has(c.id)}
+                  myReservationId={myReservationIdByLiveClassId.get(c.id) ?? null}
+                  onReserve={handleReserve}
+                  onCancelMyReservation={handleCancelMyReservation}
+                  cancelMyReservationLoadingId={cancelMyReservationLoadingId}
+                  actionLoadingId={actionLoading}
+                  waitlistEntryId={wl?.id ?? null}
+                  waitlistPosition={wl?.position}
+                  onJoinWaitlist={handleJoinWaitlist}
+                  onLeaveWaitlist={handleLeaveWaitlist}
+                  joinWaitlistLoadingId={joinWaitlistLoadingId}
+                  leaveWaitlistLoadingId={leaveWaitlistLoadingId}
+                />
+              );
+            })}
           </ul>
         ) : (
           <ul className="space-y-3">
@@ -651,6 +792,19 @@ export function PanelHomeCalendar({
           </ul>
         )}
       </div>
+
+      {promoteDialog !== null && (
+        <WaitlistPromoteDialog
+          open
+          onClose={handlePromoteClose}
+          onConfirm={handlePromoteConfirm}
+          loading={promoteDialog.loading}
+          spotTaken={promoteDialog.spotTaken}
+          className={promoteDialog.liveClass.title}
+          startsAt={promoteDialog.liveClass.startsAt}
+          durationMinutes={promoteDialog.liveClass.durationMinutes}
+        />
+      )}
     </div>
   );
 }

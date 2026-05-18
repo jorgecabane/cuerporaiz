@@ -1,7 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Hourglass } from "lucide-react";
 import type { ReservationDto } from "@/lib/dto/reservation-dto";
+import type { WaitlistEntryDto } from "@/lib/dto/waitlist-dto";
 import { AdaptiveSheet } from "@/components/ui/AdaptiveSheet";
 import { Button } from "@/components/ui/Button";
 import { toast } from "@/components/ui/Toast";
@@ -17,6 +19,8 @@ import {
 } from "./segment-reservations";
 import { formatMinutesAsShortSpanish } from "@/lib/domain/center-policy";
 import { ReservationListSkeleton } from "@/components/ui/PanelSkeletons";
+
+const TAB_WAITLIST = "waitlist";
 
 function willConsumeClassIfCancelNow(r: ReservationDto, cancelBeforeMinutes: number): boolean {
   const startsAt = r.liveClass?.startsAt;
@@ -100,20 +104,27 @@ export function MisReservasSheet({
   cancelPolicyCopy,
 }: MisReservasSheetProps) {
   const [items, setItems] = useState<ReservationDto[]>([]);
+  const [waitlist, setWaitlist] = useState<WaitlistEntryDto[]>([]);
   const [loading, setLoading] = useState(false);
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [reservationToCancel, setReservationToCancel] = useState<ReservationDto | null>(null);
   const [cancelLoadingId, setCancelLoadingId] = useState<string | null>(null);
+  const [leaveWaitlistLoadingId, setLeaveWaitlistLoadingId] = useState<string | null>(null);
 
   const fetchReservations = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/reservations?page=1&pageSize=50");
-      if (!res.ok) throw new Error("Error al cargar reservas");
-      const data = await res.json();
-      setItems(data.items ?? []);
+      const [resReservations, resWaitlist] = await Promise.all([
+        fetch("/api/reservations?page=1&pageSize=50"),
+        fetch("/api/waitlist/mine"),
+      ]);
+      const reservationsData = resReservations.ok ? await resReservations.json() : { items: [] };
+      const waitlistData = resWaitlist.ok ? await resWaitlist.json() : { entries: [] };
+      setItems(reservationsData.items ?? []);
+      setWaitlist(waitlistData.entries ?? []);
     } catch {
       setItems([]);
+      setWaitlist([]);
     } finally {
       setLoading(false);
     }
@@ -122,6 +133,21 @@ export function MisReservasSheet({
   useEffect(() => {
     if (open) fetchReservations();
   }, [open, fetchReservations]);
+
+  const handleLeaveWaitlist = useCallback(async (entryId: string) => {
+    setLeaveWaitlistLoadingId(entryId);
+    try {
+      const res = await fetch(`/api/waitlist/${entryId}`, { method: "DELETE" });
+      if (!res.ok) {
+        toast.error("Error al salir de la lista de espera");
+        return;
+      }
+      toast("Saliste de la lista de espera");
+      await fetchReservations();
+    } finally {
+      setLeaveWaitlistLoadingId(null);
+    }
+  }, [fetchReservations]);
 
   const segmented = useMemo(() => segmentReservations(items), [items]);
   const canCancelIds = useMemo(
@@ -193,6 +219,14 @@ export function MisReservasSheet({
                 <TabsTrigger value={TAB_PROXIMAS} id="tab-proximas">
                   Próximas
                 </TabsTrigger>
+                <TabsTrigger value={TAB_WAITLIST} id="tab-waitlist">
+                  Lista de espera
+                  {waitlist.length > 0 && (
+                    <span className="ml-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--color-primary)] px-1 text-[10px] font-medium text-[var(--color-text-inverse)]">
+                      {waitlist.length}
+                    </span>
+                  )}
+                </TabsTrigger>
                 <TabsTrigger value={TAB_CANCELADAS} id="tab-canceladas">
                   Canceladas
                 </TabsTrigger>
@@ -218,6 +252,13 @@ export function MisReservasSheet({
                   onCancel={handleCancelClick}
                   cancelLoadingId={cancelLoadingId}
                   emptyMessage="No tienes próximas reservas."
+                />
+              </TabsContent>
+              <TabsContent value={TAB_WAITLIST} className="pt-2">
+                <WaitlistList
+                  entries={waitlist}
+                  onLeave={handleLeaveWaitlist}
+                  leaveLoadingId={leaveWaitlistLoadingId}
                 />
               </TabsContent>
               <TabsContent value={TAB_CANCELADAS} className="pt-2">
@@ -248,5 +289,73 @@ export function MisReservasSheet({
         loading={cancelLoadingId !== null}
       />
     </>
+  );
+}
+
+function WaitlistList({
+  entries,
+  onLeave,
+  leaveLoadingId,
+}: {
+  entries: WaitlistEntryDto[];
+  onLeave: (entryId: string) => void;
+  leaveLoadingId: string | null;
+}) {
+  if (entries.length === 0) {
+    return (
+      <div className="rounded-[var(--radius-md)] border border-dashed border-[var(--color-border)] bg-[var(--color-surface)] p-6 text-center">
+        <Hourglass
+          className="mx-auto mb-2 h-6 w-6 text-[var(--color-text-muted)]"
+          aria-hidden
+        />
+        <p className="text-sm text-[var(--color-text-muted)]">
+          No estás en ninguna lista de espera.
+        </p>
+        <p className="mt-1 text-xs text-[var(--color-text-muted)]">
+          Cuando una clase o evento esté lleno, podrás unirte y te avisaremos
+          cuando se libere un cupo.
+        </p>
+      </div>
+    );
+  }
+  return (
+    <ul className="space-y-2">
+      {entries.map((e) => (
+        <li
+          key={e.id}
+          className="flex items-start justify-between gap-3 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] p-3"
+        >
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-medium text-[var(--color-text)]">
+              {e.itemTitle ?? (e.kind === "class" ? "Clase" : "Evento")}
+            </p>
+            <p className="text-xs text-[var(--color-text-muted)]">
+              {e.itemStartsAt
+                ? new Date(e.itemStartsAt).toLocaleString("es-CL", {
+                    weekday: "short",
+                    day: "numeric",
+                    month: "short",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })
+                : ""}
+              {" · "}
+              <span className="inline-flex items-center gap-1 text-[var(--color-primary)]">
+                <Hourglass className="h-3 w-3" aria-hidden />
+                Posición #{e.position}
+              </span>
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => onLeave(e.id)}
+            disabled={leaveLoadingId === e.id}
+            className="shrink-0 text-xs text-[var(--color-text-muted)] underline-offset-2 hover:text-[var(--color-text)] hover:underline disabled:opacity-50 cursor-pointer"
+          >
+            {leaveLoadingId === e.id ? "Saliendo…" : "Salir"}
+          </button>
+        </li>
+      ))}
+    </ul>
   );
 }

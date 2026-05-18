@@ -14,94 +14,98 @@ datasource db {
 
 // ─── Tenants (centros) ─────────────────────────────────────────────────────
 model Center {
-  id        String   @id @default(cuid())
-  name      String
-  slug      String   @unique
-  currency  String   @default("CLP")  // moneda del centro (localidad); usada en planes
-  timezone  String   @default("America/Santiago")  // IANA tz para mostrar fechas en correos / UI cliente
+  id                             String   @id @default(cuid())
+  name                           String
+  slug                           String   @unique
+  currency                       String   @default("CLP") // moneda del centro (localidad); usada en planes
+  timezone                       String   @default("America/Santiago") // IANA tz para mostrar fechas en correos / UI cliente
   // Políticas del centro (tenant)
-  cancelBeforeMinutes Int      @default(720)   // anticipación mínima (min) para cancelar sin consumir clase (720 = 12 h)
-  maxNoShowsPerMonth   Int      @default(2)   // no-shows máximos antes de advertencia/bloqueo
-  bookBeforeMinutes    Int      @default(1440) // ventana para reservar: minutos antes del inicio deben quedar libres (1440 = 24 h)
-  notifyWhenSlotFreed  Boolean  @default(true)  // avisar cuando se libera un cupo
-  instructorCanReserveForStudent Boolean @default(true)  // profesora puede reservar en nombre de alumna
-  allowTrialClassPerPerson Boolean @default(true)  // una clase de prueba por persona
-  calendarStartHour  Int      @default(7)   // hora de inicio del calendario semanal
-  calendarEndHour    Int      @default(22)  // hora de fin del calendario semanal
-  calendarWeekStartDay Int    @default(1)   // 0=domingo, 1=lunes (ISO)
-  defaultClassDurationMinutes Int @default(60)
+  cancelBeforeMinutes            Int      @default(720) // anticipación mínima (min) para cancelar sin consumir clase (720 = 12 h)
+  maxNoShowsPerMonth             Int      @default(2) // no-shows máximos antes de advertencia/bloqueo
+  bookBeforeMinutes              Int      @default(1440) // ventana para reservar: minutos antes del inicio deben quedar libres (1440 = 24 h)
+  notifyWhenSlotFreed            Boolean  @default(true) // avisar cuando se libera un cupo
+  instructorCanReserveForStudent Boolean  @default(true) // profesora puede reservar en nombre de alumna
+  allowTrialClassPerPerson       Boolean  @default(true) // una clase de prueba por persona
+  calendarStartHour              Int      @default(7) // hora de inicio del calendario semanal
+  calendarEndHour                Int      @default(22) // hora de fin del calendario semanal
+  calendarWeekStartDay           Int      @default(1) // 0=domingo, 1=lunes (ISO)
+  defaultClassDurationMinutes    Int      @default(60)
   // Transferencia bancaria (plugin de pago)
-  bankTransferEnabled Boolean @default(false)
-  bankName        String?
-  bankAccountType String?
-  bankAccountNumber String?
-  bankAccountHolder String?
-  bankAccountRut    String?
-  bankAccountEmail  String?
+  bankTransferEnabled            Boolean  @default(false)
+  bankName                       String?
+  bankAccountType                String?
+  bankAccountNumber              String?
+  bankAccountHolder              String?
+  bankAccountRut                 String?
+  bankAccountEmail               String?
   // Toggles secundarios del plugin (qué se puede pagar por transferencia)
-  bankTransferAcceptPlans    Boolean @default(true)
-  bankTransferAcceptEvents   Boolean @default(false)
-  bankTransferRequireReceipt Boolean @default(true)
+  bankTransferAcceptPlans        Boolean  @default(true)
+  bankTransferAcceptEvents       Boolean  @default(false)
+  bankTransferRequireReceipt     Boolean  @default(true)
   // Fragmento opcional que el admin añade al correo de bienvenida del alumno
-  welcomeEmailCustomBody String? @default("")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  welcomeEmailCustomBody         String?  @default("")
+  createdAt                      DateTime @default(now())
+  updatedAt                      DateTime @updatedAt
 
-  memberships     UserCenterRole[]
-  liveClasses     LiveClass[]
-  disciplines     Discipline[]
-  liveClassSeries LiveClassSeries[]
-  holidays        CenterHoliday[]
-  mercadopagoConfig CenterMercadoPagoConfig?
-  zoomConfig       CenterZoomConfig?
-  googleMeetConfig CenterGoogleMeetConfig?
-  plans           Plan[]
-  orders          Order[]
-  webhookEvents   MercadoPagoWebhookEvent[]
-  userPlans       UserPlan[]
-  manualPayments  ManualPayment[]
+  memberships            UserCenterRole[]
+  liveClasses            LiveClass[]
+  disciplines            Discipline[]
+  liveClassSeries        LiveClassSeries[]
+  holidays               CenterHoliday[]
+  mercadopagoConfig      CenterMercadoPagoConfig?
+  zoomConfig             CenterZoomConfig?
+  googleMeetConfig       CenterGoogleMeetConfig?
+  plans                  Plan[]
+  orders                 Order[]
+  webhookEvents          MercadoPagoWebhookEvent[]
+  userPlans              UserPlan[]
+  manualPayments         ManualPayment[]
   instructorBankAccounts InstructorBankAccount[]
-  subscriptions    Subscription[]
-  emailPreferences EmailPreference[]
-  siteConfig      CenterSiteConfig?
-  siteSections    CenterSiteSection[]
-  aboutPage       CenterAboutPage?
-  onDemandCategories OnDemandCategory[]
-  lessonUnlocks      LessonUnlock[]
-  events             Event[]
+  subscriptions          Subscription[]
+  emailPreferences       EmailPreference[]
+  siteConfig             CenterSiteConfig?
+  siteSections           CenterSiteSection[]
+  aboutPage              CenterAboutPage?
+  onDemandCategories     OnDemandCategory[]
+  lessonUnlocks          LessonUnlock[]
+  events                 Event[]
+  waitlistEntries        WaitlistEntry[]
 }
 
 // ─── Usuarios (sin datos de infra; dominio puro en lib/domain) ──────────────
 model User {
-  id           String    @id @default(cuid())
-  email        String    @unique
-  passwordHash String
-  name         String?
-  lastName     String?
-  /** URL de imagen de perfil (avatar) */
-  imageUrl     String?
-  phone        String?
-  rut          String?
-  birthday     DateTime?
-  sex          String?   // M, F, X, null
-  notes        String?   // observaciones internas del centro
+  id              String    @id @default(cuid())
+  email           String    @unique
+  passwordHash    String
+  name            String?
+  lastName        String?
+  /**
+   * URL de imagen de perfil (avatar)
+   */
+  imageUrl        String?
+  phone           String?
+  rut             String?
+  birthday        DateTime?
+  sex             String? // M, F, X, null
+  notes           String? // observaciones internas del centro
   googleId        String?   @unique
   emailVerifiedAt DateTime?
   tokenVersion    Int       @default(0)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
-  memberships    UserCenterRole[]
-  reservations   Reservation[]
-  orders         Order[]
-  userPlans      UserPlan[]
-  manualPayments ManualPayment[]
-  instructorBankAccounts InstructorBankAccount[]
-  subscriptions    Subscription[]
-  emailPreferences EmailPreference[]
-  siteItems       CenterSiteSectionItem[]
-  lessonUnlocks LessonUnlock[]
-  eventTickets  EventTicket[]
+  memberships             UserCenterRole[]
+  reservations            Reservation[]
+  orders                  Order[]
+  userPlans               UserPlan[]
+  manualPayments          ManualPayment[]
+  instructorBankAccounts  InstructorBankAccount[]
+  subscriptions           Subscription[]
+  emailPreferences        EmailPreference[]
+  siteItems               CenterSiteSectionItem[]
+  lessonUnlocks           LessonUnlock[]
+  eventTickets            EventTicket[]
+  waitlistEntries         WaitlistEntry[]
   passwordResetTokens     PasswordResetToken[]
   emailVerificationTokens EmailVerificationToken[]
 }
@@ -132,29 +136,29 @@ enum RepeatFrequency {
 }
 
 model LiveClassSeries {
-  id                  String          @id @default(cuid())
-  centerId            String
-  title               String
-  disciplineId        String?
-  instructorId        String?
-  maxCapacity         Int             @default(20)
-  durationMinutes     Int             @default(60)
-  isOnline            Boolean         @default(false)
-  meetingUrl          String?
-  isTrialClass        Boolean         @default(false)
-  trialCapacity       Int?
-  color               String?
-  classPassEnabled    Boolean         @default(false)
-  classPassCapacity   Int?
-  repeatFrequency     RepeatFrequency @default(WEEKLY)
-  repeatOnDaysOfWeek  Int[]           @default([])   // 0=Dom, 1=Lun..6=Sáb
-  repeatEveryN        Int             @default(1)    // cada N semanas/días/meses
-  startsAt            DateTime                       // fecha/hora de la primera clase
-  endsAt              DateTime?                      // fecha fin de la serie (nullable = nunca)
-  repeatCount         Int?                           // o N repeticiones (nullable = infinito/hasta endsAt)
-  monthlyMode         String?                        // "dayOfMonth" | "weekdayOrdinal" (solo para MONTHLY)
-  createdAt           DateTime        @default(now())
-  updatedAt           DateTime        @updatedAt
+  id                 String          @id @default(cuid())
+  centerId           String
+  title              String
+  disciplineId       String?
+  instructorId       String?
+  maxCapacity        Int             @default(20)
+  durationMinutes    Int             @default(60)
+  isOnline           Boolean         @default(false)
+  meetingUrl         String?
+  isTrialClass       Boolean         @default(false)
+  trialCapacity      Int?
+  color              String?
+  classPassEnabled   Boolean         @default(false)
+  classPassCapacity  Int?
+  repeatFrequency    RepeatFrequency @default(WEEKLY)
+  repeatOnDaysOfWeek Int[]           @default([]) // 0=Dom, 1=Lun..6=Sáb
+  repeatEveryN       Int             @default(1) // cada N semanas/días/meses
+  startsAt           DateTime // fecha/hora de la primera clase
+  endsAt             DateTime? // fecha fin de la serie (nullable = nunca)
+  repeatCount        Int? // o N repeticiones (nullable = infinito/hasta endsAt)
+  monthlyMode        String? // "dayOfMonth" | "weekdayOrdinal" (solo para MONTHLY)
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
 
   center     Center      @relation(fields: [centerId], references: [id], onDelete: Cascade)
   discipline Discipline? @relation(fields: [disciplineId], references: [id], onDelete: SetNull)
@@ -165,30 +169,31 @@ model LiveClassSeries {
 
 // ─── Clases en vivo (por centro) ───────────────────────────────────────────
 model LiveClass {
-  id              String   @id @default(cuid())
-  centerId        String
-  title           String
-  startsAt        DateTime
-  durationMinutes Int      @default(60)
-  maxCapacity     Int      @default(20)
-  disciplineId    String?
-  instructorId    String?
-  isOnline        Boolean  @default(false)
-  meetingUrl      String?
-  isTrialClass    Boolean  @default(false)
-  trialCapacity   Int?
-  color           String?
-  classPassEnabled Boolean @default(false)
+  id                String   @id @default(cuid())
+  centerId          String
+  title             String
+  startsAt          DateTime
+  durationMinutes   Int      @default(60)
+  maxCapacity       Int      @default(20)
+  disciplineId      String?
+  instructorId      String?
+  isOnline          Boolean  @default(false)
+  meetingUrl        String?
+  isTrialClass      Boolean  @default(false)
+  trialCapacity     Int?
+  color             String?
+  classPassEnabled  Boolean  @default(false)
   classPassCapacity Int?
-  seriesId        String?
-  status          String   @default("ACTIVE")  // ACTIVE | CANCELLED | ARCHIVED
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  seriesId          String?
+  status            String   @default("ACTIVE") // ACTIVE | CANCELLED | ARCHIVED
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
-  center       Center           @relation(fields: [centerId], references: [id], onDelete: Cascade)
-  discipline   Discipline?      @relation(fields: [disciplineId], references: [id], onDelete: SetNull)
-  series       LiveClassSeries? @relation(fields: [seriesId], references: [id], onDelete: SetNull)
-  reservations Reservation[]
+  center          Center           @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  discipline      Discipline?      @relation(fields: [disciplineId], references: [id], onDelete: SetNull)
+  series          LiveClassSeries? @relation(fields: [seriesId], references: [id], onDelete: SetNull)
+  reservations    Reservation[]
+  waitlistEntries WaitlistEntry[]
 
   @@index([centerId])
   @@index([centerId, startsAt])
@@ -226,32 +231,32 @@ enum PlanPaymentStatus {
 }
 
 model UserPlan {
-  id              String            @id @default(cuid())
-  userId          String
-  planId          String
-  centerId        String
-  orderId         String?           // null si fue asignado manualmente por admin
-  subscriptionId  String?           // null = pago único; set = plan recurrente (suscripción MP)
-  status          UserPlanStatus    @default(ACTIVE)
-  paymentStatus   PlanPaymentStatus @default(PENDING)
-  classesTotal    Int?              // null = ilimitado
-  classesUsed     Int               @default(0)
-  validFrom       DateTime          @default(now())
-  validUntil      DateTime?         // null = sin vencimiento explícito
-  frozenAt        DateTime?
-  frozenUntil     DateTime?
-  freezeReason    String?
-  unfrozenAt      DateTime?
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
+  id             String            @id @default(cuid())
+  userId         String
+  planId         String
+  centerId       String
+  orderId        String? // null si fue asignado manualmente por admin
+  subscriptionId String? // null = pago único; set = plan recurrente (suscripción MP)
+  status         UserPlanStatus    @default(ACTIVE)
+  paymentStatus  PlanPaymentStatus @default(PENDING)
+  classesTotal   Int? // null = ilimitado
+  classesUsed    Int               @default(0)
+  validFrom      DateTime          @default(now())
+  validUntil     DateTime? // null = sin vencimiento explícito
+  frozenAt       DateTime?
+  frozenUntil    DateTime?
+  freezeReason   String?
+  unfrozenAt     DateTime?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
 
-  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  plan            Plan              @relation(fields: [planId], references: [id], onDelete: Restrict)
-  center          Center            @relation(fields: [centerId], references: [id], onDelete: Cascade)
-  subscription    Subscription?    @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
-  reservations    Reservation[]
-  manualPayments  ManualPayment[]
-  lessonUnlocks   LessonUnlock[]
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan           Plan            @relation(fields: [planId], references: [id], onDelete: Restrict)
+  center         Center          @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  subscription   Subscription?   @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  reservations   Reservation[]
+  manualPayments ManualPayment[]
+  lessonUnlocks  LessonUnlock[]
 
   @@index([userId, centerId])
   @@index([userId, centerId, status])
@@ -265,13 +270,13 @@ model ManualPayment {
   id              String   @id @default(cuid())
   centerId        String
   userId          String
-  userPlanId      String?  // null = pago suelto no vinculado a plan
-  eventTicketId   String?  // para transferencias de eventos aprobadas manualmente
+  userPlanId      String? // null = pago suelto no vinculado a plan
+  eventTicketId   String? // para transferencias de eventos aprobadas manualmente
   amountCents     Int
   currency        String   @default("CLP")
   method          String   @default("transfer") // transfer, cash, other
-  note            String?  // ej: "Cuota 1/3 Plan A", "Pago extra mat"
-  receiptSanityId String?  // doc id en Sanity con el comprobante (si aplica)
+  note            String? // ej: "Cuota 1/3 Plan A", "Pago extra mat"
+  receiptSanityId String? // doc id en Sanity con el comprobante (si aplica)
   paidAt          DateTime @default(now())
   createdAt       DateTime @default(now())
 
@@ -313,25 +318,27 @@ model InstructorBankAccount {
 
 // Estados de reserva
 enum ReservationStatus {
-  CONFIRMED    // Confirmada
-  CANCELLED    // Cancelada a tiempo (clase devuelta al plan)
-  LATE_CANCELLED  // Cancelada tarde (clase consumida)
-  ATTENDED     // Asistió
-  NO_SHOW      // No asistió
+  CONFIRMED // Confirmada
+  CANCELLED // Cancelada a tiempo (clase devuelta al plan)
+  LATE_CANCELLED // Cancelada tarde (clase consumida)
+  ATTENDED // Asistió
+  NO_SHOW // No asistió
 }
 
 model Reservation {
-  id         String           @id @default(cuid())
-  userId     String
-  liveClassId String
-  userPlanId  String?          // plan con el que se hizo la reserva (null = reservas legacy)
-  status     ReservationStatus @default(CONFIRMED)
-  /** Marca cuándo se mandó el recordatorio "2h antes". Null = aún no enviado.
-   *  Hace idempotente al cron de class-reminder (necesario en Hobby por la
-   *  precisión ±59min de los schedules diarios). */
+  id             String            @id @default(cuid())
+  userId         String
+  liveClassId    String
+  userPlanId     String? // plan con el que se hizo la reserva (null = reservas legacy)
+  status         ReservationStatus @default(CONFIRMED)
+  /**
+   * Marca cuándo se mandó el recordatorio "2h antes". Null = aún no enviado.
+   * Hace idempotente al cron de class-reminder (necesario en Hobby por la
+   * precisión ±59min de los schedules diarios).
+   */
   reminderSentAt DateTime?
-  createdAt  DateTime         @default(now())
-  updatedAt  DateTime         @updatedAt
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
 
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   liveClass LiveClass @relation(fields: [liveClassId], references: [id], onDelete: Cascade)
@@ -342,6 +349,46 @@ model Reservation {
   @@index([liveClassId])
   @@index([userPlanId])
   @@index([userId, updatedAt])
+}
+
+// Lista de espera para clases y eventos. Polimórfica: exactamente uno de
+// liveClassId o eventId está seteado (validado en lib/domain/waitlist.ts).
+enum WaitlistStatus {
+  QUEUED // en cola, sin notificar
+  NOTIFIED // recibió correo broadcast (sigue en cola)
+  HELD // solo eventos: hold activo durante checkout (consume cupo)
+  PROMOTED // ganó el cupo y reservó/pagó (terminal)
+  EXPIRED // hold venció, clase pasó, etc. (terminal)
+  CANCELLED // salió manualmente o admin lo quitó (terminal)
+}
+
+model WaitlistEntry {
+  id          String         @id @default(cuid())
+  userId      String
+  centerId    String // denormalizado para queries multi-tenant rápidas
+  liveClassId String?
+  eventId     String?
+  status      WaitlistStatus @default(QUEUED)
+  position    Int // orden FIFO al unirse
+  notifiedAt  DateTime? // último broadcast recibido (para throttle)
+  heldUntil   DateTime? // solo eventos: expiración del hold
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  center    Center     @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  liveClass LiveClass? @relation(fields: [liveClassId], references: [id], onDelete: Cascade)
+  event     Event?     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, liveClassId])
+  @@unique([userId, eventId])
+  @@index([liveClassId, status])
+  @@index([eventId, status])
+  // FIFO ordering: notifyWaitlistOnSpotFreed y listados ordenan por position.
+  @@index([liveClassId, position])
+  @@index([eventId, position])
+  @@index([centerId])
+  @@index([userId])
 }
 
 // Rol por centro (multi-tenant RBAC). Valores en inglés para consistencia con BD.
@@ -390,11 +437,11 @@ model CenterMercadoPagoConfig {
 
 // ─── Zoom por centro (plugin videollamadas) ──────────────────────────────────
 model CenterZoomConfig {
-  id              String    @id @default(cuid())
-  centerId        String    @unique
-  accessToken     String
-  refreshToken    String?
-  tokenExpiresAt  DateTime?
+  id             String    @id @default(cuid())
+  centerId       String    @unique
+  accessToken    String
+  refreshToken   String?
+  tokenExpiresAt DateTime?
   enabled        Boolean   @default(true)
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
@@ -404,14 +451,14 @@ model CenterZoomConfig {
 
 // ─── Google Meet por centro (plugin videollamadas) ──────────────────────────
 model CenterGoogleMeetConfig {
-  id              String    @id @default(cuid())
-  centerId        String    @unique
-  accessToken     String
-  refreshToken    String?
-  tokenExpiresAt  DateTime?
+  id             String    @id @default(cuid())
+  centerId       String    @unique
+  accessToken    String
+  refreshToken   String?
+  tokenExpiresAt DateTime?
   enabled        Boolean   @default(true)
   createdAt      DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  updatedAt      DateTime  @updatedAt
 
   center Center @relation(fields: [centerId], references: [id], onDelete: Cascade)
 }
@@ -435,43 +482,43 @@ enum BillingMode {
 
 // Vigencia por período (1 período = mensual, trimestral, etc.)
 enum ValidityPeriod {
-  MONTHLY      // mensual
-  QUARTERLY    // trimestral
+  MONTHLY // mensual
+  QUARTERLY // trimestral
   QUADRIMESTRAL // cuatrimestral
-  SEMESTER     // semestral
-  ANNUAL       // anual
+  SEMESTER // semestral
+  ANNUAL // anual
 }
 
 model Plan {
-  id          String   @id @default(cuid())
-  centerId    String
-  name        String
-  slug        String
-  description String?
-  amountCents Int
-  currency    String   @default("CLP")
-  type        PlanType
+  id                       String          @id @default(cuid())
+  centerId                 String
+  name                     String
+  slug                     String
+  description              String?
+  amountCents              Int
+  currency                 String          @default("CLP")
+  type                     PlanType
   // Vigencia: solo uno de los dos (por días O por período)
-  validityDays   Int?             // vigencia por días (ej. 15 días)
-  validityPeriod ValidityPeriod?  // vigencia por período (1 mensual, 1 trimestral, etc.)
-  billingMode    BillingMode?
+  validityDays             Int? // vigencia por días (ej. 15 días)
+  validityPeriod           ValidityPeriod? // vigencia por período (1 mensual, 1 trimestral, etc.)
+  billingMode              BillingMode?
   // Descuento % (0-100) si el cliente elige pago recurrente; solo si billingMode RECURRING o BOTH
-  recurringDiscountPercent Int?   @default(0)
+  recurringDiscountPercent Int?            @default(0)
   // Cuántas veces puede asistir en el período: null = ilimitado
-  maxReservations       Int?
-  maxReservationsPerDay Int?  // distribución: máx por día
-  maxReservationsPerWeek Int? // distribución: máx por semana (ej. 8/mes, máx 4/semana)
+  maxReservations          Int?
+  maxReservationsPerDay    Int? // distribución: máx por día
+  maxReservationsPerWeek   Int? // distribución: máx por semana (ej. 8/mes, máx 4/semana)
   // Ciclo de vida
-  archivedAt  DateTime?        // si no null, el plan está deshabilitado (no se muestra en tienda)
-  sortOrder   Int      @default(0) // menor primero; orden manual del admin
-  isPopular   Boolean  @default(false) // destaca con badge "Popular" en la tienda
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  archivedAt               DateTime? // si no null, el plan está deshabilitado (no se muestra en tienda)
+  sortOrder                Int             @default(0) // menor primero; orden manual del admin
+  isPopular                Boolean         @default(false) // destaca con badge "Popular" en la tienda
+  createdAt                DateTime        @default(now())
+  updatedAt                DateTime        @updatedAt
 
-  center Center @relation(fields: [centerId], references: [id], onDelete: Cascade)
-  orders Order[]
-  userPlans UserPlan[]
-  subscriptions Subscription[]
+  center         Center              @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  orders         Order[]
+  userPlans      UserPlan[]
+  subscriptions  Subscription[]
   categoryQuotas PlanCategoryQuota[]
 
   @@unique([centerId, slug])
@@ -493,24 +540,24 @@ enum PaymentMethod {
 }
 
 model Order {
-  id                 String        @id @default(cuid())
-  centerId           String
-  userId             String
-  planId             String
-  subscriptionId     String?       // si es cuota de suscripción recurrente
-  amountCents        Int
-  currency           String        @default("CLP")
-  status             OrderStatus   @default(PENDING)
-  paymentMethod      PaymentMethod @default(MERCADOPAGO)
-  externalReference  String        @unique
-  mpPreferenceId     String?
-  mpPaymentId        String?
+  id                      String        @id @default(cuid())
+  centerId                String
+  userId                  String
+  planId                  String
+  subscriptionId          String? // si es cuota de suscripción recurrente
+  amountCents             Int
+  currency                String        @default("CLP")
+  status                  OrderStatus   @default(PENDING)
+  paymentMethod           PaymentMethod @default(MERCADOPAGO)
+  externalReference       String        @unique
+  mpPreferenceId          String?
+  mpPaymentId             String?
   // Transferencia bancaria (sólo cuando paymentMethod = TRANSFER)
   transferClaimedAt       DateTime?
   transferReceiptSanityId String?
   transferRejectedReason  String?
-  createdAt          DateTime      @default(now())
-  updatedAt          DateTime      @updatedAt
+  createdAt               DateTime      @default(now())
+  updatedAt               DateTime      @updatedAt
 
   center       Center        @relation(fields: [centerId], references: [id], onDelete: Cascade)
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -541,17 +588,17 @@ model Subscription {
   planId             String
   mpSubscriptionId   String             @unique
   mpPayerId          String?
-  status             SubscriptionStatus  @default(PENDING)
+  status             SubscriptionStatus @default(PENDING)
   currentPeriodStart DateTime
   currentPeriodEnd   DateTime
   createdAt          DateTime           @default(now())
-  updatedAt          DateTime          @updatedAt
+  updatedAt          DateTime           @updatedAt
 
-  center     Center     @relation(fields: [centerId], references: [id], onDelete: Cascade)
-  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  plan       Plan       @relation(fields: [planId], references: [id], onDelete: Restrict)
-  userPlans  UserPlan[]
-  orders     Order[]
+  center    Center     @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan      Plan       @relation(fields: [planId], references: [id], onDelete: Restrict)
+  userPlans UserPlan[]
+  orders    Order[]
 
   @@index([centerId])
   @@index([userId])
@@ -573,19 +620,19 @@ model MercadoPagoWebhookEvent {
 
 // ─── Preferencias de email por usuario+centro ─────────────────────────────────
 model EmailPreference {
-  id                  String   @id @default(cuid())
-  userId              String
-  centerId            String
-  classReminder       Boolean  @default(true)
-  spotFreed           Boolean  @default(true)
-  planExpiring        Boolean  @default(true)
-  reservationConfirm  Boolean  @default(true)
-  purchaseConfirm     Boolean  @default(true)
-  lessonUnlocked      Boolean  @default(true)
-  quotaExhausted      Boolean  @default(true)
-  newContent          Boolean  @default(true)
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  id                 String   @id @default(cuid())
+  userId             String
+  centerId           String
+  classReminder      Boolean  @default(true)
+  spotFreed          Boolean  @default(true)
+  planExpiring       Boolean  @default(true)
+  reservationConfirm Boolean  @default(true)
+  purchaseConfirm    Boolean  @default(true)
+  lessonUnlocked     Boolean  @default(true)
+  quotaExhausted     Boolean  @default(true)
+  newContent         Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   center Center @relation(fields: [centerId], references: [id], onDelete: Cascade)
@@ -668,8 +715,9 @@ model Event {
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
-  center  Center        @relation(fields: [centerId], references: [id], onDelete: Cascade)
-  tickets EventTicket[]
+  center          Center          @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  tickets         EventTicket[]
+  waitlistEntries WaitlistEntry[]
 
   @@index([centerId])
   @@index([centerId, startsAt])
@@ -698,12 +746,12 @@ model EventTicket {
   transferClaimedAt       DateTime?
   transferReceiptSanityId String?
   transferRejectedReason  String?
-  paidAt        DateTime?
-  createdAt     DateTime          @default(now())
+  paidAt                  DateTime?
+  createdAt               DateTime          @default(now())
 
-  event           Event           @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  manualPayments  ManualPayment[]
+  event          Event           @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  manualPayments ManualPayment[]
 
   @@unique([eventId, userId])
   @@index([eventId])
@@ -720,19 +768,19 @@ enum OnDemandContentStatus {
 }
 
 model OnDemandCategory {
-  id            String                @id @default(cuid())
-  centerId      String
-  name          String
-  description   String?
-  thumbnailUrl  String?
-  sortOrder     Int                   @default(0)
-  status        OnDemandContentStatus @default(DRAFT)
-  createdAt     DateTime              @default(now())
-  updatedAt     DateTime              @updatedAt
+  id           String                @id @default(cuid())
+  centerId     String
+  name         String
+  description  String?
+  thumbnailUrl String?
+  sortOrder    Int                   @default(0)
+  status       OnDemandContentStatus @default(DRAFT)
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
 
-  center        Center                @relation(fields: [centerId], references: [id], onDelete: Cascade)
-  practices     OnDemandPractice[]
-  quotas        PlanCategoryQuota[]
+  center    Center              @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  practices OnDemandPractice[]
+  quotas    PlanCategoryQuota[]
 
   @@unique([centerId, name])
   @@index([centerId])
@@ -740,18 +788,18 @@ model OnDemandCategory {
 }
 
 model OnDemandPractice {
-  id            String                @id @default(cuid())
-  categoryId    String
-  name          String
-  description   String?
-  thumbnailUrl  String?
-  sortOrder     Int                   @default(0)
-  status        OnDemandContentStatus @default(DRAFT)
-  createdAt     DateTime              @default(now())
-  updatedAt     DateTime              @updatedAt
+  id           String                @id @default(cuid())
+  categoryId   String
+  name         String
+  description  String?
+  thumbnailUrl String?
+  sortOrder    Int                   @default(0)
+  status       OnDemandContentStatus @default(DRAFT)
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
 
-  category      OnDemandCategory      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  lessons       OnDemandLesson[]
+  category OnDemandCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  lessons  OnDemandLesson[]
 
   @@unique([categoryId, name])
   @@index([categoryId])
@@ -777,23 +825,23 @@ model OnDemandLesson {
   createdAt       DateTime              @default(now())
   updatedAt       DateTime              @updatedAt
 
-  practice        OnDemandPractice      @relation(fields: [practiceId], references: [id], onDelete: Cascade)
-  unlocks         LessonUnlock[]
+  practice OnDemandPractice @relation(fields: [practiceId], references: [id], onDelete: Cascade)
+  unlocks  LessonUnlock[]
 
   @@index([practiceId])
   @@index([practiceId, status])
 }
 
 model PlanCategoryQuota {
-  id          String   @id @default(cuid())
-  planId      String
-  categoryId  String
-  maxLessons  Int
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         String   @id @default(cuid())
+  planId     String
+  categoryId String
+  maxLessons Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-  plan        Plan             @relation(fields: [planId], references: [id], onDelete: Cascade)
-  category    OnDemandCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  plan     Plan             @relation(fields: [planId], references: [id], onDelete: Cascade)
+  category OnDemandCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
   @@unique([planId, categoryId])
   @@index([planId])
@@ -801,17 +849,17 @@ model PlanCategoryQuota {
 }
 
 model LessonUnlock {
-  id          String   @id @default(cuid())
-  userId      String
-  lessonId    String
-  userPlanId  String
-  centerId    String
-  unlockedAt  DateTime @default(now())
+  id         String   @id @default(cuid())
+  userId     String
+  lessonId   String
+  userPlanId String
+  centerId   String
+  unlockedAt DateTime @default(now())
 
-  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  lesson      OnDemandLesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
-  userPlan    UserPlan         @relation(fields: [userPlanId], references: [id], onDelete: Cascade)
-  center      Center           @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  user     User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson   OnDemandLesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  userPlan UserPlan       @relation(fields: [userPlanId], references: [id], onDelete: Cascade)
+  center   Center         @relation(fields: [centerId], references: [id], onDelete: Cascade)
 
   @@unique([userId, lessonId])
   @@index([userId])
@@ -822,57 +870,57 @@ model LessonUnlock {
 
 // ─── Configuración del sitio público ─────────────────────────────────────────
 model CenterSiteConfig {
-  id              String  @id @default(cuid())
-  centerId        String  @unique
-  heroEyebrow     String?
-  heroTitle       String?
-  heroSubtitle    String?
-  heroImageUrl    String?
-  logoUrl         String?
-  faviconUrl      String?
-  colorPrimary    String?
-  colorSecondary  String?
-  colorAccent     String?
-  contactEmail    String?
-  contactPhone    String?
-  contactAddress  String?
-  instagramUrl    String?
-  facebookUrl     String?
-  whatsappUrl     String?
-  youtubeUrl      String?
-  blogEnabled     Boolean  @default(false)
-  blogLabel       String   @default("Blog")
-  blogHeroTitle    String?
-  blogHeroSubtitle String?
+  id                       String   @id @default(cuid())
+  centerId                 String   @unique
+  heroEyebrow              String?
+  heroTitle                String?
+  heroSubtitle             String?
+  heroImageUrl             String?
+  logoUrl                  String?
+  faviconUrl               String?
+  colorPrimary             String?
+  colorSecondary           String?
+  colorAccent              String?
+  contactEmail             String?
+  contactPhone             String?
+  contactAddress           String?
+  instagramUrl             String?
+  facebookUrl              String?
+  whatsappUrl              String?
+  youtubeUrl               String?
+  blogEnabled              Boolean  @default(false)
+  blogLabel                String   @default("Blog")
+  blogHeroTitle            String?
+  blogHeroSubtitle         String?
   headerNavLabelHowItWorks String?
   headerNavLabelInPerson   String?
   headerNavLabelOnline     String?
   headerNavLabelContact    String?
-  libraryHeroTitle       String?
-  libraryHeroDescription String?
-  libraryHeroImageUrl    String?
-  seoTitle        String?
-  seoDescription  String?
-  heroOverlayEnabled Boolean @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  libraryHeroTitle         String?
+  libraryHeroDescription   String?
+  libraryHeroImageUrl      String?
+  seoTitle                 String?
+  seoDescription           String?
+  heroOverlayEnabled       Boolean  @default(true)
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
 
-  center          Center   @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  center Center @relation(fields: [centerId], references: [id], onDelete: Cascade)
 }
 
 model CenterSiteSection {
-  id          String   @id @default(cuid())
-  centerId    String
-  sectionKey  String
-  title       String?
-  subtitle    String?
-  visible     Boolean  @default(true)
-  sortOrder   Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         String   @id @default(cuid())
+  centerId   String
+  sectionKey String
+  title      String?
+  subtitle   String?
+  visible    Boolean  @default(true)
+  sortOrder  Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-  center      Center   @relation(fields: [centerId], references: [id], onDelete: Cascade)
-  items       CenterSiteSectionItem[]
+  center Center                  @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  items  CenterSiteSectionItem[]
 
   @@unique([centerId, sectionKey])
   @@index([centerId])
@@ -891,33 +939,33 @@ model CenterSiteSectionItem {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  section     CenterSiteSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  user    User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  section CenterSiteSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
 
   @@index([sectionId])
 }
 
 // ─── Página "Sobre" dedicada (bio + galería por categoría) ──────────────────
 model CenterAboutPage {
-  id            String   @id @default(cuid())
-  centerId      String   @unique
-  visible       Boolean  @default(false)
-  showInHeader  Boolean  @default(false)
-  headerLabel   String   @default("Sobre mí")
-  pageTitle     String   @default("Sobre mí")
-  pageEyebrow   String?
-  name          String?
-  tagline       String?
-  heroImageUrl  String?
-  bio           String?
-  propuesta     String?
-  ctaLabel      String   @default("Agenda tu primera clase")
-  ctaHref       String   @default("/#agenda")
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id           String   @id @default(cuid())
+  centerId     String   @unique
+  visible      Boolean  @default(false)
+  showInHeader Boolean  @default(false)
+  headerLabel  String   @default("Sobre mí")
+  pageTitle    String   @default("Sobre mí")
+  pageEyebrow  String?
+  name         String?
+  tagline      String?
+  heroImageUrl String?
+  bio          String?
+  propuesta    String?
+  ctaLabel     String   @default("Agenda tu primera clase")
+  ctaHref      String   @default("/#agenda")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  center        Center                    @relation(fields: [centerId], references: [id], onDelete: Cascade)
-  images        CenterAboutPageImage[]
+  center Center                 @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  images CenterAboutPageImage[]
 }
 
 enum AboutImageCategory {
@@ -927,17 +975,17 @@ enum AboutImageCategory {
 }
 
 model CenterAboutPageImage {
-  id          String             @id @default(cuid())
-  pageId      String
-  imageUrl    String
-  caption     String?
-  category    AboutImageCategory
-  sortOrder   Int                @default(0)
-  visible     Boolean            @default(true)
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
+  id        String             @id @default(cuid())
+  pageId    String
+  imageUrl  String
+  caption   String?
+  category  AboutImageCategory
+  sortOrder Int                @default(0)
+  visible   Boolean            @default(true)
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
 
-  page        CenterAboutPage    @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  page CenterAboutPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
 
   @@index([pageId, category, sortOrder])
 }

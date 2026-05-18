@@ -8,7 +8,9 @@
  */
 import { prisma } from "@/lib/adapters/db/prisma";
 import { centerRepository, planRepository, userRepository, siteConfigRepository } from "@/lib/adapters/db";
+import { runAfterResponse } from "@/lib/utils/run-after-response";
 import { sendEmailSafe } from "./send-email";
+import { notifyWaitlistOnSpotFreed } from "./notify-waitlist-on-spot-freed";
 import { buildTransferRejectedEmail } from "@/lib/email";
 import { getEmailBranding } from "@/lib/email/branding";
 import { getBaseUrl } from "@/lib/utils/base-url";
@@ -165,6 +167,13 @@ export async function rejectTransferEventTicket(
       transferRejectedReason: reason,
     },
   });
+
+  // Cupo liberado: notifica a la waitlist del evento en background.
+  runAfterResponse(
+    notifyWaitlistOnSpotFreed("event", ticket.eventId).catch((err) =>
+      console.error("[waitlist] notify on event ticket rejected failed", err)
+    )
+  );
 
   const [buyer, center] = await Promise.all([
     userRepository.findById(ticket.userId),
