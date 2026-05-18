@@ -1,5 +1,6 @@
 export type PaymentsType = "checkout" | "manual" | "transfers";
 export type PaymentsDatePreset = "today" | "last7" | "thisMonth" | "custom";
+export type PaymentsPaymentKind = "plan" | "event";
 
 export interface PaymentsSearchParamsInput {
   type?: string;
@@ -9,6 +10,7 @@ export interface PaymentsSearchParamsInput {
   from?: string;
   to?: string;
   page?: string;
+  paymentKind?: string;
 }
 
 export interface PaymentsSearchParams {
@@ -19,6 +21,7 @@ export interface PaymentsSearchParams {
   from?: string;
   to?: string;
   page: number;
+  paymentKind?: PaymentsPaymentKind;
 }
 
 function isPaymentsType(v: string): v is PaymentsType {
@@ -27,6 +30,10 @@ function isPaymentsType(v: string): v is PaymentsType {
 
 function isDatePreset(v: string): v is PaymentsDatePreset {
   return v === "today" || v === "last7" || v === "thisMonth" || v === "custom";
+}
+
+function isPaymentKind(v: string): v is PaymentsPaymentKind {
+  return v === "plan" || v === "event";
 }
 
 function normalizeEmail(input: unknown): string | undefined {
@@ -48,6 +55,11 @@ export function parsePaymentsSearchParams(
     typeof input.page === "string" && input.page ? Number(input.page) : 1;
   const page = Number.isFinite(parsedPage) && parsedPage >= 1 ? Math.floor(parsedPage) : 1;
 
+  const paymentKind =
+    input.paymentKind && isPaymentKind(input.paymentKind)
+      ? input.paymentKind
+      : undefined;
+
   return {
     type,
     status: typeof input.status === "string" && input.status ? input.status : undefined,
@@ -56,6 +68,7 @@ export function parsePaymentsSearchParams(
     from: typeof input.from === "string" && input.from ? input.from : undefined,
     to: typeof input.to === "string" && input.to ? input.to : undefined,
     page,
+    paymentKind,
   };
 }
 

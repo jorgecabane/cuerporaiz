@@ -1,7 +1,7 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { manualPaymentRepository, orderRepository, planRepository, userRepository } from "@/lib/adapters/db";
+import { manualPaymentRepository, planRepository, userRepository } from "@/lib/adapters/db";
 import { prisma } from "@/lib/adapters/db/prisma";
 import { Button } from "@/components/ui/Button";
 import { ApproveOrderForm } from "./ApproveOrderForm";
@@ -9,9 +9,14 @@ import { ApproveTransferButton, RejectTransferButton } from "./TransferActions";
 import { TransferReceiptViewer } from "./TransferReceiptViewer";
 import { getTransferReceiptInfo } from "@/lib/application/get-transfer-receipt-info";
 import type { OrderStatus } from "@/lib/ports";
-import { ORDER_STATUS_LABELS } from "@/lib/ports";
+import { ORDER_STATUS_LABELS, EVENT_TICKET_STATUS_LABELS } from "@/lib/ports";
 import { isAdminRole } from "@/lib/domain";
-import { computeDateRangeUtc, parsePaymentsSearchParams } from "@/lib/panel/payments-query";
+import type { EventTicketStatus } from "@/lib/domain/event";
+import {
+  computeDateRangeUtc,
+  parsePaymentsSearchParams,
+  type PaymentsPaymentKind,
+} from "@/lib/panel/payments-query";
 import { getCenterTimezone } from "@/lib/datetime/center-timezone";
 
 function formatPrice(cents: number, currency: string): string {
@@ -48,6 +53,140 @@ interface PendingTransferRow {
   eventTitle?: string;
   /** Para tickets: cantidad de cupos comprados (default 1). */
   quantity?: number;
+}
+
+interface CheckoutLogRow {
+  id: string; // `order-<id>` o `ticket-<id>`
+  kind: "order" | "ticket";
+  itemId: string;
+  createdAt: Date;
+  userId: string;
+  amountCents: number;
+  currency: string;
+  paymentMethod: "MERCADOPAGO" | "TRANSFER";
+  transferClaimedAt: Date | null;
+  statusLabel: string;
+  rawStatus: string;
+  externalReference: string | null;
+  /** Solo orders */
+  planId?: string;
+  /** Solo tickets */
+  eventTitle?: string;
+  /** Solo tickets */
+  quantity?: number;
+}
+
+interface CheckoutLogResult {
+  rows: CheckoutLogRow[];
+  hasMore: boolean;
+}
+
+/**
+ * Carga el histórico unificado de checkout: Orders (planes) + EventTickets (eventos).
+ * Paginación in-memory: se traen `take * page + 1` filas de cada lado, se mezclan
+ * por createdAt desc y se hace slice del rango pedido. Aceptable para los
+ * volúmenes actuales del centro (~decenas/mes). Si crece a cientos por página,
+ * habría que refactorizar a un cursor compuesto a nivel SQL.
+ */
+async function loadCheckoutPaymentsLog(
+  centerId: string,
+  filters: {
+    paymentKind?: PaymentsPaymentKind;
+    status?: OrderStatus;
+    email?: string;
+    from?: Date;
+    to?: Date;
+    page: number;
+    take: number;
+  },
+): Promise<CheckoutLogResult> {
+  const take = Math.max(1, Math.min(100, filters.take));
+  const page = Math.max(1, Math.floor(filters.page));
+  const skip = (page - 1) * take;
+  const fetchLimit = skip + take + 1;
+
+  const emailFilter =
+    filters.email != null && filters.email !== ""
+      ? { contains: filters.email, mode: "insensitive" as const }
+      : null;
+  const dateFilter =
+    filters.from || filters.to
+      ? {
+          ...(filters.from && { gte: filters.from }),
+          ...(filters.to && { lte: filters.to }),
+        }
+      : null;
+
+  const wantOrders = filters.paymentKind !== "event";
+  const wantTickets = filters.paymentKind !== "plan";
+
+  const [orders, tickets] = await Promise.all([
+    wantOrders
+      ? prisma.order.findMany({
+          where: {
+            centerId,
+            ...(filters.status != null && { status: filters.status }),
+            ...(dateFilter && { createdAt: dateFilter }),
+            ...(emailFilter && { user: { email: emailFilter } }),
+          },
+          orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+          take: fetchLimit,
+        })
+      : Promise.resolve([] as never[]),
+    wantTickets
+      ? prisma.eventTicket.findMany({
+          where: {
+            event: { centerId },
+            // El dropdown Estado sigue el enum Order; cuando se mezclan ambos
+            // lados, los tickets no se filtran por estado (ver doc del filtro).
+            ...(dateFilter && { createdAt: dateFilter }),
+            ...(emailFilter && { user: { email: emailFilter } }),
+          },
+          include: { event: { select: { title: true } } },
+          orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+          take: fetchLimit,
+        })
+      : Promise.resolve([] as never[]),
+  ]);
+
+  const orderRows: CheckoutLogRow[] = orders.map((o) => ({
+    id: `order-${o.id}`,
+    kind: "order",
+    itemId: o.id,
+    createdAt: o.createdAt,
+    userId: o.userId,
+    amountCents: o.amountCents,
+    currency: o.currency,
+    paymentMethod: o.paymentMethod,
+    transferClaimedAt: o.transferClaimedAt,
+    statusLabel: ORDER_STATUS_LABELS[o.status as OrderStatus],
+    rawStatus: o.status,
+    externalReference: o.externalReference,
+    planId: o.planId,
+  }));
+  const ticketRows: CheckoutLogRow[] = tickets.map((t) => ({
+    id: `ticket-${t.id}`,
+    kind: "ticket",
+    itemId: t.id,
+    createdAt: t.createdAt,
+    userId: t.userId,
+    amountCents: t.amountCents,
+    currency: t.currency,
+    paymentMethod: t.paymentMethod,
+    transferClaimedAt: t.transferClaimedAt,
+    statusLabel: EVENT_TICKET_STATUS_LABELS[t.status as EventTicketStatus],
+    rawStatus: t.status,
+    externalReference: t.externalReference,
+    eventTitle: t.event?.title,
+    quantity: t.quantity,
+  }));
+
+  const combined = [...orderRows, ...ticketRows].sort(
+    (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
+  );
+  const sliced = combined.slice(skip, skip + take);
+  const hasMore = combined.length > skip + take;
+  return { rows: sliced, hasMore };
 }
 
 async function loadPendingTransfers(centerId: string): Promise<PendingTransferRow[]> {
@@ -122,12 +261,16 @@ export default async function PanelPagosPage({
     from: raw.from,
     to: raw.to,
     page: raw.page,
+    paymentKind: raw.paymentKind,
   });
   const dateRange = computeDateRangeUtc({
     datePreset: parsed.datePreset,
     from: parsed.from,
     to: parsed.to,
   });
+  // El filtro Tipo solo aplica a Checkout y Manual; en Transferencias el badge ya diferencia.
+  const effectivePaymentKind =
+    parsed.type === "transfers" ? undefined : parsed.paymentKind;
   const baseQuery: Record<string, string | undefined> = {
     type: parsed.type,
     status: parsed.type === "checkout" ? parsed.status : undefined,
@@ -135,18 +278,24 @@ export default async function PanelPagosPage({
     datePreset: parsed.datePreset,
     from: parsed.datePreset === "custom" ? parsed.from : undefined,
     to: parsed.datePreset === "custom" ? parsed.to : undefined,
+    paymentKind: effectivePaymentKind,
     page: String(parsed.page),
   };
 
   const take = 20;
+  // El filtro Estado solo aplica a checkout y al lado Orders. Con Tipo = Evento
+  // se descarta porque el enum Order no aplica a tickets.
   const statusFilter =
-    parsed.type === "checkout" && parsed.status
+    parsed.type === "checkout" &&
+    parsed.status &&
+    effectivePaymentKind !== "event"
       ? (parsed.status as OrderStatus)
       : undefined;
 
-  const checkoutPage =
+  const checkoutLog =
     parsed.type === "checkout"
-      ? await orderRepository.findPageByCenterId(centerId, {
+      ? await loadCheckoutPaymentsLog(centerId, {
+          paymentKind: effectivePaymentKind,
           status: statusFilter,
           email: parsed.email,
           from: dateRange?.from,
@@ -160,6 +309,7 @@ export default async function PanelPagosPage({
     parsed.type === "manual"
       ? await manualPaymentRepository.findPageByCenterId(centerId, {
           email: parsed.email,
+          paymentKind: effectivePaymentKind,
           from: dateRange?.from,
           to: dateRange?.to,
           page: parsed.page,
@@ -167,7 +317,7 @@ export default async function PanelPagosPage({
         })
       : null;
 
-  const orders = checkoutPage?.items ?? [];
+  const checkoutRows = checkoutLog?.rows ?? [];
   const manualPayments = manualPage?.items ?? [];
 
   // Transferencias por revisar: orders + tickets pendientes con claim hecho.
@@ -178,14 +328,21 @@ export default async function PanelPagosPage({
 
   const userIdsBase =
     parsed.type === "checkout"
-      ? orders.map((x) => x.userId)
+      ? checkoutRows.map((x) => x.userId)
       : parsed.type === "manual"
         ? manualPayments.map((x) => x.userId)
         : transfersList.map((t) => t.userId);
   const userIds = [...new Set(userIdsBase)];
   const planIds =
     parsed.type === "checkout"
-      ? [...new Set(orders.map((o) => o.planId))]
+      ? [
+          ...new Set(
+            checkoutRows
+              .filter((r) => r.kind === "order")
+              .map((r) => r.planId)
+              .filter((id): id is string => Boolean(id)),
+          ),
+        ]
       : parsed.type === "transfers"
         ? [
             ...new Set(
@@ -298,7 +455,9 @@ export default async function PanelPagosPage({
                 id="status"
                 name="status"
                 defaultValue={parsed.type === "checkout" ? (parsed.status ?? "") : ""}
-                disabled={parsed.type !== "checkout"}
+                disabled={
+                  parsed.type !== "checkout" || effectivePaymentKind === "event"
+                }
                 className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)] disabled:opacity-60"
               >
                 <option value="">Todos</option>
@@ -310,6 +469,27 @@ export default async function PanelPagosPage({
               </select>
             </div>
           </div>
+
+          {parsed.type !== "transfers" && (
+            <div className="mt-3 md:max-w-xs">
+              <label
+                htmlFor="paymentKind"
+                className="block text-sm font-medium text-[var(--color-text)] mb-1"
+              >
+                Tipo
+              </label>
+              <select
+                id="paymentKind"
+                name="paymentKind"
+                defaultValue={effectivePaymentKind ?? ""}
+                className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)]"
+              >
+                <option value="">Todos</option>
+                <option value="plan">Solo planes</option>
+                <option value="event">Solo eventos</option>
+              </select>
+            </div>
+          )}
 
           {parsed.datePreset === "custom" && (
             <div className="mt-3 grid gap-3 md:grid-cols-2">
@@ -436,10 +616,10 @@ export default async function PanelPagosPage({
             })}
           </div>
         )
-      ) : parsed.type === "checkout" && orders.length === 0 ? (
+      ) : parsed.type === "checkout" && checkoutRows.length === 0 ? (
         <div className="rounded-[var(--radius-lg)] bg-[var(--color-surface)] p-6">
           <p className="text-[var(--color-text-muted)]">
-            No hay órdenes con los filtros seleccionados.
+            No hay pagos con los filtros seleccionados.
           </p>
         </div>
       ) : parsed.type === "manual" && manualPayments.length === 0 ? (
@@ -455,7 +635,7 @@ export default async function PanelPagosPage({
               <tr className="border-b border-[var(--color-border)]">
                 <th className="p-3">Fecha</th>
                 <th className="p-3">Usuario</th>
-                <th className="p-3">Plan</th>
+                <th className="p-3">Ítem</th>
                 <th className="p-3">Monto</th>
                 <th className="p-3">Método</th>
                 <th className="p-3">Estado</th>
@@ -464,55 +644,75 @@ export default async function PanelPagosPage({
               </tr>
             </thead>
             <tbody>
-              {orders.map((order) => {
+              {checkoutRows.map((row) => {
                 const isTransferClaimed =
-                  order.paymentMethod === "TRANSFER" && order.transferClaimedAt != null;
+                  row.paymentMethod === "TRANSFER" && row.transferClaimedAt != null;
                 const methodLabel =
-                  order.paymentMethod === "TRANSFER"
+                  row.paymentMethod === "TRANSFER"
                     ? isTransferClaimed
                       ? "Transferencia"
                       : "Transferencia (sin confirmar)"
                     : "MercadoPago";
                 const methodClass =
-                  order.paymentMethod === "TRANSFER"
+                  row.paymentMethod === "TRANSFER"
                     ? "bg-[var(--color-primary-light)] text-[var(--color-primary)]"
                     : "bg-[#E0F2FE] text-[#0369A1]";
+                const itemName =
+                  row.kind === "order"
+                    ? planMap[row.planId ?? ""]?.name ?? row.planId ?? "Plan"
+                    : row.eventTitle ?? "Evento";
+                const quantitySuffix =
+                  row.kind === "ticket" && row.quantity != null && row.quantity > 1
+                    ? ` · ${row.quantity} cupos`
+                    : "";
+                const kindBadgeClass =
+                  row.kind === "order"
+                    ? "bg-[var(--color-primary-light)] text-[var(--color-primary)]"
+                    : "bg-[var(--color-secondary-light)] text-[var(--color-secondary)]";
                 return (
-                <tr key={order.id} className="border-b border-[var(--color-border)] last:border-0">
-                  <td className="p-3 text-[var(--color-text-muted)]">
-                    {order.createdAt.toLocaleString("es-CL", { timeZone: tz })}
-                  </td>
-                  <td className="p-3">
-                    <Link
-                      href={`/panel/clientes/${order.userId}`}
-                      className="text-[var(--color-primary)] hover:underline"
-                    >
-                      {userMap[order.userId]?.email ?? order.userId}
-                    </Link>
-                  </td>
-                  <td className="p-3">
-                    {planMap[order.planId]?.name ?? order.planId}
-                  </td>
-                  <td className="p-3">
-                    {formatPrice(order.amountCents, order.currency)}
-                  </td>
-                  <td className="p-3">
-                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${methodClass}`}>
-                      {methodLabel}
-                    </span>
-                  </td>
-                  <td className="p-3">
-                    {ORDER_STATUS_LABELS[order.status]}
-                  </td>
-                  <td className="p-3 font-mono text-xs">
-                    {order.externalReference}
-                  </td>
-                  <td className="p-3">
-                    {order.status === "PENDING" && (
-                      <ApproveOrderForm orderId={order.id} />
-                    )}
-                  </td>
-                </tr>
+                  <tr key={row.id} className="border-b border-[var(--color-border)] last:border-0">
+                    <td className="p-3 text-[var(--color-text-muted)]">
+                      {row.createdAt.toLocaleString("es-CL", { timeZone: tz })}
+                    </td>
+                    <td className="p-3">
+                      <Link
+                        href={`/panel/clientes/${row.userId}`}
+                        className="text-[var(--color-primary)] hover:underline"
+                      >
+                        {userMap[row.userId]?.email ?? row.userId}
+                      </Link>
+                    </td>
+                    <td className="p-3">
+                      <span className="flex flex-wrap items-center gap-2">
+                        <span
+                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${kindBadgeClass}`}
+                        >
+                          {row.kind === "order" ? "Plan" : "Evento"}
+                        </span>
+                        <span>
+                          {itemName}
+                          {quantitySuffix}
+                        </span>
+                      </span>
+                    </td>
+                    <td className="p-3">
+                      {formatPrice(row.amountCents, row.currency)}
+                    </td>
+                    <td className="p-3">
+                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${methodClass}`}>
+                        {methodLabel}
+                      </span>
+                    </td>
+                    <td className="p-3">{row.statusLabel}</td>
+                    <td className="p-3 font-mono text-xs">
+                      {row.externalReference ?? "—"}
+                    </td>
+                    <td className="p-3">
+                      {row.kind === "order" && row.rawStatus === "PENDING" && (
+                        <ApproveOrderForm orderId={row.itemId} />
+                      )}
+                    </td>
+                  </tr>
                 );
               })}
             </tbody>
@@ -525,34 +725,60 @@ export default async function PanelPagosPage({
               <tr className="border-b border-[var(--color-border)]">
                 <th className="p-3">Fecha</th>
                 <th className="p-3">Usuario</th>
-                <th className="p-3">Plan</th>
+                <th className="p-3">Ítem</th>
                 <th className="p-3">Monto</th>
                 <th className="p-3">Método</th>
                 <th className="p-3">Nota</th>
               </tr>
             </thead>
             <tbody>
-              {manualPayments.map((p) => (
-                <tr key={p.id} className="border-b border-[var(--color-border)] last:border-0">
-                  <td className="p-3 text-[var(--color-text-muted)]">
-                    {p.paidAt.toLocaleString("es-CL", { timeZone: tz })}
-                  </td>
-                  <td className="p-3">
-                    <Link
-                      href={`/panel/clientes/${p.userId}`}
-                      className="text-[var(--color-primary)] hover:underline"
-                    >
-                      {userMap[p.userId]?.email ?? p.userId}
-                    </Link>
-                  </td>
-                  <td className="p-3">
-                    {p.planName ?? (p.userPlanId ? p.userPlanId : "Pago suelto")}
-                  </td>
-                  <td className="p-3">{formatPrice(p.amountCents, p.currency)}</td>
-                  <td className="p-3">{p.method}</td>
-                  <td className="p-3 text-[var(--color-text-muted)]">{p.note ?? "—"}</td>
-                </tr>
-              ))}
+              {manualPayments.map((p) => {
+                const itemKind: "plan" | "event" | "loose" = p.eventTicketId
+                  ? "event"
+                  : p.userPlanId
+                    ? "plan"
+                    : "loose";
+                const itemName =
+                  itemKind === "event"
+                    ? p.eventTitle ?? "Evento"
+                    : itemKind === "plan"
+                      ? p.planName ?? p.userPlanId ?? "Plan"
+                      : "Pago suelto";
+                const kindBadgeClass =
+                  itemKind === "event"
+                    ? "bg-[var(--color-secondary-light)] text-[var(--color-secondary)]"
+                    : "bg-[var(--color-primary-light)] text-[var(--color-primary)]";
+                return (
+                  <tr key={p.id} className="border-b border-[var(--color-border)] last:border-0">
+                    <td className="p-3 text-[var(--color-text-muted)]">
+                      {p.paidAt.toLocaleString("es-CL", { timeZone: tz })}
+                    </td>
+                    <td className="p-3">
+                      <Link
+                        href={`/panel/clientes/${p.userId}`}
+                        className="text-[var(--color-primary)] hover:underline"
+                      >
+                        {userMap[p.userId]?.email ?? p.userId}
+                      </Link>
+                    </td>
+                    <td className="p-3">
+                      <span className="flex flex-wrap items-center gap-2">
+                        {itemKind !== "loose" && (
+                          <span
+                            className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${kindBadgeClass}`}
+                          >
+                            {itemKind === "event" ? "Evento" : "Plan"}
+                          </span>
+                        )}
+                        <span>{itemName}</span>
+                      </span>
+                    </td>
+                    <td className="p-3">{formatPrice(p.amountCents, p.currency)}</td>
+                    <td className="p-3">{p.method}</td>
+                    <td className="p-3 text-[var(--color-text-muted)]">{p.note ?? "—"}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -569,7 +795,7 @@ export default async function PanelPagosPage({
           href={`/panel/pagos${buildQuery(baseQuery, { page: String(parsed.page + 1) })}`}
           variant={
             parsed.type === "checkout"
-              ? checkoutPage?.hasMore
+              ? checkoutLog?.hasMore
                 ? "primary"
                 : "secondary"
               : manualPage?.hasMore

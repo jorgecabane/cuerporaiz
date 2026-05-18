@@ -1,5 +1,13 @@
 import type { EventTicket, EventTicketReferenceMatch, EventTicketStatus } from "@/lib/domain/event";
 
+/** Etiquetas para mostrar en UI. Tipado para que no falte ningún estado. */
+export const EVENT_TICKET_STATUS_LABELS: Record<EventTicketStatus, string> = {
+  PENDING: "Pendiente",
+  PAID: "Pagado",
+  CANCELLED: "Cancelado",
+  REFUNDED: "Reembolsado",
+};
+
 export interface IEventTicketRepository {
   findById(id: string): Promise<EventTicket | null>;
   findByEventId(eventId: string): Promise<EventTicket[]>;
