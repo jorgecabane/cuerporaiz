@@ -187,7 +187,7 @@ export function EditClassForm({
     const startsAt = fd.get("startsAt") as string;
     const durationMinutes = Number(fd.get("durationMinutes")) || defaultDuration;
     if (!title || !startsAt) {
-      setMeetingError("Completá nombre y fecha/hora.");
+      setMeetingError("Completa nombre y fecha/hora.");
       setGeneratingMeeting(false);
       return;
     }

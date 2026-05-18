@@ -110,7 +110,7 @@ describe("buildSetPasswordEmail", () => {
       setPasswordUrl: "https://x/auth/reset-password?token=abc&invite=1",
       roleLabel: "profesor/a",
     });
-    expect(dto.subject).toContain("Activá tu cuenta");
+    expect(dto.subject).toContain("Activa tu cuenta");
     expect(dto.subject).toContain("Cuerpo Raíz");
     expect(dto.html).toContain("Hola Andrea");
     expect(dto.html).toContain("profesor/a");

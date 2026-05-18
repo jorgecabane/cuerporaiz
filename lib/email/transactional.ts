@@ -249,7 +249,7 @@ export function buildWelcomeStaffEmail(data: WelcomeStaffData): SendEmailDto {
     <p>Te damos la bienvenida a <strong>${branding.centerName}</strong>. Fuiste agregado/a como <strong>${roleLabel}</strong>.</p>
     <p>Para acceder al panel, define tu contraseña:</p>
     <p style="text-align:center;margin:28px 0;"><a href="${data.setPasswordUrl}" style="${cta}">Crear mi contraseña</a></p>
-    <p style="font-size:12px;color:#5C5A56;">¿No funciona el botón? Copiá y pegá este link en tu navegador:</p>
+    <p style="font-size:12px;color:#5C5A56;">¿No funciona el botón? Copia y pega este link en tu navegador:</p>
     <p style="font-size:12px;word-break:break-all;background:#F5F0E9;padding:10px;border-radius:6px;color:#2A2A2A;">${data.setPasswordUrl}</p>
     <p style="font-size:13px;color:#5C5A56;">Este enlace expira en 7 días.</p>`;
   const html = emailBaseLayout({ body, branding });
@@ -290,13 +290,13 @@ export function buildWelcomeStudentEmail(data: WelcomeStudentData): SendEmailDto
   const body = `
     <p style="font-size:18px;margin:0 0 8px;">¡Hola ${data.userName}! 🌿</p>
     <p style="font-size:16px;margin:0 0 16px;">Qué bueno tenerte en <strong>${branding.centerName}</strong>.</p>
-    <p>Estamos para acompañarte en tu práctica. Desde tu panel podés reservar clases, ver tu plan y gestionar tu cuenta.</p>
+    <p>Estamos para acompañarte en tu práctica. Desde tu panel puedes reservar clases, ver tu plan y gestionar tu cuenta.</p>
     ${customBlock}
     <p style="font-weight:600;margin:24px 0 12px;color:${branding.colorPrimary};">Tus primeros pasos</p>
     <table role="presentation" width="100%" style="margin:0 0 8px;">
-      <tr><td style="padding:8px 0;border-bottom:1px solid #EAE3D7;font-size:14px;">1. Completá tu perfil — datos de contacto y avatar</td></tr>
-      <tr><td style="padding:8px 0;border-bottom:1px solid #EAE3D7;font-size:14px;">2. Revisá los horarios y reservá tu primera clase</td></tr>
-      <tr><td style="padding:8px 0;font-size:14px;">3. Si tienes lesiones o consultas, escribinos${branding.contactEmail ? ` a <a href="mailto:${branding.contactEmail}" style="color:${branding.colorPrimary};">${branding.contactEmail}</a>` : ""}</td></tr>
+      <tr><td style="padding:8px 0;border-bottom:1px solid #EAE3D7;font-size:14px;">1. Completa tu perfil — datos de contacto y avatar</td></tr>
+      <tr><td style="padding:8px 0;border-bottom:1px solid #EAE3D7;font-size:14px;">2. Revisa los horarios y reserva tu primera clase</td></tr>
+      <tr><td style="padding:8px 0;font-size:14px;">3. Si tienes lesiones o consultas, escríbenos${branding.contactEmail ? ` a <a href="mailto:${branding.contactEmail}" style="color:${branding.colorPrimary};">${branding.contactEmail}</a>` : ""}</td></tr>
     </table>
     <p style="text-align:center;margin:28px 0 12px;"><a href="${data.dashboardUrl}" style="${cta}">Entrar al panel</a></p>
     <p style="text-align:center;font-size:13px;margin:0;"><a href="${data.profileUrl}" style="color:${branding.colorPrimary};">Completar mi perfil →</a></p>`;
@@ -333,7 +333,7 @@ export function buildWelcomeStudentByAdminEmail(data: WelcomeStudentByAdminData)
     <p style="font-size:16px;margin:0 0 16px;">Te damos la bienvenida a <strong>${branding.centerName}</strong>.</p>
     <p>El equipo te creó una cuenta. Define tu contraseña con este link y vas a poder reservar clases y gestionar tu plan:</p>
     <p style="text-align:center;margin:28px 0;"><a href="${data.setPasswordUrl}" style="${cta}">Crear mi contraseña</a></p>
-    <p style="font-size:12px;color:#5C5A56;">¿No funciona el botón? Copiá y pegá este link en tu navegador:</p>
+    <p style="font-size:12px;color:#5C5A56;">¿No funciona el botón? Copia y pega este link en tu navegador:</p>
     <p style="font-size:12px;word-break:break-all;background:#F5F0E9;padding:10px;border-radius:6px;color:#2A2A2A;">${data.setPasswordUrl}</p>
     <p style="font-size:13px;color:#5C5A56;">Este enlace expira en 7 días.</p>
     ${customBlock}`;
@@ -343,7 +343,7 @@ export function buildWelcomeStudentByAdminEmail(data: WelcomeStudentByAdminData)
   return {
     from: fromForBranding(branding),
     to: [data.toEmail],
-    subject: `Activá tu cuenta — ${branding.centerName}`,
+    subject: `Activa tu cuenta — ${branding.centerName}`,
     html,
     text,
   };

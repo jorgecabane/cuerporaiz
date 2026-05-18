@@ -552,7 +552,7 @@ export function PanelHomeCalendar({
       <ConfirmDialog
         open={trialConfirmFor !== null}
         title="¿Reservar tu clase de prueba?"
-        description="La clase de prueba es única por centro: solo podés usarla una vez. Si cancelás a tiempo, vuelve a quedar disponible."
+        description="La clase de prueba es única por centro: solo puedes usarla una vez. Si cancelas a tiempo, vuelve a quedar disponible."
         confirmLabel="Reservar clase de prueba"
         cancelLabel="Cancelar"
         variant="warning"

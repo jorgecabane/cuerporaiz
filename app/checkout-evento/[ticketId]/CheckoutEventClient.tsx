@@ -89,7 +89,7 @@ export function CheckoutEventClient(props: Props) {
     }
     // Para PDFs no optimizamos: validamos tamaño upfront contra el límite del server.
     if (file.type === "application/pdf" && file.size > MAX_RECEIPT_BYTES) {
-      setUploadError("PDF supera 4MB. Probá exportarlo en menor calidad.");
+      setUploadError("PDF supera 4MB. Prueba exportarlo en menor calidad.");
       return;
     }
     setUploading(true);
@@ -100,7 +100,7 @@ export function CheckoutEventClient(props: Props) {
         toUpload = await optimizeImage(file, "transferReceipt");
       }
       if (toUpload.size > MAX_RECEIPT_BYTES) {
-        setUploadError("La imagen sigue muy grande tras optimizar. Probá una más chica.");
+        setUploadError("La imagen sigue muy grande tras optimizar. Prueba una más chica.");
         return;
       }
       const fd = new FormData();
@@ -161,7 +161,7 @@ export function CheckoutEventClient(props: Props) {
 
           {!props.mpEnabled && !props.transferAvailable && (
             <div className="rounded-[var(--radius-md)] border border-[var(--color-error)] bg-[var(--color-error-bg)] p-4 text-sm text-[var(--color-error-text)]">
-              Este centro no tiene métodos de pago activos. Contactá al centro para coordinar.
+              Este centro no tiene métodos de pago activos. Contacta al centro para coordinar.
             </div>
           )}
 
