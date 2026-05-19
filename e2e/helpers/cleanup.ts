@@ -1314,7 +1314,7 @@ export async function restoreTier2SiteConfig(
 }
 
 /**
- * Crea una LiveClass con `isTrialClass=true` que cumple la ventana de
+ * Crea una LiveClass con `acceptsTrialReservations=true` que cumple la ventana de
  * reserva (default: arranca en 48h, lejos del bookBeforeMinutes=1440).
  * Retorna `{ id }`.
  */
@@ -1336,7 +1336,7 @@ export async function seedTier2TrialClass(opts: {
       startsAt,
       durationMinutes: 60,
       maxCapacity: 10,
-      isTrialClass: true,
+      acceptsTrialReservations: true,
       trialCapacity: opts.trialCapacity ?? 10,
     },
   });

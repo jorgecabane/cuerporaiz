@@ -55,7 +55,7 @@ async function main() {
     // no la bloquee con ALREADY_RESERVED.
     const center2 = center;
     const trials = await prisma.liveClass.findMany({
-      where: { centerId: center2.id, isTrialClass: true, startsAt: { gte: new Date() } },
+      where: { centerId: center2.id, acceptsTrialReservations: true, startsAt: { gte: new Date() } },
     });
     for (const t of trials) {
       const reservation = await prisma.reservation.findFirst({
@@ -104,7 +104,7 @@ async function main() {
 
     // Cancelar trials previos para no bloquearse con ALREADY_RESERVED.
     const trials = await prisma.liveClass.findMany({
-      where: { centerId: center.id, isTrialClass: true, startsAt: { gte: new Date() } },
+      where: { centerId: center.id, acceptsTrialReservations: true, startsAt: { gte: new Date() } },
     });
     for (const t of trials) {
       const r = await prisma.reservation.findFirst({
@@ -119,7 +119,7 @@ async function main() {
   inThreeDays.setHours(11, 0, 0, 0);
 
   const existingTrial = await prisma.liveClass.findFirst({
-    where: { centerId: center.id, isTrialClass: true, startsAt: { gte: new Date() } },
+    where: { centerId: center.id, acceptsTrialReservations: true, startsAt: { gte: new Date() } },
   });
   if (!existingTrial) {
     await prisma.liveClass.create({
@@ -129,7 +129,7 @@ async function main() {
         startsAt: inThreeDays,
         durationMinutes: 60,
         maxCapacity: 10,
-        isTrialClass: true,
+        acceptsTrialReservations: true,
       },
     });
     console.log("Trial class creada en e2e-test");
@@ -141,7 +141,7 @@ async function main() {
   inFourDays.setDate(inFourDays.getDate() + 4);
   inFourDays.setHours(11, 0, 0, 0);
   const existingNormal = await prisma.liveClass.findFirst({
-    where: { centerId: center.id, isTrialClass: false, title: "Clase Normal Test", startsAt: { gte: new Date() } },
+    where: { centerId: center.id, acceptsTrialReservations: false, title: "Clase Normal Test", startsAt: { gte: new Date() } },
   });
   if (!existingNormal) {
     await prisma.liveClass.create({
@@ -151,7 +151,7 @@ async function main() {
         startsAt: inFourDays,
         durationMinutes: 60,
         maxCapacity: 10,
-        isTrialClass: false,
+        acceptsTrialReservations: false,
       },
     });
     console.log("Normal class creada en e2e-test");

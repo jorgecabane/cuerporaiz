@@ -80,7 +80,7 @@ export function EditClassForm({
   const [loadingPreview, setLoadingPreview] = useState(false);
   const [editScope, setEditScope] = useState<EditScope>("this");
 
-  const [isTrialClass, setIsTrialClass] = useState(liveClass.isTrialClass);
+  const [acceptsTrialReservations, setAcceptsTrialReservations] = useState(liveClass.acceptsTrialReservations);
   const [selectedDisciplineId, setSelectedDisciplineId] = useState(
     liveClass.disciplineId ?? ""
   );
@@ -118,7 +118,7 @@ export function EditClassForm({
     const maxCapacity = Number(fd.get("maxCapacity")) || 20;
     const disciplineId = (fd.get("disciplineId") as string) || null;
     const instructorId = (fd.get("instructorId") as string) || null;
-    const trialCapacity = isTrialClass
+    const trialCapacity = acceptsTrialReservations
       ? Number(fd.get("trialCapacity")) || 2
       : null;
 
@@ -135,7 +135,7 @@ export function EditClassForm({
       maxCapacity,
       isOnline: !!meetingUrl,
       meetingUrl,
-      isTrialClass,
+      acceptsTrialReservations,
       trialCapacity,
       color: effectiveColor,
     };
@@ -406,8 +406,8 @@ export function EditClassForm({
         <label className="inline-flex items-center gap-2 cursor-pointer">
           <input
             type="checkbox"
-            checked={isTrialClass}
-            onChange={(e) => setIsTrialClass(e.target.checked)}
+            checked={acceptsTrialReservations}
+            onChange={(e) => setAcceptsTrialReservations(e.target.checked)}
             className="rounded border-[var(--color-border)]"
           />
           <span className="text-sm text-[var(--color-text)]">Acepta clase de prueba</span>
@@ -483,7 +483,7 @@ export function EditClassForm({
       </div>
       )}
 
-      {isTrialClass && (
+      {acceptsTrialReservations && (
         <div>
           <label htmlFor="trialCapacity" className="block text-sm font-medium text-[var(--color-text)] mb-1">
             Cupos de prueba

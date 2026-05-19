@@ -52,7 +52,7 @@ const futureClass = {
   maxCapacity: 5,
   isOnline: false,
   status: "ACTIVE",
-  isTrialClass: false,
+  acceptsTrialReservations: false,
 };
 
 const center = {

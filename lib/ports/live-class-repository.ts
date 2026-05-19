@@ -9,7 +9,7 @@ export interface CreateLiveClassInput {
   instructorId?: string | null;
   isOnline?: boolean;
   meetingUrl?: string | null;
-  isTrialClass?: boolean;
+  acceptsTrialReservations?: boolean;
   trialCapacity?: number | null;
   color?: string | null;
   classPassEnabled?: boolean;
@@ -26,7 +26,7 @@ export interface UpdateLiveClassInput {
   instructorId?: string | null;
   isOnline?: boolean;
   meetingUrl?: string | null;
-  isTrialClass?: boolean;
+  acceptsTrialReservations?: boolean;
   trialCapacity?: number | null;
   color?: string | null;
   classPassEnabled?: boolean;

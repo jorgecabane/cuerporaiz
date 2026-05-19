@@ -13,7 +13,7 @@ type PrismaLiveClass = {
   instructorId: string | null;
   isOnline: boolean;
   meetingUrl: string | null;
-  isTrialClass: boolean;
+  acceptsTrialReservations: boolean;
   trialCapacity: number | null;
   color: string | null;
   classPassEnabled: boolean;
@@ -36,7 +36,7 @@ function toDomain(c: PrismaLiveClass): LiveClass {
     instructorId: c.instructorId,
     isOnline: c.isOnline,
     meetingUrl: c.meetingUrl,
-    isTrialClass: c.isTrialClass,
+    acceptsTrialReservations: c.acceptsTrialReservations,
     trialCapacity: c.trialCapacity,
     color: c.color,
     classPassEnabled: c.classPassEnabled,
@@ -123,7 +123,7 @@ export const liveClassRepository: ILiveClassRepository = {
         instructorId: data.instructorId ?? null,
         isOnline: data.isOnline ?? false,
         meetingUrl: data.meetingUrl ?? null,
-        isTrialClass: data.isTrialClass ?? false,
+        acceptsTrialReservations: data.acceptsTrialReservations ?? false,
         trialCapacity: data.trialCapacity ?? null,
         color: data.color ?? null,
         classPassEnabled: data.classPassEnabled ?? false,
@@ -146,7 +146,7 @@ export const liveClassRepository: ILiveClassRepository = {
         instructorId: d.instructorId ?? null,
         isOnline: d.isOnline ?? false,
         meetingUrl: d.meetingUrl ?? null,
-        isTrialClass: d.isTrialClass ?? false,
+        acceptsTrialReservations: d.acceptsTrialReservations ?? false,
         trialCapacity: d.trialCapacity ?? null,
         color: d.color ?? null,
         classPassEnabled: d.classPassEnabled ?? false,
@@ -170,7 +170,7 @@ export const liveClassRepository: ILiveClassRepository = {
           ...(data.instructorId !== undefined && { instructorId: data.instructorId }),
           ...(data.isOnline !== undefined && { isOnline: data.isOnline }),
           ...(data.meetingUrl !== undefined && { meetingUrl: data.meetingUrl }),
-          ...(data.isTrialClass !== undefined && { isTrialClass: data.isTrialClass }),
+          ...(data.acceptsTrialReservations !== undefined && { acceptsTrialReservations: data.acceptsTrialReservations }),
           ...(data.trialCapacity !== undefined && { trialCapacity: data.trialCapacity }),
           ...(data.color !== undefined && { color: data.color }),
           ...(data.classPassEnabled !== undefined && { classPassEnabled: data.classPassEnabled }),
@@ -196,7 +196,7 @@ export const liveClassRepository: ILiveClassRepository = {
         ...(data.instructorId !== undefined && { instructorId: data.instructorId }),
         ...(data.isOnline !== undefined && { isOnline: data.isOnline }),
         ...(data.meetingUrl !== undefined && { meetingUrl: data.meetingUrl }),
-        ...(data.isTrialClass !== undefined && { isTrialClass: data.isTrialClass }),
+        ...(data.acceptsTrialReservations !== undefined && { acceptsTrialReservations: data.acceptsTrialReservations }),
         ...(data.trialCapacity !== undefined && { trialCapacity: data.trialCapacity }),
         ...(data.color !== undefined && { color: data.color }),
         ...(data.status !== undefined && { status: data.status }),
@@ -217,7 +217,7 @@ export const liveClassRepository: ILiveClassRepository = {
         ...(data.instructorId !== undefined && { instructorId: data.instructorId }),
         ...(data.isOnline !== undefined && { isOnline: data.isOnline }),
         ...(data.meetingUrl !== undefined && { meetingUrl: data.meetingUrl }),
-        ...(data.isTrialClass !== undefined && { isTrialClass: data.isTrialClass }),
+        ...(data.acceptsTrialReservations !== undefined && { acceptsTrialReservations: data.acceptsTrialReservations }),
         ...(data.trialCapacity !== undefined && { trialCapacity: data.trialCapacity }),
         ...(data.color !== undefined && { color: data.color }),
         ...(data.status !== undefined && { status: data.status }),

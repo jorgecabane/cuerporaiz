@@ -66,7 +66,7 @@ function setupCommonMocks(opts: {
     startsAt: new Date(Date.now() + opts.startsInMinutes * 60 * 1000),
     durationMinutes: 60,
     maxCapacity: 10,
-    isTrialClass: false,
+    acceptsTrialReservations: false,
     isOnline: false,
   });
   mocks.centerRepository.findById.mockResolvedValue({

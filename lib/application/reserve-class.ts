@@ -37,6 +37,7 @@ function toReservationDto(r: Reservation, liveClassDto?: LiveClassDto): Reservat
     userId: r.userId,
     liveClassId: r.liveClassId,
     userPlanId: r.userPlanId,
+    isTrial: r.isTrial,
     status: r.status,
     createdAt: r.createdAt.toISOString(),
     updatedAt: r.updatedAt.toISOString(),
@@ -52,7 +53,7 @@ function toLiveClassDto(
   durationMinutes: number,
   maxCapacity: number,
   spotsLeft: number,
-  opts?: { isTrialClass?: boolean; isOnline?: boolean; instructorName?: string | null; instructorImageUrl?: string | null }
+  opts?: { acceptsTrialReservations?: boolean; isOnline?: boolean; instructorName?: string | null; instructorImageUrl?: string | null }
 ): LiveClassDto {
   return {
     id,
@@ -62,7 +63,7 @@ function toLiveClassDto(
     durationMinutes,
     maxCapacity,
     spotsLeft,
-    ...(opts?.isTrialClass !== undefined ? { isTrialClass: opts.isTrialClass } : {}),
+    ...(opts?.acceptsTrialReservations !== undefined ? { acceptsTrialReservations: opts.acceptsTrialReservations } : {}),
     ...(opts?.isOnline !== undefined ? { isOnline: opts.isOnline } : {}),
     ...(opts?.instructorName !== undefined ? { instructorName: opts.instructorName } : {}),
     ...(opts?.instructorImageUrl !== undefined ? { instructorImageUrl: opts.instructorImageUrl } : {}),
@@ -140,7 +141,7 @@ export async function reserveClassUseCase(
     // Si la clase es de prueba y el usuario aún no la usó, permite reservar sin plan activo.
     // Excepción: clientes marcados como migrados de otra plataforma no tienen derecho a clase de prueba.
     // Si el usuario ya tiene un plan LIVE activo, prefiere usarlo en vez del trial.
-    if (liveClass.isTrialClass && center.allowTrialClassPerPerson) {
+    if (liveClass.acceptsTrialReservations && center.allowTrialClassPerPerson) {
       const hasUsableLive = await hasUsableLivePlan(userId, centerId);
       if (!hasUsableLive) {
         const membership = await userRepository.findMembership(userId, centerId);
@@ -227,6 +228,7 @@ export async function reserveClassUseCase(
     userId,
     liveClassId,
     userPlanId: selectedPlan?.id ?? null,
+    isTrial: isTrialEligible,
   });
 
   // Descontar clase del plan (solo si hay plan asignado y tiene límite)
@@ -243,7 +245,7 @@ export async function reserveClassUseCase(
     liveClass.durationMinutes,
     liveClass.maxCapacity,
     spotsLeft,
-    { isTrialClass: liveClass.isTrialClass, isOnline: liveClass.isOnline }
+    { acceptsTrialReservations: liveClass.acceptsTrialReservations, isOnline: liveClass.isOnline }
   );
 
   // Fire-and-forget: emails post-reserva
@@ -267,11 +269,13 @@ export async function reserveClassUseCase(
         location,
         myReservationsUrl: `${baseUrl}/panel/reservas`,
         branding,
+        isTrial: reservation.isTrial,
       })
     );
 
-    // Aviso al profe/admin si es clase de prueba.
-    if (liveClass.isTrialClass) {
+    // Aviso al profe/admin solo si ESTA reserva consumió el cupo trial.
+    // No depende de si la clase admite trials (puede recibir ambas).
+    if (reservation.isTrial) {
       const teacher = liveClass.instructorId
         ? await instructorRepository.findById(liveClass.instructorId, centerId)
         : null;
@@ -377,7 +381,7 @@ export async function cancelReservationUseCase(
     liveClass.durationMinutes,
     liveClass.maxCapacity,
     liveClass.maxCapacity, // no recalculamos spots aquí
-    { isTrialClass: liveClass.isTrialClass, isOnline: liveClass.isOnline }
+    { acceptsTrialReservations: liveClass.acceptsTrialReservations, isOnline: liveClass.isOnline }
   );
   return {
     success: true,
@@ -455,7 +459,7 @@ export async function cancelReservationByStaffUseCase(
     liveClass.durationMinutes,
     liveClass.maxCapacity,
     liveClass.maxCapacity,
-    { isTrialClass: liveClass.isTrialClass, isOnline: liveClass.isOnline }
+    { acceptsTrialReservations: liveClass.acceptsTrialReservations, isOnline: liveClass.isOnline }
   );
   return {
     success: true,
@@ -486,7 +490,7 @@ export async function listMyReservationsUseCase(
       liveClass.durationMinutes,
       liveClass.maxCapacity,
       spotsLeft,
-      { isTrialClass: liveClass.isTrialClass, isOnline: liveClass.isOnline }
+      { acceptsTrialReservations: liveClass.acceptsTrialReservations, isOnline: liveClass.isOnline }
     );
     dtos.push(toReservationDto(r, liveClassDto));
   }
@@ -520,7 +524,7 @@ export async function listLiveClassesUseCase(centerId: string): Promise<LiveClas
         c.maxCapacity,
         c.maxCapacity - confirmed,
         {
-          isTrialClass: c.isTrialClass,
+          acceptsTrialReservations: c.acceptsTrialReservations,
           isOnline: c.isOnline,
           instructorName: c.instructorId ? nameByUserId.get(c.instructorId) ?? null : null,
           instructorImageUrl: c.instructorId ? imageUrlByUserId.get(c.instructorId) ?? null : null,
@@ -542,7 +546,7 @@ export interface ListLiveClassesPaginatedResult {
 
 /**
  * Listar clases en vivo del centro con paginación.
- * Si se pasa `viewerUserId`, oculta el flag `isTrialClass` en las clases
+ * Si se pasa `viewerUserId`, oculta el flag `acceptsTrialReservations` en las clases
  * cuando ese usuario no debe ver el flujo de prueba (ya tiene plan, es
  * cliente migrado, ya consumió el trial, o el centro lo deshabilitó).
  */
@@ -575,7 +579,7 @@ export async function listLiveClassesPaginated(
         c.maxCapacity,
         c.maxCapacity - confirmed,
         {
-          isTrialClass: c.isTrialClass && showTrialForViewer,
+          acceptsTrialReservations: c.acceptsTrialReservations && showTrialForViewer,
           isOnline: c.isOnline,
           instructorName: c.instructorId ? nameByUserId.get(c.instructorId) ?? null : null,
           instructorImageUrl: c.instructorId ? imageUrlByUserId.get(c.instructorId) ?? null : null,
@@ -589,7 +593,7 @@ export async function listLiveClassesPaginated(
 /**
  * Listar clases en vivo del centro en un rango de fechas (ej. una semana).
  * Si instructorId se pasa, solo se devuelven las clases de ese profesor.
- * Si `viewerUserId` se pasa, oculta `isTrialClass` cuando ese usuario no
+ * Si `viewerUserId` se pasa, oculta `acceptsTrialReservations` cuando ese usuario no
  * debería ver el flujo de prueba (ver `isUserTrialEligible`).
  */
 export async function listLiveClassesByRange(
@@ -620,7 +624,7 @@ export async function listLiveClassesByRange(
         c.maxCapacity,
         c.maxCapacity - confirmed,
         {
-          isTrialClass: c.isTrialClass && showTrialForViewer,
+          acceptsTrialReservations: c.acceptsTrialReservations && showTrialForViewer,
           isOnline: c.isOnline,
           instructorName: c.instructorId ? nameByUserId.get(c.instructorId) ?? null : null,
           instructorImageUrl: c.instructorId ? imageUrlByUserId.get(c.instructorId) ?? null : null,
@@ -668,7 +672,7 @@ export async function listMyReservationsPaginated(
       liveClass.durationMinutes,
       liveClass.maxCapacity,
       spotsLeft,
-      { isTrialClass: liveClass.isTrialClass, isOnline: liveClass.isOnline }
+      { acceptsTrialReservations: liveClass.acceptsTrialReservations, isOnline: liveClass.isOnline }
     );
     dtos.push(toReservationDto(r, liveClassDto));
   }
@@ -710,7 +714,7 @@ export async function listCenterReservationsPaginated(
       liveClass.durationMinutes,
       liveClass.maxCapacity,
       spotsLeft,
-      { isTrialClass: liveClass.isTrialClass, isOnline: liveClass.isOnline }
+      { acceptsTrialReservations: liveClass.acceptsTrialReservations, isOnline: liveClass.isOnline }
     );
     dtos.push(toReservationDto(r, liveClassDto));
   }
@@ -724,7 +728,7 @@ export async function listCenterReservationsPaginated(
 /**
  * Indica si se debe mostrar el CTA "Puedes reservar una clase de prueba gratis".
  * Condiciones: centro permite trial, usuario nunca reservó en el centro, y hay al menos
- * una clase futura con isTrialClass y cupos disponibles.
+ * una clase futura con acceptsTrialReservations y cupos disponibles.
  */
 export async function canShowTrialCta(
   userId: string,
@@ -748,7 +752,7 @@ export async function canShowTrialCta(
   const from = new Date();
   const classes = await liveClassRepository.findByCenterId(centerId, from);
   for (const c of classes) {
-    if (!c.isTrialClass) continue;
+    if (!c.acceptsTrialReservations) continue;
     const confirmed = await liveClassRepository.countConfirmedReservations(c.id);
     if (c.maxCapacity - confirmed > 0) return true;
   }

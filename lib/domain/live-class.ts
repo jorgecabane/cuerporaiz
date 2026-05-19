@@ -18,7 +18,7 @@ export interface LiveClass {
   instructorId: string | null;
   isOnline: boolean;
   meetingUrl: string | null;
-  isTrialClass: boolean;
+  acceptsTrialReservations: boolean;
   trialCapacity: number | null;
   color: string | null;
   classPassEnabled: boolean;

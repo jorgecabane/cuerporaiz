@@ -145,7 +145,7 @@ model LiveClassSeries {
   durationMinutes    Int             @default(60)
   isOnline           Boolean         @default(false)
   meetingUrl         String?
-  isTrialClass       Boolean         @default(false)
+  acceptsTrialReservations Boolean    @default(false)
   trialCapacity      Int?
   color              String?
   classPassEnabled   Boolean         @default(false)
@@ -179,7 +179,7 @@ model LiveClass {
   instructorId      String?
   isOnline          Boolean  @default(false)
   meetingUrl        String?
-  isTrialClass      Boolean  @default(false)
+  acceptsTrialReservations Boolean @default(false)
   trialCapacity     Int?
   color             String?
   classPassEnabled  Boolean  @default(false)
@@ -329,7 +329,12 @@ model Reservation {
   id             String            @id @default(cuid())
   userId         String
   liveClassId    String
-  userPlanId     String? // plan con el que se hizo la reserva (null = reservas legacy)
+  userPlanId     String? // plan con el que se hizo la reserva (null = sin plan; ver isTrial)
+  /// true cuando la reserva consumió el cupo de clase de prueba del usuario
+  /// (alumno nuevo sin plan en clase con acceptsTrialReservations=true).
+  /// Una clase puede admitir trials Y tener alumnos con plan en simultáneo;
+  /// este flag distingue una reserva trial específica del resto.
+  isTrial        Boolean           @default(false)
   status         ReservationStatus @default(CONFIRMED)
   /**
    * Marca cuándo se mandó el recordatorio "2h antes". Null = aún no enviado.
@@ -349,6 +354,7 @@ model Reservation {
   @@index([liveClassId])
   @@index([userPlanId])
   @@index([userId, updatedAt])
+  @@index([userId, isTrial])
 }
 
 // Lista de espera para clases y eventos. Polimórfica: exactamente uno de

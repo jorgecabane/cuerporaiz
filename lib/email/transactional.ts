@@ -29,6 +29,12 @@ export interface ReservationConfirmationData {
   location: string;
   myReservationsUrl?: string;
   branding: EmailBranding;
+  /**
+   * Cuando esta reserva específica consumió el cupo trial del usuario, el
+   * email cambia el asunto y agrega copy de bienvenida + mención de planes.
+   * Se calcula desde `reservation.isTrial`.
+   */
+  isTrial?: boolean;
 }
 
 export function buildReservationConfirmationEmail(
@@ -48,9 +54,16 @@ export function buildReservationConfirmationEmail(
   const greeting = data.userName ? `Hola ${data.userName}` : "Hola";
   const when = formatLongDateTime(data.startAt, branding.timezone);
   const cta = emailCtaStyle(branding.colorSecondary);
+  const isTrial = data.isTrial === true;
+  const intro = isTrial
+    ? "Tu clase de prueba quedó confirmada. Te esperamos para que conozcas el espacio y la práctica."
+    : "Tu reserva quedó confirmada.";
+  const trialFooter = isTrial
+    ? `<p style="margin-top:24px;font-size:14px;color:#5C5A56;">Si quieres seguir después de la prueba, puedes ver los planes disponibles en nuestra web.</p>`
+    : "";
   const body = `
     <p>${greeting},</p>
-    <p>Tu reserva quedó confirmada.</p>
+    <p>${intro}</p>
     <table role="presentation" width="100%" style="margin:16px 0;background:#F5F0E9;border-radius:10px;padding:16px;">
       <tr><td>
         <p style="margin:0;font-size:16px;font-weight:600;color:${branding.colorPrimary};">${data.className}</p>
@@ -60,23 +73,27 @@ export function buildReservationConfirmationEmail(
     </table>
     <p style="text-align:center;margin:24px 0;"><a href="${calendarUrl}" style="${cta}">Añadir a Google Calendar</a></p>
     ${data.myReservationsUrl ? `<p style="text-align:center;font-size:13px;"><a href="${data.myReservationsUrl}" style="color:${branding.colorPrimary};">Ver mis reservas</a></p>` : ""}
+    ${trialFooter}
     <p style="margin-top:24px;">Nos vemos en la práctica.</p>`;
   const html = emailBaseLayout({ body, branding });
-  const text = [
+  const textLines = [
     `${greeting},`,
-    "Tu reserva quedó confirmada.",
+    intro,
     `${data.className} | ${when} | ${data.location}`,
     getAddToCalendarInstruction(calendarUrl),
     data.myReservationsUrl ? `Ver mis reservas: ${data.myReservationsUrl}` : "",
+    isTrial ? "Si quieres seguir después de la prueba, puedes ver los planes disponibles en nuestra web." : "",
     `— ${branding.centerName}`,
-  ].filter(Boolean).join("\n");
+  ].filter(Boolean);
 
   return {
     from: fromForBranding(branding),
     to: [data.toEmail],
-    subject: `Reserva confirmada: ${data.className}`,
+    subject: isTrial
+      ? `Clase de prueba confirmada: ${data.className}`
+      : `Reserva confirmada: ${data.className}`,
     html,
-    text,
+    text: textLines.join("\n"),
   };
 }
 

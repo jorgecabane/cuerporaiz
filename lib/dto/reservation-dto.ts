@@ -62,7 +62,12 @@ export interface LiveClassDto {
   durationMinutes: number;
   maxCapacity: number;
   spotsLeft: number; // derivado: maxCapacity - reservas CONFIRMED
-  isTrialClass?: boolean;
+  /**
+   * True si la clase acepta reservas de prueba (hasta trialCapacity). NO
+   * implica que toda reserva en esta clase sea trial: una misma clase puede
+   * recibir alumnos con plan y alumnos consumiendo su clase de prueba.
+   */
+  acceptsTrialReservations?: boolean;
   /** Si la clase es online (meetingUrl) o presencial */
   isOnline?: boolean;
   /** Nombre del profesor que imparte la clase */
@@ -76,6 +81,8 @@ export interface ReservationDto {
   userId: string;
   liveClassId: string;
   userPlanId: string | null;
+  /** True cuando esta reserva consumió el cupo trial del usuario. */
+  isTrial: boolean;
   status: ReservationStatus;
   createdAt: string;
   updatedAt: string;

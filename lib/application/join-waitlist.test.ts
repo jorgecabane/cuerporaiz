@@ -42,7 +42,7 @@ function makeLiveClass(overrides: Partial<LiveClass> = {}): LiveClass {
     maxCapacity: 10,
     isOnline: false,
     status: "ACTIVE",
-    isTrialClass: false,
+    acceptsTrialReservations: false,
     classPassEnabled: false,
     ...overrides,
   } as LiveClass;

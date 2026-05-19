@@ -19,12 +19,12 @@ import {
  * Matriz "plan vs trial" — la regresión que motivó este spec.
  *
  * Bug original: un usuario con plan activo + marcado como legacy intentaba
- * reservar una clase con `isTrialClass=true` y el server le devolvía
+ * reservar una clase con `acceptsTrialReservations=true` y el server le devolvía
  * TRIAL_NOT_AVAILABLE en vez de usar el plan. El cliente mostraba el modal
  * "Necesitas un plan" pese a que el usuario sí tenía plan.
  *
  * Fix: el server prioriza el plan sobre el flujo de trial; el listing
- * "scrubea" `isTrialClass` para usuarios que no deben ver el tag.
+ * "scrubea" `acceptsTrialReservations` para usuarios que no deben ver el tag.
  *
  * Cobertura:
  *  - 6 casos principales (matriz plan × tipo de clase × legacy)
@@ -221,9 +221,10 @@ test.describe("Plan-vs-trial priority — matriz completa (6 + 10)", () => {
     expect(res.status()).toBe(201);
     const body = await res.json();
     expect(body.userPlanId).not.toBeNull();
+    expect(body.isTrial).toBe(false);
   });
 
-  test("[2] con plan + clase trial → 201, usa plan (NO quema trial)", async () => {
+  test("[2] con plan + clase trial → 201, usa plan (NO quema trial, isTrial=false)", async () => {
     test.skip(!trialClass, "Sin DB en este worker");
     await resetState({ withPlan: true, legacy: false });
 
@@ -233,6 +234,10 @@ test.describe("Plan-vs-trial priority — matriz completa (6 + 10)", () => {
     expect(res.status()).toBe(201);
     const body = await res.json();
     expect(body.userPlanId).not.toBeNull();
+    // Regresión Bug B: la reserva NO es trial aunque la clase admita trials.
+    // El instructor no debe recibir el mail "Clase de prueba:" porque
+    // reservation.isTrial=false.
+    expect(body.isTrial).toBe(false);
   });
 
   test("[3] sin plan + legacy + clase normal → 400 NO_ACTIVE_PLAN", async () => {
@@ -280,8 +285,9 @@ test.describe("Plan-vs-trial priority — matriz completa (6 + 10)", () => {
     });
     expect(res.status()).toBe(201);
     const body = await res.json();
-    // userPlanId === null prueba que fue trial (no plan).
+    // userPlanId === null + isTrial === true prueba que fue trial.
     expect(body.userPlanId).toBeNull();
+    expect(body.isTrial).toBe(true);
   });
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -307,7 +313,7 @@ test.describe("Plan-vs-trial priority — matriz completa (6 + 10)", () => {
     expect(body.code).toBe("TRIAL_ALREADY_USED");
   });
 
-  test("[E2] centro con allowTrialClassPerPerson=false: sin plan + trial → NO_ACTIVE_PLAN; listing scrubea isTrialClass", async ({
+  test("[E2] centro con allowTrialClassPerPerson=false: sin plan + trial → NO_ACTIVE_PLAN; listing scrubea acceptsTrialReservations", async ({
     request,
   }) => {
     test.skip(!trial3, "Sin DB en este worker");
@@ -332,7 +338,7 @@ test.describe("Plan-vs-trial priority — matriz completa (6 + 10)", () => {
       const lstBody = await lst.json();
       const c = lstBody.items.find((x: { id: string }) => x.id === trial3!.id);
       expect(c).toBeTruthy();
-      expect(c.isTrialClass).toBe(false);
+      expect(c.acceptsTrialReservations).toBe(false);
     } finally {
       await setTier2CenterAllowTrial({ centerSlug: CENTER_SLUG, allow: true });
     }
@@ -510,12 +516,50 @@ test.describe("Plan-vs-trial priority — matriz completa (6 + 10)", () => {
     expect(body.code).toBe("ALREADY_RESERVED");
   });
 
+  // ─── Regresión Bug A ────────────────────────────────────────────────────
+  // Antes del fix, hasTrialReservation contaba cualquier reserva en clases
+  // con acceptsTrialReservations=true, sin importar si fue trial o con plan.
+  // Eso marcaba al alumno como "ya usó su trial" cuando en realidad no.
+  // Este caso verifica que reservar con plan en una clase trial-friendly NO
+  // consume el cupo trial: después puede usar su trial real.
+  test("[E11] Bug A: reserva con plan en clase trial-friendly NO consume el trial — puede usar trial después", async () => {
+    test.skip(!extraTrialClass || !trial2, "Sin DB en este worker");
+    await resetState({ withPlan: true, legacy: false });
+
+    // 1. Reserva con plan en una clase trial-friendly.
+    const withPlan = await pvtReq.post("/api/reservations", {
+      data: { liveClassId: extraTrialClass!.id },
+    });
+    expect(withPlan.status()).toBe(201);
+    const wpBody = await withPlan.json();
+    expect(wpBody.userPlanId).not.toBeNull();
+    expect(wpBody.isTrial).toBe(false);
+
+    // 2. Quitamos su plan (deja al alumno sin plan vigente). Borrando los
+    //    planes creados via createdPlanIds.
+    while (createdPlanIds.length > 0) {
+      const id = createdPlanIds.pop()!;
+      await cleanupTier2UserPlan(id);
+    }
+
+    // 3. Ahora sin plan, intenta su trial real en OTRA clase trial-friendly.
+    //    Pre-fix: hubiera dado TRIAL_ALREADY_USED por el falso positivo.
+    //    Post-fix: 201 + isTrial=true.
+    const trialAttempt = await pvtReq.post("/api/reservations", {
+      data: { liveClassId: trial2!.id },
+    });
+    expect(trialAttempt.status()).toBe(201);
+    const taBody = await trialAttempt.json();
+    expect(taBody.userPlanId).toBeNull();
+    expect(taBody.isTrial).toBe(true);
+  });
+
   // ═══════════════════════════════════════════════════════════════════════
-  // Listing scrub: el DTO no expone `isTrialClass=true` a usuarios que no
+  // Listing scrub: el DTO no expone `acceptsTrialReservations=true` a usuarios que no
   // deben ver el flujo de prueba.
   // ═══════════════════════════════════════════════════════════════════════
 
-  test("[listing] con plan → trial class viaja con isTrialClass=false", async () => {
+  test("[listing] con plan → trial class viaja con acceptsTrialReservations=false", async () => {
     test.skip(!trialClass, "Sin DB en este worker");
     await resetState({ withPlan: true, legacy: false });
 
@@ -528,10 +572,10 @@ test.describe("Plan-vs-trial priority — matriz completa (6 + 10)", () => {
     const body = await res.json();
     const c = body.items.find((x: { id: string }) => x.id === trialClass!.id);
     expect(c).toBeTruthy();
-    expect(c.isTrialClass).toBe(false);
+    expect(c.acceptsTrialReservations).toBe(false);
   });
 
-  test("[listing] legacy sin plan → trial class viaja con isTrialClass=false", async ({
+  test("[listing] legacy sin plan → trial class viaja con acceptsTrialReservations=false", async ({
     request,
   }) => {
     test.skip(!trialClass, "Sin DB en este worker");
@@ -546,10 +590,10 @@ test.describe("Plan-vs-trial priority — matriz completa (6 + 10)", () => {
     const body = await res.json();
     const c = body.items.find((x: { id: string }) => x.id === trialClass!.id);
     expect(c).toBeTruthy();
-    expect(c.isTrialClass).toBe(false);
+    expect(c.acceptsTrialReservations).toBe(false);
   });
 
-  test("[listing] sin plan + no legacy + nunca usó trial → trial class viaja con isTrialClass=true", async ({
+  test("[listing] sin plan + no legacy + nunca usó trial → trial class viaja con acceptsTrialReservations=true", async ({
     request,
   }) => {
     test.skip(!trialClass, "Sin DB en este worker");
@@ -564,6 +608,6 @@ test.describe("Plan-vs-trial priority — matriz completa (6 + 10)", () => {
     const body = await res.json();
     const c = body.items.find((x: { id: string }) => x.id === trialClass!.id);
     expect(c).toBeTruthy();
-    expect(c.isTrialClass).toBe(true);
+    expect(c.acceptsTrialReservations).toBe(true);
   });
 });

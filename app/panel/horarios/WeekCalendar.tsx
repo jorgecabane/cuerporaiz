@@ -138,7 +138,7 @@ export function WeekCalendar({
         instructorId: null,
         isOnline: false,
         meetingUrl: null,
-        isTrialClass: false,
+        acceptsTrialReservations: false,
         trialCapacity: null,
         color: ev.color ?? "var(--color-secondary)",
         classPassEnabled: false,

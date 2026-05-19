@@ -33,7 +33,7 @@ export interface IReservationRepository {
   findActiveByLiveClassIds(liveClassIds: string[]): Promise<Reservation[]>;
   countByUserAndStatus(userId: string, centerId: string, status: ReservationStatus, since: Date): Promise<number>;
   hasTrialReservation(userId: string, centerId: string): Promise<boolean>;
-  create(data: { userId: string; liveClassId: string; userPlanId?: string | null }): Promise<Reservation>;
+  create(data: { userId: string; liveClassId: string; userPlanId?: string | null; isTrial?: boolean }): Promise<Reservation>;
   updateStatus(id: string, status: ReservationStatus): Promise<Reservation>;
   /** Marca todas las reservas CONFIRMED de estas clases como CANCELLED. Retorna cantidad actualizada. */
   cancelActiveByLiveClassIds(liveClassIds: string[]): Promise<number>;
