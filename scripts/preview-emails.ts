@@ -110,6 +110,24 @@ const entries: EmailEntry[] = [
     }),
   },
   {
+    slug: "01b-reservation-confirmation-trial",
+    title: "Confirmación de reserva — variante clase de prueba",
+    trigger: "lib/application/reserve-class.ts — cuando reservation.isTrial=true",
+    recipient: "Estudiante (alumno nuevo consumiendo su clase de prueba)",
+    status: "active",
+    dto: buildReservationConfirmationEmail({
+      toEmail: STUDENT_EMAIL,
+      userName: STUDENT,
+      className: "Hatha Yoga Nivel Inicial",
+      startAt: START,
+      endAt: END,
+      location: "Av. O'Higgins 555, Pucón",
+      myReservationsUrl: `${BASE}/panel/reservas`,
+      branding: B,
+      isTrial: true,
+    }),
+  },
+  {
     slug: "02-class-cancelled",
     title: "Clase cancelada por el centro",
     trigger: "app/panel/horarios/actions.ts — admin cancela clase",
@@ -329,7 +347,7 @@ const entries: EmailEntry[] = [
   {
     slug: "16-trial-class-teacher",
     title: "Aviso a profesor por clase de prueba",
-    trigger: "lib/application/reserve-class.ts — cuando isTrialClass",
+    trigger: "lib/application/reserve-class.ts — cuando reservation.isTrial",
     recipient: "Profesor / contactEmail del centro",
     status: "active",
     dto: buildTrialClassNoticeToTeacherEmail({

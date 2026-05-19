@@ -8,6 +8,7 @@ function toDomainReservation(r: {
   userId: string;
   liveClassId: string;
   userPlanId: string | null;
+  isTrial: boolean;
   status: string;
   createdAt: Date;
   updatedAt: Date;
@@ -17,6 +18,7 @@ function toDomainReservation(r: {
     userId: r.userId,
     liveClassId: r.liveClassId,
     userPlanId: r.userPlanId,
+    isTrial: r.isTrial,
     status: r.status as ReservationStatus,
     createdAt: r.createdAt,
     updatedAt: r.updatedAt,
@@ -115,25 +117,28 @@ export const reservationRepository: IReservationRepository = {
   },
 
   async hasTrialReservation(userId: string, centerId: string) {
-    // La clase de prueba se considera "ya usada" si quedó como CONFIRMED/ATTENDED
-    // o si el usuario incumplió: LATE_CANCELLED (canceló fuera del plazo) o NO_SHOW
-    // (no asistió). Solo CANCELLED a tiempo la libera, para evitar abuso.
+    // "Ya usó su trial" = tiene alguna reserva con isTrial=true en el centro,
+    // en cualquier estado que cuente como consumido: CONFIRMED, ATTENDED,
+    // LATE_CANCELLED (canceló fuera del plazo), NO_SHOW (no asistió).
+    // CANCELLED a tiempo libera la trial.
     const count = await prisma.reservation.count({
       where: {
         userId,
-        liveClass: { centerId, isTrialClass: true },
+        isTrial: true,
+        liveClass: { centerId },
         status: { in: ["CONFIRMED", "ATTENDED", "LATE_CANCELLED", "NO_SHOW"] },
       },
     });
     return count > 0;
   },
 
-  async create(data: { userId: string; liveClassId: string; userPlanId?: string | null }) {
+  async create(data: { userId: string; liveClassId: string; userPlanId?: string | null; isTrial?: boolean }) {
     const r = await prisma.reservation.create({
       data: {
         userId: data.userId,
         liveClassId: data.liveClassId,
         userPlanId: data.userPlanId ?? null,
+        isTrial: data.isTrial ?? false,
       },
     });
     return toDomainReservation(r);

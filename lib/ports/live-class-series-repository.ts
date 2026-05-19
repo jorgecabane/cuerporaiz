@@ -8,7 +8,7 @@ export interface CreateSeriesInput {
   durationMinutes: number;
   isOnline?: boolean;
   meetingUrl?: string | null;
-  isTrialClass?: boolean;
+  acceptsTrialReservations?: boolean;
   trialCapacity?: number | null;
   color?: string | null;
   classPassEnabled?: boolean;
@@ -30,7 +30,7 @@ export interface UpdateSeriesInput {
   durationMinutes?: number;
   isOnline?: boolean;
   meetingUrl?: string | null;
-  isTrialClass?: boolean;
+  acceptsTrialReservations?: boolean;
   trialCapacity?: number | null;
   color?: string | null;
   endsAt?: Date | null;

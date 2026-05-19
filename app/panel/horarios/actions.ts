@@ -66,7 +66,7 @@ export interface CreateClassFormData {
   maxCapacity: number;
   isOnline: boolean;
   meetingUrl: string | null;
-  isTrialClass: boolean;
+  acceptsTrialReservations: boolean;
   trialCapacity: number | null;
   color: string | null;
   repeat: "none" | "DAILY" | "WEEKLY" | "MONTHLY";
@@ -96,7 +96,7 @@ export async function createLiveClass(data: CreateClassFormData): Promise<void> 
       instructorId: data.instructorId || null,
       isOnline: data.isOnline,
       meetingUrl: data.meetingUrl || null,
-      isTrialClass: data.isTrialClass,
+      acceptsTrialReservations: data.acceptsTrialReservations,
       trialCapacity: data.trialCapacity,
       color: data.color || null,
     });
@@ -118,7 +118,7 @@ export async function createLiveClass(data: CreateClassFormData): Promise<void> 
       durationMinutes: data.durationMinutes,
       isOnline: data.isOnline,
       meetingUrl: data.meetingUrl || null,
-      isTrialClass: data.isTrialClass,
+      acceptsTrialReservations: data.acceptsTrialReservations,
       trialCapacity: data.trialCapacity,
       color: data.color || null,
       repeatFrequency: data.repeat as RepeatFrequency,
@@ -157,7 +157,7 @@ export interface UpdateClassFormData {
   maxCapacity: number;
   isOnline: boolean;
   meetingUrl: string | null;
-  isTrialClass: boolean;
+  acceptsTrialReservations: boolean;
   trialCapacity: number | null;
   color: string | null;
 }
@@ -181,7 +181,7 @@ export async function updateLiveClass(data: UpdateClassFormData): Promise<void> 
     instructorId: data.instructorId || null,
     isOnline: data.isOnline,
     meetingUrl: data.meetingUrl || null,
-    isTrialClass: data.isTrialClass,
+    acceptsTrialReservations: data.acceptsTrialReservations,
     trialCapacity: data.trialCapacity,
     color: data.color || null,
   });
@@ -290,7 +290,7 @@ export async function updateSeriesClasses(data: EditSeriesFormData): Promise<voi
     instructorId: data.instructorId || null,
     isOnline: data.isOnline,
     meetingUrl: data.meetingUrl || null,
-    isTrialClass: data.isTrialClass,
+    acceptsTrialReservations: data.acceptsTrialReservations,
     trialCapacity: data.trialCapacity,
     color: data.color || null,
   };
@@ -303,7 +303,7 @@ export async function updateSeriesClasses(data: EditSeriesFormData): Promise<voi
     instructorId: data.instructorId || null,
     isOnline: data.isOnline,
     meetingUrl: data.meetingUrl || null,
-    isTrialClass: data.isTrialClass,
+    acceptsTrialReservations: data.acceptsTrialReservations,
     trialCapacity: data.trialCapacity,
     color: data.color || null,
   };

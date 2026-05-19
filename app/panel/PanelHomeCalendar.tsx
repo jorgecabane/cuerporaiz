@@ -395,13 +395,14 @@ export function PanelHomeCalendar({
   }
 
   async function handleReserve(liveClassId: string, userPlanId?: string) {
-    // El listing del calendario ya oculta `isTrialClass` para usuarios que no
-    // deben ver el flujo de prueba (con plan, legacy, o trial ya usado), por
-    // lo que llegar acá con isTrialClass=true significa "el usuario no tiene
-    // plan y debería quemar su clase de prueba" → pedir confirmación.
+    // El listing del calendario ya oculta `acceptsTrialReservations` para
+    // usuarios que no deben ver el flujo de prueba (con plan, legacy, o trial
+    // ya usado), por lo que llegar acá con acceptsTrialReservations=true
+    // significa "el usuario no tiene plan y debería quemar su clase de
+    // prueba" → pedir confirmación.
     if (!userPlanId && isStudentRole(role)) {
       const target = liveClasses.find((c) => c.id === liveClassId);
-      if (target?.isTrialClass) {
+      if (target?.acceptsTrialReservations) {
         setTrialConfirmFor(liveClassId);
         return;
       }

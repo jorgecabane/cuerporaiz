@@ -12,7 +12,7 @@ type PrismaSeries = {
   durationMinutes: number;
   isOnline: boolean;
   meetingUrl: string | null;
-  isTrialClass: boolean;
+  acceptsTrialReservations: boolean;
   trialCapacity: number | null;
   color: string | null;
   classPassEnabled: boolean;
@@ -39,7 +39,7 @@ function toDomain(s: PrismaSeries): LiveClassSeries {
     durationMinutes: s.durationMinutes,
     isOnline: s.isOnline,
     meetingUrl: s.meetingUrl,
-    isTrialClass: s.isTrialClass,
+    acceptsTrialReservations: s.acceptsTrialReservations,
     trialCapacity: s.trialCapacity,
     color: s.color,
     classPassEnabled: s.classPassEnabled,
@@ -81,7 +81,7 @@ export const liveClassSeriesRepository: ILiveClassSeriesRepository = {
         durationMinutes: data.durationMinutes,
         isOnline: data.isOnline ?? false,
         meetingUrl: data.meetingUrl ?? null,
-        isTrialClass: data.isTrialClass ?? false,
+        acceptsTrialReservations: data.acceptsTrialReservations ?? false,
         trialCapacity: data.trialCapacity ?? null,
         color: data.color ?? null,
         classPassEnabled: data.classPassEnabled ?? false,
@@ -110,7 +110,7 @@ export const liveClassSeriesRepository: ILiveClassSeriesRepository = {
           ...(data.durationMinutes !== undefined && { durationMinutes: data.durationMinutes }),
           ...(data.isOnline !== undefined && { isOnline: data.isOnline }),
           ...(data.meetingUrl !== undefined && { meetingUrl: data.meetingUrl }),
-          ...(data.isTrialClass !== undefined && { isTrialClass: data.isTrialClass }),
+          ...(data.acceptsTrialReservations !== undefined && { acceptsTrialReservations: data.acceptsTrialReservations }),
           ...(data.trialCapacity !== undefined && { trialCapacity: data.trialCapacity }),
           ...(data.color !== undefined && { color: data.color }),
           ...(data.endsAt !== undefined && { endsAt: data.endsAt }),

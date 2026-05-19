@@ -86,7 +86,7 @@ export function CreateClassForm({ disciplines, instructors, defaultDate, default
   );
 
   // Toggles
-  const [isTrialClass, setIsTrialClass] = useState(false);
+  const [acceptsTrialReservations, setAcceptsTrialReservations] = useState(false);
 
   // Color: inherits from discipline by default
   const [selectedDisciplineId, setSelectedDisciplineId] = useState<string>("");
@@ -204,7 +204,7 @@ export function CreateClassForm({ disciplines, instructors, defaultDate, default
     const maxCapacity = Number(fd.get("maxCapacity")) || 20;
     const disciplineId = (fd.get("disciplineId") as string) || null;
     const instructorId = (fd.get("instructorId") as string) || null;
-    const trialCapacity = isTrialClass ? Number(fd.get("trialCapacity")) || 2 : null;
+    const trialCapacity = acceptsTrialReservations ? Number(fd.get("trialCapacity")) || 2 : null;
 
     if (!title || !startsAt) return;
     if (new Date(startsAt) <= new Date()) {
@@ -234,7 +234,7 @@ export function CreateClassForm({ disciplines, instructors, defaultDate, default
         maxCapacity,
         isOnline: !!meetingUrlToUse,
         meetingUrl: meetingUrlToUse,
-        isTrialClass,
+        acceptsTrialReservations,
         trialCapacity,
         color: effectiveColor,
         repeat,
@@ -430,8 +430,8 @@ export function CreateClassForm({ disciplines, instructors, defaultDate, default
         <label className="inline-flex items-center gap-2 cursor-pointer">
           <input
             type="checkbox"
-            checked={isTrialClass}
-            onChange={(e) => setIsTrialClass(e.target.checked)}
+            checked={acceptsTrialReservations}
+            onChange={(e) => setAcceptsTrialReservations(e.target.checked)}
             className="rounded border-[var(--color-border)]"
           />
           <span className="text-sm text-[var(--color-text)]">Acepta clase de prueba</span>
@@ -518,7 +518,7 @@ export function CreateClassForm({ disciplines, instructors, defaultDate, default
       )}
 
       {/* Trial capacity */}
-      {isTrialClass && (
+      {acceptsTrialReservations && (
         <div>
           <label htmlFor="trialCapacity" className="block text-sm font-medium text-[var(--color-text)] mb-1">
             Cupos de prueba

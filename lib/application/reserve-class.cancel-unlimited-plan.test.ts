@@ -56,7 +56,7 @@ describe("cancelReservationUseCase", () => {
       startsAt: new Date(Date.now() + 1000 * 60 * 60 * 24),
       durationMinutes: 60,
       maxCapacity: 10,
-      isTrialClass: false,
+      acceptsTrialReservations: false,
       isOnline: false,
     });
     mocks.centerRepository.findById.mockResolvedValue({

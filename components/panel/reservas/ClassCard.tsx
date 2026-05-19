@@ -28,7 +28,7 @@ function instructorInitial(name: string | null | undefined): string {
 }
 
 export interface ClassCardProps {
-  class: LiveClassDto & { isTrialClass?: boolean };
+  class: LiveClassDto & { acceptsTrialReservations?: boolean };
   /** Clase ya pasada → estilo más gris */
   isPast?: boolean;
   /** Solo para alumno: ya tiene reserva confirmada en esta clase */
@@ -127,7 +127,7 @@ export function ClassCard({
               <span className="rounded-[var(--radius-md)] border border-[var(--color-border)] px-2 py-0.5 text-xs font-medium text-[var(--color-text-muted)]">
                 {tagLabel}
               </span>
-              {"isTrialClass" in c && c.isTrialClass && (
+              {"acceptsTrialReservations" in c && c.acceptsTrialReservations && (
                 <span className="rounded-[var(--radius-md)] bg-[var(--color-primary-light)] px-2 py-0.5 text-xs font-medium text-[var(--color-primary)]">
                   Clase de prueba
                 </span>

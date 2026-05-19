@@ -14,6 +14,12 @@ export interface Reservation {
   userId: UserId;
   liveClassId: LiveClassId;
   userPlanId: string | null;
+  /**
+   * True cuando la reserva consumió el cupo de clase de prueba del usuario.
+   * Una clase puede aceptar trials y al mismo tiempo recibir reservas con plan;
+   * este flag distingue la reserva trial específica.
+   */
+  isTrial: boolean;
   status: ReservationStatus;
   createdAt: Date;
   updatedAt: Date;
