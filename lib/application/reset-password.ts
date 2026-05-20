@@ -24,9 +24,16 @@ export async function resetPassword(
   }
 
   const hash = await deps.hashPassword(newPassword);
+  // Clickear el link del email demuestra control de la casilla, así que también
+  // marcamos emailVerifiedAt si todavía no estaba seteado. Esto evita que el
+  // gate de C6 bloquee el primer login post-reset o post-invitación.
   await prisma.user.update({
     where: { id: resetToken.userId },
-    data: { passwordHash: hash, tokenVersion: { increment: 1 } },
+    data: {
+      passwordHash: hash,
+      tokenVersion: { increment: 1 },
+      emailVerifiedAt: { set: new Date() },
+    },
   });
   await deps.tokenRepo.markPasswordResetUsed(resetToken.id);
 

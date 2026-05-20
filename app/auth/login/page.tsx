@@ -12,15 +12,20 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") ?? "/panel";
   const isReset = searchParams.get("reset") === "1";
+  const isRegistered = searchParams.get("registered") === "1";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const centerId = process.env.NEXT_PUBLIC_DEFAULT_CENTER_SLUG ?? "cuerporaiz";
   const [error, setError] = useState<string | null>(null);
+  const [unverified, setUnverified] = useState(false);
+  const [resendStatus, setResendStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setUnverified(false);
+    setResendStatus("idle");
     setLoading(true);
     try {
       const result = await signIn("credentials", {
@@ -30,7 +35,10 @@ function LoginForm() {
         redirect: false,
       });
       if (result?.error) {
-        if (result.error === "RATE_LIMITED" || result.error.includes("RATE_LIMITED")) {
+        const code = result.code;
+        if (code === "EMAIL_NOT_VERIFIED") {
+          setUnverified(true);
+        } else if (code === "RATE_LIMITED") {
           setError("Demasiados intentos. Espera 15 minutos e intenta de nuevo.");
         } else {
           setError("Email o contraseña incorrectos. Revisa el centro si aplica.");
@@ -46,6 +54,24 @@ function LoginForm() {
     }
   }
 
+  async function handleResend() {
+    setResendStatus("sending");
+    try {
+      const res = await fetch("/api/auth/resend-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, centerId }),
+      });
+      if (res.ok) {
+        setResendStatus("sent");
+      } else {
+        setResendStatus("error");
+      }
+    } catch {
+      setResendStatus("error");
+    }
+  }
+
   return (
     <div className="min-h-[80vh] flex flex-col items-center justify-center px-4">
       <div className="w-full max-w-sm rounded-[var(--radius-lg)] bg-[var(--color-surface)] p-[var(--space-8)] shadow-[var(--shadow-md)]">
@@ -56,6 +82,15 @@ function LoginForm() {
         {isReset && (
           <p className="mb-[var(--space-4)] rounded-[var(--radius-md)] bg-green-50 px-3 py-2 text-sm text-green-700" role="status">
             Contraseña actualizada. Inicia sesión.
+          </p>
+        )}
+
+        {isRegistered && (
+          <p
+            className="mb-[var(--space-4)] rounded-[var(--radius-md)] bg-amber-50 px-3 py-2 text-sm text-amber-900"
+            role="status"
+          >
+            ✓ Cuenta creada. Te mandamos un email para activarla — clickea el link antes de iniciar sesión.
           </p>
         )}
 
@@ -101,6 +136,36 @@ function LoginForm() {
             <p className="text-sm text-[var(--color-secondary)]" role="alert">
               {error}
             </p>
+          )}
+          {unverified && (
+            <div
+              role="alert"
+              className="flex flex-col gap-2 rounded-[var(--radius-md)] bg-amber-50 px-3 py-3 text-sm text-amber-900"
+            >
+              <p className="font-medium">Verifica tu email para entrar</p>
+              <p>
+                Te mandamos un enlace al crear tu cuenta. Si no lo encuentras, pídelo de nuevo.
+              </p>
+              {resendStatus === "sent" ? (
+                <p className="text-sm text-amber-800">
+                  Te mandamos un nuevo link. Revisá tu casilla (también spam).
+                </p>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleResend}
+                  disabled={resendStatus === "sending"}
+                  className="self-start rounded-[var(--radius-md)] bg-amber-700 px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-amber-800 disabled:opacity-60"
+                >
+                  {resendStatus === "sending" ? "Enviando…" : "Reenviar verificación"}
+                </button>
+              )}
+              {resendStatus === "error" && (
+                <p className="text-xs text-amber-800">
+                  No pudimos enviar el link. Intentá de nuevo en un rato.
+                </p>
+              )}
+            </div>
           )}
           <button
             type="submit"

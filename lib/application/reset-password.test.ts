@@ -73,7 +73,11 @@ describe("resetPassword", () => {
     expect(hashPassword).toHaveBeenCalledWith("new-password-123");
     expect(prisma.user.update).toHaveBeenCalledWith({
       where: { id: resetToken.userId },
-      data: { passwordHash: "hashed-new-password", tokenVersion: { increment: 1 } },
+      data: {
+        passwordHash: "hashed-new-password",
+        tokenVersion: { increment: 1 },
+        emailVerifiedAt: { set: expect.any(Date) },
+      },
     });
     expect(tokenRepo.markPasswordResetUsed).toHaveBeenCalledWith(resetToken.id);
   });
