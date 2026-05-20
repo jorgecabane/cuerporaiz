@@ -23,6 +23,7 @@ import {
 } from "./process-subscription-webhook";
 import { runAfterResponse } from "@/lib/utils/run-after-response";
 import { notifyWaitlistOnSpotFreed } from "./notify-waitlist-on-spot-freed";
+import { sendSecurityAlert } from "./security-alerts";
 
 const paymentProvider: IPaymentProvider = mercadoPagoPaymentAdapter;
 
@@ -248,6 +249,16 @@ export async function processWebhookUseCase(
     webhookSecret,
   });
   if (!valid) {
+    await sendSecurityAlert({
+      kind: "mp_invalid_signature",
+      severity: "HIGH",
+      metadata: {
+        requestId,
+        resourceId: String(resourceId),
+        mpUserId: body.user_id != null ? String(body.user_id) : null,
+        xSignaturePresent: input.xSignature != null,
+      },
+    });
     return { success: false, error: "Firma del webhook inválida" };
   }
 
@@ -310,10 +321,51 @@ export async function processWebhookUseCase(
     return { success: true, alreadyProcessed: false };
   }
 
+  // C2: la orden debe pertenecer al mismo centro que resolvimos desde mpUserId.
+  if (order.centerId !== centerId) {
+    await sendSecurityAlert({
+      kind: "mp_center_mismatch",
+      severity: "CRITICAL",
+      metadata: {
+        orderId: order.id,
+        orderCenterId: order.centerId,
+        resolvedCenterId: centerId,
+        mpPaymentId: payment.id,
+        requestId,
+      },
+    });
+    await webhookEventRepository.markProcessed(centerId, requestId);
+    return { success: true, alreadyProcessed: false };
+  }
+
   const status = ORDER_STATUS_BY_MP[payment.status] ?? "PENDING";
+
+  // C3: para APPROVED, MP debe haber cobrado exactamente el monto de la orden.
+  // payment.transactionAmount es el bruto que pagó el customer; la comisión MP
+  // se descuenta aparte (net_received_amount). Mismatch = fraude o bug, alertamos.
+  if (status === "APPROVED" && payment.transactionAmount !== order.amountCents) {
+    await sendSecurityAlert({
+      kind: "mp_amount_mismatch",
+      severity: "CRITICAL",
+      metadata: {
+        orderId: order.id,
+        expectedAmountCents: order.amountCents,
+        paidTransactionAmount: payment.transactionAmount,
+        mpPaymentId: payment.id,
+        centerId,
+        requestId,
+      },
+    });
+    await webhookEventRepository.markProcessed(centerId, requestId);
+    return { success: true, alreadyProcessed: false };
+  }
+
   await orderRepository.updateStatus(order.id, status, payment.id);
 
   if (status === "APPROVED") {
+    // El UNIQUE en UserPlan.orderId cierra el race de retries concurrentes:
+    // si dos webhooks llegan en paralelo, el segundo activate revienta en
+    // constraint violation y MP reintenta hasta que wasProcessed=true.
     const { activatePlanForOrder } = await import("./activate-plan");
     await activatePlanForOrder(order.id, order.userId, order.planId, order.centerId);
   }

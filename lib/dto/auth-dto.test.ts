@@ -11,14 +11,24 @@ describe("auth-dto schemas", () => {
     expect(parsed.email).toBe("a@b.com");
   });
 
-  it("signupBodySchema default role es opcional pero válido si viene", () => {
+  it("signupBodySchema parsea inputs válidos sin campo role", () => {
     const parsed = signupBodySchema.parse({
       email: "a@b.com",
       password: "12345678",
       centerId: "center",
-      role: "STUDENT",
     });
-    expect(parsed.role).toBe("STUDENT");
+    expect(parsed.email).toBe("a@b.com");
+    expect("role" in parsed).toBe(false);
+  });
+
+  it("signupBodySchema descarta role aunque venga en el body (anti privilege escalation)", () => {
+    const parsed = signupBodySchema.parse({
+      email: "a@b.com",
+      password: "12345678",
+      centerId: "center",
+      role: "ADMINISTRATOR",
+    } as unknown as { email: string; password: string; centerId: string });
+    expect("role" in parsed).toBe(false);
   });
 });
 

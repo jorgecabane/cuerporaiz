@@ -780,6 +780,19 @@ export async function getTier1UserEmailVerifiedAt(
   return user?.emailVerifiedAt ?? null;
 }
 
+/** Lista los roles UserCenterRole.role del usuario en cualquier centro. */
+export async function getTier1UserRolesByEmail(
+  userEmail: string,
+): Promise<string[]> {
+  const prisma = await getPrisma();
+  if (!prisma) return [];
+  const user = await prisma.user.findUnique({
+    where: { email: userEmail },
+    select: { memberships: { select: { role: true } } },
+  });
+  return user?.memberships.map((m) => m.role) ?? [];
+}
+
 /** Lee una Order por id (para asserts de status post-action). */
 export async function getTier1OrderById(orderId: string): Promise<{
   status: string;
