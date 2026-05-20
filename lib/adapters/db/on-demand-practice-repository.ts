@@ -84,7 +84,14 @@ export const onDemandPracticeRepository: IOnDemandPracticeRepository = {
     return r ? toDomain(r) : null;
   },
 
-  async create(data: CreatePracticeInput) {
+  async create(centerId: string, data: CreatePracticeInput) {
+    // Verifica que la categoría pertenezca al centro antes de crear la práctica.
+    const category = await prisma.onDemandCategory.findFirst({
+      where: { id: data.categoryId, centerId },
+      select: { id: true },
+    });
+    if (!category) return null;
+
     const last = await prisma.onDemandPractice.findFirst({
       where: { categoryId: data.categoryId },
       orderBy: { sortOrder: "desc" },
@@ -104,11 +111,9 @@ export const onDemandPracticeRepository: IOnDemandPracticeRepository = {
     return toDomain(r);
   },
 
-  async update(id: string, data: UpdatePracticeInput) {
-    const existing = await prisma.onDemandPractice.findUnique({ where: { id } });
-    if (!existing) return null;
-    const r = await prisma.onDemandPractice.update({
-      where: { id },
+  async update(id: string, centerId: string, data: UpdatePracticeInput) {
+    const result = await prisma.onDemandPractice.updateMany({
+      where: { id, category: { centerId } },
       data: {
         ...(data.name != null && { name: data.name }),
         ...(data.description !== undefined && { description: data.description }),
@@ -116,20 +121,25 @@ export const onDemandPracticeRepository: IOnDemandPracticeRepository = {
         ...(data.status != null && { status: data.status as PrismaOnDemandContentStatus }),
       },
     });
-    return toDomain(r);
+    if (result.count === 0) return null;
+    const r = await prisma.onDemandPractice.findUnique({ where: { id } });
+    return r ? toDomain(r) : null;
   },
 
-  async delete(id: string) {
-    const existing = await prisma.onDemandPractice.findUnique({ where: { id } });
-    if (!existing) return false;
-    await prisma.onDemandPractice.delete({ where: { id } });
-    return true;
+  async delete(id: string, centerId: string) {
+    const result = await prisma.onDemandPractice.deleteMany({
+      where: { id, category: { centerId } },
+    });
+    return result.count > 0;
   },
 
-  async reorder(orderedIds: string[]) {
+  async reorder(centerId: string, orderedIds: string[]) {
     await prisma.$transaction(
       orderedIds.map((id, index) =>
-        prisma.onDemandPractice.update({ where: { id }, data: { sortOrder: index } })
+        prisma.onDemandPractice.updateMany({
+          where: { id, category: { centerId } },
+          data: { sortOrder: index },
+        })
       )
     );
   },

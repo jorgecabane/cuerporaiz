@@ -34,7 +34,10 @@ export async function POST(request: Request) {
     if (!category || category.centerId !== session.user.centerId) {
       return NextResponse.json({ code: "NOT_FOUND" }, { status: 404 });
     }
-    const lesson = await onDemandLessonRepository.create(parsed.data);
+    const lesson = await onDemandLessonRepository.create(session.user.centerId, parsed.data);
+    if (!lesson) {
+      return NextResponse.json({ code: "NOT_FOUND" }, { status: 404 });
+    }
     return NextResponse.json(lesson, { status: 201 });
   } catch (err) {
     console.error("[on-demand lessons POST]", err);

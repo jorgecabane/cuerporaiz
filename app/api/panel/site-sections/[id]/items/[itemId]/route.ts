@@ -21,7 +21,10 @@ export async function PATCH(
     return NextResponse.json({ error: "Datos inválidos", details: parsed.error.flatten() }, { status: 400 });
   }
 
-  const item = await siteSectionRepository.updateItem(itemId, parsed.data);
+  const item = await siteSectionRepository.updateItem(itemId, session.user.centerId, parsed.data);
+  if (!item) {
+    return NextResponse.json({ error: "Ítem no encontrado" }, { status: 404 });
+  }
   revalidatePath("/");
   return NextResponse.json(item);
 }
@@ -36,7 +39,10 @@ export async function DELETE(
   }
 
   const { itemId } = await params;
-  await siteSectionRepository.deleteItem(itemId);
+  const ok = await siteSectionRepository.deleteItem(itemId, session.user.centerId);
+  if (!ok) {
+    return NextResponse.json({ error: "Ítem no encontrado" }, { status: 404 });
+  }
   revalidatePath("/");
   return new NextResponse(null, { status: 204 });
 }

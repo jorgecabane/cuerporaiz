@@ -121,11 +121,9 @@ export const onDemandCategoryRepository: IOnDemandCategoryRepository = {
     return toDomain(r);
   },
 
-  async update(id: string, data: UpdateCategoryInput) {
-    const existing = await prisma.onDemandCategory.findUnique({ where: { id } });
-    if (!existing) return null;
-    const r = await prisma.onDemandCategory.update({
-      where: { id },
+  async update(id: string, centerId: string, data: UpdateCategoryInput) {
+    const result = await prisma.onDemandCategory.updateMany({
+      where: { id, centerId },
       data: {
         ...(data.name != null && { name: data.name }),
         ...(data.description !== undefined && { description: data.description }),
@@ -133,20 +131,23 @@ export const onDemandCategoryRepository: IOnDemandCategoryRepository = {
         ...(data.status != null && { status: data.status as PrismaOnDemandContentStatus }),
       },
     });
-    return toDomain(r);
+    if (result.count === 0) return null;
+    const r = await prisma.onDemandCategory.findUnique({ where: { id } });
+    return r ? toDomain(r) : null;
   },
 
-  async delete(id: string) {
-    const existing = await prisma.onDemandCategory.findUnique({ where: { id } });
-    if (!existing) return false;
-    await prisma.onDemandCategory.delete({ where: { id } });
-    return true;
+  async delete(id: string, centerId: string) {
+    const result = await prisma.onDemandCategory.deleteMany({ where: { id, centerId } });
+    return result.count > 0;
   },
 
-  async reorder(orderedIds: string[]) {
+  async reorder(centerId: string, orderedIds: string[]) {
     await prisma.$transaction(
       orderedIds.map((id, index) =>
-        prisma.onDemandCategory.update({ where: { id }, data: { sortOrder: index } })
+        prisma.onDemandCategory.updateMany({
+          where: { id, centerId },
+          data: { sortOrder: index },
+        })
       )
     );
   },

@@ -80,28 +80,45 @@ export const siteSectionRepository: ISiteSectionRepository = {
     return rows.map(toSectionWithItems);
   },
 
-  async findByIdWithItems(id: string) {
-    const r = await prisma.centerSiteSection.findUnique({
-      where: { id },
+  async findByIdWithItems(id: string, centerId: string) {
+    const r = await prisma.centerSiteSection.findFirst({
+      where: { id, centerId },
       include: { items: { orderBy: { sortOrder: "asc" } } },
     });
     return r ? toSectionWithItems(r) : null;
   },
 
-  async update(id: string, data: UpdateSiteSectionInput) {
-    const r = await prisma.centerSiteSection.update({ where: { id }, data });
-    return toSection(r);
+  async update(id: string, centerId: string, data: UpdateSiteSectionInput) {
+    const result = await prisma.centerSiteSection.updateMany({
+      where: { id, centerId },
+      data,
+    });
+    if (result.count === 0) return null;
+    const r = await prisma.centerSiteSection.findUnique({ where: { id } });
+    return r ? toSection(r) : null;
   },
 
   async reorder(centerId: string, orderedIds: string[]) {
+    // Sólo afecta secciones que efectivamente pertenecen al centro.
+    // IDs ajenos quedan ignorados (no-op por filtro compuesto en updateMany).
     await prisma.$transaction(
       orderedIds.map((id, index) =>
-        prisma.centerSiteSection.update({ where: { id }, data: { sortOrder: index } })
+        prisma.centerSiteSection.updateMany({
+          where: { id, centerId },
+          data: { sortOrder: index },
+        })
       )
     );
   },
 
-  async createItem(sectionId: string, data: CreateSiteSectionItemInput) {
+  async createItem(sectionId: string, centerId: string, data: CreateSiteSectionItemInput) {
+    // Verifica que la sección pertenezca al centro antes de crear ítem.
+    const section = await prisma.centerSiteSection.findFirst({
+      where: { id: sectionId, centerId },
+      select: { id: true },
+    });
+    if (!section) return null;
+
     const count = await prisma.centerSiteSectionItem.count({ where: { sectionId } });
     const r = await prisma.centerSiteSectionItem.create({
       data: { sectionId, sortOrder: count, ...data },
@@ -109,20 +126,39 @@ export const siteSectionRepository: ISiteSectionRepository = {
     return toSectionItem(r);
   },
 
-  async updateItem(itemId: string, data: UpdateSiteSectionItemInput) {
-    const r = await prisma.centerSiteSectionItem.update({ where: { id: itemId }, data });
-    return toSectionItem(r);
+  async updateItem(itemId: string, centerId: string, data: UpdateSiteSectionItemInput) {
+    const result = await prisma.centerSiteSectionItem.updateMany({
+      where: { id: itemId, section: { centerId } },
+      data,
+    });
+    if (result.count === 0) return null;
+    const r = await prisma.centerSiteSectionItem.findUnique({ where: { id: itemId } });
+    return r ? toSectionItem(r) : null;
   },
 
-  async deleteItem(itemId: string) {
-    await prisma.centerSiteSectionItem.delete({ where: { id: itemId } });
+  async deleteItem(itemId: string, centerId: string) {
+    const result = await prisma.centerSiteSectionItem.deleteMany({
+      where: { id: itemId, section: { centerId } },
+    });
+    return result.count > 0;
   },
 
-  async reorderItems(sectionId: string, orderedIds: string[]) {
+  async reorderItems(sectionId: string, centerId: string, orderedIds: string[]) {
+    // Verifica que la sección pertenezca al centro antes de reordenar ítems.
+    const section = await prisma.centerSiteSection.findFirst({
+      where: { id: sectionId, centerId },
+      select: { id: true },
+    });
+    if (!section) return false;
+
     await prisma.$transaction(
       orderedIds.map((id, index) =>
-        prisma.centerSiteSectionItem.update({ where: { id }, data: { sortOrder: index } })
+        prisma.centerSiteSectionItem.updateMany({
+          where: { id, sectionId },
+          data: { sortOrder: index },
+        })
       )
     );
+    return true;
   },
 };

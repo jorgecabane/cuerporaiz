@@ -41,7 +41,7 @@ export async function PATCH(request: Request) {
         if (cats.some((c) => !c || c.centerId !== centerId)) {
           return NextResponse.json({ code: "FORBIDDEN" }, { status: 403 });
         }
-        await onDemandCategoryRepository.reorder(orderedIds);
+        await onDemandCategoryRepository.reorder(centerId, orderedIds);
         break;
       }
       case "practice": {
@@ -51,7 +51,7 @@ export async function PATCH(request: Request) {
         if (practices.some((p) => !p) || cats.some((c) => !c || c.centerId !== centerId)) {
           return NextResponse.json({ code: "FORBIDDEN" }, { status: 403 });
         }
-        await onDemandPracticeRepository.reorder(orderedIds);
+        await onDemandPracticeRepository.reorder(centerId, orderedIds);
         break;
       }
       case "lesson": {
@@ -63,7 +63,7 @@ export async function PATCH(request: Request) {
         if (lessons.some((l) => !l) || practices.some((p) => !p) || cats.some((c) => !c || c.centerId !== centerId)) {
           return NextResponse.json({ code: "FORBIDDEN" }, { status: 403 });
         }
-        await onDemandLessonRepository.reorder(orderedIds);
+        await onDemandLessonRepository.reorder(centerId, orderedIds);
         break;
       }
     }

@@ -65,7 +65,14 @@ export const onDemandLessonRepository: IOnDemandLessonRepository = {
     return r ? toDomain(r) : null;
   },
 
-  async create(data: CreateLessonInput) {
+  async create(centerId: string, data: CreateLessonInput) {
+    // Verifica que practice → category pertenezca al centro antes de crear la lección.
+    const practice = await prisma.onDemandPractice.findFirst({
+      where: { id: data.practiceId, category: { centerId } },
+      select: { id: true },
+    });
+    if (!practice) return null;
+
     const last = await prisma.onDemandLesson.findFirst({
       where: { practiceId: data.practiceId },
       orderBy: { sortOrder: "desc" },
@@ -93,11 +100,9 @@ export const onDemandLessonRepository: IOnDemandLessonRepository = {
     return toDomain(r);
   },
 
-  async update(id: string, data: UpdateLessonInput) {
-    const existing = await prisma.onDemandLesson.findUnique({ where: { id } });
-    if (!existing) return null;
-    const r = await prisma.onDemandLesson.update({
-      where: { id },
+  async update(id: string, centerId: string, data: UpdateLessonInput) {
+    const result = await prisma.onDemandLesson.updateMany({
+      where: { id, practice: { category: { centerId } } },
       data: {
         ...(data.title != null && { title: data.title }),
         ...(data.videoUrl != null && { videoUrl: data.videoUrl }),
@@ -113,20 +118,25 @@ export const onDemandLessonRepository: IOnDemandLessonRepository = {
         ...(data.status != null && { status: data.status as PrismaOnDemandContentStatus }),
       },
     });
-    return toDomain(r);
+    if (result.count === 0) return null;
+    const r = await prisma.onDemandLesson.findUnique({ where: { id } });
+    return r ? toDomain(r) : null;
   },
 
-  async delete(id: string) {
-    const existing = await prisma.onDemandLesson.findUnique({ where: { id } });
-    if (!existing) return false;
-    await prisma.onDemandLesson.delete({ where: { id } });
-    return true;
+  async delete(id: string, centerId: string) {
+    const result = await prisma.onDemandLesson.deleteMany({
+      where: { id, practice: { category: { centerId } } },
+    });
+    return result.count > 0;
   },
 
-  async reorder(orderedIds: string[]) {
+  async reorder(centerId: string, orderedIds: string[]) {
     await prisma.$transaction(
       orderedIds.map((id, index) =>
-        prisma.onDemandLesson.update({ where: { id }, data: { sortOrder: index } })
+        prisma.onDemandLesson.updateMany({
+          where: { id, practice: { category: { centerId } } },
+          data: { sortOrder: index },
+        })
       )
     );
   },

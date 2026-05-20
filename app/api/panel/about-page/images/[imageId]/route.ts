@@ -24,7 +24,10 @@ export async function PATCH(
     );
   }
 
-  const updated = await aboutPageRepository.updateImage(imageId, parsed.data);
+  const updated = await aboutPageRepository.updateImage(imageId, session.user.centerId, parsed.data);
+  if (!updated) {
+    return NextResponse.json({ error: "Imagen no encontrada" }, { status: 404 });
+  }
   revalidatePath("/sobre");
   return NextResponse.json(updated);
 }
@@ -39,7 +42,10 @@ export async function DELETE(
   }
 
   const { imageId } = await params;
-  await aboutPageRepository.deleteImage(imageId);
+  const ok = await aboutPageRepository.deleteImage(imageId, session.user.centerId);
+  if (!ok) {
+    return NextResponse.json({ error: "Imagen no encontrada" }, { status: 404 });
+  }
   revalidatePath("/sobre");
   return new NextResponse(null, { status: 204 });
 }

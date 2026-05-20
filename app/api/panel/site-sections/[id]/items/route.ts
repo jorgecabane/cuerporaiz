@@ -21,7 +21,10 @@ export async function POST(
     return NextResponse.json({ error: "Datos inválidos", details: parsed.error.flatten() }, { status: 400 });
   }
 
-  const item = await siteSectionRepository.createItem(id, parsed.data);
+  const item = await siteSectionRepository.createItem(id, session.user.centerId, parsed.data);
+  if (!item) {
+    return NextResponse.json({ error: "Sección no encontrada" }, { status: 404 });
+  }
   revalidatePath("/");
   return NextResponse.json(item, { status: 201 });
 }

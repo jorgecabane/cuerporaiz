@@ -1674,3 +1674,131 @@ export async function cleanupTier1WaitlistEntries(entryIds: string[]): Promise<v
   if (!prisma || entryIds.length === 0) return;
   await prisma.waitlistEntry.deleteMany({ where: { id: { in: entryIds } } });
 }
+
+/**
+ * Seed multi-tenant isolation fixtures: un centro "extranjero" con un set
+ * mínimo de recursos. El admin de e2e-test NO debería poder mutar nada de acá.
+ * Devuelve los IDs para los asserts; null si no hay DB.
+ */
+export async function seedForeignCenterFixtures(): Promise<{
+  centerId: string;
+  siteSectionId: string;
+  siteSectionItemId: string;
+  aboutImageId: string;
+  categoryId: string;
+  practiceId: string;
+  lessonId: string;
+} | null> {
+  const prisma = await getPrisma();
+  if (!prisma) return null;
+
+  const slug = "e2e-foreign";
+  const center = await prisma.center.upsert({
+    where: { slug },
+    update: {},
+    create: {
+      slug,
+      name: "Foreign E2E",
+      timezone: "America/Santiago",
+      currency: "CLP",
+    },
+  });
+
+  const section = await prisma.centerSiteSection.create({
+    data: {
+      centerId: center.id,
+      sectionKey: "hero",
+      title: "Foreign section",
+      sortOrder: 0,
+      visible: true,
+    },
+  });
+  const sectionItem = await prisma.centerSiteSectionItem.create({
+    data: { sectionId: section.id, title: "foreign item", sortOrder: 0 },
+  });
+
+  const aboutPage = await prisma.centerAboutPage.upsert({
+    where: { centerId: center.id },
+    update: {},
+    create: { centerId: center.id, pageTitle: "Sobre el centro extranjero" },
+  });
+  const aboutImage = await prisma.centerAboutPageImage.create({
+    data: {
+      pageId: aboutPage.id,
+      imageUrl: "https://example.test/foreign.jpg",
+      caption: "foreign",
+      category: "RETIROS",
+      sortOrder: 0,
+      visible: true,
+    },
+  });
+
+  const category = await prisma.onDemandCategory.create({
+    data: {
+      centerId: center.id,
+      name: "Foreign category",
+      sortOrder: 0,
+      status: "PUBLISHED",
+    },
+  });
+  const practice = await prisma.onDemandPractice.create({
+    data: {
+      categoryId: category.id,
+      name: "Foreign practice",
+      sortOrder: 0,
+      status: "PUBLISHED",
+    },
+  });
+  const lesson = await prisma.onDemandLesson.create({
+    data: {
+      practiceId: practice.id,
+      title: "Foreign lesson",
+      videoUrl: "https://example.test/foreign.mp4",
+      sortOrder: 0,
+      status: "PUBLISHED",
+    },
+  });
+
+  return {
+    centerId: center.id,
+    siteSectionId: section.id,
+    siteSectionItemId: sectionItem.id,
+    aboutImageId: aboutImage.id,
+    categoryId: category.id,
+    practiceId: practice.id,
+    lessonId: lesson.id,
+  };
+}
+
+export async function cleanupForeignCenterFixtures(): Promise<void> {
+  const prisma = await getPrisma();
+  if (!prisma) return;
+  const center = await prisma.center.findUnique({ where: { slug: "e2e-foreign" } });
+  if (!center) return;
+  // Las relaciones cascadean: borrar el Center remueve sections, about-page (+ imágenes),
+  // categories (+ practices + lessons), etc.
+  await prisma.center.delete({ where: { id: center.id } }).catch(() => {});
+}
+
+/** Verifica que un recurso siga existiendo (para asserts de "no se borró"). */
+export async function foreignResourceExists(
+  kind: "siteSection" | "siteSectionItem" | "aboutImage" | "category" | "practice" | "lesson",
+  id: string,
+): Promise<boolean> {
+  const prisma = await getPrisma();
+  if (!prisma) return false;
+  switch (kind) {
+    case "siteSection":
+      return !!(await prisma.centerSiteSection.findUnique({ where: { id } }));
+    case "siteSectionItem":
+      return !!(await prisma.centerSiteSectionItem.findUnique({ where: { id } }));
+    case "aboutImage":
+      return !!(await prisma.centerAboutPageImage.findUnique({ where: { id } }));
+    case "category":
+      return !!(await prisma.onDemandCategory.findUnique({ where: { id } }));
+    case "practice":
+      return !!(await prisma.onDemandPractice.findUnique({ where: { id } }));
+    case "lesson":
+      return !!(await prisma.onDemandLesson.findUnique({ where: { id } }));
+  }
+}

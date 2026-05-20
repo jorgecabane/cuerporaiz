@@ -36,21 +36,21 @@ export async function updateCategory(
     status?: OnDemandContentStatus;
   }
 ): Promise<void> {
-  await requireAdminCenterId();
-  await onDemandCategoryRepository.update(id, data);
+  const centerId = await requireAdminCenterId();
+  await onDemandCategoryRepository.update(id, centerId, data);
   revalidatePath("/panel/on-demand/categorias");
   revalidatePath(`/panel/on-demand/categorias/${id}`);
 }
 
 export async function deleteCategory(id: string): Promise<void> {
-  await requireAdminCenterId();
-  await onDemandCategoryRepository.delete(id);
+  const centerId = await requireAdminCenterId();
+  await onDemandCategoryRepository.delete(id, centerId);
   revalidatePath("/panel/on-demand/categorias");
   redirect("/panel/on-demand/categorias");
 }
 
 export async function reorderCategories(orderedIds: string[]): Promise<void> {
-  await requireAdminCenterId();
-  await onDemandCategoryRepository.reorder(orderedIds);
+  const centerId = await requireAdminCenterId();
+  await onDemandCategoryRepository.reorder(centerId, orderedIds);
   revalidatePath("/panel/on-demand/categorias");
 }

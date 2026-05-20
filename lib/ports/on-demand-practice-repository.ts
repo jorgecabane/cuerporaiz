@@ -12,8 +12,12 @@ export interface IOnDemandPracticeRepository {
   findPublishedByCategoryId(categoryId: string): Promise<OnDemandPractice[]>;
   findPublishedWithLessonsByCategoryId(categoryId: string): Promise<PracticeWithLessons[]>;
   findById(id: string): Promise<OnDemandPractice | null>;
-  create(data: CreatePracticeInput): Promise<OnDemandPractice>;
-  update(id: string, data: UpdatePracticeInput): Promise<OnDemandPractice | null>;
-  delete(id: string): Promise<boolean>;
-  reorder(orderedIds: string[]): Promise<void>;
+  /** Crea sólo si la categoría pertenece al centro. */
+  create(centerId: string, data: CreatePracticeInput): Promise<OnDemandPractice | null>;
+  /** Devuelve null si la practice no existe o no pertenece (vía category) al centro. */
+  update(id: string, centerId: string, data: UpdatePracticeInput): Promise<OnDemandPractice | null>;
+  /** Devuelve false si la practice no existe o no pertenece al centro. */
+  delete(id: string, centerId: string): Promise<boolean>;
+  /** Sólo afecta practices cuyas categorías pertenezcan al centro. */
+  reorder(centerId: string, orderedIds: string[]): Promise<void>;
 }

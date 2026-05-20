@@ -25,16 +25,20 @@ export default async function EditarLeccionPage({
   const lesson = await onDemandLessonRepository.findById(id);
   if (!lesson) notFound();
 
-  const unlockCount = await lessonUnlockRepository.countByLessonId(lesson.id);
+  // Verifica que la lección pertenezca al centro del admin (vía practice → category).
+  // Sin este check, un admin podía abrir la pantalla de edición de lecciones de
+  // otros centros y leer videoUrl/metadata aunque las mutaciones ya quedaron blindadas.
   const categories = await onDemandCategoryRepository.findByCenterId(centerId);
   const practicesPerCategory = await Promise.all(
     categories.map((cat) => onDemandPracticeRepository.findByCategoryId(cat.id))
   );
   const practices = practicesPerCategory.flat();
-
-  // Resolve hierarchy for breadcrumb
   const practice = practices.find((p) => p.id === lesson.practiceId) ?? null;
-  const category = practice ? categories.find((c) => c.id === practice.categoryId) ?? null : null;
+  if (!practice) notFound();
+  const category = categories.find((c) => c.id === practice.categoryId) ?? null;
+  if (!category) notFound();
+
+  const unlockCount = await lessonUnlockRepository.countByLessonId(lesson.id);
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-12">

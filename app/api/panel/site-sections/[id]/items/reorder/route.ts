@@ -21,7 +21,10 @@ export async function PATCH(
     return NextResponse.json({ error: "Datos inválidos", details: parsed.error.flatten() }, { status: 400 });
   }
 
-  await siteSectionRepository.reorderItems(id, parsed.data.orderedIds);
+  const ok = await siteSectionRepository.reorderItems(id, session.user.centerId, parsed.data.orderedIds);
+  if (!ok) {
+    return NextResponse.json({ error: "Sección no encontrada" }, { status: 404 });
+  }
   revalidatePath("/");
   return NextResponse.json({ ok: true });
 }

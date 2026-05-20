@@ -32,7 +32,7 @@ export async function PATCH(
         { status: 400 }
       );
     }
-    const updated = await onDemandPracticeRepository.update(practiceId, parsed.data);
+    const updated = await onDemandPracticeRepository.update(practiceId, session.user.centerId, parsed.data);
     if (!updated) {
       return NextResponse.json({ code: "NOT_FOUND" }, { status: 404 });
     }
@@ -63,7 +63,7 @@ export async function DELETE(
     if (!category || category.centerId !== session.user.centerId) {
       return NextResponse.json({ code: "NOT_FOUND" }, { status: 404 });
     }
-    const deleted = await onDemandPracticeRepository.delete(practiceId);
+    const deleted = await onDemandPracticeRepository.delete(practiceId, session.user.centerId);
     if (!deleted) {
       return NextResponse.json({ code: "NOT_FOUND" }, { status: 404 });
     }
