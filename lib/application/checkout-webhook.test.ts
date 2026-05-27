@@ -16,6 +16,12 @@ const mocks = vi.hoisted(() => ({
   paymentProvider: {
     getPayment: vi.fn(),
   },
+  userRepository: {
+    findById: vi.fn(),
+  },
+  planRepository: {
+    findById: vi.fn(),
+  },
   verifyMercadoPagoWebhookSignature: vi.fn(),
   sendSecurityAlert: vi.fn(),
   activatePlanForOrder: vi.fn(),
@@ -26,10 +32,10 @@ vi.mock("@/lib/adapters/db", () => ({
   orderRepository: mocks.orderRepository,
   webhookEventRepository: mocks.webhookEventRepository,
   centerRepository: { findById: vi.fn(), findBySlug: vi.fn() },
-  planRepository: { findById: vi.fn() },
+  planRepository: mocks.planRepository,
   eventTicketRepository: { findByExternalReference: vi.fn() },
   eventRepository: { findById: vi.fn() },
-  userRepository: { findById: vi.fn() },
+  userRepository: mocks.userRepository,
 }));
 
 vi.mock("@/lib/adapters/payment", () => ({
@@ -90,6 +96,7 @@ function makePayment(overrides: Record<string, unknown> = {}) {
 beforeEach(() => {
   vi.clearAllMocks();
   vi.stubEnv("MP_WEBHOOK_SECRET", "fake-secret");
+  vi.stubEnv("NEXTAUTH_URL", "https://app.cuerporaiz.cl");
   mocks.verifyMercadoPagoWebhookSignature.mockReturnValue(true);
   mocks.mercadopagoConfigRepository.findByMpUserId.mockResolvedValue({
     centerId: "center_A",
@@ -100,6 +107,15 @@ beforeEach(() => {
   mocks.webhookEventRepository.markProcessed.mockResolvedValue(undefined);
   mocks.orderRepository.updateStatus.mockResolvedValue(undefined);
   mocks.paymentProvider.getPayment.mockResolvedValue(makePayment());
+  mocks.userRepository.findById.mockResolvedValue({
+    id: "user_1",
+    name: "Ana Pérez",
+    email: "ana@example.com",
+  });
+  mocks.planRepository.findById.mockResolvedValue({
+    id: "plan_1",
+    name: "Plan Mensual Vinyasa",
+  });
 });
 
 afterEach(() => {
@@ -134,6 +150,28 @@ describe("processWebhookUseCase — C2: order/center mismatch", () => {
       orderId: "order_X",
       orderCenterId: "center_B",
       resolvedCenterId: "center_A",
+      buyerName: "Ana Pérez",
+      buyerEmail: "ana@example.com",
+      planName: "Plan Mensual Vinyasa",
+      panelUrl: "https://app.cuerporaiz.cl/panel/pagos?orderId=order_X",
+    });
+  });
+
+  it("usa null en buyerName/planName si el lookup falla (no lanza)", async () => {
+    mocks.orderRepository.findByExternalReference.mockResolvedValue(
+      makeOrder({ centerId: "center_B" })
+    );
+    mocks.userRepository.findById.mockResolvedValue(null);
+    mocks.planRepository.findById.mockResolvedValue(null);
+
+    await expect(processWebhookUseCase(VALID_INPUT)).resolves.toBeDefined();
+
+    expect(mocks.sendSecurityAlert).toHaveBeenCalledTimes(1);
+    const alert = mocks.sendSecurityAlert.mock.calls[0][0];
+    expect(alert.metadata).toMatchObject({
+      buyerName: null,
+      buyerEmail: null,
+      planName: null,
     });
   });
 
@@ -185,6 +223,10 @@ describe("processWebhookUseCase — C3: payment/order amount mismatch", () => {
       orderId: "order_Y",
       expectedAmountCents: 10000,
       paidTransactionAmount: 1,
+      buyerName: "Ana Pérez",
+      buyerEmail: "ana@example.com",
+      planName: "Plan Mensual Vinyasa",
+      panelUrl: "https://app.cuerporaiz.cl/panel/pagos?orderId=order_Y",
     });
   });
 
