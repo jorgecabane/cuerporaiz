@@ -37,7 +37,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         { status: 400 }
       );
     }
-    const updated = await onDemandLessonRepository.update(id, parsed.data);
+    const updated = await onDemandLessonRepository.update(id, session.user.centerId, parsed.data);
     if (!updated) {
       return NextResponse.json({ code: "NOT_FOUND" }, { status: 404 });
     }
@@ -69,7 +69,7 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
     if (!category || category.centerId !== session.user.centerId) {
       return NextResponse.json({ code: "NOT_FOUND" }, { status: 404 });
     }
-    const deleted = await onDemandLessonRepository.delete(id);
+    const deleted = await onDemandLessonRepository.delete(id, session.user.centerId);
     if (!deleted) {
       return NextResponse.json({ code: "NOT_FOUND" }, { status: 404 });
     }

@@ -109,16 +109,21 @@ export const aboutPageRepository: IAboutPageRepository = {
     return toAboutImage(row);
   },
 
-  async updateImage(imageId, data) {
-    const row = await prisma.centerAboutPageImage.update({
-      where: { id: imageId },
+  async updateImage(imageId, centerId, data) {
+    const result = await prisma.centerAboutPageImage.updateMany({
+      where: { id: imageId, page: { centerId } },
       data,
     });
-    return toAboutImage(row);
+    if (result.count === 0) return null;
+    const row = await prisma.centerAboutPageImage.findUnique({ where: { id: imageId } });
+    return row ? toAboutImage(row) : null;
   },
 
-  async deleteImage(imageId) {
-    await prisma.centerAboutPageImage.delete({ where: { id: imageId } });
+  async deleteImage(imageId, centerId) {
+    const result = await prisma.centerAboutPageImage.deleteMany({
+      where: { id: imageId, page: { centerId } },
+    });
+    return result.count > 0;
   },
 
   async reorderImages(pageId, category, orderedIds) {

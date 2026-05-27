@@ -24,8 +24,8 @@ export async function createPractice(
     status?: OnDemandContentStatus;
   }
 ): Promise<void> {
-  await requireAdminCenterId();
-  await onDemandPracticeRepository.create({ categoryId, ...data });
+  const centerId = await requireAdminCenterId();
+  await onDemandPracticeRepository.create(centerId, { categoryId, ...data });
   revalidatePath(`/panel/on-demand/categorias/${categoryId}`);
 }
 
@@ -39,16 +39,16 @@ export async function updatePractice(
     status?: OnDemandContentStatus;
   }
 ): Promise<void> {
-  await requireAdminCenterId();
-  await onDemandPracticeRepository.update(id, data);
+  const centerId = await requireAdminCenterId();
+  await onDemandPracticeRepository.update(id, centerId, data);
   revalidatePath(`/panel/on-demand/categorias/${categoryId}`);
   revalidatePath(`/panel/on-demand/categorias/${categoryId}/practicas/${id}`);
   redirect(`/panel/on-demand/categorias/${categoryId}/practicas/${id}`);
 }
 
 export async function deletePractice(id: string, categoryId: string): Promise<void> {
-  await requireAdminCenterId();
-  await onDemandPracticeRepository.delete(id);
+  const centerId = await requireAdminCenterId();
+  await onDemandPracticeRepository.delete(id, centerId);
   revalidatePath(`/panel/on-demand/categorias/${categoryId}`);
   redirect(`/panel/on-demand/categorias/${categoryId}`);
 }
@@ -57,7 +57,7 @@ export async function reorderPractices(
   orderedIds: string[],
   categoryId: string
 ): Promise<void> {
-  await requireAdminCenterId();
-  await onDemandPracticeRepository.reorder(orderedIds);
+  const centerId = await requireAdminCenterId();
+  await onDemandPracticeRepository.reorder(centerId, orderedIds);
   revalidatePath(`/panel/on-demand/categorias/${categoryId}`);
 }

@@ -15,7 +15,7 @@ export async function GET(
   }
 
   const { id } = await params;
-  const section = await siteSectionRepository.findByIdWithItems(id);
+  const section = await siteSectionRepository.findByIdWithItems(id, session.user.centerId);
   if (!section) {
     return NextResponse.json({ error: "Sección no encontrada" }, { status: 404 });
   }
@@ -39,7 +39,10 @@ export async function PATCH(
     return NextResponse.json({ error: "Datos inválidos", details: parsed.error.flatten() }, { status: 400 });
   }
 
-  const section = await siteSectionRepository.update(id, parsed.data);
+  const section = await siteSectionRepository.update(id, session.user.centerId, parsed.data);
+  if (!section) {
+    return NextResponse.json({ error: "Sección no encontrada" }, { status: 404 });
+  }
   revalidatePath("/");
   return NextResponse.json(section);
 }

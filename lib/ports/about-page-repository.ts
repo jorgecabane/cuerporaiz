@@ -11,8 +11,10 @@ export interface IAboutPageRepository {
 
   listImages(pageId: string): Promise<AboutImage[]>;
   createImage(pageId: string, data: CreateAboutImageInput): Promise<AboutImage>;
-  updateImage(imageId: string, data: UpdateAboutImageInput): Promise<AboutImage>;
-  deleteImage(imageId: string): Promise<void>;
+  /** Devuelve null si la imagen no existe o no pertenece al centro. */
+  updateImage(imageId: string, centerId: string, data: UpdateAboutImageInput): Promise<AboutImage | null>;
+  /** Devuelve false si la imagen no existe o no pertenece al centro. */
+  deleteImage(imageId: string, centerId: string): Promise<boolean>;
   reorderImages(
     pageId: string,
     category: AboutImageCategory,

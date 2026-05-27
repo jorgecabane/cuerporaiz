@@ -54,10 +54,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         { status: 400 }
       );
     }
-    const practice = await onDemandPracticeRepository.create({
+    const practice = await onDemandPracticeRepository.create(session.user.centerId, {
       categoryId: id,
       ...parsed.data,
     });
+    if (!practice) {
+      return NextResponse.json({ code: "NOT_FOUND" }, { status: 404 });
+    }
     return NextResponse.json(practice, { status: 201 });
   } catch (err) {
     console.error("[on-demand practices POST]", err);

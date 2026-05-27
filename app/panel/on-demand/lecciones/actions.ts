@@ -18,8 +18,8 @@ async function requireAdminCenterId(): Promise<string> {
 }
 
 export async function createLesson(data: CreateLessonInput): Promise<void> {
-  await requireAdminCenterId();
-  const lesson = await onDemandLessonRepository.create(data);
+  const centerId = await requireAdminCenterId();
+  const lesson = await onDemandLessonRepository.create(centerId, data);
   const practice = await onDemandPracticeRepository.findById(data.practiceId);
   revalidatePath("/panel/on-demand");
   revalidatePath("/catalogo");
@@ -28,8 +28,8 @@ export async function createLesson(data: CreateLessonInput): Promise<void> {
 }
 
 export async function updateLesson(id: string, data: UpdateLessonInput): Promise<void> {
-  await requireAdminCenterId();
-  await onDemandLessonRepository.update(id, data);
+  const centerId = await requireAdminCenterId();
+  await onDemandLessonRepository.update(id, centerId, data);
   revalidatePath("/panel/on-demand");
   revalidatePath("/catalogo");
   const lesson = await onDemandLessonRepository.findById(id);
@@ -48,13 +48,13 @@ export async function updateLesson(id: string, data: UpdateLessonInput): Promise
 export async function deleteLesson(
   id: string
 ): Promise<{ ok: false; reason: "has_unlocks"; unlockCount: number }> {
-  await requireAdminCenterId();
+  const centerId = await requireAdminCenterId();
   const unlockCount = await lessonUnlockRepository.countByLessonId(id);
   if (unlockCount > 0) {
     return { ok: false, reason: "has_unlocks", unlockCount };
   }
   const lesson = await onDemandLessonRepository.findById(id);
-  await onDemandLessonRepository.delete(id);
+  await onDemandLessonRepository.delete(id, centerId);
   revalidatePath("/panel/on-demand");
   revalidatePath("/catalogo");
   if (lesson) {
@@ -70,8 +70,8 @@ export async function deleteLesson(
  * unlock, no del status).
  */
 export async function archiveLesson(id: string): Promise<void> {
-  await requireAdminCenterId();
-  await onDemandLessonRepository.update(id, { status: "ARCHIVED" });
+  const centerId = await requireAdminCenterId();
+  await onDemandLessonRepository.update(id, centerId, { status: "ARCHIVED" });
   revalidatePath("/panel/on-demand");
   revalidatePath("/catalogo");
   const lesson = await onDemandLessonRepository.findById(id);
@@ -86,8 +86,8 @@ export async function archiveLesson(id: string): Promise<void> {
  * Des-archiva una lección: vuelve a status PUBLISHED y reaparece en el catálogo.
  */
 export async function unarchiveLesson(id: string): Promise<void> {
-  await requireAdminCenterId();
-  await onDemandLessonRepository.update(id, { status: "PUBLISHED" });
+  const centerId = await requireAdminCenterId();
+  await onDemandLessonRepository.update(id, centerId, { status: "PUBLISHED" });
   revalidatePath("/panel/on-demand");
   revalidatePath("/catalogo");
   const lesson = await onDemandLessonRepository.findById(id);

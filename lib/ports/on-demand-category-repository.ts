@@ -16,7 +16,10 @@ export interface IOnDemandCategoryRepository {
   findPublishedTreeByCenterId(centerId: string): Promise<CategoryTree[]>;
   findById(id: string): Promise<OnDemandCategory | null>;
   create(data: CreateCategoryInput): Promise<OnDemandCategory>;
-  update(id: string, data: UpdateCategoryInput): Promise<OnDemandCategory | null>;
-  delete(id: string): Promise<boolean>;
-  reorder(orderedIds: string[]): Promise<void>;
+  /** Devuelve null si la categoría no existe o no pertenece al centro. */
+  update(id: string, centerId: string, data: UpdateCategoryInput): Promise<OnDemandCategory | null>;
+  /** Devuelve false si la categoría no existe o no pertenece al centro. */
+  delete(id: string, centerId: string): Promise<boolean>;
+  /** Sólo afecta categorías del centro indicado; IDs ajenos quedan ignorados. */
+  reorder(centerId: string, orderedIds: string[]): Promise<void>;
 }
