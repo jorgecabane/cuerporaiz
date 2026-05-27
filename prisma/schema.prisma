@@ -235,7 +235,7 @@ model UserPlan {
   userId         String
   planId         String
   centerId       String
-  orderId        String? // null si fue asignado manualmente por admin
+  orderId        String? @unique // null si fue asignado manualmente; UNIQUE previene minteo duplicado por race en webhook
   subscriptionId String? // null = pago único; set = plan recurrente (suscripción MP)
   status         UserPlanStatus    @default(ACTIVE)
   paymentStatus  PlanPaymentStatus @default(PENDING)

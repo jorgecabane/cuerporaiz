@@ -3,6 +3,7 @@ import {
   cleanupTier1UsersByEmailPrefix,
   getTier1LatestEmailVerificationToken,
   getTier1UserEmailVerifiedAt,
+  getTier1UserRolesByEmail,
 } from "./helpers/cleanup";
 
 /**
@@ -75,11 +76,32 @@ test.describe("Auth — signup + verify email", () => {
         email: fixedEmail,
         password: "Test1234!",
         centerId: "e2e-test",
-        role: "STUDENT",
       },
     });
     expect(res.status()).toBe(409);
     const body = (await res.json()) as { code?: string };
     expect(body.code).toBe("EMAIL_IN_USE");
+  });
+
+  test("signup con role=ADMINISTRATOR ignora el campo y asigna STUDENT", async ({
+    request,
+  }) => {
+    const attackerEmail = `${emailPrefix}attack-${Date.now()}-${Math.random()
+      .toString(36)
+      .slice(2, 8)}@example.test`;
+    const res = await request.post("/api/auth/signup", {
+      data: {
+        email: attackerEmail,
+        password: "Test1234!",
+        centerId: "e2e-test",
+        role: "ADMINISTRATOR",
+      },
+    });
+    expect(res.status()).toBe(201);
+
+    const roles = await getTier1UserRolesByEmail(attackerEmail);
+    test.skip(roles.length === 0, "Sin DB en este worker");
+    expect(roles).toEqual(["STUDENT"]);
+    expect(roles).not.toContain("ADMINISTRATOR");
   });
 });
