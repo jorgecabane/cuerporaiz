@@ -28,8 +28,9 @@ async function main() {
       email,
       passwordHash: hash,
       name: "Administrator",
+      emailVerifiedAt: new Date(),
     },
-    update: {},
+    update: { emailVerifiedAt: new Date() },
   });
 
   await prisma.userCenterRole.upsert({
@@ -54,8 +55,9 @@ async function main() {
       email: studentEmail,
       passwordHash: studentHash,
       name: "Student E2E",
+      emailVerifiedAt: new Date(),
     },
-    update: {},
+    update: { emailVerifiedAt: new Date() },
   });
   await prisma.userCenterRole.upsert({
     where: {
@@ -79,8 +81,9 @@ async function main() {
       email: instructorEmail,
       passwordHash: instructorHash,
       name: "Instructor E2E",
+      emailVerifiedAt: new Date(),
     },
-    update: {},
+    update: { emailVerifiedAt: new Date() },
   });
   await prisma.userCenterRole.upsert({
     where: {

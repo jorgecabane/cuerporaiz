@@ -1,7 +1,20 @@
-import NextAuth from "next-auth";
+import NextAuth, { CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
 import type { Role } from "@/lib/domain/role";
+import { decideGoogleSignIn } from "@/lib/domain/google-signin-policy";
+
+/**
+ * Errores estructurados de credenciales. Auth.js v5 sólo propaga al cliente el
+ * campo `code` cuando se lanza una subclase de CredentialsSignin — un
+ * `Error("RATE_LIMITED")` genérico nunca llega como `result.error` al frontend.
+ */
+class RateLimitedError extends CredentialsSignin {
+  code = "RATE_LIMITED";
+}
+class EmailNotVerifiedError extends CredentialsSignin {
+  code = "EMAIL_NOT_VERIFIED";
+}
 
 declare module "next-auth" {
   interface User {
@@ -64,11 +77,26 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           repo: loginAttemptRepository,
         });
         if (!rateCheck.allowed) {
-          throw new Error("RATE_LIMITED");
+          throw new RateLimitedError();
         }
 
         try {
           const result = await authService.authenticateWithCredentials(email, password, center.id);
+
+          // C6: el usuario debe haber verificado su email antes de poder loguear.
+          // Excepción: invitados pending (passwordHash="") no llegan acá porque
+          // authenticateWithCredentials ya falla en verifyPassword sobre hash vacío.
+          const { prisma } = await import("@/lib/adapters/db/prisma");
+          const dbUser = await prisma.user.findUnique({
+            where: { id: result.user.id },
+            select: { emailVerifiedAt: true },
+          });
+          if (!dbUser?.emailVerifiedAt) {
+            // No contamos como failed attempt para no contaminar el rate-limit
+            // de password incorrecto: el usuario ya tuvo password correcta.
+            throw new EmailNotVerifiedError();
+          }
+
           await loginAttemptRepository.create({
             email,
             centerId: center.id,
@@ -83,7 +111,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             centerId: result.centerId,
           };
         } catch (err) {
-          if (err instanceof Error && err.message === "RATE_LIMITED") throw err;
+          if (err instanceof CredentialsSignin) throw err;
           await loginAttemptRepository.create({
             email,
             centerId: center.id,
@@ -112,11 +140,26 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
   callbacks: {
-    async signIn({ user, account }) {
+    async signIn({ user, account, profile }) {
       if (account?.provider === "google" && user.email) {
         const { prisma } = await import("@/lib/adapters/db/prisma");
         const email = user.email;
         const googleId = account.providerAccountId;
+
+        const googleEmailVerified =
+          (profile as { email_verified?: boolean } | undefined)?.email_verified === true;
+
+        let dbUser = await prisma.user.findUnique({ where: { email } });
+
+        const decision = decideGoogleSignIn({
+          googleEmailVerified,
+          localUser: dbUser
+            ? { googleId: dbUser.googleId, emailVerifiedAt: dbUser.emailVerifiedAt }
+            : null,
+        });
+        if (decision === "reject") {
+          return false;
+        }
 
         const defaultSlug = process.env.DEFAULT_CENTER_SLUG ?? "cuerporaiz";
         const center = await prisma.center.findFirst({ where: { slug: defaultSlug } });
@@ -124,9 +167,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         const centerId = center.id;
 
-        let dbUser = await prisma.user.findUnique({ where: { email } });
-
-        if (dbUser) {
+        if (decision === "allow_new_user") {
+          dbUser = await prisma.user.create({
+            data: {
+              email,
+              passwordHash: "",
+              name: user.name ?? null,
+              imageUrl: user.image ?? null,
+              googleId,
+              emailVerifiedAt: new Date(),
+            },
+          });
+          await prisma.userCenterRole.create({
+            data: { userId: dbUser.id, centerId, role: "STUDENT" },
+          });
+        } else if (dbUser) {
+          // allow_link: backfilear googleId/emailVerifiedAt si faltan + asegurar membership.
           const updates: Record<string, unknown> = {};
           if (!dbUser.googleId) updates.googleId = googleId;
           if (!dbUser.emailVerifiedAt) updates.emailVerifiedAt = new Date();
@@ -141,20 +197,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               data: { userId: dbUser.id, centerId, role: "STUDENT" },
             });
           }
-        } else {
-          dbUser = await prisma.user.create({
-            data: {
-              email,
-              passwordHash: "",
-              name: user.name ?? null,
-              imageUrl: user.image ?? null,
-              googleId,
-              emailVerifiedAt: new Date(),
-            },
-          });
-          await prisma.userCenterRole.create({
-            data: { userId: dbUser.id, centerId, role: "STUDENT" },
-          });
         }
       }
       return true;
