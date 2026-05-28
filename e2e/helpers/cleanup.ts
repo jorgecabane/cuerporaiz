@@ -1802,3 +1802,59 @@ export async function foreignResourceExists(
       return !!(await prisma.onDemandLesson.findUnique({ where: { id } }));
   }
 }
+
+/**
+ * Lee `Reservation.status` desde la DB. Útil para verificar persistencia de
+ * `markAttendanceUseCase` en specs de E2E.
+ */
+export async function getTier2ReservationStatus(
+  reservationId: string,
+): Promise<string | null> {
+  const prisma = await getPrisma();
+  if (!prisma) return null;
+  const r = await prisma.reservation.findUnique({
+    where: { id: reservationId },
+    select: { status: true },
+  });
+  return r?.status ?? null;
+}
+
+/**
+ * Crea LiveClass pasada + Reservation CONFIRMED en el centro "e2e-foreign".
+ * Asume `seedForeignCenterFixtures()` ya creó el centro. Usa al usuario
+ * `userEmail` (que vive en `e2e-test`) como dueño de la reserva — es válido
+ * porque User es global; solo el centerId de la clase importa para attendance.
+ *
+ * Útil para defense-in-depth: admin/instructor de centro A intenta marcar
+ * asistencia de una reserva cuya LiveClass pertenece al centro B.
+ */
+export async function seedForeignCenterPastReservation(opts: {
+  userEmail: string;
+  title: string;
+  hoursAgo?: number;
+}): Promise<{ liveClassId: string; reservationId: string } | null> {
+  const prisma = await getPrisma();
+  if (!prisma) return null;
+  const center = await prisma.center.findUnique({ where: { slug: "e2e-foreign" } });
+  if (!center) return null;
+  const user = await prisma.user.findUnique({ where: { email: opts.userEmail } });
+  if (!user) return null;
+  const startsAt = new Date(Date.now() - (opts.hoursAgo ?? 2) * 60 * 60 * 1000);
+  const lc = await prisma.liveClass.create({
+    data: {
+      centerId: center.id,
+      title: opts.title,
+      startsAt,
+      durationMinutes: 60,
+      maxCapacity: 10,
+    },
+  });
+  const r = await prisma.reservation.create({
+    data: {
+      userId: user.id,
+      liveClassId: lc.id,
+      status: "CONFIRMED",
+    },
+  });
+  return { liveClassId: lc.id, reservationId: r.id };
+}
