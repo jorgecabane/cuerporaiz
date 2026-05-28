@@ -13,6 +13,7 @@ import {
   webhookEventRepository,
   eventTicketRepository,
   eventRepository,
+  userRepository,
 } from "@/lib/adapters/db";
 import { mercadoPagoPaymentAdapter } from "@/lib/adapters/payment";
 import { verifyMercadoPagoWebhookSignature } from "./verify-webhook-signature";
@@ -24,6 +25,7 @@ import {
 import { runAfterResponse } from "@/lib/utils/run-after-response";
 import { notifyWaitlistOnSpotFreed } from "./notify-waitlist-on-spot-freed";
 import { sendSecurityAlert } from "./security-alerts";
+import { getBaseUrl } from "@/lib/utils/base-url";
 
 const paymentProvider: IPaymentProvider = mercadoPagoPaymentAdapter;
 
@@ -323,6 +325,7 @@ export async function processWebhookUseCase(
 
   // C2: la orden debe pertenecer al mismo centro que resolvimos desde mpUserId.
   if (order.centerId !== centerId) {
+    const enrichment = await enrichOrderForAlert(order);
     await sendSecurityAlert({
       kind: "mp_center_mismatch",
       severity: "CRITICAL",
@@ -332,6 +335,7 @@ export async function processWebhookUseCase(
         resolvedCenterId: centerId,
         mpPaymentId: payment.id,
         requestId,
+        ...enrichment,
       },
     });
     await webhookEventRepository.markProcessed(centerId, requestId);
@@ -344,6 +348,7 @@ export async function processWebhookUseCase(
   // payment.transactionAmount es el bruto que pagó el customer; la comisión MP
   // se descuenta aparte (net_received_amount). Mismatch = fraude o bug, alertamos.
   if (status === "APPROVED" && payment.transactionAmount !== order.amountCents) {
+    const enrichment = await enrichOrderForAlert(order);
     await sendSecurityAlert({
       kind: "mp_amount_mismatch",
       severity: "CRITICAL",
@@ -354,6 +359,7 @@ export async function processWebhookUseCase(
         mpPaymentId: payment.id,
         centerId,
         requestId,
+        ...enrichment,
       },
     });
     await webhookEventRepository.markProcessed(centerId, requestId);
@@ -397,6 +403,24 @@ export async function processWebhookUseCase(
   await webhookEventRepository.markProcessed(centerId, requestId);
 
   return { success: true, alreadyProcessed: false };
+}
+
+/**
+ * Enriquece la metadata de alertas de seguridad MP con info legible
+ * (buyerName, buyerEmail, planName, panelUrl). Best-effort: si el lookup
+ * falla devuelve null en ese campo y no lanza.
+ */
+async function enrichOrderForAlert(order: { id: string; userId: string; planId: string }) {
+  const [user, plan] = await Promise.all([
+    userRepository.findById(order.userId).catch(() => null),
+    planRepository.findById(order.planId).catch(() => null),
+  ]);
+  return {
+    buyerName: user?.name ?? null,
+    buyerEmail: user?.email ?? null,
+    planName: plan?.name ?? null,
+    panelUrl: `${getBaseUrl()}/panel/pagos?orderId=${order.id}`,
+  };
 }
 
 /**
