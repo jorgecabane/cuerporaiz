@@ -1858,3 +1858,40 @@ export async function seedForeignCenterPastReservation(opts: {
   });
   return { liveClassId: lc.id, reservationId: r.id };
 }
+
+/**
+ * Crea N usuarios STUDENT con emails `{prefix}{NN}@e2e.test` y names
+ * `{nameLabel} {NN}` (padded a 2 dígitos). Idempotente. Útil para tests de
+ * listas paginadas / búsqueda. Cleanup vía `cleanupTier1UsersByEmailPrefix`.
+ */
+export async function seedBulkStudents(opts: {
+  centerSlug: string;
+  emailPrefix: string;
+  nameLabel: string;
+  count: number;
+}): Promise<{ created: number } | null> {
+  const prisma = await getPrisma();
+  if (!prisma) return null;
+  const center = await prisma.center.findUnique({ where: { slug: opts.centerSlug } });
+  if (!center) return null;
+  const bcryptMod = await import("bcryptjs");
+  const passwordHash = await bcryptMod.default.hash("bulk-students-e2e", 12);
+  let created = 0;
+  for (let i = 1; i <= opts.count; i++) {
+    const padded = String(i).padStart(2, "0");
+    const email = `${opts.emailPrefix}${padded}@e2e.test`;
+    const name = `${opts.nameLabel} ${padded}`;
+    const user = await prisma.user.upsert({
+      where: { email },
+      create: { email, passwordHash, name },
+      update: { name },
+    });
+    await prisma.userCenterRole.upsert({
+      where: { userId_centerId: { userId: user.id, centerId: center.id } },
+      create: { userId: user.id, centerId: center.id, role: "STUDENT" },
+      update: { role: "STUDENT" },
+    });
+    created++;
+  }
+  return { created };
+}
