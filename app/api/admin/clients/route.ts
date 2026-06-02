@@ -16,6 +16,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const pageRaw = searchParams.get("page");
     const pageSizeRaw = searchParams.get("pageSize");
+    const q = searchParams.get("q")?.trim() ?? "";
     const page = pageRaw ? Number(pageRaw) : 1;
     const pageSize = pageSizeRaw ? Number(pageSizeRaw) : DEFAULT_PAGE_SIZE;
 
@@ -32,9 +33,24 @@ export async function GET(request: Request) {
     const centerId = session.user.centerId;
     const skip = (page - 1) * pageSize;
 
+    const where = {
+      centerId,
+      role: "STUDENT" as const,
+      ...(q
+        ? {
+            user: {
+              OR: [
+                { name: { contains: q, mode: "insensitive" as const } },
+                { email: { contains: q, mode: "insensitive" as const } },
+              ],
+            },
+          }
+        : {}),
+    };
+
     const [items, total] = await Promise.all([
       prisma.userCenterRole.findMany({
-        where: { centerId, role: "STUDENT" },
+        where,
         select: {
           userId: true,
           isLegacyClient: true,
@@ -44,9 +60,7 @@ export async function GET(request: Request) {
         take: pageSize,
         skip,
       }),
-      prisma.userCenterRole.count({
-        where: { centerId, role: "STUDENT" },
-      }),
+      prisma.userCenterRole.count({ where }),
     ]);
 
     return NextResponse.json({

@@ -2,7 +2,7 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { isAdminRole } from "@/lib/domain";
 import { Button } from "@/components/ui/Button";
-import { ClientsListInfinite } from "./ClientsListInfinite";
+import { ClientsList } from "./ClientsList";
 
 export default async function PanelClientesPage() {
   const session = await auth();
@@ -22,7 +22,7 @@ export default async function PanelClientesPage() {
         </Button>
       </div>
 
-      <ClientsListInfinite pageSize={25} />
+      <ClientsList />
 
       <div className="mt-8">
         <Button href="/panel" variant="secondary">
