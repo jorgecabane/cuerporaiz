@@ -32,6 +32,70 @@ async function getPrisma(): Promise<PrismaClient | null> {
   return cachedPrisma;
 }
 
+// ─── Convención E2E para crear users ─────────────────────────────────────────
+// Tras el gate C6 (commit ca08281) el login por credentials lanza
+// EmailNotVerifiedError si el user no tiene emailVerifiedAt. Como los tests
+// que usan `playwright.request.newContext()` heredan el storageState del
+// proyecto (cookies admin), un login fallido deja cookies admin colgadas y
+// los asserts contra endpoints admin reciben 200 en vez del 4xx esperado.
+//
+// REGLA: cualquier helper nuevo que cree un User E2E DEBE pasar por
+// `ensureE2EUser` (que setea emailVerifiedAt y la membership). No usar
+// prisma.user.upsert + userCenterRole.upsert directo.
+
+/**
+ * Hashea un password para uso en E2E (bcrypt 12, igual al seed). Reutilizá
+ * el hash entre múltiples `ensureE2EUser` cuando crees N users con el mismo
+ * password (bulk seeds) para evitar pagar el costo N veces.
+ */
+export async function hashE2EPassword(plain: string): Promise<string> {
+  const bcryptMod = await import("bcryptjs");
+  return bcryptMod.default.hash(plain, 12);
+}
+
+/**
+ * Crea o reutiliza un User E2E + UserCenterRole. SIEMPRE setea
+ * `emailVerifiedAt` (ver convención arriba).
+ *
+ * @param rotateOnExisting Si true, en update rota passwordHash y bumpea
+ *   tokenVersion (invalida sesiones previas). Usar en flows de auth donde
+ *   distintos tests setean passwords diferentes para el mismo email.
+ */
+export async function ensureE2EUser(opts: {
+  centerId: string;
+  email: string;
+  passwordHash: string;
+  name?: string;
+  role: "ADMINISTRATOR" | "INSTRUCTOR" | "STUDENT";
+  rotateOnExisting?: boolean;
+}): Promise<{ id: string } | null> {
+  const prisma = await getPrisma();
+  if (!prisma) return null;
+  const verifiedAt = new Date();
+  const user = await prisma.user.upsert({
+    where: { email: opts.email },
+    create: {
+      email: opts.email,
+      passwordHash: opts.passwordHash,
+      name: opts.name ?? "E2E User",
+      emailVerifiedAt: verifiedAt,
+    },
+    update: opts.rotateOnExisting
+      ? {
+          passwordHash: opts.passwordHash,
+          tokenVersion: { increment: 1 },
+          emailVerifiedAt: verifiedAt,
+        }
+      : { emailVerifiedAt: verifiedAt },
+  });
+  await prisma.userCenterRole.upsert({
+    where: { userId_centerId: { userId: user.id, centerId: opts.centerId } },
+    create: { userId: user.id, centerId: opts.centerId, role: opts.role },
+    update: { role: opts.role },
+  });
+  return { id: user.id };
+}
+
 /** Delete on-demand categories (cascades to practices + lessons) matching a name pattern */
 export async function cleanupCategories(namePattern: string) {
   const prisma = await getPrisma();
@@ -588,25 +652,16 @@ export async function seedTier1StudentWithActivePlan(opts: {
   const center = await prisma.center.findUnique({ where: { slug: opts.centerSlug } });
   if (!center) return null;
 
-  const bcryptMod = await import("bcryptjs");
-  const passwordHash = await bcryptMod.default.hash(opts.password ?? "Test1234!", 12);
-  // emailVerifiedAt: required tras el gate C6 (commit ca08281). Ver
-  // nota en ensureTier2DedicatedStudent.
-  const user = await prisma.user.upsert({
-    where: { email: opts.email },
-    create: {
-      email: opts.email,
-      passwordHash,
-      name: opts.name ?? "Student Tier1",
-      emailVerifiedAt: new Date(),
-    },
-    update: { emailVerifiedAt: new Date() },
+  const passwordHash = await hashE2EPassword(opts.password ?? "Test1234!");
+  const ensured = await ensureE2EUser({
+    centerId: center.id,
+    email: opts.email,
+    passwordHash,
+    name: opts.name ?? "Student Tier1",
+    role: "STUDENT",
   });
-  await prisma.userCenterRole.upsert({
-    where: { userId_centerId: { userId: user.id, centerId: center.id } },
-    create: { userId: user.id, centerId: center.id, role: "STUDENT" },
-    update: { role: "STUDENT" },
-  });
+  if (!ensured) return null;
+  const user = { id: ensured.id };
 
   const planName = opts.planName ?? `Tier1 Plan ${Date.now()}`;
   const planSlug = planName.toLowerCase().replace(/[^a-z0-9]+/g, "-");
@@ -1150,23 +1205,18 @@ export async function seedTier2ResetUser(opts: {
   if (!prisma) return null;
   const center = await prisma.center.findUnique({ where: { slug: opts.centerSlug } });
   if (!center) return null;
-  const bcrypt = await import("bcryptjs");
-  const hash = await bcrypt.hash(opts.initialPassword, 12);
+  const passwordHash = await hashE2EPassword(opts.initialPassword);
   const email = `${opts.emailPrefix}@e2e.test`;
-  // emailVerifiedAt: el flujo de reset auto-verifica, pero lo seteamos
-  // explícito para que el user pueda hacer login en tests adicionales
-  // que no dependan del reset (ver gate C6 en ensureTier2DedicatedStudent).
-  const user = await prisma.user.upsert({
-    where: { email },
-    create: { email, passwordHash: hash, name: "Reset E2E", emailVerifiedAt: new Date() },
-    update: { passwordHash: hash, tokenVersion: { increment: 1 }, emailVerifiedAt: new Date() },
+  const ensured = await ensureE2EUser({
+    centerId: center.id,
+    email,
+    passwordHash,
+    name: "Reset E2E",
+    role: "STUDENT",
+    rotateOnExisting: true,
   });
-  await prisma.userCenterRole.upsert({
-    where: { userId_centerId: { userId: user.id, centerId: center.id } },
-    create: { userId: user.id, centerId: center.id, role: "STUDENT" },
-    update: { role: "STUDENT" },
-  });
-  return { email, password: opts.initialPassword, userId: user.id };
+  if (!ensured) return null;
+  return { email, password: opts.initialPassword, userId: ensured.id };
 }
 
 /** Borra un usuario y sus dependientes. */
@@ -1490,28 +1540,17 @@ export async function ensureTier2DedicatedStudent(opts: {
   if (!prisma) return null;
   const center = await prisma.center.findUnique({ where: { slug: opts.centerSlug } });
   if (!center) return null;
-  const bcrypt = await import("bcryptjs");
-  const hash = await bcrypt.hash(opts.password, 12);
-  // emailVerifiedAt: required tras el gate C6 (commit ca08281). Sin esto el
-  // login por credentials lanza EmailNotVerifiedError, el APIRequestContext
-  // mantiene cookies admin del storageState y los tests asertan estados
-  // equivocados (admin authorized en endpoints que esperaban STUDENT).
-  const user = await prisma.user.upsert({
-    where: { email: opts.email },
-    create: {
-      email: opts.email,
-      passwordHash: hash,
-      name: "PvT Runner E2E",
-      emailVerifiedAt: new Date(),
-    },
-    update: { passwordHash: hash, tokenVersion: { increment: 1 }, emailVerifiedAt: new Date() },
+  const passwordHash = await hashE2EPassword(opts.password);
+  const ensured = await ensureE2EUser({
+    centerId: center.id,
+    email: opts.email,
+    passwordHash,
+    name: "PvT Runner E2E",
+    role: "STUDENT",
+    rotateOnExisting: true,
   });
-  await prisma.userCenterRole.upsert({
-    where: { userId_centerId: { userId: user.id, centerId: center.id } },
-    create: { userId: user.id, centerId: center.id, role: "STUDENT" },
-    update: { role: "STUDENT" },
-  });
-  return { email: opts.email, password: opts.password, userId: user.id };
+  if (!ensured) return null;
+  return { email: opts.email, password: opts.password, userId: ensured.id };
 }
 
 /**
@@ -1889,27 +1928,21 @@ export async function seedBulkStudents(opts: {
   if (!prisma) return null;
   const center = await prisma.center.findUnique({ where: { slug: opts.centerSlug } });
   if (!center) return null;
-  const bcryptMod = await import("bcryptjs");
-  const passwordHash = await bcryptMod.default.hash("bulk-students-e2e", 12);
+  // Hasheamos una vez fuera del loop (bcrypt ~100ms * N sería desperdicio).
+  const passwordHash = await hashE2EPassword("bulk-students-e2e");
   let created = 0;
-  const verifiedAt = new Date();
   for (let i = 1; i <= opts.count; i++) {
     const padded = String(i).padStart(2, "0");
     const email = `${opts.emailPrefix}${padded}@e2e.test`;
     const name = `${opts.nameLabel} ${padded}`;
-    // emailVerifiedAt: por defecto verificados para que cualquier test
-    // futuro que necesite loguear a estos users no falle por el gate C6.
-    const user = await prisma.user.upsert({
-      where: { email },
-      create: { email, passwordHash, name, emailVerifiedAt: verifiedAt },
-      update: { name, emailVerifiedAt: verifiedAt },
+    const ensured = await ensureE2EUser({
+      centerId: center.id,
+      email,
+      passwordHash,
+      name,
+      role: "STUDENT",
     });
-    await prisma.userCenterRole.upsert({
-      where: { userId_centerId: { userId: user.id, centerId: center.id } },
-      create: { userId: user.id, centerId: center.id, role: "STUDENT" },
-      update: { role: "STUDENT" },
-    });
-    created++;
+    if (ensured) created++;
   }
   return { created };
 }
