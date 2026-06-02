@@ -2,7 +2,6 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { isAdminRole } from "@/lib/domain";
 import { Button } from "@/components/ui/Button";
-import { Suspense } from "react";
 import { ClientsList } from "./ClientsList";
 
 export default async function PanelClientesPage() {
@@ -23,9 +22,7 @@ export default async function PanelClientesPage() {
         </Button>
       </div>
 
-      <Suspense fallback={null}>
-        <ClientsList />
-      </Suspense>
+      <ClientsList />
 
       <div className="mt-8">
         <Button href="/panel" variant="secondary">
