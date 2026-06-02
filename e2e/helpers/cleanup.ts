@@ -590,14 +590,17 @@ export async function seedTier1StudentWithActivePlan(opts: {
 
   const bcryptMod = await import("bcryptjs");
   const passwordHash = await bcryptMod.default.hash(opts.password ?? "Test1234!", 12);
+  // emailVerifiedAt: required tras el gate C6 (commit ca08281). Ver
+  // nota en ensureTier2DedicatedStudent.
   const user = await prisma.user.upsert({
     where: { email: opts.email },
     create: {
       email: opts.email,
       passwordHash,
       name: opts.name ?? "Student Tier1",
+      emailVerifiedAt: new Date(),
     },
-    update: {},
+    update: { emailVerifiedAt: new Date() },
   });
   await prisma.userCenterRole.upsert({
     where: { userId_centerId: { userId: user.id, centerId: center.id } },
@@ -1150,10 +1153,13 @@ export async function seedTier2ResetUser(opts: {
   const bcrypt = await import("bcryptjs");
   const hash = await bcrypt.hash(opts.initialPassword, 12);
   const email = `${opts.emailPrefix}@e2e.test`;
+  // emailVerifiedAt: el flujo de reset auto-verifica, pero lo seteamos
+  // explícito para que el user pueda hacer login en tests adicionales
+  // que no dependan del reset (ver gate C6 en ensureTier2DedicatedStudent).
   const user = await prisma.user.upsert({
     where: { email },
-    create: { email, passwordHash: hash, name: "Reset E2E" },
-    update: { passwordHash: hash, tokenVersion: { increment: 1 } },
+    create: { email, passwordHash: hash, name: "Reset E2E", emailVerifiedAt: new Date() },
+    update: { passwordHash: hash, tokenVersion: { increment: 1 }, emailVerifiedAt: new Date() },
   });
   await prisma.userCenterRole.upsert({
     where: { userId_centerId: { userId: user.id, centerId: center.id } },
@@ -1886,14 +1892,17 @@ export async function seedBulkStudents(opts: {
   const bcryptMod = await import("bcryptjs");
   const passwordHash = await bcryptMod.default.hash("bulk-students-e2e", 12);
   let created = 0;
+  const verifiedAt = new Date();
   for (let i = 1; i <= opts.count; i++) {
     const padded = String(i).padStart(2, "0");
     const email = `${opts.emailPrefix}${padded}@e2e.test`;
     const name = `${opts.nameLabel} ${padded}`;
+    // emailVerifiedAt: por defecto verificados para que cualquier test
+    // futuro que necesite loguear a estos users no falle por el gate C6.
     const user = await prisma.user.upsert({
       where: { email },
-      create: { email, passwordHash, name },
-      update: { name },
+      create: { email, passwordHash, name, emailVerifiedAt: verifiedAt },
+      update: { name, emailVerifiedAt: verifiedAt },
     });
     await prisma.userCenterRole.upsert({
       where: { userId_centerId: { userId: user.id, centerId: center.id } },
