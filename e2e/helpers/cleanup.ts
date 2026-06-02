@@ -1486,10 +1486,19 @@ export async function ensureTier2DedicatedStudent(opts: {
   if (!center) return null;
   const bcrypt = await import("bcryptjs");
   const hash = await bcrypt.hash(opts.password, 12);
+  // emailVerifiedAt: required tras el gate C6 (commit ca08281). Sin esto el
+  // login por credentials lanza EmailNotVerifiedError, el APIRequestContext
+  // mantiene cookies admin del storageState y los tests asertan estados
+  // equivocados (admin authorized en endpoints que esperaban STUDENT).
   const user = await prisma.user.upsert({
     where: { email: opts.email },
-    create: { email: opts.email, passwordHash: hash, name: "PvT Runner E2E" },
-    update: { passwordHash: hash, tokenVersion: { increment: 1 } },
+    create: {
+      email: opts.email,
+      passwordHash: hash,
+      name: "PvT Runner E2E",
+      emailVerifiedAt: new Date(),
+    },
+    update: { passwordHash: hash, tokenVersion: { increment: 1 }, emailVerifiedAt: new Date() },
   });
   await prisma.userCenterRole.upsert({
     where: { userId_centerId: { userId: user.id, centerId: center.id } },
