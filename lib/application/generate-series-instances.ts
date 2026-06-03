@@ -1,9 +1,12 @@
 import type { LiveClassSeries } from "@/lib/domain";
 import type { CreateLiveClassInput } from "@/lib/ports";
 import {
+  civilDateTimeInTzToUtc,
   civilDayKeyInTz,
   civilDayOfMonthInTz,
   civilDayOfWeekInTz,
+  civilHourMinuteInTz,
+  civilYearMonthDayInTz,
   civilYearMonthInTz,
 } from "@/lib/datetime/civil-day";
 
@@ -28,8 +31,13 @@ export function generateSeriesInstances(
   const instances: CreateLiveClassInput[] = [];
   const holidays = holidayDates ?? new Set<string>();
 
+  // baseHour/baseMinute UTC se conservan sólo para derivar la fecha civil
+  // aproximada de cada candidato. La hora real de cada instancia se
+  // reconstruye desde civilStart + civil date + TZ para que DST no
+  // desfase la hora civil entre instancias.
   const baseHour = series.startsAt.getUTCHours();
   const baseMinute = series.startsAt.getUTCMinutes();
+  const civilStart = civilHourMinuteInTz(series.startsAt, timeZone);
 
   const horizon = series.endsAt
     ? series.endsAt
@@ -61,11 +69,25 @@ export function generateSeriesInstances(
   }
 
   if (series.repeatFrequency === "DAILY") {
-    while (cursor <= horizon && instances.length < maxCount) {
-      if (!holidays.has(dateKey(cursor))) {
-        instances.push(makeInput(new Date(cursor)));
+    let civilDate = civilYearMonthDayInTz(cursor, timeZone);
+    const MAX_ITERS = MAX_INSTANCES;
+    for (let iter = 0; instances.length < maxCount && iter < MAX_ITERS; iter++) {
+      const candidate =
+        iter === 0
+          ? new Date(cursor)
+          : civilDateTimeInTzToUtc(
+              civilDate.year,
+              civilDate.month,
+              civilDate.day,
+              civilStart.hour,
+              civilStart.minute,
+              timeZone,
+            );
+      if (candidate > horizon) break;
+      if (!holidays.has(dateKey(candidate))) {
+        instances.push(makeInput(candidate));
       }
-      cursor.setUTCDate(cursor.getUTCDate() + series.repeatEveryN);
+      civilDate = addCivilDays(civilDate, series.repeatEveryN);
     }
   } else if (series.repeatFrequency === "WEEKLY") {
     // El set viene en día CIVIL (lo que eligió el usuario en su calendario).
@@ -90,19 +112,30 @@ export function generateSeriesInstances(
 
     while (weekCursor <= horizon && instances.length < maxCount) {
       for (let dow = 0; dow < 7 && instances.length < maxCount; dow++) {
-        const candidate = new Date(weekCursor);
-        candidate.setUTCDate(candidate.getUTCDate() + dow);
-        candidate.setUTCHours(baseHour, baseMinute, 0, 0);
+        // Punto "crudo" para derivar la fecha civil del candidato.
+        const rough = new Date(weekCursor);
+        rough.setUTCDate(rough.getUTCDate() + dow);
+        rough.setUTCHours(baseHour, baseMinute, 0, 0);
 
-        // Comparar contra el día civil del candidato (en TZ del centro),
-        // no contra el iterador dow (que está en UTC).
-        if (!daysOfWeek.has(civilDayOfWeekInTz(candidate, timeZone))) continue;
+        if (!daysOfWeek.has(civilDayOfWeekInTz(rough, timeZone))) continue;
+
+        // Reconstruir UTC desde fecha civil + hora civil de inicio. Esto
+        // mantiene la hora civil estable aunque el offset cambie (DST).
+        const civilDate = civilYearMonthDayInTz(rough, timeZone);
+        const candidate = civilDateTimeInTzToUtc(
+          civilDate.year,
+          civilDate.month,
+          civilDate.day,
+          civilStart.hour,
+          civilStart.minute,
+          timeZone,
+        );
 
         if (candidate <= series.startsAt) continue;
         if (candidate > horizon) break;
         if (holidays.has(dateKey(candidate))) continue;
 
-        instances.push(makeInput(new Date(candidate)));
+        instances.push(makeInput(candidate));
       }
       weekCursor.setUTCDate(weekCursor.getUTCDate() + 7 * series.repeatEveryN);
     }
@@ -130,6 +163,8 @@ export function generateSeriesInstances(
           weekNum: targetWeekNum,
           baseHour,
           baseMinute,
+          civilHour: civilStart.hour,
+          civilMinute: civilStart.minute,
           timeZone,
         });
         if (!candidate) continue; // mes sin Nth occurrence — saltar
@@ -138,14 +173,30 @@ export function generateSeriesInstances(
         instances.push(makeInput(candidate));
       }
     } else {
-      const dayOfMonth = cursor.getUTCDate();
-      while (cursor <= horizon && instances.length < maxCount) {
-        if (!holidays.has(dateKey(cursor))) {
-          instances.push(makeInput(new Date(cursor)));
+      // dayOfMonth: día civil del mes (no UTC). Reconstruimos UTC con
+      // civilStart para que DST no shifte la hora.
+      const targetDayOfMonth = civilDayOfMonthInTz(cursor, timeZone);
+      const startYm = civilYearMonthInTz(cursor, timeZone);
+      const MAX_ITERS = 12 * 30;
+      for (let iter = 0; instances.length < maxCount && iter < MAX_ITERS; iter++) {
+        const totalMonths =
+          startYm.year * 12 + (startYm.month - 1) + iter * series.repeatEveryN;
+        const targetY = Math.floor(totalMonths / 12);
+        const targetM = (totalMonths % 12) + 1;
+        const daysInMonth = new Date(targetY, targetM, 0).getDate();
+        const targetD = Math.min(targetDayOfMonth, daysInMonth);
+        const candidate = civilDateTimeInTzToUtc(
+          targetY,
+          targetM,
+          targetD,
+          civilStart.hour,
+          civilStart.minute,
+          timeZone,
+        );
+        if (candidate > horizon) break;
+        if (!holidays.has(dateKey(candidate))) {
+          instances.push(makeInput(candidate));
         }
-        cursor.setUTCMonth(cursor.getUTCMonth() + series.repeatEveryN);
-        cursor.setUTCDate(Math.min(dayOfMonth, new Date(cursor.getUTCFullYear(), cursor.getUTCMonth() + 1, 0).getUTCDate()));
-        cursor.setUTCHours(baseHour, baseMinute, 0, 0);
       }
     }
   }
@@ -155,7 +206,8 @@ export function generateSeriesInstances(
 
 /**
  * Encuentra el Nth día civil "targetDow" del mes civil (targetY, targetM) y
- * devuelve el instante UTC correspondiente a baseHour:baseMinute UTC.
+ * devuelve el instante UTC correspondiente a civilHour:civilMinute hora civil
+ * (i.e. el offset se resuelve al instante real, respetando DST).
  *
  * Devuelve null si el mes no tiene un "Nth targetDow" (ej. 5to Miércoles
  * en un mes que tiene sólo 4).
@@ -167,31 +219,59 @@ function findNthCivilDowInMonth(opts: {
   weekNum: number;
   baseHour: number;
   baseMinute: number;
+  civilHour: number;
+  civilMinute: number;
   timeZone: string;
 }): Date | null {
-  const { year, month, targetDow, weekNum, baseHour, baseMinute, timeZone } = opts;
+  const {
+    year,
+    month,
+    targetDow,
+    weekNum,
+    baseHour,
+    baseMinute,
+    civilHour,
+    civilMinute,
+    timeZone,
+  } = opts;
 
-  // Punto de partida: UTC (year, month, 1) a baseHour. Dependiendo del offset
-  // este instante puede caer en el mes civil anterior; avanzamos UTC days
-  // hasta que el día civil esté en (year, month).
-  const candidate = new Date(Date.UTC(year, month - 1, 1, baseHour, baseMinute));
+  // Punto crudo para localizar el Nth día. baseHour/baseMinute UTC se usan
+  // sólo para que la fecha civil sea estable durante la búsqueda; la hora
+  // real se reconstruye al final con civilHour/civilMinute.
+  const rough = new Date(Date.UTC(year, month - 1, 1, baseHour, baseMinute));
   for (let safety = 0; safety < 5; safety++) {
-    const ym = civilYearMonthInTz(candidate, timeZone);
+    const ym = civilYearMonthInTz(rough, timeZone);
     if (ym.year === year && ym.month === month) break;
-    candidate.setUTCDate(candidate.getUTCDate() + 1);
+    rough.setUTCDate(rough.getUTCDate() + 1);
   }
-
-  // Avanzar hasta el primer civil targetDow del mes.
   for (let safety = 0; safety < 7; safety++) {
-    if (civilDayOfWeekInTz(candidate, timeZone) === targetDow) break;
-    candidate.setUTCDate(candidate.getUTCDate() + 1);
+    if (civilDayOfWeekInTz(rough, timeZone) === targetDow) break;
+    rough.setUTCDate(rough.getUTCDate() + 1);
   }
+  rough.setUTCDate(rough.getUTCDate() + (weekNum - 1) * 7);
 
-  // Sumar (weekNum - 1) semanas para llegar al Nth.
-  candidate.setUTCDate(candidate.getUTCDate() + (weekNum - 1) * 7);
+  const finalYmd = civilYearMonthDayInTz(rough, timeZone);
+  if (finalYmd.year !== year || finalYmd.month !== month) return null;
+  return civilDateTimeInTzToUtc(
+    finalYmd.year,
+    finalYmd.month,
+    finalYmd.day,
+    civilHour,
+    civilMinute,
+    timeZone,
+  );
+}
 
-  // Verificar que sigue en el mes civil objetivo.
-  const finalYm = civilYearMonthInTz(candidate, timeZone);
-  if (finalYm.year !== year || finalYm.month !== month) return null;
-  return candidate;
+/** Suma N días civiles a una fecha civil {year, month, day}. */
+function addCivilDays(
+  d: { year: number; month: number; day: number },
+  days: number,
+): { year: number; month: number; day: number } {
+  const dt = new Date(Date.UTC(d.year, d.month - 1, d.day));
+  dt.setUTCDate(dt.getUTCDate() + days);
+  return {
+    year: dt.getUTCFullYear(),
+    month: dt.getUTCMonth() + 1,
+    day: dt.getUTCDate(),
+  };
 }

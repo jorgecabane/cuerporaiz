@@ -526,3 +526,130 @@ describe("generateSeriesInstances — MONTHLY · matriz en TZ Chile", () => {
     ]);
   });
 });
+
+// ─── DST: transiciones Chile (5-abr-2026 UTC-3→UTC-4, 6-sep-2026 UTC-4→UTC-3) ─
+// Helper para construir startsAt en verano Chile (UTC-3, oct–marzo).
+function chileSummer(civilIso: string, hh: number, mm: number): Date {
+  const [y, m, d] = civilIso.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d, hh + 3, mm, 0));
+}
+
+describe("generateSeriesInstances — DST: serie cruza transición de offset", () => {
+  it("WEEKLY: arranca verano (UTC-3) y cruza fin de DST (5-abr) → 20:00 civil estable", () => {
+    // 25-mar (Mié) verano: 20:00 Chile = 23:00 UTC
+    // 8-abr (Mié) invierno: 20:00 Chile = 00:00 UTC del 9
+    const series = makeSeries({
+      repeatFrequency: "WEEKLY",
+      repeatOnDaysOfWeek: [3], // Mié
+      startsAt: chileSummer("2026-03-25", 20, 0),
+      endsAt: chileWinter("2026-05-06", 20, 0),
+    });
+    const instances = generateSeriesInstances(series, undefined, TZ);
+    // Verificar 20:00 civil en TODAS las instancias (la clave del fix DST).
+    for (const inst of instances) {
+      expect(fmtCivilTime(inst.startsAt)).toBe("20:00");
+      expect(fmtCivilDow(inst.startsAt)).toBe("Wed");
+    }
+    const civilDays = instances.map((i) => fmtCivilDay(i.startsAt));
+    // Mié 25/03, 01/04, 08/04, 15/04, 22/04, 29/04, 06/05.
+    // 25/03 y 01/04 son verano (UTC-3); 08/04 y siguientes son invierno (UTC-4).
+    expect(civilDays).toEqual([
+      "2026-03-25",
+      "2026-04-01",
+      "2026-04-08",
+      "2026-04-15",
+      "2026-04-22",
+      "2026-04-29",
+      "2026-05-06",
+    ]);
+
+    // Sanity: los UTC ISO efectivamente cambian (UTC-3 vs UTC-4).
+    expect(instances[0].startsAt.toISOString()).toBe("2026-03-25T23:00:00.000Z"); // verano
+    expect(instances[2].startsAt.toISOString()).toBe("2026-04-09T00:00:00.000Z"); // invierno
+  });
+
+  it("WEEKLY: arranca invierno (UTC-4) y cruza inicio de DST (6-sep) → 20:00 civil estable", () => {
+    // 26-ago (Mié) invierno: 20:00 Chile = 00:00 UTC del 27
+    // 9-sep (Mié) verano: 20:00 Chile = 23:00 UTC mismo día
+    const series = makeSeries({
+      repeatFrequency: "WEEKLY",
+      repeatOnDaysOfWeek: [3], // Mié
+      startsAt: chileWinter("2026-08-26", 20, 0),
+      endsAt: chileSummer("2026-09-30", 20, 0),
+    });
+    const instances = generateSeriesInstances(series, undefined, TZ);
+    for (const inst of instances) {
+      expect(fmtCivilTime(inst.startsAt)).toBe("20:00");
+      expect(fmtCivilDow(inst.startsAt)).toBe("Wed");
+    }
+    const civilDays = instances.map((i) => fmtCivilDay(i.startsAt));
+    expect(civilDays).toEqual([
+      "2026-08-26",
+      "2026-09-02",
+      "2026-09-09",
+      "2026-09-16",
+      "2026-09-23",
+      "2026-09-30",
+    ]);
+    expect(instances[0].startsAt.toISOString()).toBe("2026-08-27T00:00:00.000Z"); // invierno
+    expect(instances[2].startsAt.toISOString()).toBe("2026-09-09T23:00:00.000Z"); // verano
+  });
+
+  it("DAILY: cruza transición de abril → cada instancia a 20:00 civil", () => {
+    const series = makeSeries({
+      repeatFrequency: "DAILY",
+      repeatOnDaysOfWeek: [],
+      startsAt: chileSummer("2026-04-03", 20, 0),
+      endsAt: chileWinter("2026-04-09", 20, 0),
+    });
+    const instances = generateSeriesInstances(series, undefined, TZ);
+    // 3, 4, 5 son UTC-3; 6+ son UTC-4 (transición a las 24:00 civil del 5/04).
+    expect(instances.length).toBe(7);
+    for (const inst of instances) {
+      expect(fmtCivilTime(inst.startsAt)).toBe("20:00");
+    }
+    const civilDays = instances.map((i) => fmtCivilDay(i.startsAt));
+    expect(civilDays).toEqual([
+      "2026-04-03",
+      "2026-04-04",
+      "2026-04-05",
+      "2026-04-06",
+      "2026-04-07",
+      "2026-04-08",
+      "2026-04-09",
+    ]);
+  });
+
+  it("MONTHLY weekdayOrdinal: 1er Mié 20:00 Chile a lo largo del año mantiene 20:00 civil", () => {
+    const series = makeSeries({
+      repeatFrequency: "MONTHLY",
+      repeatOnDaysOfWeek: [],
+      monthlyMode: "weekdayOrdinal",
+      startsAt: chileSummer("2026-03-04", 20, 0), // 1er Mié de marzo
+      endsAt: chileSummer("2026-11-30", 20, 0),
+    });
+    const instances = generateSeriesInstances(series, undefined, TZ);
+    for (const inst of instances) {
+      expect(fmtCivilTime(inst.startsAt)).toBe("20:00");
+      expect(fmtCivilDow(inst.startsAt)).toBe("Wed");
+    }
+    // Instancias en marzo (verano), abril–agosto (invierno), septiembre+ (verano).
+    expect(instances.length).toBe(9); // mar a nov
+  });
+
+  it("MONTHLY dayOfMonth día 15 20:00 Chile a lo largo del año → 20:00 civil siempre", () => {
+    const series = makeSeries({
+      repeatFrequency: "MONTHLY",
+      repeatOnDaysOfWeek: [],
+      monthlyMode: "dayOfMonth",
+      startsAt: chileSummer("2026-03-15", 20, 0),
+      endsAt: chileSummer("2026-12-15", 20, 0),
+    });
+    const instances = generateSeriesInstances(series, undefined, TZ);
+    for (const inst of instances) {
+      expect(fmtCivilTime(inst.startsAt)).toBe("20:00");
+      expect(fmtCivilDay(inst.startsAt).slice(8)).toBe("15");
+    }
+    expect(instances.length).toBe(10); // mar a dic
+  });
+});

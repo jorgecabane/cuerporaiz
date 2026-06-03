@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { civilDayKeyInTz, civilDayOfWeekInTz } from "./civil-day";
+import {
+  civilDateTimeInTzToUtc,
+  civilDayKeyInTz,
+  civilDayOfWeekInTz,
+  civilHourMinuteInTz,
+  civilYearMonthDayInTz,
+} from "./civil-day";
 
 describe("civilDayKeyInTz", () => {
   it("clase 8:15 PM Chile en mayo (UTC-4) cae en el día civil correcto", () => {
@@ -77,5 +83,87 @@ describe("civilDayOfWeekInTz", () => {
   it("UTC TZ → coincide con getUTCDay()", () => {
     const d = new Date("2026-06-04T00:00:00Z");
     expect(civilDayOfWeekInTz(d, "UTC")).toBe(d.getUTCDay());
+  });
+});
+
+describe("civilHourMinuteInTz", () => {
+  it("20:00 Chile invierno (UTC-4) sacado de 00:00 UTC del día siguiente", () => {
+    const d = new Date("2026-07-09T00:00:00Z");
+    expect(civilHourMinuteInTz(d, "America/Santiago")).toEqual({ hour: 20, minute: 0 });
+  });
+
+  it("20:00 Chile verano (UTC-3) sacado de 23:00 UTC mismo día", () => {
+    const d = new Date("2026-03-25T23:00:00Z");
+    expect(civilHourMinuteInTz(d, "America/Santiago")).toEqual({ hour: 20, minute: 0 });
+  });
+
+  it("UTC TZ devuelve hora UTC tal cual", () => {
+    const d = new Date("2026-07-09T15:30:00Z");
+    expect(civilHourMinuteInTz(d, "UTC")).toEqual({ hour: 15, minute: 30 });
+  });
+});
+
+describe("civilYearMonthDayInTz", () => {
+  it("23:00 Chile invierno (UTC-4) = 03:00 UTC día siguiente → día civil correcto", () => {
+    const d = new Date("2026-07-09T03:00:00Z");
+    expect(civilYearMonthDayInTz(d, "America/Santiago")).toEqual({
+      year: 2026,
+      month: 7,
+      day: 8,
+    });
+  });
+});
+
+describe("civilDateTimeInTzToUtc", () => {
+  it("Chile invierno (UTC-4): 20:00 civil → 00:00 UTC día siguiente", () => {
+    const utc = civilDateTimeInTzToUtc(2026, 7, 8, 20, 0, "America/Santiago");
+    expect(utc.toISOString()).toBe("2026-07-09T00:00:00.000Z");
+  });
+
+  it("Chile verano (UTC-3): 20:00 civil → 23:00 UTC mismo día", () => {
+    const utc = civilDateTimeInTzToUtc(2026, 3, 25, 20, 0, "America/Santiago");
+    expect(utc.toISOString()).toBe("2026-03-25T23:00:00.000Z");
+  });
+
+  it("Roundtrip Chile: civilDateTimeInTzToUtc ∘ civilHourMinuteInTz = identity (invierno)", () => {
+    const original = new Date("2026-07-09T00:00:00Z");
+    const civil = civilHourMinuteInTz(original, "America/Santiago");
+    const civilDate = civilYearMonthDayInTz(original, "America/Santiago");
+    const reconstructed = civilDateTimeInTzToUtc(
+      civilDate.year,
+      civilDate.month,
+      civilDate.day,
+      civil.hour,
+      civil.minute,
+      "America/Santiago",
+    );
+    expect(reconstructed.toISOString()).toBe(original.toISOString());
+  });
+
+  it("DST: clases a 20:00 Chile antes/después de transición de abril mantienen hora civil", () => {
+    // 25-marzo verano (UTC-3): 20:00 Chile = 23:00 UTC
+    const beforeDst = civilDateTimeInTzToUtc(2026, 3, 25, 20, 0, "America/Santiago");
+    expect(beforeDst.toISOString()).toBe("2026-03-25T23:00:00.000Z");
+
+    // 8-abril invierno (UTC-4): 20:00 Chile = 00:00 UTC día siguiente
+    const afterDst = civilDateTimeInTzToUtc(2026, 4, 8, 20, 0, "America/Santiago");
+    expect(afterDst.toISOString()).toBe("2026-04-09T00:00:00.000Z");
+
+    // Ambos deben mostrar 20:00 al re-extraer la hora civil.
+    expect(civilHourMinuteInTz(beforeDst, "America/Santiago").hour).toBe(20);
+    expect(civilHourMinuteInTz(afterDst, "America/Santiago").hour).toBe(20);
+  });
+
+  it("DST: clases a 20:00 Chile antes/después de transición de septiembre mantienen hora civil", () => {
+    // 26-agosto invierno (UTC-4)
+    const beforeDst = civilDateTimeInTzToUtc(2026, 8, 26, 20, 0, "America/Santiago");
+    expect(beforeDst.toISOString()).toBe("2026-08-27T00:00:00.000Z");
+
+    // 9-septiembre verano (UTC-3) — después del 6/9 transition
+    const afterDst = civilDateTimeInTzToUtc(2026, 9, 9, 20, 0, "America/Santiago");
+    expect(afterDst.toISOString()).toBe("2026-09-09T23:00:00.000Z");
+
+    expect(civilHourMinuteInTz(beforeDst, "America/Santiago").hour).toBe(20);
+    expect(civilHourMinuteInTz(afterDst, "America/Santiago").hour).toBe(20);
   });
 });
