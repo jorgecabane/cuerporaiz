@@ -32,6 +32,16 @@ async function getPrisma(): Promise<PrismaClient | null> {
   return cachedPrisma;
 }
 
+/**
+ * Cliente Prisma para specs E2E que necesitan hablar directo con la BD
+ * (sin pasar por la UI/API). Lazy-loads .env. Tira si no hay DATABASE_URL.
+ */
+export async function getE2EPrisma(): Promise<PrismaClient> {
+  const prisma = await getPrisma();
+  if (!prisma) throw new Error("E2E: DATABASE_URL no configurada");
+  return prisma;
+}
+
 // ─── Convención E2E para crear users ─────────────────────────────────────────
 // Tras el gate C6 (commit ca08281) el login por credentials lanza
 // EmailNotVerifiedError si el user no tiene emailVerifiedAt. Como los tests
