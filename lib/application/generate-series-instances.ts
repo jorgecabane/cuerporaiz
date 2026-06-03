@@ -1,6 +1,11 @@
 import type { LiveClassSeries } from "@/lib/domain";
 import type { CreateLiveClassInput } from "@/lib/ports";
-import { civilDayKeyInTz } from "@/lib/datetime/civil-day";
+import {
+  civilDayKeyInTz,
+  civilDayOfMonthInTz,
+  civilDayOfWeekInTz,
+  civilYearMonthInTz,
+} from "@/lib/datetime/civil-day";
 
 const MAX_INSTANCES = 365;
 const DEFAULT_HORIZON_DAYS = 180;
@@ -63,10 +68,14 @@ export function generateSeriesInstances(
       cursor.setUTCDate(cursor.getUTCDate() + series.repeatEveryN);
     }
   } else if (series.repeatFrequency === "WEEKLY") {
+    // El set viene en día CIVIL (lo que eligió el usuario en su calendario).
+    // Si está vacío, defaulteamos al civil DOW del startsAt — usar
+    // cursor.getUTCDay() acá produce shift cuando la hora cae cerca de
+    // medianoche local (ej. 20:00 Chile = 00:00 UTC del día siguiente).
     const daysOfWeek =
       series.repeatOnDaysOfWeek.length > 0
         ? new Set(series.repeatOnDaysOfWeek)
-        : new Set([cursor.getUTCDay()]);
+        : new Set([civilDayOfWeekInTz(cursor, timeZone)]);
 
     // Always include startsAt as the first instance, even if its day-of-week
     // isn't in the recurrence pattern (e.g. class created on Sunday but repeats Mon-Fri)
@@ -81,10 +90,13 @@ export function generateSeriesInstances(
 
     while (weekCursor <= horizon && instances.length < maxCount) {
       for (let dow = 0; dow < 7 && instances.length < maxCount; dow++) {
-        if (!daysOfWeek.has(dow)) continue;
         const candidate = new Date(weekCursor);
         candidate.setUTCDate(candidate.getUTCDate() + dow);
         candidate.setUTCHours(baseHour, baseMinute, 0, 0);
+
+        // Comparar contra el día civil del candidato (en TZ del centro),
+        // no contra el iterador dow (que está en UTC).
+        if (!daysOfWeek.has(civilDayOfWeekInTz(candidate, timeZone))) continue;
 
         if (candidate <= series.startsAt) continue;
         if (candidate > horizon) break;
@@ -96,23 +108,34 @@ export function generateSeriesInstances(
     }
   } else if (series.repeatFrequency === "MONTHLY") {
     if (series.monthlyMode === "weekdayOrdinal") {
-      const targetDow = cursor.getUTCDay();
-      const targetWeekNum = Math.ceil(cursor.getUTCDate() / 7);
+      // Mismo razonamiento que WEEKLY: el target debe ser día civil (en TZ
+      // del centro), no UTC. La "semana ordinal" también se mide en mes
+      // civil. Para cada iteración, busco el Nth civil targetDow en el mes
+      // civil correspondiente y construyo el UTC del candidato.
+      const targetDow = civilDayOfWeekInTz(cursor, timeZone);
+      const targetWeekNum = Math.ceil(civilDayOfMonthInTz(cursor, timeZone) / 7);
+      const startYm = civilYearMonthInTz(cursor, timeZone);
 
-      while (cursor <= horizon && instances.length < maxCount) {
-        if (!holidays.has(dateKey(cursor))) {
-          instances.push(makeInput(new Date(cursor)));
-        }
-        cursor.setUTCMonth(cursor.getUTCMonth() + series.repeatEveryN);
-        cursor.setUTCDate(1);
-        // Find the Nth occurrence of the target weekday in the new month
-        const firstDow = cursor.getUTCDay();
-        let offset = targetDow - firstDow;
-        if (offset < 0) offset += 7;
-        const candidateDate = 1 + offset + (targetWeekNum - 1) * 7;
-        const daysInMonth = new Date(cursor.getUTCFullYear(), cursor.getUTCMonth() + 1, 0).getDate();
-        cursor.setUTCDate(Math.min(candidateDate, daysInMonth));
-        cursor.setUTCHours(baseHour, baseMinute, 0, 0);
+      const MAX_ITERS = 12 * 30; // safety: 30 años
+      for (let iter = 0; instances.length < maxCount && iter < MAX_ITERS; iter++) {
+        const totalMonths =
+          startYm.year * 12 + (startYm.month - 1) + iter * series.repeatEveryN;
+        const targetY = Math.floor(totalMonths / 12);
+        const targetM = (totalMonths % 12) + 1;
+
+        const candidate = findNthCivilDowInMonth({
+          year: targetY,
+          month: targetM,
+          targetDow,
+          weekNum: targetWeekNum,
+          baseHour,
+          baseMinute,
+          timeZone,
+        });
+        if (!candidate) continue; // mes sin Nth occurrence — saltar
+        if (candidate > horizon) break;
+        if (holidays.has(dateKey(candidate))) continue;
+        instances.push(makeInput(candidate));
       }
     } else {
       const dayOfMonth = cursor.getUTCDate();
@@ -128,4 +151,47 @@ export function generateSeriesInstances(
   }
 
   return instances;
+}
+
+/**
+ * Encuentra el Nth día civil "targetDow" del mes civil (targetY, targetM) y
+ * devuelve el instante UTC correspondiente a baseHour:baseMinute UTC.
+ *
+ * Devuelve null si el mes no tiene un "Nth targetDow" (ej. 5to Miércoles
+ * en un mes que tiene sólo 4).
+ */
+function findNthCivilDowInMonth(opts: {
+  year: number;
+  month: number;
+  targetDow: number;
+  weekNum: number;
+  baseHour: number;
+  baseMinute: number;
+  timeZone: string;
+}): Date | null {
+  const { year, month, targetDow, weekNum, baseHour, baseMinute, timeZone } = opts;
+
+  // Punto de partida: UTC (year, month, 1) a baseHour. Dependiendo del offset
+  // este instante puede caer en el mes civil anterior; avanzamos UTC days
+  // hasta que el día civil esté en (year, month).
+  const candidate = new Date(Date.UTC(year, month - 1, 1, baseHour, baseMinute));
+  for (let safety = 0; safety < 5; safety++) {
+    const ym = civilYearMonthInTz(candidate, timeZone);
+    if (ym.year === year && ym.month === month) break;
+    candidate.setUTCDate(candidate.getUTCDate() + 1);
+  }
+
+  // Avanzar hasta el primer civil targetDow del mes.
+  for (let safety = 0; safety < 7; safety++) {
+    if (civilDayOfWeekInTz(candidate, timeZone) === targetDow) break;
+    candidate.setUTCDate(candidate.getUTCDate() + 1);
+  }
+
+  // Sumar (weekNum - 1) semanas para llegar al Nth.
+  candidate.setUTCDate(candidate.getUTCDate() + (weekNum - 1) * 7);
+
+  // Verificar que sigue en el mes civil objetivo.
+  const finalYm = civilYearMonthInTz(candidate, timeZone);
+  if (finalYm.year !== year || finalYm.month !== month) return null;
+  return candidate;
 }

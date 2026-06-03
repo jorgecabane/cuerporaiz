@@ -22,3 +22,49 @@ export function civilDayKeyInTz(date: Date, timeZone: string): string {
   const d = parts.find((p) => p.type === "day")!.value;
   return `${y}-${m}-${d}`;
 }
+
+const WEEKDAY_INDEX: Record<string, number> = {
+  Sun: 0,
+  Mon: 1,
+  Tue: 2,
+  Wed: 3,
+  Thu: 4,
+  Fri: 5,
+  Sat: 6,
+};
+
+/**
+ * Día de la semana civil (0=Dom..6=Sáb) de un instante en una IANA timezone.
+ *
+ * Caso de uso: matchear el día de una clase guardada como UTC (ej. 20:00
+ * Chile = 00:00 UTC del día siguiente) contra un set de daysOfWeek que el
+ * usuario eligió en su calendario civil. Usar `.getUTCDay()` da el día UTC
+ * y produce un shift de 1 día cuando la hora cae cerca de medianoche local.
+ */
+export function civilDayOfWeekInTz(date: Date, timeZone: string): number {
+  const name = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    weekday: "short",
+  }).format(date);
+  const idx = WEEKDAY_INDEX[name];
+  if (idx === undefined) {
+    throw new Error(`civilDayOfWeekInTz: weekday no reconocido (${name})`);
+  }
+  return idx;
+}
+
+/** {year, month} (1-based) del día civil en una IANA timezone. */
+export function civilYearMonthInTz(
+  date: Date,
+  timeZone: string,
+): { year: number; month: number } {
+  const key = civilDayKeyInTz(date, timeZone);
+  const [y, m] = key.split("-").map(Number);
+  return { year: y, month: m };
+}
+
+/** Día del mes civil (1-31) en una IANA timezone. */
+export function civilDayOfMonthInTz(date: Date, timeZone: string): number {
+  const key = civilDayKeyInTz(date, timeZone);
+  return Number(key.split("-")[2]);
+}

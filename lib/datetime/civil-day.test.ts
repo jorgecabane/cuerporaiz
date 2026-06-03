@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { civilDayKeyInTz } from "./civil-day";
+import { civilDayKeyInTz, civilDayOfWeekInTz } from "./civil-day";
 
 describe("civilDayKeyInTz", () => {
   it("clase 8:15 PM Chile en mayo (UTC-4) cae en el día civil correcto", () => {
@@ -43,5 +43,39 @@ describe("civilDayKeyInTz", () => {
   it("respeta una TZ distinta (UTC)", () => {
     const d = new Date("2026-05-22T00:15:00Z");
     expect(civilDayKeyInTz(d, "UTC")).toBe("2026-05-22");
+  });
+});
+
+describe("civilDayOfWeekInTz", () => {
+  it("Mié 20:00 Chile (UTC-4) → civilDow=3 (Wed), no 4 (Thu UTC)", () => {
+    // 2026-06-03 20:00 Chile = 2026-06-04 00:00 UTC (Jueves UTC)
+    const d = new Date("2026-06-04T00:00:00Z");
+    expect(civilDayOfWeekInTz(d, "America/Santiago")).toBe(3);
+    // sanity: UTC dice 4 (Jueves)
+    expect(d.getUTCDay()).toBe(4);
+  });
+
+  it("Vie 20:00 Chile → civilDow=5 (Fri), no 6 (Sat UTC)", () => {
+    // 2026-06-05 20:00 Chile = 2026-06-06 00:00 UTC (Sábado UTC)
+    const d = new Date("2026-06-06T00:00:00Z");
+    expect(civilDayOfWeekInTz(d, "America/Santiago")).toBe(5);
+    expect(d.getUTCDay()).toBe(6);
+  });
+
+  it("Dom 10:00 Chile mismo día UTC → civilDow=0", () => {
+    const d = new Date("2026-06-07T14:00:00Z");
+    expect(civilDayOfWeekInTz(d, "America/Santiago")).toBe(0);
+  });
+
+  it("verano Chile (UTC-3): 22:00 Sáb cae Sáb civil", () => {
+    // Enero. 22:00 Sáb Chile = 01:00 Dom UTC
+    const d = new Date("2026-01-11T01:00:00Z");
+    expect(civilDayOfWeekInTz(d, "America/Santiago")).toBe(6);
+    expect(d.getUTCDay()).toBe(0);
+  });
+
+  it("UTC TZ → coincide con getUTCDay()", () => {
+    const d = new Date("2026-06-04T00:00:00Z");
+    expect(civilDayOfWeekInTz(d, "UTC")).toBe(d.getUTCDay());
   });
 });
