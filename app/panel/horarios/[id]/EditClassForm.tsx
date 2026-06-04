@@ -140,7 +140,11 @@ export function EditClassForm({
       color: effectiveColor,
     };
 
-    if (series && editScope !== "this") {
+    if (series) {
+      // Incluye scope="this": el action se encarga de desvincular la
+      // instancia (seriesId=null). Si pasamos por updateLiveClass directo,
+      // la UI promete "Se desvincula de la serie" pero la BD mantiene el
+      // seriesId — usuario termina editando una clase que sigue ligada.
       startTransition(() =>
         updateSeriesClasses({
           ...formPayload,

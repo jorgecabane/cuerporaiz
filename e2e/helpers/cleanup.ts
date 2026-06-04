@@ -1956,3 +1956,120 @@ export async function seedBulkStudents(opts: {
   }
   return { created };
 }
+
+/**
+ * Crea una LiveClassSeries WEEKLY + N LiveClass instancias asociadas para
+ * tests CRUD de horarios. Las instancias se crean directamente vía Prisma
+ * (no via generateSeriesInstances) para tener control exacto de cantidades
+ * y fechas independiente del generador.
+ *
+ * Default: arranca en `offsetDays` días (7 por default) a las 10:00 local
+ * del runner, repite todas las semanas el mismo día.
+ */
+export async function seedHorarioWeeklySeries(opts: {
+  centerSlug: string;
+  count: number;
+  titlePrefix: string;
+  offsetDays?: number;
+}): Promise<{
+  seriesId: string;
+  title: string;
+  instances: Array<{ id: string; startsAt: Date }>;
+} | null> {
+  const prisma = await getPrisma();
+  if (!prisma) return null;
+  const center = await prisma.center.findUnique({ where: { slug: opts.centerSlug } });
+  if (!center) return null;
+
+  const runId = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
+  const title = `${opts.titlePrefix} ${runId}`;
+  const baseStart = new Date(Date.now() + (opts.offsetDays ?? 7) * 86400000);
+  baseStart.setHours(10, 0, 0, 0);
+
+  const series = await prisma.liveClassSeries.create({
+    data: {
+      centerId: center.id,
+      title,
+      durationMinutes: 60,
+      maxCapacity: 10,
+      isOnline: false,
+      acceptsTrialReservations: false,
+      classPassEnabled: false,
+      repeatFrequency: "WEEKLY",
+      repeatOnDaysOfWeek: [baseStart.getUTCDay()],
+      repeatEveryN: 1,
+      startsAt: baseStart,
+      // endsAt = startsAt de la última instancia (no la semana posterior),
+      // así thisAndFollowing no regenera una instancia "extra" después
+      // de la última seedeada.
+      endsAt: new Date(baseStart.getTime() + (opts.count - 1) * 7 * 86400000),
+      monthlyMode: null,
+    },
+  });
+
+  const instances: Array<{ id: string; startsAt: Date }> = [];
+  for (let i = 0; i < opts.count; i++) {
+    const startsAt = new Date(baseStart.getTime() + i * 7 * 86400000);
+    const cls = await prisma.liveClass.create({
+      data: {
+        centerId: center.id,
+        seriesId: series.id,
+        title,
+        startsAt,
+        durationMinutes: 60,
+        maxCapacity: 10,
+      },
+    });
+    instances.push({ id: cls.id, startsAt: cls.startsAt });
+  }
+  return { seriesId: series.id, title, instances };
+}
+
+/**
+ * Borra LiveClass + LiveClassSeries (y reservas dependientes) cuyo título
+ * empiece con `prefix`. Útil como red de seguridad en afterAll.
+ */
+export async function cleanupHorariosByTitlePrefix(prefix: string): Promise<void> {
+  const prisma = await getPrisma();
+  if (!prisma) return;
+
+  const classes = await prisma.liveClass.findMany({
+    where: { title: { startsWith: prefix } },
+    select: { id: true },
+  });
+  const classIds = classes.map((c) => c.id);
+  if (classIds.length > 0) {
+    await prisma.reservation
+      .deleteMany({ where: { liveClassId: { in: classIds } } })
+      .catch(() => {});
+    await prisma.liveClass
+      .deleteMany({ where: { id: { in: classIds } } })
+      .catch(() => {});
+  }
+
+  const series = await prisma.liveClassSeries.findMany({
+    where: { title: { startsWith: prefix } },
+    select: { id: true },
+  });
+  const seriesIds = series.map((s) => s.id);
+  if (seriesIds.length > 0) {
+    // Por si quedaron instancias huérfanas que no matchean el prefijo
+    // (ej. updates de título que no usan el mismo prefijo).
+    const orphans = await prisma.liveClass.findMany({
+      where: { seriesId: { in: seriesIds } },
+      select: { id: true },
+    });
+    const orphanIds = orphans.map((c) => c.id);
+    if (orphanIds.length > 0) {
+      await prisma.reservation
+        .deleteMany({ where: { liveClassId: { in: orphanIds } } })
+        .catch(() => {});
+      await prisma.liveClass
+        .deleteMany({ where: { id: { in: orphanIds } } })
+        .catch(() => {});
+    }
+    await prisma.liveClassSeries
+      .deleteMany({ where: { id: { in: seriesIds } } })
+      .catch(() => {});
+  }
+}
