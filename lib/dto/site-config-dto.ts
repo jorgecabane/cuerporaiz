@@ -13,13 +13,26 @@ const httpsUrlSchema = z
   .nullable()
   .optional();
 
+// Imágenes/assets del sitio: pueden ser URLs externas https:// (ej. Sanity CDN) o
+// rutas same-origin que empiezan con "/" (assets bundled o uploads servidos por la
+// app, ej. "/checkout-icons/mphands.svg" — que SiteLogoMark renderiza como <img src>).
+// Se rechaza protocol-relative "//host" y esquemas peligrosos (http://, javascript:, …).
+const assetUrlSchema = z
+  .string()
+  .refine(
+    (v) => /^https:\/\/\S+$/.test(v) || /^\/(?!\/)\S*$/.test(v),
+    "Debe ser una URL https:// o una ruta que empiece con /",
+  )
+  .nullable()
+  .optional();
+
 export const upsertSiteConfigSchema = z.object({
   heroEyebrow: z.string().trim().max(100).nullable().optional(),
   heroTitle: z.string().nullable().optional(),
   heroSubtitle: z.string().nullable().optional(),
-  heroImageUrl: httpsUrlSchema,
-  logoUrl: httpsUrlSchema,
-  faviconUrl: httpsUrlSchema,
+  heroImageUrl: assetUrlSchema,
+  logoUrl: assetUrlSchema,
+  faviconUrl: assetUrlSchema,
   colorPrimary: hexColorSchema,
   colorSecondary: hexColorSchema,
   colorAccent: hexColorSchema,
@@ -40,7 +53,7 @@ export const upsertSiteConfigSchema = z.object({
   headerNavLabelContact: z.string().trim().max(40).nullable().optional(),
   libraryHeroTitle: z.string().trim().max(120).nullable().optional(),
   libraryHeroDescription: z.string().trim().max(300).nullable().optional(),
-  libraryHeroImageUrl: httpsUrlSchema,
+  libraryHeroImageUrl: assetUrlSchema,
   seoTitle: z.string().trim().max(120).nullable().optional(),
   seoDescription: z.string().trim().max(300).nullable().optional(),
   heroOverlayEnabled: z.boolean().optional(),

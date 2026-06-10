@@ -33,7 +33,13 @@ export interface UpdateSeriesInput {
   acceptsTrialReservations?: boolean;
   trialCapacity?: number | null;
   color?: string | null;
+  startsAt?: Date;
   endsAt?: Date | null;
+  repeatFrequency?: RepeatFrequency;
+  repeatOnDaysOfWeek?: number[];
+  repeatEveryN?: number;
+  repeatCount?: number | null;
+  monthlyMode?: string | null;
 }
 
 export interface ILiveClassSeriesRepository {

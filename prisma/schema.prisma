@@ -185,6 +185,9 @@ model LiveClass {
   classPassEnabled  Boolean  @default(false)
   classPassCapacity Int?
   seriesId          String?
+  // Serie de origen cuando la instancia se desvinculó (editar "solo esta"):
+  // seriesId queda null, pero conservamos el origen para avisar al editar la serie.
+  detachedFromSeriesId String?
   status            String   @default("ACTIVE") // ACTIVE | CANCELLED | ARCHIVED
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
@@ -200,6 +203,7 @@ model LiveClass {
   @@index([startsAt])
   @@index([disciplineId])
   @@index([seriesId])
+  @@index([detachedFromSeriesId])
 }
 
 // ─── Feriados / días sin actividad por centro ──────────────────────────────

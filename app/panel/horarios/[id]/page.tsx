@@ -1,5 +1,5 @@
 import { auth } from "@/auth";
-import { redirect, notFound } from "next/navigation";
+import { redirect } from "next/navigation";
 import { isAdminRole } from "@/lib/domain/role";
 import {
   liveClassRepository,
@@ -7,9 +7,12 @@ import {
   instructorRepository,
   centerRepository,
   liveClassSeriesRepository,
+  centerHolidayRepository,
   zoomConfigRepository,
   googleMeetConfigRepository,
 } from "@/lib/adapters/db";
+import { getCenterTimezone } from "@/lib/datetime/center-timezone";
+import type { SeriesInstanceInfo } from "@/lib/application/series-edit";
 import { Button } from "@/components/ui/Button";
 import { EditClassForm } from "./EditClassForm";
 
@@ -39,13 +42,45 @@ export default async function EditClassPage({ params }: Props) {
     meet: !!(meetStatus?.enabled && meetStatus?.hasCredentials),
   };
 
-  if (!liveClass || liveClass.centerId !== centerId) notFound();
+  // Si la instancia no existe (o no es del centro), volvemos al listado en vez de
+  // 404. Importa además porque una edición de serie puede borrar la instancia que
+  // se estaba viendo: tras la mutación, el re-render de esta ruta debe redirigir
+  // limpiamente (un notFound acá corrompe la respuesta del server action y deja la
+  // navegación colgada).
+  if (!liveClass || liveClass.centerId !== centerId) redirect("/panel/horarios");
 
   const series = liveClass.seriesId
     ? await liveClassSeriesRepository.findById(liveClass.seriesId)
     : null;
 
   const reservationCount = await liveClassRepository.countConfirmedReservations(id);
+
+  // Datos para el preview client-side de edición de serie (sin server action).
+  let seriesInstances: SeriesInstanceInfo[] = [];
+  let holidayKeys: string[] = [];
+  let seriesTimeZone = "America/Santiago";
+  let detachedCount = 0;
+  if (series) {
+    const now = new Date();
+    const [active, holidays, tz, detached] = await Promise.all([
+      liveClassRepository.findBySeriesId(series.id),
+      centerHolidayRepository.findByCenterId(centerId),
+      getCenterTimezone(centerId),
+      liveClassRepository.countDetachedBySeriesFromDate(series.id, centerId, now),
+    ]);
+    const confirmedMap = await liveClassRepository.countConfirmedByLiveClassIds(
+      active.map((c) => c.id),
+    );
+    seriesInstances = active.map((c) => ({
+      id: c.id,
+      title: c.title,
+      startsAt: c.startsAt,
+      confirmed: confirmedMap.get(c.id) ?? 0,
+    }));
+    holidayKeys = holidays.map((h) => h.date.toISOString().slice(0, 10));
+    seriesTimeZone = tz;
+    detachedCount = detached;
+  }
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-12">
@@ -65,6 +100,10 @@ export default async function EditClassPage({ params }: Props) {
           disciplines={disciplines}
           instructors={instructors}
           series={series}
+          seriesInstances={seriesInstances}
+          holidayKeys={holidayKeys}
+          seriesTimeZone={seriesTimeZone}
+          detachedCount={detachedCount}
           defaultDuration={center?.defaultClassDurationMinutes ?? 60}
           videoProviders={videoProviders}
         />

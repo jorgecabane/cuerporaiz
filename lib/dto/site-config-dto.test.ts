@@ -56,6 +56,36 @@ describe("upsertSiteConfigSchema", () => {
     expect(result.success).toBe(false);
   });
 
+  describe("asset URLs admiten rutas relativas same-origin", () => {
+    it.each(["logoUrl", "faviconUrl", "heroImageUrl", "libraryHeroImageUrl"])(
+      "acepta ruta relativa en %s (ej. assets/uploads same-origin)",
+      (field) => {
+        const result = upsertSiteConfigSchema.safeParse({ [field]: "/checkout-icons/mphands.svg" });
+        expect(result.success).toBe(true);
+      },
+    );
+
+    it("acepta otra ruta relativa de upload", () => {
+      const result = upsertSiteConfigSchema.safeParse({ logoUrl: "/uploads/logo-123.png" });
+      expect(result.success).toBe(true);
+    });
+
+    it("sigue aceptando https en asset URLs", () => {
+      const result = upsertSiteConfigSchema.safeParse({ logoUrl: "https://cdn.sanity.io/x.png" });
+      expect(result.success).toBe(true);
+    });
+
+    it("rechaza protocol-relative //host (evita https://host externo encubierto)", () => {
+      const result = upsertSiteConfigSchema.safeParse({ logoUrl: "//evil.com/x.png" });
+      expect(result.success).toBe(false);
+    });
+
+    it("sigue rechazando http:// en logoUrl", () => {
+      const result = upsertSiteConfigSchema.safeParse({ logoUrl: "http://example.com/x.png" });
+      expect(result.success).toBe(false);
+    });
+  });
+
   it("accepts null values", () => {
     const result = upsertSiteConfigSchema.safeParse({ heroTitle: null, colorPrimary: null });
     expect(result.success).toBe(true);

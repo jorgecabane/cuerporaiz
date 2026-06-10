@@ -32,6 +32,7 @@ export interface UpdateLiveClassInput {
   classPassEnabled?: boolean;
   classPassCapacity?: number | null;
   seriesId?: string | null;
+  detachedFromSeriesId?: string | null;
   status?: string;
 }
 
@@ -55,7 +56,11 @@ export interface ILiveClassRepository {
     instructorId?: string
   ): Promise<LiveClass[]>;
   findBySeriesId(seriesId: string): Promise<LiveClass[]>;
+  /** Cuenta instancias activas desvinculadas de una serie (seriesId=null) con startsAt >= from. */
+  countDetachedBySeriesFromDate(originalSeriesId: string, centerId: string, from: Date): Promise<number>;
   countConfirmedReservations(liveClassId: string): Promise<number>;
+  /** Mapa liveClassId → reservas CONFIRMED para varias clases (una sola query). */
+  countConfirmedByLiveClassIds(liveClassIds: string[]): Promise<Map<string, number>>;
   create(centerId: string, data: CreateLiveClassInput): Promise<LiveClass>;
   createMany(centerId: string, data: CreateLiveClassInput[]): Promise<number>;
   update(id: string, centerId: string, data: UpdateLiveClassInput): Promise<LiveClass | null>;

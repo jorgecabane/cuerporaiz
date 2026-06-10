@@ -105,10 +105,32 @@ export const liveClassRepository: ILiveClassRepository = {
     return list.map(toDomain);
   },
 
+  async countDetachedBySeriesFromDate(originalSeriesId, centerId, from) {
+    return prisma.liveClass.count({
+      where: {
+        detachedFromSeriesId: originalSeriesId,
+        centerId,
+        seriesId: null,
+        status: "ACTIVE",
+        startsAt: { gte: from },
+      },
+    });
+  },
+
   async countConfirmedReservations(liveClassId) {
     return prisma.reservation.count({
       where: { liveClassId, status: "CONFIRMED" },
     });
+  },
+
+  async countConfirmedByLiveClassIds(liveClassIds) {
+    if (liveClassIds.length === 0) return new Map();
+    const rows = await prisma.reservation.groupBy({
+      by: ["liveClassId"],
+      where: { liveClassId: { in: liveClassIds }, status: "CONFIRMED" },
+      _count: { _all: true },
+    });
+    return new Map(rows.map((r) => [r.liveClassId, r._count._all]));
   },
 
   async create(centerId, data) {
@@ -176,6 +198,7 @@ export const liveClassRepository: ILiveClassRepository = {
           ...(data.classPassEnabled !== undefined && { classPassEnabled: data.classPassEnabled }),
           ...(data.classPassCapacity !== undefined && { classPassCapacity: data.classPassCapacity }),
           ...(data.seriesId !== undefined && { seriesId: data.seriesId }),
+          ...(data.detachedFromSeriesId !== undefined && { detachedFromSeriesId: data.detachedFromSeriesId }),
           ...(data.status !== undefined && { status: data.status }),
         },
       });
