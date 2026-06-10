@@ -113,7 +113,13 @@ export const liveClassSeriesRepository: ILiveClassSeriesRepository = {
           ...(data.acceptsTrialReservations !== undefined && { acceptsTrialReservations: data.acceptsTrialReservations }),
           ...(data.trialCapacity !== undefined && { trialCapacity: data.trialCapacity }),
           ...(data.color !== undefined && { color: data.color }),
+          ...(data.startsAt !== undefined && { startsAt: data.startsAt }),
           ...(data.endsAt !== undefined && { endsAt: data.endsAt }),
+          ...(data.repeatFrequency !== undefined && { repeatFrequency: data.repeatFrequency }),
+          ...(data.repeatOnDaysOfWeek !== undefined && { repeatOnDaysOfWeek: data.repeatOnDaysOfWeek }),
+          ...(data.repeatEveryN !== undefined && { repeatEveryN: data.repeatEveryN }),
+          ...(data.repeatCount !== undefined && { repeatCount: data.repeatCount }),
+          ...(data.monthlyMode !== undefined && { monthlyMode: data.monthlyMode }),
         },
       });
       return toDomain(s);

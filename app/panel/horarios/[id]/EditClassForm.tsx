@@ -8,10 +8,19 @@ import {
   updateSeriesClasses,
   createMeetingForClass,
 } from "../actions";
-import type { EditScope, CancelScopePreview } from "../actions";
+import type { EditScope, CancelScopePreview, EditSeriesFormData } from "../actions";
 import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { RecurrenceField, type RecurrenceValue } from "@/components/panel/horarios/RecurrenceField";
+import { useTimezone } from "@/components/providers/TimezoneProvider";
+import {
+  buildSeriesScheduleFields,
+  buildSeriesEditPreview,
+  type SeriesEditPreview,
+  type SeriesEditConflict,
+  type SeriesInstanceInfo,
+} from "@/lib/application/series-edit";
 import type { LiveClass, Discipline, LiveClassSeries } from "@/lib/domain";
 import type { Instructor } from "@/lib/ports/instructor-repository";
 
@@ -56,11 +65,35 @@ function toLocalISO(d: Date): string {
   return copy.toISOString().slice(0, 16);
 }
 
+function toLocalDateInput(d: Date): string {
+  return toLocalISO(d).slice(0, 10);
+}
+
+/** Mapea una serie persistida al valor inicial del editor de recurrencia. */
+function seriesToRecurrence(series: LiveClassSeries): RecurrenceValue {
+  const repeatEnd: RecurrenceValue["repeatEnd"] =
+    series.repeatCount != null ? "count" : series.endsAt != null ? "date" : "never";
+  return {
+    repeat: series.repeatFrequency,
+    repeatOnDays: series.repeatOnDaysOfWeek,
+    repeatEveryN: series.repeatEveryN,
+    repeatEnd,
+    repeatEndDate: series.endsAt ? toLocalDateInput(series.endsAt) : null,
+    repeatEndCount: series.repeatCount,
+    monthlyMode: (series.monthlyMode as "dayOfMonth" | "weekdayOrdinal" | null) ?? null,
+  };
+}
+
 interface Props {
   liveClass: LiveClass;
   disciplines: Discipline[];
   instructors: Instructor[];
   series: LiveClassSeries | null;
+  /** Instancias ACTIVAS de la serie + reservas confirmadas (preview client-side). */
+  seriesInstances?: SeriesInstanceInfo[];
+  holidayKeys?: string[];
+  seriesTimeZone?: string;
+  detachedCount?: number;
   defaultDuration: number;
   videoProviders?: { zoom: boolean; meet: boolean };
 }
@@ -70,15 +103,34 @@ export function EditClassForm({
   disciplines,
   instructors,
   series,
+  seriesInstances = [],
+  holidayKeys = [],
+  seriesTimeZone = "America/Santiago",
+  detachedCount = 0,
   defaultDuration,
   videoProviders = { zoom: false, meet: false },
 }: Props) {
+  const tz = useTimezone();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [preview, setPreview] = useState<CancelScopePreview | null>(null);
   const [loadingPreview, setLoadingPreview] = useState(false);
   const [editScope, setEditScope] = useState<EditScope>("this");
+
+  // Edición de recurrencia + flujo de confirmación (scope all / thisAndFollowing).
+  const [recurrence, setRecurrence] = useState<RecurrenceValue>(
+    series ? seriesToRecurrence(series) : {
+      repeat: "none", repeatOnDays: [], repeatEveryN: 1,
+      repeatEnd: "never", repeatEndDate: null, repeatEndCount: null, monthlyMode: null,
+    },
+  );
+  const [seriesConfirmOpen, setSeriesConfirmOpen] = useState(false);
+  const [seriesPreview, setSeriesPreview] = useState<SeriesEditPreview | null>(null);
+  const [pendingEdit, setPendingEdit] = useState<EditSeriesFormData | null>(null);
+  // Conflicto detectado por el servidor (carrera: reserva creada entre el preview
+  // client-side y el guardado).
+  const [raceConflict, setRaceConflict] = useState<SeriesEditConflict | null>(null);
 
   const [acceptsTrialReservations, setAcceptsTrialReservations] = useState(liveClass.acceptsTrialReservations);
   const [selectedDisciplineId, setSelectedDisciplineId] = useState(
@@ -103,6 +155,13 @@ export function EditClassForm({
     if (!selectedDisciplineId) return null;
     return disciplines.find((d) => d.id === selectedDisciplineId)?.color ?? null;
   }, [selectedDisciplineId, disciplines]);
+
+  // Memoizado: pasar `new Date(...)` inline crea una identidad nueva cada render y
+  // dispara el efecto emisor de RecurrenceField en loop ("Maximum update depth").
+  const recurrenceSelectedDate = useMemo(
+    () => (startsAtValue ? new Date(startsAtValue) : null),
+    [startsAtValue],
+  );
 
   const effectiveColor = colorOverride ?? disciplineColor;
 
@@ -140,21 +199,109 @@ export function EditClassForm({
       color: effectiveColor,
     };
 
-    if (series) {
-      // Incluye scope="this": el action se encarga de desvincular la
-      // instancia (seriesId=null). Si pasamos por updateLiveClass directo,
-      // la UI promete "Se desvincula de la serie" pero la BD mantiene el
-      // seriesId — usuario termina editando una clase que sigue ligada.
-      startTransition(() =>
-        updateSeriesClasses({
-          ...formPayload,
-          scope: editScope,
-          seriesId: series.id,
-        })
-      );
-    } else {
+    if (!series) {
       startTransition(() => updateLiveClass(formPayload));
+      return;
     }
+
+    const editData: EditSeriesFormData = {
+      ...formPayload,
+      scope: editScope,
+      seriesId: series.id,
+      repeat: recurrence.repeat === "none" ? "WEEKLY" : recurrence.repeat,
+      repeatOnDays: recurrence.repeatOnDays,
+      repeatEveryN: recurrence.repeatEveryN,
+      repeatEnd: recurrence.repeatEnd,
+      repeatEndDate: recurrence.repeatEndDate,
+      repeatEndCount: recurrence.repeatEndCount,
+      monthlyMode: recurrence.monthlyMode,
+    };
+
+    // scope="this": desvincula y mueve sólo esta instancia (sin confirmación).
+    if (editScope === "this") {
+      runSeriesEdit(editData);
+      return;
+    }
+
+    // all / thisAndFollowing: valida y muestra el preview client-side; al confirmar
+    // se ejecuta la mutación.
+    const validationError = validateRecurrence();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+    // Preview en el CLIENTE con los datos cargados al render (sin server action).
+    setSeriesPreview(
+      buildSeriesEditPreview({
+        series,
+        fields: buildSeriesScheduleFields(editData),
+        scope: editScope,
+        openedInstanceId: liveClass.id,
+        openedStartsAt: new Date(liveClass.startsAt),
+        instances: seriesInstances,
+        newCapacity: maxCapacity,
+        holidayKeys: new Set(holidayKeys),
+        tz: seriesTimeZone,
+        now: new Date(),
+        detachedCount,
+      }),
+    );
+    setPendingEdit(editData);
+    setSeriesConfirmOpen(true);
+  }
+
+  /**
+   * Ejecuta la mutación de serie. El action RETORNA el resultado (no redirige): en
+   * éxito navegamos con router.push; en conflicto (carrera) mostramos el detalle.
+   * Evita depender del redirect del server action, que no navega cuando la propia
+   * operación borra la instancia que se está viendo.
+   */
+  function runSeriesEdit(data: EditSeriesFormData) {
+    setRaceConflict(null);
+    startTransition(async () => {
+      const res = await updateSeriesClasses(data);
+      if (res && !res.ok) {
+        setRaceConflict(res.conflict);
+        setSeriesConfirmOpen(true);
+        return;
+      }
+      // Navegación dura: el refresh RSC del server action pelea con router.push,
+      // así que forzamos la navegación al listado.
+      window.location.assign("/panel/horarios");
+    });
+  }
+
+  function validateRecurrence(): string | null {
+    if (recurrence.repeatEveryN < 1) return "El intervalo de repetición debe ser al menos 1.";
+    if (recurrence.repeatEnd === "count" && (recurrence.repeatEndCount ?? 0) < 1)
+      return "La cantidad de repeticiones debe ser al menos 1.";
+    if (recurrence.repeatEnd === "date" && recurrence.repeatEndDate && startsAtValue) {
+      if (new Date(recurrence.repeatEndDate) < new Date(startsAtValue))
+        return "La fecha de término no puede ser anterior a la fecha de inicio.";
+    }
+    return null;
+  }
+
+  function closeSeriesConfirm() {
+    setSeriesConfirmOpen(false);
+    setSeriesPreview(null);
+    setPendingEdit(null);
+    setRaceConflict(null);
+  }
+
+  function confirmSeriesEdit() {
+    if (pendingEdit) runSeriesEdit(pendingEdit);
+  }
+
+  // El conflicto del servidor (carrera) tiene prioridad sobre el del preview.
+  const activeConflict = raceConflict ?? seriesPreview?.conflict ?? null;
+
+  function formatConflictWhen(iso: string): string {
+    return new Date(iso).toLocaleString("es-CL", {
+      timeZone: tz,
+      dateStyle: "medium",
+      timeStyle: "short",
+    });
   }
 
   const cancelScope: EditScope = series ? editScope : "this";
@@ -179,7 +326,10 @@ export function EditClassForm({
   }
 
   function handleCancel() {
-    startTransition(() => cancelLiveClassWithScope(liveClass.id, cancelScope));
+    startTransition(async () => {
+      await cancelLiveClassWithScope(liveClass.id, cancelScope);
+      window.location.assign("/panel/horarios");
+    });
   }
 
   async function handleGenerateMeeting(provider: "zoom" | "meet") {
@@ -338,6 +488,17 @@ export function EditClassForm({
           />
         </div>
       </div>
+
+      {/* Recurrencia: editable cuando se edita la serie (no "solo esta") */}
+      {series && editScope !== "this" && (
+        <RecurrenceField
+          selectedDate={recurrenceSelectedDate}
+          tz={tz}
+          allowNone={false}
+          initial={seriesToRecurrence(series)}
+          onChange={setRecurrence}
+        />
+      )}
 
       {/* Cupos */}
       <div>
@@ -542,6 +703,104 @@ export function EditClassForm({
         variant="danger"
         loading={isPending || loadingPreview}
       />
+
+      {seriesConfirmOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onClick={closeSeriesConfirm}
+        >
+          <div
+            className="w-full max-w-md rounded-[var(--radius-lg)] bg-[var(--color-surface)] p-6 shadow-[var(--shadow-lg)] space-y-3"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-base font-semibold text-[var(--color-text)]">
+              {editScope === "all" ? "Editar toda la serie" : "Editar esta y las siguientes"}
+            </h3>
+
+            {activeConflict ? (
+              <div className="space-y-3 text-sm">
+                {activeConflict.reservationClasses.length > 0 && (
+                  <div className="rounded-[var(--radius-md)] border border-[var(--color-error)] bg-[var(--color-error-bg)] p-3">
+                    <p className="font-medium text-[var(--color-text)]">
+                      Estas clases tienen reservas confirmadas. Cancélalas o gestiónalas antes de cambiar el horario:
+                    </p>
+                    <ul className="mt-2 space-y-1 text-[var(--color-text-muted)]">
+                      {activeConflict.reservationClasses.map((c) => (
+                        <li key={c.id}>
+                          {formatConflictWhen(c.startsAt)} — {c.confirmed} reserva
+                          {c.confirmed === 1 ? "" : "s"}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {activeConflict.capacityClasses.length > 0 && (
+                  <div className="rounded-[var(--radius-md)] border border-[var(--color-error)] bg-[var(--color-error-bg)] p-3">
+                    <p className="font-medium text-[var(--color-text)]">
+                      El nuevo cupo es menor que las reservas confirmadas de estas clases:
+                    </p>
+                    <ul className="mt-2 space-y-1 text-[var(--color-text-muted)]">
+                      {activeConflict.capacityClasses.map((c) => (
+                        <li key={c.id}>
+                          {formatConflictWhen(c.startsAt)} — {c.confirmed} reservas vs cupo {c.newCapacity}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            ) : seriesPreview ? (
+              <div className="space-y-2 text-sm text-[var(--color-text-muted)]">
+                <p className="text-[var(--color-text)]">{seriesPreview.recurrenceSummary}</p>
+                {seriesPreview.scheduleChanged ? (
+                  <p>
+                    Se regenerarán {seriesPreview.affectedCount} clase
+                    {seriesPreview.affectedCount === 1 ? "" : "s"} desde el{" "}
+                    {formatConflictWhen(seriesPreview.effectiveFrom)}.
+                    {seriesPreview.pastPreserved > 0 &&
+                      ` ${seriesPreview.pastPreserved} clase${seriesPreview.pastPreserved === 1 ? "" : "s"} anterior${seriesPreview.pastPreserved === 1 ? "" : "es"} no se modifica${seriesPreview.pastPreserved === 1 ? "" : "n"}.`}
+                  </p>
+                ) : (
+                  <p>
+                    Se actualizarán {seriesPreview.affectedCount} clase
+                    {seriesPreview.affectedCount === 1 ? "" : "s"}.
+                  </p>
+                )}
+                {seriesPreview.detachedCount > 0 && (
+                  <p className="text-[var(--color-warning)]">
+                    Hay {seriesPreview.detachedCount} clase
+                    {seriesPreview.detachedCount === 1 ? "" : "s"} suelta
+                    {seriesPreview.detachedCount === 1 ? "" : "s"} de esta serie (editada
+                    {seriesPreview.detachedCount === 1 ? "" : "s"} individualmente) que no se
+                    {seriesPreview.detachedCount === 1 ? " verá" : " verán"} afectada
+                    {seriesPreview.detachedCount === 1 ? "" : "s"}.
+                  </p>
+                )}
+              </div>
+            ) : null}
+
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={closeSeriesConfirm}
+                className="rounded-[var(--radius-md)] px-4 py-2 text-sm font-medium text-[var(--color-text-muted)] hover:bg-[var(--color-tertiary)]"
+              >
+                {activeConflict ? "Entendido" : "Cancelar"}
+              </button>
+              {!activeConflict && (
+                <button
+                  type="button"
+                  onClick={confirmSeriesEdit}
+                  disabled={isPending}
+                  className="rounded-[var(--radius-md)] bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-primary-hover)] disabled:opacity-50"
+                >
+                  {isPending ? "Guardando…" : "Confirmar y guardar"}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </form>
   );
 }

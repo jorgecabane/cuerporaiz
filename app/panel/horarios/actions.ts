@@ -12,6 +12,15 @@ import {
 } from "@/lib/adapters/db";
 import { isAdminRole } from "@/lib/domain/role";
 import { generateSeriesInstances } from "@/lib/application/generate-series-instances";
+import {
+  buildSeriesScheduleFields,
+  buildSeriesEditPreview,
+  filterFutureInstances,
+  validateSeriesScheduleForm,
+  type SeriesEditConflict,
+  type SeriesEditScope,
+  type SeriesInstanceInfo,
+} from "@/lib/application/series-edit";
 import { createZoomMeeting } from "@/lib/application/create-zoom-meeting";
 import { createGoogleMeetMeeting } from "@/lib/application/create-google-meet-meeting";
 import { runAfterResponse } from "@/lib/utils/run-after-response";
@@ -21,8 +30,8 @@ import { buildClassCancelledEmail } from "@/lib/email";
 import { getEmailBranding } from "@/lib/email/branding";
 import { getBaseUrl } from "@/lib/utils/base-url";
 import { getCenterTimezone } from "@/lib/datetime/center-timezone";
-import type { LiveClass, RepeatFrequency } from "@/lib/domain";
-import type { UpdateSeriesInput } from "@/lib/ports";
+import type { LiveClass, LiveClassSeries, RepeatFrequency } from "@/lib/domain";
+import type { CreateLiveClassInput, UpdateSeriesInput } from "@/lib/ports";
 
 async function requireAdminCenterId(): Promise<string> {
   const session = await auth();
@@ -262,25 +271,107 @@ export async function batchCancelLiveClasses(ids: string[]): Promise<BatchCancel
   return { cancelledCount, notifiedCount };
 }
 
-export type EditScope = "this" | "thisAndFollowing" | "all";
+export type EditScope = SeriesEditScope;
 
 export interface EditSeriesFormData extends UpdateClassFormData {
   scope: EditScope;
   seriesId: string;
+  // Recurrencia editable (sólo se usa en scope all/thisAndFollowing).
+  repeat: "DAILY" | "WEEKLY" | "MONTHLY";
+  repeatOnDays: number[];
+  repeatEveryN: number;
+  repeatEnd: "never" | "date" | "count";
+  repeatEndDate: string | null;
+  repeatEndCount: number | null;
+  monthlyMode: "dayOfMonth" | "weekdayOrdinal" | null;
 }
 
-export async function updateSeriesClasses(data: EditSeriesFormData): Promise<void> {
-  const centerId = await requireAdminCenterId();
+// El action RETORNA el resultado (no redirige): el cliente navega con router.push
+// en éxito. Redirigir acá no navega cuando la operación borra la instancia que se
+// está viendo (el redirect del server action no llega al browser en ese caso).
+export type UpdateSeriesResult = { ok: true } | { ok: false; conflict: SeriesEditConflict };
 
+/** Genera las instancias FUTURAS (>= now) de una serie. Puro (sin fetch). */
+function generateFuture(
+  seriesLike: LiveClassSeries,
+  holidayKeys: Set<string>,
+  tz: string,
+  now: Date,
+): CreateLiveClassInput[] {
+  return filterFutureInstances(generateSeriesInstances(seriesLike, holidayKeys, tz), now);
+}
+
+async function loadSeriesEditTarget(data: { id: string; seriesId: string }) {
+  const centerId = await requireAdminCenterId();
   const existing = await liveClassRepository.findById(data.id);
   if (!existing || existing.centerId !== centerId) {
     throw new Error("Clase no encontrada.");
   }
-
   const series = await liveClassSeriesRepository.findById(data.seriesId);
   if (!series || series.centerId !== centerId) {
     throw new Error("Serie no encontrada.");
   }
+  return { centerId, existing, series };
+}
+
+/**
+ * Gate autoritativo (server) de una edición de serie: carga instancias + reservas
+ * confirmadas + feriados + TZ y calcula el mismo preview que el cliente
+ * (buildSeriesEditPreview). No muta nada. Devuelve también lo necesario para mutar.
+ */
+async function planSeriesEdit(
+  data: EditSeriesFormData,
+  ctx: { centerId: string; existing: LiveClass; series: LiveClassSeries },
+) {
+  const { centerId, existing, series } = ctx;
+  const now = new Date();
+  const tz = await getCenterTimezone(centerId);
+  const fields = buildSeriesScheduleFields(data);
+
+  const [activeInstances, holidays, detachedCount] = await Promise.all([
+    liveClassRepository.findBySeriesId(series.id),
+    centerHolidayRepository.findByCenterId(centerId),
+    liveClassRepository.countDetachedBySeriesFromDate(series.id, centerId, now),
+  ]);
+  const confirmedMap = await liveClassRepository.countConfirmedByLiveClassIds(
+    activeInstances.map((c) => c.id),
+  );
+  const holidayKeys = new Set(holidays.map((h) => h.date.toISOString().slice(0, 10)));
+  const instances: SeriesInstanceInfo[] = activeInstances.map((c) => ({
+    id: c.id,
+    title: c.title,
+    startsAt: c.startsAt,
+    confirmed: confirmedMap.get(c.id) ?? 0,
+  }));
+
+  const preview = buildSeriesEditPreview({
+    series,
+    fields,
+    scope: data.scope,
+    openedInstanceId: existing.id,
+    openedStartsAt: existing.startsAt,
+    instances,
+    newCapacity: data.maxCapacity,
+    holidayKeys,
+    tz,
+    now,
+    detachedCount,
+  });
+
+  return { centerId, series, fields, now, tz, holidayKeys, preview };
+}
+
+/**
+ * Mutación de edición de serie (UNA sola server action en el flujo — el preview
+ * es client-side). Redirige en éxito (navegación nativa al invocarla con
+ * `startTransition(async () => await updateSeriesClasses(...))`) y retorna el
+ * conflicto en caso de carrera (reserva creada entre el preview y el guardado).
+ */
+export async function updateSeriesClasses(
+  data: EditSeriesFormData,
+): Promise<UpdateSeriesResult> {
+  const ctx = await loadSeriesEditTarget(data);
+  const { centerId, series } = ctx;
 
   const classUpdate = {
     title: data.title,
@@ -295,70 +386,78 @@ export async function updateSeriesClasses(data: EditSeriesFormData): Promise<voi
     color: data.color || null,
   };
 
-  const seriesUpdate: UpdateSeriesInput = {
-    title: data.title,
-    durationMinutes: data.durationMinutes,
-    maxCapacity: data.maxCapacity,
-    disciplineId: data.disciplineId || null,
-    instructorId: data.instructorId || null,
-    isOnline: data.isOnline,
-    meetingUrl: data.meetingUrl || null,
-    acceptsTrialReservations: data.acceptsTrialReservations,
-    trialCapacity: data.trialCapacity,
-    color: data.color || null,
-  };
-
+  // Scope "this": desvincula y mueve sólo esta instancia (conserva el origen
+  // para poder avisar luego al editar la serie).
   if (data.scope === "this") {
     await liveClassRepository.update(data.id, centerId, {
       ...classUpdate,
       startsAt: new Date(data.startsAt),
       seriesId: null,
+      detachedFromSeriesId: series.id,
     });
-  } else if (data.scope === "thisAndFollowing") {
-    const instanceDate = new Date(existing.startsAt);
-
-    await liveClassSeriesRepository.update(series.id, centerId, {
-      endsAt: instanceDate,
-    });
-
-    await liveClassRepository.deleteBySeriesIdFromDate(
-      series.id,
-      centerId,
-      instanceDate,
-    );
-
-    const newSeries = await liveClassSeriesRepository.create(centerId, {
-      ...seriesUpdate,
-      title: data.title,
-      maxCapacity: data.maxCapacity,
-      durationMinutes: data.durationMinutes,
-      repeatFrequency: series.repeatFrequency,
-      repeatOnDaysOfWeek: series.repeatOnDaysOfWeek,
-      repeatEveryN: series.repeatEveryN,
-      startsAt: new Date(data.startsAt),
-      endsAt: series.endsAt,
-      repeatCount: series.repeatCount,
-      monthlyMode: series.monthlyMode,
-    });
-
-    const [holidays, tz] = await Promise.all([
-      centerHolidayRepository.findByCenterId(centerId),
-      getCenterTimezone(centerId),
-    ]);
-    const holidayDates = new Set(
-      holidays.map((h) => h.date.toISOString().slice(0, 10))
-    );
-
-    const instances = generateSeriesInstances(newSeries, holidayDates, tz);
-    if (instances.length > 0) {
-      await liveClassRepository.createMany(centerId, instances);
-    }
-  } else {
-    await liveClassSeriesRepository.update(series.id, centerId, seriesUpdate);
-    await liveClassRepository.updateManyBySeriesId(series.id, centerId, classUpdate);
+    return { ok: true };
   }
 
-  redirect("/panel/horarios");
+  // Validación de borde de la recurrencia.
+  const validationError = validateSeriesScheduleForm(data, {
+    maxCapacity: data.maxCapacity,
+    trialCapacity: data.trialCapacity,
+  });
+  if (validationError) throw new Error(validationError);
+
+  const { fields, now, tz, holidayKeys, preview } = await planSeriesEdit(data, ctx);
+  if (preview.conflict) {
+    return { ok: false, conflict: preview.conflict };
+  }
+
+  const seriesUpdate: UpdateSeriesInput = { ...classUpdate };
+  const delFrom = new Date(preview.effectiveFrom);
+
+  if (preview.effectiveScope === "all" && !preview.willRegenerate) {
+    // Sólo propiedades: actualiza serie + instancias activas, preserva reservas.
+    await liveClassSeriesRepository.update(series.id, centerId, seriesUpdate);
+    await liveClassRepository.updateManyBySeriesId(series.id, centerId, classUpdate);
+    return { ok: true };
+  }
+
+  if (preview.effectiveScope === "all") {
+    // Cambió horario/recurrencia: actualiza la serie y regenera sólo futuras.
+    const updated = await liveClassSeriesRepository.update(series.id, centerId, {
+      ...seriesUpdate,
+      startsAt: fields.startsAt,
+      endsAt: fields.endsAt,
+      repeatFrequency: fields.repeatFrequency,
+      repeatOnDaysOfWeek: fields.repeatOnDaysOfWeek,
+      repeatEveryN: fields.repeatEveryN,
+      repeatCount: fields.repeatCount,
+      monthlyMode: fields.monthlyMode,
+    });
+    await liveClassRepository.deleteBySeriesIdFromDate(series.id, centerId, now);
+    const future = generateFuture(updated ?? series, holidayKeys, tz, now);
+    if (future.length > 0) await liveClassRepository.createMany(centerId, future);
+    return { ok: true };
+  }
+
+  // thisAndFollowing: corta la serie vieja en delFrom y crea una serie nueva
+  // con la recurrencia del form; regenera sólo futuras.
+  await liveClassSeriesRepository.update(series.id, centerId, { endsAt: delFrom });
+  await liveClassRepository.deleteBySeriesIdFromDate(series.id, centerId, delFrom);
+  const newSeries = await liveClassSeriesRepository.create(centerId, {
+    ...seriesUpdate,
+    title: data.title,
+    maxCapacity: data.maxCapacity,
+    durationMinutes: data.durationMinutes,
+    repeatFrequency: fields.repeatFrequency,
+    repeatOnDaysOfWeek: fields.repeatOnDaysOfWeek,
+    repeatEveryN: fields.repeatEveryN,
+    startsAt: fields.startsAt,
+    endsAt: fields.endsAt,
+    repeatCount: fields.repeatCount,
+    monthlyMode: fields.monthlyMode,
+  });
+  const future = generateFuture(newSeries, holidayKeys, tz, now);
+  if (future.length > 0) await liveClassRepository.createMany(centerId, future);
+  return { ok: true };
 }
 
 export interface CancelScopePreview {
@@ -420,7 +519,8 @@ export async function cancelLiveClassWithScope(
   const targets = await resolveTargetClasses(existing, scope, centerId);
   const ids = targets.map((c) => c.id);
   if (ids.length > 0) await batchCancelLiveClasses(ids);
-  redirect("/panel/horarios");
+  // No redirige: el cliente navega con window.location (el redirect del server
+  // action no llega al browser de forma confiable junto con el diálogo/preview).
 }
 
 export async function deleteLiveClass(formData: FormData): Promise<void> {
