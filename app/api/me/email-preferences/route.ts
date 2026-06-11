@@ -21,6 +21,10 @@ export async function GET() {
     planExpiring: true,
     reservationConfirm: true,
     purchaseConfirm: true,
+    lessonUnlocked: true,
+    quotaExhausted: true,
+    newContent: true,
+    blogPublished: true,
   });
 }
 

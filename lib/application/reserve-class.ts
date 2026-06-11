@@ -22,6 +22,7 @@ import {
 import { planRepository } from "@/lib/adapters/db";
 import { runAfterResponse } from "@/lib/utils/run-after-response";
 import { sendEmailSafe } from "@/lib/application/send-email";
+import { shouldSendEmail } from "@/lib/application/check-email-preference";
 import {
   buildReservationConfirmationEmail,
   buildTrialClassNoticeToTeacherEmail,
@@ -259,19 +260,23 @@ export async function reserveClassUseCase(
       ? (liveClass.meetingUrl ?? "Por confirmar")
       : (branding.contactAddress ?? "Presencial");
 
-    sendEmailSafe(
-      buildReservationConfirmationEmail({
-        toEmail: user.email,
-        userName: user.name ?? undefined,
-        className: liveClass.title,
-        startAt: liveClass.startsAt.toISOString(),
-        endAt: endAt.toISOString(),
-        location,
-        myReservationsUrl: `${baseUrl}/panel/reservas`,
-        branding,
-        isTrial: reservation.isTrial,
-      })
-    );
+    // Respeta el switch del perfil. El aviso al profe (trial, abajo) NO se gatea:
+    // es a staff, no una preferencia del estudiante.
+    if (await shouldSendEmail(userId, centerId, "reservationConfirm")) {
+      sendEmailSafe(
+        buildReservationConfirmationEmail({
+          toEmail: user.email,
+          userName: user.name ?? undefined,
+          className: liveClass.title,
+          startAt: liveClass.startsAt.toISOString(),
+          endAt: endAt.toISOString(),
+          location,
+          myReservationsUrl: `${baseUrl}/panel/reservas`,
+          branding,
+          isTrial: reservation.isTrial,
+        })
+      );
+    }
 
     // Aviso al profe/admin solo si ESTA reserva consumió el cupo trial.
     // No depende de si la clase admite trials (puede recibir ambas).

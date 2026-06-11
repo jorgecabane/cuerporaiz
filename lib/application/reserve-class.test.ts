@@ -35,6 +35,7 @@ const mocks = vi.hoisted(() => ({
   },
   userRepository: { findById: vi.fn(), findMembership: vi.fn() },
   planRepository: { findById: vi.fn() },
+  emailPreferenceRepository: { isEnabled: vi.fn(async () => true) },
 }));
 
 vi.mock("@/lib/adapters/db", () => ({
@@ -46,6 +47,7 @@ vi.mock("@/lib/adapters/db", () => ({
   instructorRepository: { findByCenterId: vi.fn(), findById: vi.fn() },
   planRepository: mocks.planRepository,
   centerHolidayRepository: mocks.centerHolidayRepository,
+  emailPreferenceRepository: mocks.emailPreferenceRepository,
 }));
 
 // Capturamos los emails enviados para que los tests puedan inspeccionarlos
@@ -465,6 +467,24 @@ describe("reserveClassUseCase — clase de prueba (trial)", () => {
     // Email cliente sin variante trial. NINGÚN mail "Clase de prueba:" al instructor (regresión Bug B).
     expect(sentEmails.list.some((e) => e.subject.startsWith("Reserva confirmada:"))).toBe(true);
     expect(sentEmails.list.some((e) => e.subject.startsWith("Clase de prueba:"))).toBe(false);
+  });
+
+  it("respeta el switch reservationConfirm: si está OFF no envía confirmación al estudiante", async () => {
+    mocks.liveClassRepository.findById.mockResolvedValue(
+      makeLiveClass({ startsAt: new Date("2026-06-10T14:00:00Z"), centerId })
+    );
+    mocks.userPlanRepository.findActiveByUserAndCenter.mockResolvedValue([
+      { id: "up-1", planId: "p-1", classesTotal: 10, classesUsed: 0, validUntil: null, status: "ACTIVE", validFrom: new Date("2026-01-01") },
+    ]);
+    mocks.planRepository.findById.mockResolvedValue({ id: "p-1", type: "LIVE" });
+    // El usuario apagó el switch de confirmación de reserva.
+    mocks.emailPreferenceRepository.isEnabled.mockResolvedValueOnce(false);
+
+    const result = await reserveClassUseCase(userId, centerId, "lc-1");
+
+    expect(result.success).toBe(true);
+    expect(mocks.reservationRepository.create).toHaveBeenCalled();
+    expect(sentEmails.list.some((e) => e.subject.startsWith("Reserva confirmada:"))).toBe(false);
   });
 
   it("permite reservar trial class usando plan activo aunque ya usó trial antes", async () => {

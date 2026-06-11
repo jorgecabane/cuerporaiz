@@ -637,6 +637,7 @@ model EmailPreference {
   lessonUnlocked     Boolean  @default(true)
   quotaExhausted     Boolean  @default(true)
   newContent         Boolean  @default(true)
+  blogPublished      Boolean  @default(true)
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
@@ -645,6 +646,18 @@ model EmailPreference {
 
   @@unique([userId, centerId])
   @@index([userId])
+  @@index([centerId])
+}
+
+// ─── Dedup de notificaciones de blog (entradas Sanity) ────────────────────────
+// Un registro por post notificado: evita reenviar el correo si el webhook de
+// Sanity vuelve a disparar al editar/re-publicar una entrada ya notificada.
+model BlogPostNotification {
+  id         String   @id @default(cuid())
+  postId     String   @unique // _id del documento en Sanity
+  centerId   String
+  notifiedAt DateTime @default(now())
+
   @@index([centerId])
 }
 

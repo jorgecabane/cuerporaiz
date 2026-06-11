@@ -28,6 +28,9 @@ const mocks = vi.hoisted(() => ({
   sendEmailSafe: vi.fn(),
   getEmailBranding: vi.fn(),
   getBaseUrl: vi.fn(() => "https://app.example.com"),
+  emailPreferenceRepository: {
+    isEnabled: vi.fn(async (_userId: string, _centerId: string, _type: string) => true),
+  },
 }));
 
 vi.mock("@/lib/adapters/db", () => ({
@@ -37,6 +40,7 @@ vi.mock("@/lib/adapters/db", () => ({
   eventTicketRepository: mocks.eventTicketRepository,
   userRepository: mocks.userRepository,
   waitlistRepository: mocks.waitlistRepository,
+  emailPreferenceRepository: mocks.emailPreferenceRepository,
 }));
 
 vi.mock("@/lib/application/send-email", () => ({
@@ -67,6 +71,7 @@ const branding = {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.emailPreferenceRepository.isEnabled.mockImplementation(async () => true);
   mocks.getEmailBranding.mockResolvedValue(branding);
   mocks.centerRepository.findById.mockResolvedValue({
     id: "ctr_1",
@@ -166,6 +171,27 @@ describe("notifyWaitlistOnSpotFreed — clase", () => {
       "wl_2",
       expect.any(Date)
     );
+  });
+
+  it("respeta el switch spotFreed por usuario (no envía ni marca a quien lo apagó)", async () => {
+    mocks.liveClassRepository.findById.mockResolvedValue(makeClass({ maxCapacity: 10 }));
+    mocks.liveClassRepository.countConfirmedReservations.mockResolvedValue(5);
+    mocks.waitlistRepository.findActiveByItem.mockResolvedValue([
+      { id: "wl_1", userId: "u1", notifiedAt: null, position: 1 },
+      { id: "wl_2", userId: "u2", notifiedAt: null, position: 2 },
+    ]);
+    mocks.userRepository.findById.mockImplementation(async (id: string) => ({
+      id,
+      email: `${id}@x.com`,
+    }));
+    // u1 apagó el switch; u2 lo mantiene encendido.
+    mocks.emailPreferenceRepository.isEnabled.mockImplementation(
+      async (userId: string) => userId !== "u1"
+    );
+    await notifyWaitlistOnSpotFreed("class", "lc_1");
+    expect(mocks.sendEmailSafe).toHaveBeenCalledTimes(1);
+    expect(mocks.waitlistRepository.markNotified).toHaveBeenCalledTimes(1);
+    expect(mocks.waitlistRepository.markNotified).toHaveBeenCalledWith("wl_2", expect.any(Date));
   });
 
   it("continúa si un usuario falla (no aborta el batch)", async () => {

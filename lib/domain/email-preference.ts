@@ -10,6 +10,7 @@ export interface EmailPreference {
   lessonUnlocked: boolean;
   quotaExhausted: boolean;
   newContent: boolean;
+  blogPublished: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -25,6 +26,7 @@ export type EmailPreferenceType = keyof Pick<
   | "lessonUnlocked"
   | "quotaExhausted"
   | "newContent"
+  | "blogPublished"
 >;
 
 export const EMAIL_PREFERENCE_LABELS: Record<EmailPreferenceType, string> = {
@@ -35,5 +37,6 @@ export const EMAIL_PREFERENCE_LABELS: Record<EmailPreferenceType, string> = {
   purchaseConfirm: "Confirmación de compra",
   lessonUnlocked: "Lección desbloqueada",
   quotaExhausted: "Cuota agotada",
-  newContent: "Nuevo contenido",
+  newContent: "Nuevo contenido on-demand",
+  blogPublished: "Nuevas entradas del blog",
 };
