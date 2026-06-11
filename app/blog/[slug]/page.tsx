@@ -18,8 +18,10 @@ import { PostBody } from "@/components/blog/PostBody";
 import { AuthorCard } from "@/components/blog/AuthorCard";
 import { PostCard } from "@/components/blog/PostCard";
 import { DraftModeBanner } from "@/components/blog/DraftModeBanner";
+import { BlogShare } from "@/components/blog/BlogShare";
 import { formatPostDate, estimateReadingMinutes } from "@/components/blog/utils";
 import { getPublicCenterTimezone } from "@/lib/datetime/center-timezone";
+import { absoluteUrl } from "@/lib/seo/urls";
 
 export const revalidate = 60;
 
@@ -95,12 +97,17 @@ export default async function BlogPostPage({ params }: { params: Promise<Params>
   const coverUrl = urlForImage(post.coverImage) ?? "";
   const minutes = estimateReadingMinutes(post.body, post.readingMinutes);
   const tz = await getPublicCenterTimezone();
+  const shareUrl = absoluteUrl(`/blog/${slug}`);
 
   return (
     <article className="pb-[var(--space-20)]">
       {isDraft ? <DraftModeBanner /> : null}
 
-      <header className="mx-auto max-w-3xl px-[var(--space-6)] pb-[var(--space-10)] pt-[var(--space-12)] text-center md:px-[var(--space-10)] md:pt-[var(--space-16)]">
+      <header className="relative mx-auto max-w-3xl px-[var(--space-6)] pb-[var(--space-10)] pt-[var(--space-12)] text-center md:px-[var(--space-10)] md:pt-[var(--space-16)]">
+        <div className="absolute right-[var(--space-6)] top-[var(--space-6)] md:right-[var(--space-10)] md:top-[var(--space-8)]">
+          <BlogShare variant="icon" url={shareUrl} title={post.title} />
+        </div>
+
         <Link
           href="/blog"
           className="mb-[var(--space-8)] inline-flex items-center gap-2 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
@@ -152,6 +159,13 @@ export default async function BlogPostPage({ params }: { params: Promise<Params>
 
       <div className="px-[var(--space-6)] md:px-[var(--space-10)]">
         <PostBody value={post.body} />
+      </div>
+
+      <div className="mx-auto mt-[var(--space-12)] flex max-w-[42rem] flex-col items-center gap-[var(--space-4)] border-t border-[var(--color-border)] px-[var(--space-6)] pt-[var(--space-12)] text-center">
+        <p className="font-display text-2xl italic text-[var(--color-primary)]">
+          ¿Te gustó? Compártelo
+        </p>
+        <BlogShare variant="cta" url={shareUrl} title={post.title} />
       </div>
 
       <div className="px-[var(--space-6)] md:px-[var(--space-10)]">
