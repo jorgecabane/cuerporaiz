@@ -8,6 +8,10 @@ export interface UpsertEmailPreferenceInput {
   planExpiring?: boolean;
   reservationConfirm?: boolean;
   purchaseConfirm?: boolean;
+  lessonUnlocked?: boolean;
+  quotaExhausted?: boolean;
+  newContent?: boolean;
+  blogPublished?: boolean;
 }
 
 export interface IEmailPreferenceRepository {

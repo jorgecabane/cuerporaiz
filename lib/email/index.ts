@@ -50,3 +50,7 @@ export {
   type SpotFreedData,
   type WaitlistClassCancelledData,
 } from "./waitlist";
+export {
+  buildBlogPostPublishedEmail,
+  type BlogPostPublishedEmailData,
+} from "./blog";

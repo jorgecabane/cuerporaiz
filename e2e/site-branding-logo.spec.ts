@@ -20,20 +20,21 @@ test.describe("Branding — logo en panel header", () => {
   test.describe.configure({ mode: "serial" });
 
   const TEST_LOGO = "/checkout-icons/mphands.svg";
-  let previousLogo: string | null = null;
   let dbAvailable = false;
 
   test.beforeAll(async () => {
-    const result = await setCenterLogoUrl("e2e-test", TEST_LOGO);
-    // Si la helper devolvió null podría ser que no había config previa,
-    // o que no hay DB. Distinguimos verificando si tenemos DATABASE_URL.
+    await setCenterLogoUrl("e2e-test", TEST_LOGO);
     dbAvailable = Boolean(process.env.DATABASE_URL);
-    previousLogo = result;
   });
 
   test.afterAll(async () => {
+    // Restaurar al baseline LIMPIO del seed (logoUrl=null), NO al valor previo:
+    // TEST_LOGO es una ruta relativa que NO pasa `upsertSiteConfigSchema`
+    // (exige https). Si restauráramos `previousLogo` y un run anterior quedó
+    // a medias, perpetuaríamos un logoUrl inválido en la DB compartida, y el
+    // form de branding (panel-sitio-save.spec.ts) fallaría al reenviarlo (400).
     if (dbAvailable) {
-      await setCenterLogoUrl("e2e-test", previousLogo);
+      await setCenterLogoUrl("e2e-test", null);
     }
   });
 

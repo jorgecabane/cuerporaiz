@@ -31,6 +31,7 @@ import {
   buildEmailVerificationEmail,
 } from "@/lib/email/auth";
 import { buildEventTicketConfirmationEmail } from "@/lib/email/event";
+import { buildBlogPostPublishedEmail } from "@/lib/email/blog";
 import {
   buildLessonUnlockedEmail,
   buildQuotaExhaustedEmail,
@@ -492,6 +493,29 @@ const entries: EmailEntry[] = [
       className: "Vinyasa Flow",
       startAt: START,
       location: "Av. O'Higgins 555, Pucón",
+      branding: B,
+    }),
+  },
+  // ─── Blog: nueva entrada publicada ─────────────────────────────────────────
+  {
+    slug: "25-blog-post-published",
+    title: "Nueva entrada del blog publicada",
+    trigger: "app/api/webhooks/sanity/post-published — al publicar en Sanity",
+    recipient: "Estudiantes con switch 'Nuevas entradas del blog' (broadcast)",
+    status: "active",
+    dto: buildBlogPostPublishedEmail({
+      toEmail: STUDENT_EMAIL,
+      userName: STUDENT,
+      postTitle: "Cómo respirar mejor en tu práctica diaria",
+      excerpt:
+        "Una guía simple para conectar la respiración con el movimiento y llevar más calma a tu día. Te invitamos a leerla con tiempo.",
+      coverImageUrl:
+        "https://placehold.co/1200x630/2D3B2A/F5F0E9.png?text=Cuerpo+Ra%C3%ADz+Blog&font=playfair-display",
+      categoryName: "Yoga",
+      readingMinutes: 5,
+      authorName: "María González",
+      postUrl: `${BASE}/blog/como-respirar-mejor-en-tu-practica-diaria`,
+      preferencesUrl: `${BASE}/panel/mi-perfil?tab=correos`,
       branding: B,
     }),
   },

@@ -7,10 +7,14 @@ type Prefs = Record<EmailPreferenceType, boolean>;
 
 const PREF_KEYS: EmailPreferenceType[] = [
   "classReminder",
+  "reservationConfirm",
   "spotFreed",
   "planExpiring",
-  "reservationConfirm",
   "purchaseConfirm",
+  "blogPublished",
+  "newContent",
+  "lessonUnlocked",
+  "quotaExhausted",
 ];
 
 export default function EmailPreferencesForm() {
@@ -47,7 +51,7 @@ export default function EmailPreferencesForm() {
   if (!prefs) {
     return (
       <div className="space-y-3 animate-pulse">
-        {[...Array(5)].map((_, i) => (
+        {[...Array(PREF_KEYS.length)].map((_, i) => (
           <div key={i} className="flex items-center justify-between py-2 border-b border-[var(--color-border)] last:border-0">
             <div className="h-3.5 w-40 rounded bg-[var(--color-border)]/40" />
             <div className="h-5 w-9 rounded-full bg-[var(--color-border)]/40" />

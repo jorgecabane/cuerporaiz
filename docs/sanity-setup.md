@@ -94,6 +94,40 @@ npx tsx scripts/seed-sanity.ts
 
 Requiere que las env vars estén setteadas.
 
+## 8. Webhook: notificar a estudiantes al publicar una entrada
+
+Cuando se publica una entrada, el endpoint `/api/webhooks/sanity/post-published`
+envía un correo a los estudiantes del centro que tengan el switch
+**"Nuevas entradas del blog"** encendido (default ON, en `/panel/mi-perfil?tab=correos`).
+Hay dedup por `postId`: editar/re-publicar un post ya notificado **no** reenvía.
+
+Pasos en `manage.sanity.io` → API → **Webhooks** → *Create webhook*:
+
+1. **URL**: `https://<dominio>/api/webhooks/sanity/post-published`
+2. **Trigger on**: Create + Update.
+3. **Filter** (GROQ): `_type == "post" && defined(slug.current) && publishedAt <= now()`
+4. **Projection**:
+   ```groq
+   {
+     "_id": _id,
+     "_type": _type,
+     "slug": slug.current,
+     "title": title,
+     "excerpt": excerpt,
+     "coverImage": coverImage,
+     "readingMinutes": readingMinutes,
+     "categoryName": categories[0]->name,
+     "authorName": author->name,
+     "publishedAt": publishedAt
+   }
+   ```
+5. **Secret**: generar con `openssl rand -hex 32` y poner el **mismo** valor en la
+   env var `SANITY_WEBHOOK_SECRET` (local + Vercel). La firma se valida con
+   `@sanity/webhook`; sin secret correcto el endpoint responde 401.
+
+La audiencia es el centro público por defecto (`NEXT_PUBLIC_DEFAULT_CENTER_SLUG`),
+ya que el blog es single-dataset.
+
 ## Troubleshooting
 
 | Síntoma | Causa | Solución |
@@ -102,6 +136,8 @@ Requiere que las env vars estén setteadas.
 | `/studio` pide login infinito | CORS mal configurado | Agregar el origen exacto en `manage.sanity.io` → API → CORS |
 | Posts nuevos no aparecen | ISR de 60s | Esperar 60s o hacer hard refresh |
 | Draft mode no funciona | falta `SANITY_PREVIEW_SECRET` | Generar uno con `openssl rand -hex 32` y agregar al env |
+| Webhook responde 401 | secret no coincide | El secret de `manage.sanity.io` debe ser igual a `SANITY_WEBHOOK_SECRET` |
+| No llega correo al publicar | switch del usuario OFF, o post ya notificado (dedup) | Revisar `/panel/mi-perfil?tab=correos` y la tabla `BlogPostNotification` |
 
 ## Permisos
 

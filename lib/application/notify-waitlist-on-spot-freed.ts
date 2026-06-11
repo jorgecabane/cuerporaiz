@@ -19,6 +19,7 @@ import {
   waitlistRepository,
 } from "@/lib/adapters/db";
 import { sendEmailSafe } from "@/lib/application/send-email";
+import { shouldSendEmail } from "@/lib/application/check-email-preference";
 import { buildSpotFreedEmail } from "@/lib/email/waitlist";
 import { getEmailBranding } from "@/lib/email/branding";
 import { getBaseUrl } from "@/lib/utils/base-url";
@@ -73,6 +74,10 @@ async function notifyClass(liveClassId: string): Promise<void> {
     if (shouldThrottleNotification(entry.notifiedAt, now)) continue;
     const user = await userRepository.findById(entry.userId);
     if (user === null) continue;
+    // El switch del usuario es opt-out personal; el centro ya actuó como
+    // kill-switch global arriba (notifyWhenSlotFreed). No marcamos notificado al
+    // saltar: igual no se envía, y el próximo trigger vuelve a respetar la pref.
+    if (!(await shouldSendEmail(user.id, center.id, "spotFreed"))) continue;
     // Marcar notificado ANTES de despachar el correo: si el envío falla, se pierde
     // un email pero el próximo trigger respeta el throttle. Es preferible perder
     // un aviso a inundar al usuario con duplicados si la lambda muere mid-batch.
@@ -129,6 +134,7 @@ async function notifyEvent(eventId: string): Promise<void> {
     if (shouldThrottleNotification(entry.notifiedAt, nowIter)) continue;
     const user = await userRepository.findById(entry.userId);
     if (user === null) continue;
+    if (!(await shouldSendEmail(user.id, center.id, "spotFreed"))) continue;
     // Marcar notificado ANTES de despachar el correo (ver nota en notifyClass).
     await waitlistRepository.markNotified(entry.id, nowIter);
     sendEmailSafe(

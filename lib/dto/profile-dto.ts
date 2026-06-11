@@ -28,5 +28,9 @@ export const updateEmailPreferencesSchema = z.object({
   planExpiring: z.boolean().optional(),
   reservationConfirm: z.boolean().optional(),
   purchaseConfirm: z.boolean().optional(),
+  lessonUnlocked: z.boolean().optional(),
+  quotaExhausted: z.boolean().optional(),
+  newContent: z.boolean().optional(),
+  blogPublished: z.boolean().optional(),
 });
 export type UpdateEmailPreferencesInput = z.infer<typeof updateEmailPreferencesSchema>;
