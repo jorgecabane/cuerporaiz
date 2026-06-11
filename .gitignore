@@ -62,3 +62,6 @@ next-env.d.ts
 
 # previews y artefactos locales
 tmp/
+
+# Brainstorming visual companion mocks
+.superpowers/
