@@ -15,6 +15,7 @@ function toDomain(r: {
   externalReference: string | null;
   pendingAdditionQuantity: number;
   pendingAdditionExternalReference: string | null;
+  claimToken: string | null;
   orderId: string | null;
   paidAt: Date | null;
   createdAt: Date;
@@ -31,6 +32,7 @@ function toDomain(r: {
     externalReference: r.externalReference,
     pendingAdditionQuantity: r.pendingAdditionQuantity,
     pendingAdditionExternalReference: r.pendingAdditionExternalReference,
+    claimToken: r.claimToken,
     orderId: r.orderId,
     paidAt: r.paidAt,
     createdAt: r.createdAt,
@@ -94,6 +96,7 @@ export const eventTicketRepository: IEventTicketRepository = {
     amountCents: number;
     currency: string;
     quantity?: number;
+    claimToken?: string;
   }) {
     const r = await prisma.eventTicket.create({
       data: {
@@ -102,9 +105,26 @@ export const eventTicketRepository: IEventTicketRepository = {
         amountCents: data.amountCents,
         currency: data.currency,
         quantity: data.quantity ?? 1,
+        claimToken: data.claimToken ?? null,
       },
     });
     return toDomain(r);
+  },
+
+  async setClaimToken(id: string, token: string) {
+    const existing = await prisma.eventTicket.findUnique({ where: { id } });
+    if (!existing) return null;
+    const r = await prisma.eventTicket.update({
+      where: { id },
+      data: { claimToken: token },
+    });
+    return toDomain(r);
+  },
+
+  async findByClaimToken(token: string) {
+    if (!token) return null;
+    const r = await prisma.eventTicket.findUnique({ where: { claimToken: token } });
+    return r ? toDomain(r) : null;
   },
 
   async resetPending(

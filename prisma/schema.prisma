@@ -764,6 +764,10 @@ model EventTicket {
   // campos). En eventos gratuitos siempre son 0 / null (incremento directo).
   pendingAdditionQuantity          Int     @default(0)
   pendingAdditionExternalReference String? @unique
+  // Token aleatorio para compras guest (sin login): da acceso público a la
+  // página de confirmación / pago por transferencia y al flujo de reclamar
+  // cuenta. Null para tickets creados por usuarios autenticados.
+  claimToken    String? @unique
   orderId       String?
   // Transferencia bancaria (sólo cuando paymentMethod = TRANSFER)
   transferClaimedAt       DateTime?

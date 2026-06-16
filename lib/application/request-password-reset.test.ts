@@ -39,6 +39,10 @@ function makeDeps() {
     userRepo: {
       create: vi.fn(),
       findByEmail: vi.fn(),
+      findAuthSummaryByEmail: vi.fn(),
+      findAuthSummaryById: vi.fn(),
+      updateGuestProfile: vi.fn(),
+      setPasswordAndVerify: vi.fn(),
       findById: vi.fn(),
       findManyByIds: vi.fn(),
       findByIdWithMemberships: vi.fn(),

@@ -31,6 +31,8 @@ export interface EventTicket {
   externalReference: string | null;
   pendingAdditionQuantity: number;
   pendingAdditionExternalReference: string | null;
+  /** Token de acceso público para compras guest (sin login). Null si autenticado. */
+  claimToken: string | null;
   orderId: string | null;
   paidAt: Date | null;
   createdAt: Date;

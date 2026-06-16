@@ -17,7 +17,7 @@ interface HeaderProps {
 }
 
 /** Rutas que usan cascarón público: header siempre sólido (buen contraste en fondo claro). */
-const PUBLIC_SHELL_PATHS = ["/checkout", "/auth", "/catalogo", "/sobre", "/blog"];
+const PUBLIC_SHELL_PATHS = ["/checkout", "/auth", "/catalogo", "/sobre", "/blog", "/eventos"];
 
 export function Header({ navLinks, logoUrl = null, centerName = SITE_NAME }: HeaderProps = {}) {
   const links: readonly HeaderNavLink[] = navLinks ?? NAV_LINKS;

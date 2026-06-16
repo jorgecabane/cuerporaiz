@@ -75,6 +75,7 @@ function makeTicket(overrides: Partial<EventTicket> = {}): EventTicket {
     externalReference: "evt_initial",
     pendingAdditionQuantity: 0,
     pendingAdditionExternalReference: null,
+    claimToken: null,
     orderId: null,
     paidAt: null,
     createdAt: new Date(),

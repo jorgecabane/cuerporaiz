@@ -38,7 +38,7 @@ function formatHour(iso: string, tz: string): string {
   });
 }
 
-export function EventsSection({ title, subtitle, events, href = "/panel/eventos", tz }: EventsSectionProps) {
+export function EventsSection({ title, subtitle, events, href = "/eventos", tz }: EventsSectionProps) {
   if (events.length === 0) return null;
 
   return (
@@ -81,7 +81,7 @@ export function EventsSection({ title, subtitle, events, href = "/panel/eventos"
           {events.map((ev) => (
             <li key={ev.id} className="flex-shrink-0 snap-start">
               <Link
-                href={href}
+                href={`/eventos/${ev.id}`}
                 className="group flex h-full w-[280px] flex-col overflow-hidden rounded-[var(--radius-xl)] bg-[var(--color-tertiary)] shadow-[var(--shadow-sm)] transition-shadow duration-[var(--duration-slow)] hover:shadow-[var(--shadow-md)] md:w-[320px]"
               >
                 <div className="relative aspect-[4/3] overflow-hidden">

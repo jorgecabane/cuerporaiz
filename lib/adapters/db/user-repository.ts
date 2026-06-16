@@ -46,6 +46,7 @@ export const userRepository: IUserRepository = {
         email: data.email,
         passwordHash: data.passwordHash,
         name: data.name ?? null,
+        phone: data.phone ?? null,
       },
     });
     return toDomainUser(u);
@@ -54,6 +55,55 @@ export const userRepository: IUserRepository = {
   async findByEmail(email: string) {
     const u = await prisma.user.findUnique({ where: { email } });
     return u ? toDomainUser(u) : null;
+  },
+
+  async findAuthSummaryByEmail(email: string) {
+    const u = await prisma.user.findUnique({
+      where: { email },
+      select: { id: true, name: true, phone: true, passwordHash: true, emailVerifiedAt: true },
+    });
+    if (!u) return null;
+    return {
+      id: u.id,
+      name: u.name,
+      phone: u.phone,
+      hasPassword: u.passwordHash !== "",
+      emailVerified: u.emailVerifiedAt !== null,
+    };
+  },
+
+  async findAuthSummaryById(userId: string) {
+    const u = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, name: true, phone: true, passwordHash: true, emailVerifiedAt: true },
+    });
+    if (!u) return null;
+    return {
+      id: u.id,
+      name: u.name,
+      phone: u.phone,
+      hasPassword: u.passwordHash !== "",
+      emailVerified: u.emailVerifiedAt !== null,
+    };
+  },
+
+  async setPasswordAndVerify(userId: string, passwordHash: string) {
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        passwordHash,
+        emailVerifiedAt: { set: new Date() },
+        tokenVersion: { increment: 1 },
+      },
+    });
+  },
+
+  async updateGuestProfile(userId: string, data: { name?: string; phone?: string }) {
+    const patch: { name?: string; phone?: string } = {};
+    if (data.name !== undefined) patch.name = data.name;
+    if (data.phone !== undefined) patch.phone = data.phone;
+    if (Object.keys(patch).length === 0) return;
+    await prisma.user.update({ where: { id: userId }, data: patch });
   },
 
   async findById(id: string) {
