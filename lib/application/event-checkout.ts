@@ -48,6 +48,17 @@ export interface CreateEventCheckoutInput {
   payerEmail?: string;
   payerFirstName?: string;
   payerLastName?: string;
+  /**
+   * Compra sin login: genera un `claimToken` en el ticket para dar acceso
+   * público a la confirmación / pago por transferencia, y redirige a páginas
+   * públicas en vez del panel.
+   */
+  isGuest?: boolean;
+}
+
+/** Token aleatorio opaco para acceso público a un ticket guest. */
+function generateClaimToken(): string {
+  return crypto.randomBytes(32).toString("base64url");
 }
 
 /**
@@ -61,22 +72,33 @@ async function upsertTicket(input: {
   amountCents: number;
   currency: string;
   quantity: number;
+  /** Token de acceso público para compras guest; se asegura sobre el ticket. */
+  claimToken?: string;
 }): Promise<EventTicket> {
+  let ticket: EventTicket | null = null;
   if (input.existing) {
-    const reset = await eventTicketRepository.resetPending(input.existing.id, {
+    ticket = await eventTicketRepository.resetPending(input.existing.id, {
       amountCents: input.amountCents,
       quantity: input.quantity,
       currency: input.currency,
     });
-    if (reset) return reset;
   }
-  return eventTicketRepository.create({
-    eventId: input.eventId,
-    userId: input.userId,
-    amountCents: input.amountCents,
-    currency: input.currency,
-    quantity: input.quantity,
-  });
+  if (!ticket) {
+    ticket = await eventTicketRepository.create({
+      eventId: input.eventId,
+      userId: input.userId,
+      amountCents: input.amountCents,
+      currency: input.currency,
+      quantity: input.quantity,
+      claimToken: input.claimToken,
+    });
+  }
+  // Ticket reusado de un guest: asegurar el claimToken si aún no lo tiene.
+  if (input.claimToken && !ticket.claimToken) {
+    const withToken = await eventTicketRepository.setClaimToken(ticket.id, input.claimToken);
+    if (withToken) ticket = withToken;
+  }
+  return ticket;
 }
 
 function buildBackUrls(base: string, centerId: string, ticketId: string) {
@@ -147,6 +169,7 @@ export async function createEventCheckout(
   }
 
   const totalAmountCents = event.amountCents * quantity;
+  const claimToken = input.isGuest ? generateClaimToken() : undefined;
 
   // Evento gratuito: crear ticket PAID directamente. Nunca toca MP.
   if (event.amountCents === 0) {
@@ -157,8 +180,10 @@ export async function createEventCheckout(
       amountCents: 0,
       currency: event.currency,
       quantity,
+      claimToken,
     });
     const paid = await eventTicketRepository.updateStatus(pending.id, "PAID", { paidAt: new Date() });
+    const ticket = paid ?? pending;
     const { notifyEventTicketConfirmation } = await import("./notify-event-ticket-confirmation");
     notifyEventTicketConfirmation({
       eventId: event.id,
@@ -169,12 +194,21 @@ export async function createEventCheckout(
       quantity,
       kind: "purchase",
     }).catch((err) => console.error("[event-checkout] confirm email", err));
-    return { success: true, ticket: paid ?? pending };
+    if (input.isGuest && ticket.claimToken) {
+      return {
+        success: true,
+        ticket,
+        redirectTo: `/eventos/confirmacion/${ticket.id}?token=${ticket.claimToken}`,
+      };
+    }
+    return { success: true, ticket };
   }
 
   // Evento de pago: si el centro permite transferencia, devolvemos sólo el
   // ticket PENDING y el cliente redirige al selector inline.
-  const center = await centerRepository.findById(input.centerId);
+  // Nota: el selector de transferencia (subida de comprobante) requiere sesión,
+  // por eso sólo se ofrece a usuarios autenticados. Los guests pagan por MP.
+  const center = input.isGuest ? null : await centerRepository.findById(input.centerId);
   const transferAllowed =
     !!center && center.bankTransferEnabled && center.bankTransferAcceptEvents;
 
@@ -207,6 +241,7 @@ export async function createEventCheckout(
     amountCents: totalAmountCents,
     currency: event.currency,
     quantity,
+    claimToken,
   });
 
   const externalRef = `evt_${crypto.randomUUID()}`;

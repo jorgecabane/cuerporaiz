@@ -19,7 +19,12 @@ export interface IEventTicketRepository {
     amountCents: number;
     currency: string;
     quantity?: number;
+    claimToken?: string;
   }): Promise<EventTicket>;
+  /** Setea el `claimToken` de acceso público (compras guest). */
+  setClaimToken(id: string, token: string): Promise<EventTicket | null>;
+  /** Busca un ticket por su `claimToken` (acceso público guest). */
+  findByClaimToken(token: string): Promise<EventTicket | null>;
   /**
    * Reusa un ticket existente (PENDING/CANCELLED) actualizando monto, quantity
    * y status a PENDING. Devuelve el ticket actualizado o `null` si no existe.
