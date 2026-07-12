@@ -26,6 +26,7 @@ model Center {
   notifyWhenSlotFreed            Boolean  @default(true) // avisar cuando se libera un cupo
   instructorCanReserveForStudent Boolean  @default(true) // profesora puede reservar en nombre de alumna
   allowTrialClassPerPerson       Boolean  @default(true) // una clase de prueba por persona
+  showClassRosterToStudents      Boolean  @default(false) // alumno ve quién más tiene cupo confirmado en la misma clase
   calendarStartHour              Int      @default(7) // hora de inicio del calendario semanal
   calendarEndHour                Int      @default(22) // hora de fin del calendario semanal
   calendarWeekStartDay           Int      @default(1) // 0=domingo, 1=lunes (ISO)

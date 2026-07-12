@@ -13,6 +13,7 @@ function toDomainCenter(c: {
   notifyWhenSlotFreed: boolean;
   instructorCanReserveForStudent: boolean;
   allowTrialClassPerPerson: boolean;
+  showClassRosterToStudents: boolean;
   calendarStartHour: number;
   calendarEndHour: number;
   calendarWeekStartDay: number;
@@ -43,6 +44,7 @@ function toDomainCenter(c: {
     notifyWhenSlotFreed: c.notifyWhenSlotFreed,
     instructorCanReserveForStudent: c.instructorCanReserveForStudent,
     allowTrialClassPerPerson: c.allowTrialClassPerPerson,
+    showClassRosterToStudents: c.showClassRosterToStudents,
     calendarStartHour: c.calendarStartHour,
     calendarEndHour: c.calendarEndHour,
     calendarWeekStartDay: c.calendarWeekStartDay,
@@ -92,6 +94,7 @@ export const centerRepository: ICenterRepository = {
     if (data.notifyWhenSlotFreed !== undefined) payload.notifyWhenSlotFreed = data.notifyWhenSlotFreed;
     if (data.instructorCanReserveForStudent !== undefined) payload.instructorCanReserveForStudent = data.instructorCanReserveForStudent;
     if (data.allowTrialClassPerPerson !== undefined) payload.allowTrialClassPerPerson = data.allowTrialClassPerPerson;
+    if (data.showClassRosterToStudents !== undefined) payload.showClassRosterToStudents = data.showClassRosterToStudents;
     if (data.calendarStartHour !== undefined) payload.calendarStartHour = data.calendarStartHour;
     if (data.calendarEndHour !== undefined) payload.calendarEndHour = data.calendarEndHour;
     if (data.calendarWeekStartDay !== undefined) payload.calendarWeekStartDay = data.calendarWeekStartDay;
