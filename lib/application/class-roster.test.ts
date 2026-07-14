@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { listClassRosterUseCase } from "./class-roster";
+import { classRosterQuerySchema } from "@/lib/dto/class-roster-dto";
 import type { Center, LiveClass } from "@/lib/domain";
 
 const mocks = vi.hoisted(() => ({
@@ -133,5 +134,20 @@ describe("listClassRosterUseCase", () => {
     ]);
     const result = await listClassRosterUseCase("lc-1", "center-1");
     expect(result.success && result.roster[0]).not.toHaveProperty("email");
+  });
+});
+
+describe("classRosterQuerySchema", () => {
+  it("acepta liveClassId válido y no vacío", () => {
+    const result = classRosterQuerySchema.safeParse({ liveClassId: "lc-1" });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.liveClassId).toBe("lc-1");
+    }
+  });
+
+  it("rechaza liveClassId vacío", () => {
+    const result = classRosterQuerySchema.safeParse({ liveClassId: "" });
+    expect(result.success).toBe(false);
   });
 });
