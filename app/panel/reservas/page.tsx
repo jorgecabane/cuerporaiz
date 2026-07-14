@@ -11,12 +11,14 @@ export default async function PanelReservasPage() {
   const centerId = session.user.centerId as string;
   const center = await centerRepository.findById(centerId);
   const weekStartDay = center?.calendarWeekStartDay ?? 1;
+  const showClassRosterToStudents = center?.showClassRosterToStudents ?? false;
 
   return (
     <ReservasPanel
       role={session.user.role}
       centerId={centerId}
       weekStartDay={weekStartDay}
+      showClassRosterToStudents={showClassRosterToStudents}
     />
   );
 }
