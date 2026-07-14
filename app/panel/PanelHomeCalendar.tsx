@@ -481,6 +481,9 @@ export function PanelHomeCalendar({
       toast.success("Reserva confirmada");
       await loadReservations();
       await loadClassesForWeek(weekAnchor);
+      if (showClassRosterToStudents && effectiveSelectedDay) {
+        await loadRosterForDay(effectiveSelectedDay);
+      }
     } finally {
       setActionLoading(null);
     }

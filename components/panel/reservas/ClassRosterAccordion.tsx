@@ -28,6 +28,7 @@ export function ClassRosterAccordion({ roster }: ClassRosterAccordionProps) {
       <button
         type="button"
         onClick={() => setExpanded((e) => !e)}
+        aria-expanded={expanded}
         className="flex w-full items-center justify-between gap-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-left text-sm font-medium text-[var(--color-primary)] hover:bg-[var(--color-border)]/30 cursor-pointer"
       >
         <span>Compañeros registrados ({roster.length})</span>
