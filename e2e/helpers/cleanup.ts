@@ -1602,6 +1602,26 @@ export async function setTier2CenterAllowTrial(opts: {
 }
 
 /**
+ * Toggle `showClassRosterToStudents` del centro. Devuelve el valor previo
+ * para restaurarlo en afterAll.
+ */
+export async function setTier2CenterShowRoster(opts: {
+  centerSlug: string;
+  show: boolean;
+}): Promise<{ previous: boolean } | null> {
+  const prisma = await getPrisma();
+  if (!prisma) return null;
+  const center = await prisma.center.findUnique({ where: { slug: opts.centerSlug } });
+  if (!center) return null;
+  const previous = center.showClassRosterToStudents;
+  await prisma.center.update({
+    where: { id: center.id },
+    data: { showClassRosterToStudents: opts.show },
+  });
+  return { previous };
+}
+
+/**
  * Asigna un UserPlan ACTIVE de tipo ON_DEMAND a un usuario existente.
  * Útil para verificar que ON_DEMAND no satisface la elegibilidad de clases
  * en vivo (LIVE). Devuelve el id del userPlan creado.
