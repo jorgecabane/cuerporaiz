@@ -4,6 +4,8 @@ import { useState } from "react";
 import Image from "next/image";
 import { ChevronDown, ChevronUp, Clock, Hourglass, Users } from "lucide-react";
 import type { LiveClassDto } from "@/lib/dto/reservation-dto";
+import type { ClassRosterEntryDto } from "@/lib/dto/class-roster-dto";
+import { ClassRosterAccordion } from "./ClassRosterAccordion";
 import { Button } from "@/components/ui/Button";
 import { useTimezone } from "@/components/providers/TimezoneProvider";
 
@@ -74,6 +76,10 @@ export interface ClassCardProps {
   joinWaitlistLoadingId?: string | null;
   /** Solo para alumno: id en proceso para leave */
   leaveWaitlistLoadingId?: string | null;
+  /** Solo alumno: mostrar acordeón de compañeros registrados (según policy del centro) */
+  showRoster?: boolean;
+  /** Solo alumno: compañeros con reserva confirmada en esta clase */
+  roster?: ClassRosterEntryDto[];
 }
 
 export function ClassCard({
@@ -105,6 +111,8 @@ export function ClassCard({
   onLeaveWaitlist,
   joinWaitlistLoadingId = null,
   leaveWaitlistLoadingId = null,
+  showRoster = false,
+  roster,
 }: ClassCardProps) {
   const tz = useTimezone();
   const noSpots = c.spotsLeft <= 0;
@@ -336,6 +344,7 @@ export function ClassCard({
               )}
             </div>
           )}
+          {!isStaff && showRoster && <ClassRosterAccordion roster={roster ?? []} />}
         </div>
         {!isStaff && (
           <div className="shrink-0">
