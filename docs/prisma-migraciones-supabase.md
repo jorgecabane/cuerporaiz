@@ -81,6 +81,12 @@ En Vercel, el build debe ejecutar `prisma generate` después de que el schema y 
 
 - Tras mergear migraciones nuevas: en cada entorno con BD compartida, **`migrate deploy`** en el orden correcto.
 - Evitar tener **dos “inicios”** de esquema (init mínimo + baseline completo) sin una estrategia de baseline documentada; si en el futuro se limpia el historial, usar [baselining](https://www.prisma.io/docs/guides/migrate/developing-with-prisma-migrate/baselining) oficial.
+- **`npx prisma migrate resolve --applied` no ejecuta SQL** — sólo marca la fila en `_prisma_migrations`. Si se usa mal (o el deploy real falló después de marcarla), la tabla queda con columnas/índices faltantes y el runtime revienta con `PrismaClientKnownRequestError: column ... does not exist` en la primera query que la use — **`prisma migrate status` no lo detecta** (sólo compara el historial, no compara columnas reales). Pasó con `EventTicket.claimToken` (`20260614120000_add_event_ticket_claim_token`): quedó marcada `finished_at` en `_prisma_migrations` sin la columna real en Supabase → 500 en `/panel/tienda`.
+- **Verificar drift real contra la base** (no sólo el historial) después de cualquier `migrate resolve --applied` manual o deploy dudoso:
+  ```bash
+  npm run db:check-drift
+  ```
+  Compara el schema real (vía `DIRECT_DATABASE_URL`/`DATABASE_URL` en `prisma.config.ts`) contra `prisma/schema.prisma`. Exit code `0` = sin drift, `2` = hay diferencias (las imprime). **Nota:** CI usa `prisma db push` para levantar la BD de test, así que sincroniza el schema completo directo y **no pasa por las migraciones** — un `db:check-drift` en verde en CI no dice nada sobre si las migraciones reales se aplicaron bien en Supabase; hay que correrlo apuntando a la base real (local `.env` con `DATABASE_URL`/`DIRECT_DATABASE_URL` de producción) tras cada deploy con migraciones nuevas.
 
 ## Reparación automática (recomendado si tuviste `init_postgres` duplicado / rolled back)
 
