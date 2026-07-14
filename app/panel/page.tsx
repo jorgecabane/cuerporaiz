@@ -198,6 +198,7 @@ export default async function PanelPage() {
           centerId={centerId}
           weekStartDay={center?.calendarWeekStartDay ?? 1}
           role={user.role}
+          showClassRosterToStudents={center?.showClassRosterToStudents ?? false}
         />
       </section>
 
