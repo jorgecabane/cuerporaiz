@@ -28,6 +28,7 @@ export function PoliticasForm({ center }: Props) {
         const notifyWhenSlotFreed = formData.get("notifyWhenSlotFreed") === "on";
         const instructorCanReserveForStudent = formData.get("instructorCanReserveForStudent") === "on";
         const allowTrialClassPerPerson = formData.get("allowTrialClassPerPerson") === "on";
+        const showClassRosterToStudents = formData.get("showClassRosterToStudents") === "on";
         const calendarStartHour = formData.get("calendarStartHour");
         const calendarEndHour = formData.get("calendarEndHour");
         const defaultClassDurationMinutes = formData.get("defaultClassDurationMinutes");
@@ -41,6 +42,7 @@ export function PoliticasForm({ center }: Props) {
             notifyWhenSlotFreed,
             instructorCanReserveForStudent,
             allowTrialClassPerPerson,
+            showClassRosterToStudents,
             calendarStartHour: calendarStartHour != null ? Number(calendarStartHour) : undefined,
             calendarEndHour: calendarEndHour != null ? Number(calendarEndHour) : undefined,
             defaultClassDurationMinutes: defaultClassDurationMinutes != null ? Number(defaultClassDurationMinutes) : undefined,
@@ -118,6 +120,21 @@ export function PoliticasForm({ center }: Props) {
             Permitir una clase de prueba por persona
           </label>
         </div>
+        <div className="flex items-center gap-2">
+          <input
+            id="showClassRosterToStudents"
+            name="showClassRosterToStudents"
+            type="checkbox"
+            defaultChecked={center.showClassRosterToStudents}
+            className="rounded border-[var(--color-border)]"
+          />
+          <label htmlFor="showClassRosterToStudents" className="text-sm text-[var(--color-text)]">
+            Mostrar a los alumnos quién más está registrado en la clase
+          </label>
+        </div>
+        <p className="text-xs text-[var(--color-text-muted)] -mt-2">
+          Los alumnos verán el nombre y la foto de perfil de quienes ya tienen un cupo confirmado en la misma clase.
+        </p>
       </div>
 
       {/* Preferencias del calendario */}

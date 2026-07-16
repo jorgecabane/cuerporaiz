@@ -7,6 +7,7 @@ import { isAdminRole, isStudentRole } from "@/lib/domain";
 import { toast } from "@/components/ui/Toast";
 import type { LiveClassDto, ReservationDto, UserPlanOptionDto } from "@/lib/dto/reservation-dto";
 import type { WaitlistEntryDto } from "@/lib/dto/waitlist-dto";
+import type { ClassRosterEntryDto } from "@/lib/dto/class-roster-dto";
 import {
   WeekNav,
   getWeekBounds,
@@ -33,16 +34,19 @@ interface PanelHomeCalendarProps {
   centerId: string;
   weekStartDay: number;
   role: Role;
+  showClassRosterToStudents: boolean;
 }
 
 export function PanelHomeCalendar({
   centerId,
   weekStartDay,
   role,
+  showClassRosterToStudents,
 }: PanelHomeCalendarProps) {
   const [liveClasses, setLiveClasses] = useState<LiveClassDto[]>([]);
   const [staffClassesOnly, setStaffClassesOnly] = useState<LiveClassDto[]>([]);
   const [staffAttendeesByClass, setStaffAttendeesByClass] = useState<Record<string, ClassAttendanceDto[]>>({});
+  const [rosterByClassId, setRosterByClassId] = useState<Record<string, ClassRosterEntryDto[]>>({});
   const [reservations, setReservations] = useState<ReservationDto[]>([]);
   const [weekEvents, setWeekEvents] = useState<Array<{ id: string; title: string; startsAt: string; endsAt: string; color: string | null; amountCents: number; currency: string; hasTicket: boolean; ticketQuantity: number }>>([]);
   const [weekAnchor, setWeekAnchor] = useState<Date>(() => new Date());
@@ -154,6 +158,28 @@ export function PanelHomeCalendar({
     });
   }, [staffClassesOnly]);
 
+  const loadRosterForDay = useCallback(
+    async (dayKey: string) => {
+      const byDay = groupClassesByDay(liveClasses);
+      const classesOfDay = byDay.get(dayKey) ?? [];
+      if (classesOfDay.length === 0) return;
+      const results = await Promise.all(
+        classesOfDay.map(async (c) => {
+          const res = await fetch(`/api/reservations/roster?liveClassId=${encodeURIComponent(c.id)}`);
+          const raw = res.ok ? await res.json() : [];
+          const roster: ClassRosterEntryDto[] = Array.isArray(raw) ? raw : [];
+          return { id: c.id, roster } as const;
+        })
+      );
+      setRosterByClassId((prev) => {
+        const next = { ...prev };
+        for (const { id, roster } of results) next[id] = roster;
+        return next;
+      });
+    },
+    [liveClasses]
+  );
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -254,6 +280,12 @@ export function PanelHomeCalendar({
       loadStaffAttendeesForDay(effectiveSelectedDay);
     }
   }, [role, effectiveSelectedDay, staffClassesOnly.length, loadStaffAttendeesForDay]);
+
+  useEffect(() => {
+    if (isStudentRole(role) && showClassRosterToStudents && effectiveSelectedDay && liveClasses.length > 0) {
+      loadRosterForDay(effectiveSelectedDay);
+    }
+  }, [role, showClassRosterToStudents, effectiveSelectedDay, liveClasses.length, loadRosterForDay]);
 
   const myConfirmedLiveClassIds = useMemo(
     () =>
@@ -449,6 +481,9 @@ export function PanelHomeCalendar({
       toast.success("Reserva confirmada");
       await loadReservations();
       await loadClassesForWeek(weekAnchor);
+      if (showClassRosterToStudents && effectiveSelectedDay) {
+        await loadRosterForDay(effectiveSelectedDay);
+      }
     } finally {
       setActionLoading(null);
     }
@@ -754,6 +789,8 @@ export function PanelHomeCalendar({
                   onLeaveWaitlist={handleLeaveWaitlist}
                   joinWaitlistLoadingId={joinWaitlistLoadingId}
                   leaveWaitlistLoadingId={leaveWaitlistLoadingId}
+                  showRoster={showClassRosterToStudents}
+                  roster={rosterByClassId[c.id] ?? []}
                 />
               );
             })}

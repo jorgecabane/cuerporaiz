@@ -4,6 +4,8 @@ import type { ReservationDto } from "@/lib/dto/reservation-dto";
 import { RESERVATION_STATUS_LABELS } from "@/lib/domain/reservation";
 import { Button } from "@/components/ui/Button";
 import { useTimezone } from "@/components/providers/TimezoneProvider";
+import type { ClassRosterEntryDto } from "@/lib/dto/class-roster-dto";
+import { ClassRosterAccordion } from "./ClassRosterAccordion";
 
 function formatDate(iso: string, tz: string) {
   const d = new Date(iso);
@@ -38,6 +40,10 @@ export interface ReservationsListProps {
   showCancelBadge?: boolean;
   /** Solo mostrar botón Cancelar si la reserva es cancelable (CONFIRMED y clase no iniciada). Si no se pasa, se muestra para toda CONFIRMED. */
   canCancelIds?: Set<string>;
+  /** Mostrar roster de compañeros (solo para reservas CONFIRMED, según policy del centro) */
+  showRoster?: boolean;
+  /** Roster ya cargado por el padre, indexado por liveClassId */
+  rosterByClassId?: Record<string, ClassRosterEntryDto[]>;
 }
 
 export function ReservationsList({
@@ -48,6 +54,8 @@ export function ReservationsList({
   compact = false,
   showCancelBadge = false,
   canCancelIds,
+  showRoster = false,
+  rosterByClassId,
 }: ReservationsListProps) {
   const tz = useTimezone();
   if (reservations.length === 0) {
@@ -118,6 +126,9 @@ export function ReservationsList({
                 </Button>
               )}
             </div>
+            {showRoster && r.status === "CONFIRMED" && (
+              <ClassRosterAccordion roster={rosterByClassId?.[r.liveClassId] ?? []} />
+            )}
           </li>
         );
       })}

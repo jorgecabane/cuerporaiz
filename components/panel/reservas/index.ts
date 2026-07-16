@@ -3,6 +3,8 @@ export { WeekNav, getWeekBounds } from "./WeekNav";
 export { WeekDaySelector, groupClassesByDay } from "./WeekDaySelector";
 export { ClassCard } from "./ClassCard";
 export type { ClassCardProps } from "./ClassCard";
+export { ClassRosterAccordion } from "./ClassRosterAccordion";
+export type { ClassRosterAccordionProps } from "./ClassRosterAccordion";
 export { ReservationsList } from "./ReservationsList";
 export type { ReservationsListProps } from "./ReservationsList";
 export { MisReservasSheet } from "./MisReservasSheet";

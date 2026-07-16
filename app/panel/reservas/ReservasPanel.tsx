@@ -20,6 +20,7 @@ import {
 } from "@/components/panel/reservas";
 import { ReservationListSkeleton } from "@/components/ui/PanelSkeletons";
 import { useTimezone } from "@/components/providers/TimezoneProvider";
+import type { ClassRosterEntryDto } from "@/lib/dto/class-roster-dto";
 
 const RESERVATIONS_PAGE_SIZE = 50;
 
@@ -29,12 +30,14 @@ interface ReservasPanelProps {
   role: PanelRole;
   centerId: string;
   weekStartDay?: number;
+  showClassRosterToStudents: boolean;
 }
 
 export function ReservasPanel({
   role,
   centerId,
   weekStartDay: _weekStartDay,
+  showClassRosterToStudents,
 }: ReservasPanelProps) {
   const tz = useTimezone();
   const [reservations, setReservations] = useState<ReservationDto[]>([]);
@@ -54,6 +57,24 @@ export function ReservasPanel({
     plans: UserPlanOptionDto[];
   } | null>(null);
   const [showTrialCta, setShowTrialCta] = useState(false);
+  const [rosterByClassId, setRosterByClassId] = useState<Record<string, ClassRosterEntryDto[]>>({});
+
+  const loadRoster = useCallback(async (liveClassIds: string[]) => {
+    if (liveClassIds.length === 0) return;
+    const results = await Promise.all(
+      liveClassIds.map(async (id) => {
+        const res = await fetch(`/api/reservations/roster?liveClassId=${encodeURIComponent(id)}`);
+        const raw = res.ok ? await res.json() : [];
+        const roster: ClassRosterEntryDto[] = Array.isArray(raw) ? raw : [];
+        return { id, roster } as const;
+      })
+    );
+    setRosterByClassId((prev) => {
+      const next = { ...prev };
+      for (const { id, roster } of results) next[id] = roster;
+      return next;
+    });
+  }, []);
 
   function showMessage(type: "ok" | "err", text: string) {
     setMessage({ type, text });
@@ -103,6 +124,18 @@ export function ReservasPanel({
     () => new Set(reservations.filter(canCancelReservation).map((r) => r.id)),
     [reservations]
   );
+
+  useEffect(() => {
+    if (!isStudentRole(role) || !showClassRosterToStudents) return;
+    const ids = Array.from(
+      new Set(
+        [...segmentedReservations.hoy, ...segmentedReservations.proximas]
+          .filter((r) => r.status === "CONFIRMED")
+          .map((r) => r.liveClassId)
+      )
+    );
+    loadRoster(ids);
+  }, [role, showClassRosterToStudents, segmentedReservations, loadRoster]);
 
   async function handleReserve(liveClassId: string, userPlanId?: string) {
     setActionLoading(liveClassId);
@@ -317,6 +350,8 @@ export function ReservasPanel({
               onCancel={handleCancel}
               cancelLoadingId={actionLoading}
               emptyMessage="No tienes reservas para hoy."
+              showRoster={showClassRosterToStudents}
+              rosterByClassId={rosterByClassId}
             />
           </TabsContent>
           <TabsContent value={TAB_PROXIMAS} className="pt-2">
@@ -327,6 +362,8 @@ export function ReservasPanel({
               onCancel={handleCancel}
               cancelLoadingId={actionLoading}
               emptyMessage="No tienes próximas reservas."
+              showRoster={showClassRosterToStudents}
+              rosterByClassId={rosterByClassId}
             />
           </TabsContent>
           <TabsContent value={TAB_CANCELADAS} className="pt-2">

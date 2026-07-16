@@ -7,6 +7,7 @@ export interface CenterPoliciesUpdate {
   notifyWhenSlotFreed?: boolean;
   instructorCanReserveForStudent?: boolean;
   allowTrialClassPerPerson?: boolean;
+  showClassRosterToStudents?: boolean;
   calendarStartHour?: number;
   calendarEndHour?: number;
   calendarWeekStartDay?: number;

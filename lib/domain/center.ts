@@ -19,6 +19,8 @@ export interface Center {
   notifyWhenSlotFreed: boolean;
   instructorCanReserveForStudent: boolean;
   allowTrialClassPerPerson: boolean;
+  /** Alumno ve quién más tiene cupo confirmado en la misma clase (opt-in, default false) */
+  showClassRosterToStudents: boolean;
   calendarStartHour: number;
   calendarEndHour: number;
   calendarWeekStartDay: number;
