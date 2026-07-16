@@ -34,6 +34,7 @@ test.describe("Replay (student flow)", () => {
 
     // Click the first practice card button
     const practiceButton = page
+      .getByRole("main")
       .getByRole("button")
       .filter({ hasNot: page.getByRole("heading") })
       .first();
@@ -41,7 +42,7 @@ test.describe("Replay (student flow)", () => {
     if (!hasPractice) return;
 
     await practiceButton.click();
-    await expect(page).toHaveURL(/\/panel\/replay\?practice=/, { timeout: 10000 });
+    await expect(page).toHaveURL(/\/panel\/replay\?.*practice=/, { timeout: 10000 });
 
     // Find a "Ver clase" button for an already-unlocked lesson in seed data
     const verClaseBtn = page.getByRole("button", { name: /Ver clase/i }).first();
@@ -77,6 +78,7 @@ test.describe("Replay (student flow)", () => {
 
     // Navigate into a practice
     const practiceButton = page
+      .getByRole("main")
       .getByRole("button")
       .filter({ hasNot: page.getByRole("heading") })
       .first();
@@ -84,7 +86,7 @@ test.describe("Replay (student flow)", () => {
     if (!hasPractice) return;
 
     await practiceButton.click();
-    await expect(page).toHaveURL(/\/panel\/replay\?practice=/, { timeout: 10000 });
+    await expect(page).toHaveURL(/\/panel\/replay\?.*practice=/, { timeout: 10000 });
 
     // Click "Canjear" on a locked lesson
     const canjearBtn = page.getByRole("button", { name: /^Canjear$/i }).first();
@@ -123,11 +125,9 @@ test.describe("Catálogo público — navegación completa", () => {
       page.getByRole("heading", { name: /Biblioteca virtual/i })
     ).toBeVisible({ timeout: 15000 });
 
-    // Click the first category card link (wraps an h2)
-    const categoryLink = page
-      .getByRole("link")
-      .filter({ has: page.getByRole("heading", { level: 2 }) })
-      .first();
+    // Click the first category's "Ver todo" link (categories render name + link as
+    // siblings, not a link wrapping the heading).
+    const categoryLink = page.getByRole("link", { name: /Ver todo/i }).first();
     const hasCategory = await categoryLink.isVisible({ timeout: 5000 }).catch(() => false);
     if (!hasCategory) {
       // Empty catalog — verify the empty state message instead
@@ -143,10 +143,11 @@ test.describe("Catálogo público — navegación completa", () => {
     // Category detail: heading matches the category name (h1)
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible({ timeout: 5000 });
 
-    // Click first practice card
+    // Click first practice card — PracticeCard renders a <button> (client-side
+    // router.push navigation), not an <a>.
     const practiceLink = page
-      .getByRole("link")
-      .filter({ has: page.getByRole("heading", { level: 2 }) })
+      .getByRole("button")
+      .filter({ hasNot: page.getByRole("heading") })
       .first();
     const hasPractice = await practiceLink.isVisible({ timeout: 5000 }).catch(() => false);
     if (!hasPractice) {
@@ -162,8 +163,11 @@ test.describe("Catálogo público — navegación completa", () => {
     // Practice detail: heading (h1) should be visible
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible({ timeout: 5000 });
 
-    // Lesson list or empty state must be present — video URLs are never exposed here
-    const lessonItem = page.locator("ul li").first();
+    // Lesson list or empty state must be present — video URLs are never exposed here.
+    // LessonCard renders a plain <div> (no <ul>/<li>); in public (logged-out) mode its
+    // CTA is always an "Iniciar sesión" link (the only reachable branch of renderCta
+    // when unauthenticated).
+    const lessonItem = page.getByRole("link", { name: /Iniciar sesión/i }).first();
     const emptyLessons = page.getByText(/Aún no hay clases disponibles/i);
     await expect(lessonItem.or(emptyLessons)).toBeVisible({ timeout: 5000 });
   });
