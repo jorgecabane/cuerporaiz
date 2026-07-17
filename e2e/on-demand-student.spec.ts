@@ -29,7 +29,7 @@ test.describe("On-demand / Replay (student)", () => {
 
     await expect(replayHeading).toBeVisible();
 
-    const practiceButton = page.getByRole("button").filter({ hasNot: page.getByRole("heading") }).first();
+    const practiceButton = page.getByRole("main").getByRole("button").filter({ hasNot: page.getByRole("heading") }).first();
     const hasPractice = await practiceButton.isVisible({ timeout: 5000 }).catch(() => false);
 
     if (!hasPractice) {
@@ -38,8 +38,10 @@ test.describe("On-demand / Replay (student)", () => {
     }
 
     await practiceButton.click();
-    await expect(page).toHaveURL(/\/panel\/replay\?practice=/, { timeout: 10000 });
-    await expect(page.getByRole("button", { name: /←/ })).toBeVisible({ timeout: 10000 });
+    await expect(page).toHaveURL(/\/panel\/replay\?.*practice=/, { timeout: 10000 });
+    // The back arrow is a <Link aria-label="Volver">←</Link> — aria-label overrides
+    // the visible "←" text for the accessible name, and it's a link, not a button.
+    await expect(page.getByRole("link", { name: /Volver/i })).toBeVisible({ timeout: 10000 });
   });
 
   test("puede expandir detalles de una lección", async ({ page }) => {
@@ -50,12 +52,12 @@ test.describe("On-demand / Replay (student)", () => {
     const hasPlan = await replayHeading.isVisible({ timeout: 10000 }).catch(() => false);
     if (!hasPlan) return;
 
-    const practiceButton = page.getByRole("button").filter({ hasNot: page.getByRole("heading") }).first();
+    const practiceButton = page.getByRole("main").getByRole("button").filter({ hasNot: page.getByRole("heading") }).first();
     const hasPractice = await practiceButton.isVisible({ timeout: 5000 }).catch(() => false);
     if (!hasPractice) return;
 
     await practiceButton.click();
-    await expect(page).toHaveURL(/\/panel\/replay\?practice=/, { timeout: 10000 });
+    await expect(page).toHaveURL(/\/panel\/replay\?.*practice=/, { timeout: 10000 });
 
     const detailsButton = page.getByRole("button", { name: /Detalles|Ver detalles/i }).first();
     const hasDetails = await detailsButton.isVisible({ timeout: 5000 }).catch(() => false);
@@ -82,12 +84,12 @@ test.describe("On-demand / Replay (student)", () => {
     const hasPlan = await replayHeading.isVisible({ timeout: 10000 }).catch(() => false);
     if (!hasPlan) return;
 
-    const practiceButton = page.getByRole("button").filter({ hasNot: page.getByRole("heading") }).first();
+    const practiceButton = page.getByRole("main").getByRole("button").filter({ hasNot: page.getByRole("heading") }).first();
     const hasPractice = await practiceButton.isVisible({ timeout: 5000 }).catch(() => false);
     if (!hasPractice) return;
 
     await practiceButton.click();
-    await expect(page).toHaveURL(/\/panel\/replay\?practice=/, { timeout: 10000 });
+    await expect(page).toHaveURL(/\/panel\/replay\?.*practice=/, { timeout: 10000 });
 
     const canjearBtn = page.getByRole("button", { name: /^Canjear$/i }).first();
     const hasCanjear = await canjearBtn.isVisible({ timeout: 5000 }).catch(() => false);

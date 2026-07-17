@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { Hourglass } from "lucide-react";
 import type { ReservationDto } from "@/lib/dto/reservation-dto";
 import type { WaitlistEntryDto } from "@/lib/dto/waitlist-dto";
@@ -43,8 +44,8 @@ function CancelConfirmModal({
   onConfirm: () => void;
   loading: boolean;
 }) {
-  if (!open) return null;
-  return (
+  if (!open || typeof document === "undefined") return null;
+  return createPortal(
     <div
       className="fixed inset-0 z-[60] flex items-center justify-center p-4"
       role="dialog"
@@ -84,7 +85,8 @@ function CancelConfirmModal({
           </Button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
