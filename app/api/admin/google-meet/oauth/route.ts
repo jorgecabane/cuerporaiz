@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { isAdminRole } from "@/lib/domain";
+import { getBaseUrl } from "@/lib/utils/base-url";
 
 /**
  * GET /api/admin/google-meet/oauth
@@ -23,11 +24,7 @@ export async function GET() {
     );
   }
 
-  const baseUrl =
-    process.env.NEXTAUTH_URL ??
-    process.env.NEXT_PUBLIC_BASE_URL ??
-    "http://localhost:3000";
-  const redirectUri = `${baseUrl}/api/admin/google-meet/oauth/callback`;
+  const redirectUri = `${getBaseUrl()}/api/admin/google-meet/oauth/callback`;
 
   const googleAuthUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");
   googleAuthUrl.searchParams.set("client_id", clientId);
