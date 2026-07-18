@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { isAdminRole } from "@/lib/domain";
 import { googleMeetConfigRepository } from "@/lib/adapters/db";
+import { getBaseUrl } from "@/lib/utils/base-url";
 
 /**
  * GET /api/admin/google-meet/oauth/callback?code=xxx&state=centerId
@@ -29,11 +30,7 @@ export async function GET(request: Request) {
 
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  const baseUrl =
-    process.env.NEXTAUTH_URL ??
-    process.env.NEXT_PUBLIC_BASE_URL ??
-    "http://localhost:3000";
-  const redirectUri = `${baseUrl}/api/admin/google-meet/oauth/callback`;
+  const redirectUri = `${getBaseUrl()}/api/admin/google-meet/oauth/callback`;
 
   if (!clientId || !clientSecret) {
     return NextResponse.redirect(
