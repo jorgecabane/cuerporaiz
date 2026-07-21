@@ -144,6 +144,21 @@ export const reservationRepository: IReservationRepository = {
     return toDomainReservation(r);
   },
 
+  async reactivate(id: string, data: { userPlanId?: string | null; isTrial?: boolean }) {
+    const r = await prisma.reservation.update({
+      where: { id },
+      data: {
+        status: "CONFIRMED",
+        userPlanId: data.userPlanId ?? null,
+        isTrial: data.isTrial ?? false,
+        // La fila reusada puede traer el recordatorio ya marcado como enviado;
+        // sin resetear, el cron de "2h antes" se saltaría esta reserva.
+        reminderSentAt: null,
+      },
+    });
+    return toDomainReservation(r);
+  },
+
   async updateStatus(id: string, status: ReservationStatus) {
     const r = await prisma.reservation.update({
       where: { id },

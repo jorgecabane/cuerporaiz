@@ -10,6 +10,7 @@ import type {
 } from "@/lib/dto/reservation-dto";
 import type { Reservation, ReservationStatus } from "@/lib/domain";
 import { isUserPlanUsable } from "@/lib/domain/user-plan";
+import { canRebookReservation } from "@/lib/domain/reservation";
 import {
   centerRepository,
   liveClassRepository,
@@ -171,12 +172,15 @@ export async function reserveClassUseCase(
     return { success: false, code: "NO_SPOTS", message: "No hay cupos disponibles" };
   }
 
+  // Solo bloquea si la reserva previa sigue vigente. Una fila CANCELLED /
+  // LATE_CANCELLED se reactiva más abajo (ver canRebookReservation).
   const existing = await reservationRepository.findByUserAndLiveClass(userId, liveClassId);
-  if (existing) {
-    if (existing.status === "CONFIRMED") {
-      return { success: false, code: "ALREADY_RESERVED", message: "Ya tienes una reserva para esta clase" };
-    }
-    return { success: false, code: "ALREADY_RESERVED", message: "Ya tienes un registro para esta clase" };
+  if (existing && !canRebookReservation(existing.status)) {
+    const message =
+      existing.status === "CONFIRMED"
+        ? "Ya tienes una reserva para esta clase"
+        : "Ya tienes un registro para esta clase";
+    return { success: false, code: "ALREADY_RESERVED", message };
   }
 
   // Validar plan activo tipo Live (se omite cuando es una clase de prueba elegible).
@@ -225,12 +229,19 @@ export async function reserveClassUseCase(
     }
   }
 
-  const reservation = await reservationRepository.create({
-    userId,
-    liveClassId,
-    userPlanId: selectedPlan?.id ?? null,
-    isTrial: isTrialEligible,
-  });
+  // Reusa la fila cancelada si existe: @@unique([userId, liveClassId]) impide
+  // crear una segunda reserva del mismo alumno para la misma clase.
+  const reservation = existing
+    ? await reservationRepository.reactivate(existing.id, {
+        userPlanId: selectedPlan?.id ?? null,
+        isTrial: isTrialEligible,
+      })
+    : await reservationRepository.create({
+        userId,
+        liveClassId,
+        userPlanId: selectedPlan?.id ?? null,
+        isTrial: isTrialEligible,
+      });
 
   // Descontar clase del plan (solo si hay plan asignado y tiene límite)
   if (selectedPlan && selectedPlan.classesTotal !== null) {

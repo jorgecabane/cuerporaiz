@@ -18,6 +18,7 @@ const mocks = vi.hoisted(() => ({
     hasTrialReservation: vi.fn(),
     findByUserAndLiveClass: vi.fn(),
     create: vi.fn(),
+    reactivate: vi.fn(),
   },
   liveClassRepository: {
     findById: vi.fn(),
@@ -529,6 +530,131 @@ describe("reserveClassUseCase — clase de prueba (trial)", () => {
     );
     expect(sentEmails.list.some((e) => e.subject.startsWith("Reserva confirmada:"))).toBe(true);
     expect(sentEmails.list.some((e) => e.subject.startsWith("Clase de prueba:"))).toBe(false);
+  });
+});
+
+// Regresión producción (22-07-2026): un alumno que cancelaba su reserva no
+// podía volver a reservar la misma clase. El chequeo de duplicados miraba
+// cualquier fila existente (la tabla tiene @@unique([userId, liveClassId]))
+// sin filtrar por status, así que la fila CANCELLED lo bloqueaba para siempre
+// con "Ya tienes un registro para esta clase" — incluso con la clase vacía.
+describe("reserveClassUseCase — re-reserva tras cancelar", () => {
+  const userId = "user-1";
+  const centerId = "center-1";
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.clearAllMocks();
+    sentEmails.list.length = 0;
+    vi.setSystemTime(new Date("2026-06-01T10:00:00Z"));
+    mocks.centerRepository.findById.mockResolvedValue({
+      id: centerId,
+      bookBeforeMinutes: 0,
+      cancelBeforeMinutes: 0,
+      maxNoShowsPerMonth: 10,
+      allowTrialClassPerPerson: false,
+    });
+    mocks.reservationRepository.countByUserAndStatus.mockResolvedValue(0);
+    mocks.liveClassRepository.countConfirmedReservations.mockResolvedValue(0);
+    mocks.centerHolidayRepository.findByCenterIdAndDate.mockResolvedValue(null);
+    mocks.liveClassRepository.findById.mockResolvedValue(
+      makeLiveClass({ startsAt: new Date("2026-06-10T14:00:00Z"), centerId })
+    );
+    mocks.userRepository.findById.mockResolvedValue({
+      id: userId, email: "alumno@test.cl", name: "Alumno",
+    });
+    mocks.userPlanRepository.findActiveByUserAndCenter.mockResolvedValue([
+      { id: "up-1", planId: "plan-1", status: "ACTIVE", classesTotal: 10, classesUsed: 3, validUntil: null },
+    ]);
+    mocks.planRepository.findById.mockResolvedValue({ id: "plan-1", type: "LIVE", name: "Mensual" });
+    mocks.reservationRepository.reactivate.mockImplementation(async (id, data) =>
+      makeReservation({ id, status: "CONFIRMED", userPlanId: data.userPlanId ?? null, isTrial: data.isTrial ?? false })
+    );
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("permite volver a reservar si la reserva previa está CANCELLED", async () => {
+    mocks.reservationRepository.findByUserAndLiveClass.mockResolvedValue(
+      makeReservation({ id: "res-old", status: "CANCELLED", userPlanId: null })
+    );
+
+    const result = await reserveClassUseCase(userId, centerId, "lc-1");
+
+    expect(result.success).toBe(true);
+    // Reactiva la fila existente: crear una nueva viola @@unique([userId, liveClassId])
+    expect(mocks.reservationRepository.reactivate).toHaveBeenCalledWith(
+      "res-old",
+      expect.objectContaining({ userPlanId: "up-1", isTrial: false })
+    );
+    expect(mocks.reservationRepository.create).not.toHaveBeenCalled();
+    // Descuenta la clase del plan igual que una reserva nueva
+    expect(mocks.userPlanRepository.incrementClassesUsed).toHaveBeenCalledWith("up-1");
+  });
+
+  it("permite volver a reservar si la reserva previa está LATE_CANCELLED", async () => {
+    mocks.reservationRepository.findByUserAndLiveClass.mockResolvedValue(
+      makeReservation({ id: "res-old", status: "LATE_CANCELLED", userPlanId: null })
+    );
+
+    const result = await reserveClassUseCase(userId, centerId, "lc-1");
+
+    expect(result.success).toBe(true);
+    expect(mocks.reservationRepository.reactivate).toHaveBeenCalledWith("res-old", expect.anything());
+  });
+
+  it("sigue bloqueando si ya hay una reserva CONFIRMED", async () => {
+    mocks.reservationRepository.findByUserAndLiveClass.mockResolvedValue(
+      makeReservation({ id: "res-old", status: "CONFIRMED" })
+    );
+
+    const result = await reserveClassUseCase(userId, centerId, "lc-1");
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.code).toBe("ALREADY_RESERVED");
+      expect(result.message).toMatch(/Ya tienes una reserva/);
+    }
+    expect(mocks.reservationRepository.reactivate).not.toHaveBeenCalled();
+    expect(mocks.userPlanRepository.incrementClassesUsed).not.toHaveBeenCalled();
+  });
+
+  it("envía el correo de confirmación al re-reservar", async () => {
+    mocks.reservationRepository.findByUserAndLiveClass.mockResolvedValue(
+      makeReservation({ id: "res-old", status: "CANCELLED", userPlanId: null })
+    );
+
+    await reserveClassUseCase(userId, centerId, "lc-1");
+
+    expect(sentEmails.list.some((e) => e.subject.startsWith("Reserva confirmada:"))).toBe(true);
+  });
+
+  it("respeta el cupo: si la clase está llena no reactiva la reserva cancelada", async () => {
+    mocks.liveClassRepository.countConfirmedReservations.mockResolvedValue(20); // maxCapacity = 20
+    mocks.reservationRepository.findByUserAndLiveClass.mockResolvedValue(
+      makeReservation({ id: "res-old", status: "CANCELLED" })
+    );
+
+    const result = await reserveClassUseCase(userId, centerId, "lc-1");
+
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.code).toBe("NO_SPOTS");
+    expect(mocks.reservationRepository.reactivate).not.toHaveBeenCalled();
+  });
+
+  it("respeta el plan: sin plan activo no reactiva la reserva cancelada", async () => {
+    mocks.userPlanRepository.findActiveByUserAndCenter.mockResolvedValue([]);
+    mocks.reservationRepository.findByUserAndLiveClass.mockResolvedValue(
+      makeReservation({ id: "res-old", status: "CANCELLED" })
+    );
+
+    const result = await reserveClassUseCase(userId, centerId, "lc-1");
+
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.code).toBe("NO_ACTIVE_PLAN");
+    expect(mocks.reservationRepository.reactivate).not.toHaveBeenCalled();
   });
 });
 
