@@ -25,6 +25,20 @@ export interface Reservation {
   updatedAt: Date;
 }
 
+/**
+ * True si el alumno puede volver a reservar una clase donde ya tiene una fila.
+ *
+ * La tabla tiene @@unique([userId, liveClassId]): cancelar no borra la fila, la
+ * deja en CANCELLED/LATE_CANCELLED. Sin este predicado, esa fila bloquea la
+ * re-reserva para siempre aunque la clase esté vacía.
+ *
+ * ATTENDED y NO_SHOW no se reactivan: solo existen en clases ya pasadas, que el
+ * use case rechaza antes con CLASS_PAST.
+ */
+export function canRebookReservation(status: ReservationStatus): boolean {
+  return status === "CANCELLED" || status === "LATE_CANCELLED";
+}
+
 export const RESERVATION_STATUS_LABELS: Record<ReservationStatus, string> = {
   CONFIRMED: "Confirmada",
   CANCELLED: "Cancelada",

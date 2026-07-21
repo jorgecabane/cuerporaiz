@@ -39,6 +39,9 @@ test.describe("Reservas — cancelación con/sin penalización", () => {
   test.beforeAll(async () => {
     originalPolicies = await setTier1CenterPolicies("e2e-test", {
       cancelBeforeMinutes: 720,
+      // Sin ventana de anticipación: el test de re-reserva vuelve a reservar una
+      // clase a 24 h, y el default del centro (1 día) la rechazaría por borde.
+      bookBeforeMinutes: 0,
     });
 
     // Plan con 2 clases ya consumidas para que decrementar deje 1.
@@ -153,5 +156,68 @@ test.describe("Reservas — cancelación con/sin penalización", () => {
     // classesUsed NO se decrementa: la clase queda consumida.
     const after = await getTier1UserPlanClassesUsed(seededPlan.userPlanId);
     expect(after).toBe(beforeNum);
+  });
+
+  /**
+   * Regresión producción (22-07-2026): tras cancelar, el alumno no podía volver
+   * a reservar la misma clase — recibía ALREADY_RESERVED ("Ya tienes un registro
+   * para esta clase") aunque la clase estuviera vacía, porque la fila CANCELLED
+   * seguía ahí (@@unique([userId, liveClassId])).
+   *
+   * Va en E2E además del unit test: los mocks no reproducen la constraint única,
+   * así que solo contra DB real se verifica que la re-reserva reactiva la fila
+   * en vez de intentar insertar una segunda.
+   */
+  test("tras cancelar se puede volver a reservar la misma clase", async ({
+    page,
+    request,
+  }) => {
+    test.skip(!seededPlan, "Sin DB o seed en este worker");
+    if (!seededPlan) return;
+
+    // Clase mañana: > 12 h → cancelar deja CANCELLED y devuelve la clase.
+    const cls = await seedTier1LiveClass({
+      centerSlug: "e2e-test",
+      title: `Tier1 Rebook ${Date.now().toString(36)}`,
+      minutesFromNow: 24 * 60,
+    });
+    test.skip(!cls, "Sin DB para crear clase");
+    if (!cls) return;
+    liveClassIds.push(cls.liveClassId);
+
+    const res = await seedTier1Reservation({
+      userId: seededPlan.userId,
+      liveClassId: cls.liveClassId,
+      userPlanId: seededPlan.userPlanId,
+      incrementClassesUsed: true,
+    });
+    test.skip(!res, "Sin DB para crear reserva");
+    if (!res) return;
+    reservationIds.push(res.reservationId);
+
+    await page.goto("/panel");
+    await expect(page).toHaveURL(/\/panel/, { timeout: 15000 });
+
+    const cancel = await request.patch(
+      `/api/reservations/${res.reservationId}/cancel`,
+    );
+    expect(cancel.status(), await cancel.text()).toBe(200);
+    expect((await getTier1ReservationById(res.reservationId))?.status).toBe("CANCELLED");
+
+    const usedAfterCancel = await getTier1UserPlanClassesUsed(seededPlan.userPlanId);
+
+    // Re-reserva de la MISMA clase: antes del fix devolvía 409 ALREADY_RESERVED.
+    const rebook = await request.post("/api/reservations", {
+      data: { liveClassId: cls.liveClassId, userPlanId: seededPlan.userPlanId },
+    });
+    expect(rebook.status(), await rebook.text()).toBe(201);
+
+    // Reactiva la fila existente, no crea una segunda.
+    const reservation = await getTier1ReservationById(res.reservationId);
+    expect(reservation?.status).toBe("CONFIRMED");
+
+    // Y vuelve a descontar la clase del plan.
+    const usedAfterRebook = await getTier1UserPlanClassesUsed(seededPlan.userPlanId);
+    expect(usedAfterRebook).toBe((usedAfterCancel as number) + 1);
   });
 });
