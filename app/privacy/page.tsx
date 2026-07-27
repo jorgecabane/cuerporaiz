@@ -83,8 +83,8 @@ export default function PrivacyPage() {
             </li>
             <li>
               <strong>Integraciones</strong>: tokens/credenciales de conexión a
-              proveedores (por ejemplo Google Meet/Calendar) para crear eventos
-              o reuniones, según configuración del centro.
+              proveedores (por ejemplo Zoom o Google Meet/Calendar) para crear
+              eventos o reuniones, según configuración del centro.
             </li>
           </ul>
         </section>
@@ -95,7 +95,7 @@ export default function PrivacyPage() {
             <li>Crear y administrar tu cuenta.</li>
             <li>Gestionar reservas, cupos y asistencia.</li>
             <li>Procesar pagos y gestionar órdenes.</li>
-            <li>Habilitar integraciones solicitadas (p. ej. Google Meet).</li>
+            <li>Habilitar integraciones solicitadas (p. ej. Zoom o Google Meet).</li>
             <li>Soporte, seguridad y prevención de fraude.</li>
             <li>Comunicaciones transaccionales (por ejemplo emails de confirmación).</li>
           </ul>
@@ -109,8 +109,10 @@ export default function PrivacyPage() {
             pasarelas de pago y plataformas de videollamadas/calendario.
           </p>
           <p>
-            Si conectas Google Meet/Calendar, se usarán permisos OAuth para
-            crear/administrar eventos según el alcance autorizado.
+            Si conectas Zoom o Google Meet/Calendar, se usarán permisos
+            OAuth para crear/administrar reuniones o eventos según el
+            alcance autorizado. Puedes desconectar estas integraciones en
+            cualquier momento desde el panel de administración del centro.
           </p>
         </section>
 
