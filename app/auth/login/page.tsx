@@ -15,7 +15,10 @@ function LoginForm() {
   const isRegistered = searchParams.get("registered") === "1";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const centerId = process.env.NEXT_PUBLIC_DEFAULT_CENTER_SLUG ?? "cuerporaiz";
+  const centerId =
+    searchParams.get("center") ??
+    process.env.NEXT_PUBLIC_DEFAULT_CENTER_SLUG ??
+    "cuerporaiz";
   const [error, setError] = useState<string | null>(null);
   const [unverified, setUnverified] = useState(false);
   const [resendStatus, setResendStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
