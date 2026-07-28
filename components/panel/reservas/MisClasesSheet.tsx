@@ -50,7 +50,7 @@ function segmentClasses(items: LiveClassDto[]): {
 function ClassRow({ c, tz }: { c: LiveClassDto; tz: string }) {
   const start = new Date(c.startsAt);
   const dateStr = start.toLocaleDateString("es-CL", { timeZone: tz, weekday: "short", day: "numeric", month: "short" });
-  const timeStr = start.toLocaleTimeString("es-CL", { timeZone: tz, hour: "2-digit", minute: "2-digit" });
+  const timeStr = start.toLocaleTimeString("es-CL", { timeZone: tz, hour: "2-digit", minute: "2-digit", hour12: false });
   return (
     <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] p-3">
       <p className="font-medium text-[var(--color-text)]">{c.title}</p>

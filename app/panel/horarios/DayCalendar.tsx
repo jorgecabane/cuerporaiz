@@ -7,7 +7,7 @@ import type { CalendarEvent } from "./WeekCalendar";
 import { useTimezone } from "@/components/providers/TimezoneProvider";
 
 function formatTime(d: Date, tz: string): string {
-  return d.toLocaleTimeString("es-CL", { timeZone: tz, hour: "2-digit", minute: "2-digit" });
+  return d.toLocaleTimeString("es-CL", { timeZone: tz, hour: "2-digit", minute: "2-digit", hour12: false });
 }
 
 function formatDateParam(d: Date): string {

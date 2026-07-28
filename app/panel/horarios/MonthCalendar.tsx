@@ -12,7 +12,7 @@ function orderedDayLabels(weekStartDay: number): string[] {
 }
 
 function formatTime(d: Date, tz: string): string {
-  return d.toLocaleTimeString("es-CL", { timeZone: tz, hour: "2-digit", minute: "2-digit" });
+  return d.toLocaleTimeString("es-CL", { timeZone: tz, hour: "2-digit", minute: "2-digit", hour12: false });
 }
 
 function formatDateKey(d: Date): string {

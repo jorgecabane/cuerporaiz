@@ -25,7 +25,7 @@ function formatCompact(iso: string, tz: string) {
   const d = new Date(iso);
   return {
     date: d.toLocaleDateString("es-CL", { timeZone: tz, day: "2-digit", month: "2-digit" }),
-    time: d.toLocaleTimeString("es-CL", { timeZone: tz, hour: "2-digit", minute: "2-digit" }),
+    time: d.toLocaleTimeString("es-CL", { timeZone: tz, hour: "2-digit", minute: "2-digit", hour12: false }),
   };
 }
 

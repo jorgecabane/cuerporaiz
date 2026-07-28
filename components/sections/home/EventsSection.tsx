@@ -35,6 +35,7 @@ function formatHour(iso: string, tz: string): string {
     hour: "2-digit",
     minute: "2-digit",
     timeZone: tz,
+    hour12: false,
   });
 }
 

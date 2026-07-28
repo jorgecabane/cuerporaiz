@@ -18,7 +18,7 @@ function formatDateAndTime(startsAtIso: string, durationMinutes: number, tz: str
     day: "numeric",
     month: "short",
   });
-  const timePart = `${start.toLocaleTimeString("es-CL", { timeZone: tz, hour: "2-digit", minute: "2-digit" })} a ${end.toLocaleTimeString("es-CL", { timeZone: tz, hour: "2-digit", minute: "2-digit" })}`;
+  const timePart = `${start.toLocaleTimeString("es-CL", { timeZone: tz, hour: "2-digit", minute: "2-digit", hour12: false })} a ${end.toLocaleTimeString("es-CL", { timeZone: tz, hour: "2-digit", minute: "2-digit", hour12: false })}`;
   return `${datePart} ${timePart}`;
 }
 

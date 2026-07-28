@@ -104,6 +104,7 @@ export function AdminEventWaitlist({ eventId }: { eventId: string }) {
                     {new Date(e.heldUntil).toLocaleTimeString("es-CL", {
                       hour: "2-digit",
                       minute: "2-digit",
+                      hour12: false,
                     })}
                   </p>
                 )}

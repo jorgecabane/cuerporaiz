@@ -301,6 +301,7 @@ export function EditClassForm({
       timeZone: tz,
       dateStyle: "medium",
       timeStyle: "short",
+      hour12: false,
     });
   }
 

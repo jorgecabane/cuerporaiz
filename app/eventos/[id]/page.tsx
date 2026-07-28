@@ -53,8 +53,8 @@ function formatDateRange(startsAt: Date, endsAt: Date, tz: string): string {
     day: "numeric",
     month: "long",
   });
-  const start = startsAt.toLocaleTimeString("es-CL", { timeZone: tz, hour: "2-digit", minute: "2-digit" });
-  const end = endsAt.toLocaleTimeString("es-CL", { timeZone: tz, hour: "2-digit", minute: "2-digit" });
+  const start = startsAt.toLocaleTimeString("es-CL", { timeZone: tz, hour: "2-digit", minute: "2-digit", hour12: false });
+  const end = endsAt.toLocaleTimeString("es-CL", { timeZone: tz, hour: "2-digit", minute: "2-digit", hour12: false });
   return `${day} · ${start}–${end} hrs`;
 }
 
