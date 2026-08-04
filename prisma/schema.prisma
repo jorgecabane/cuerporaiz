@@ -146,6 +146,8 @@ model LiveClassSeries {
   durationMinutes    Int             @default(60)
   isOnline           Boolean         @default(false)
   meetingUrl         String?
+  meetingProvider    String?  // "zoom" | "meet"
+  meetingExternalId  String?  // Zoom meetingId | Google eventId
   acceptsTrialReservations Boolean    @default(false)
   trialCapacity      Int?
   color              String?
@@ -180,6 +182,8 @@ model LiveClass {
   instructorId      String?
   isOnline          Boolean  @default(false)
   meetingUrl        String?
+  meetingProvider   String?  // "zoom" | "meet"
+  meetingExternalId String?  // Zoom meetingId | Google eventId
   acceptsTrialReservations Boolean @default(false)
   trialCapacity     Int?
   color             String?

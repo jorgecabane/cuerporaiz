@@ -40,6 +40,8 @@ function makeSeries(overrides: Partial<LiveClassSeries> = {}): LiveClassSeries {
     durationMinutes: 60,
     isOnline: false,
     meetingUrl: null,
+    meetingProvider: null,
+    meetingExternalId: null,
     acceptsTrialReservations: false,
     trialCapacity: null,
     color: null,
