@@ -171,6 +171,139 @@ test.describe("Editar clase — auto-genera link con un solo proveedor conectado
 
     expect(meetingCalls).toBeGreaterThan(0);
   });
+
+  test("clase legacy (con meetingUrl pero sin meetingExternalId) NO regenera el link al abrir para editar", async ({
+    page,
+  }) => {
+    const prisma = await getE2EPrisma();
+    const seed = await prisma.liveClass.create({
+      data: {
+        centerId,
+        title: `E2E legacy-online ${Date.now().toString(36)}`,
+        startsAt: new Date(Date.now() + 24 * 3600 * 1000),
+        durationMinutes: 60,
+        maxCapacity: 10,
+        isOnline: true,
+        meetingUrl: "https://zoom.us/j/LEGACY_STUDENT_LINK",
+        meetingProvider: "zoom",
+        meetingExternalId: null,
+      },
+    });
+
+    let meetingCalls = 0;
+    await page.route(`**/panel/horarios/${seed.id}`, async (route) => {
+      const handled = await fulfillMeetingAction(route, {
+        joinUrl: "https://zoom.us/j/SHOULD_NOT_BE_CALLED",
+        externalId: "SHOULD_NOT_BE_CALLED",
+        provider: "zoom",
+      });
+      if (handled) {
+        meetingCalls++;
+        return;
+      }
+      await route.continue();
+    });
+
+    await page.goto(`/panel/horarios/${seed.id}`);
+    await expect(page.getByRole("heading", { name: /Editar clase/i })).toBeVisible({ timeout: 10000 });
+
+    // La clase ya está online con el link legacy precargado.
+    await expect(page.locator("#meetingUrl")).toHaveValue("https://zoom.us/j/LEGACY_STUDENT_LINK");
+
+    // Espera más que el debounce (600ms) del auto-sync para confirmar que
+    // nunca dispara: el link legacy debe quedar exactamente igual.
+    await page.waitForTimeout(1500);
+
+    await expect(page.locator("#meetingUrl")).toHaveValue("https://zoom.us/j/LEGACY_STUDENT_LINK");
+    expect(meetingCalls).toBe(0);
+  });
+});
+
+test.describe("Editar clase — instancia de serie no dispara auto-sync del link compartido", () => {
+  let centerId: string;
+  let seriesId: string;
+  let instanceId: string;
+
+  test.beforeAll(async () => {
+    const prisma = await getE2EPrisma();
+    const center = await prisma.center.findUnique({ where: { slug: CENTER_SLUG } });
+    if (!center) throw new Error("no existe el centro e2e-test");
+    centerId = center.id;
+    await prisma.centerZoomConfig.upsert({
+      where: { centerId },
+      update: { accessToken: "e2e-fake-access-token", enabled: true },
+      create: { centerId, accessToken: "e2e-fake-access-token", enabled: true },
+    });
+
+    const startsAt = new Date(Date.now() + 24 * 3600 * 1000);
+    const series = await prisma.liveClassSeries.create({
+      data: {
+        centerId,
+        title: `E2E serie-online ${Date.now().toString(36)}`,
+        durationMinutes: 60,
+        maxCapacity: 10,
+        isOnline: true,
+        meetingUrl: "https://zoom.us/j/SHARED_SERIES_LINK",
+        meetingProvider: "zoom",
+        meetingExternalId: "shared-series-ext-id",
+        repeatFrequency: "WEEKLY",
+        startsAt,
+      },
+    });
+    seriesId = series.id;
+
+    const instance = await prisma.liveClass.create({
+      data: {
+        centerId,
+        seriesId,
+        title: series.title,
+        startsAt,
+        durationMinutes: 60,
+        maxCapacity: 10,
+        isOnline: true,
+        meetingUrl: "https://zoom.us/j/SHARED_SERIES_LINK",
+        meetingProvider: "zoom",
+        meetingExternalId: "shared-series-ext-id",
+      },
+    });
+    instanceId = instance.id;
+  });
+
+  test.afterAll(async () => {
+    const prisma = await getE2EPrisma();
+    await prisma.liveClass.deleteMany({ where: { id: instanceId } });
+    await prisma.liveClassSeries.deleteMany({ where: { id: seriesId } });
+    await prisma.centerZoomConfig.deleteMany({ where: { centerId } });
+  });
+
+  test("cambiar el horario de UNA instancia no PATCHea la reunión compartida de la serie", async ({ page }) => {
+    let meetingCalls = 0;
+    await page.route(`**/panel/horarios/${instanceId}`, async (route) => {
+      const handled = await fulfillMeetingAction(route, {
+        joinUrl: "https://zoom.us/j/SHOULD_NOT_BE_CALLED",
+        externalId: "SHOULD_NOT_BE_CALLED",
+        provider: "zoom",
+      });
+      if (handled) {
+        meetingCalls++;
+        return;
+      }
+      await route.continue();
+    });
+
+    await page.goto(`/panel/horarios/${instanceId}`);
+    await expect(page.getByRole("heading", { name: /Editar clase/i })).toBeVisible({ timeout: 10000 });
+    await expect(page.locator("#meetingUrl")).toHaveValue("https://zoom.us/j/SHARED_SERIES_LINK");
+
+    // Cambia sólo el horario de esta instancia (dispararía el auto-sync si el
+    // form no distinguiera clases de serie).
+    await page.getByLabel("Fecha y hora inicio").fill(futureDatetimeLocal(48));
+
+    await page.waitForTimeout(1500);
+
+    await expect(page.locator("#meetingUrl")).toHaveValue("https://zoom.us/j/SHARED_SERIES_LINK");
+    expect(meetingCalls).toBe(0);
+  });
 });
 
 test.describe("Editar clase — guarda online requiere link", () => {

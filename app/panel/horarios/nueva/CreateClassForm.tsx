@@ -67,6 +67,11 @@ export function CreateClassForm({ disciplines, instructors, defaultDate, default
 
   // Recurrence (manejada por <RecurrenceField/>, que emite el valor resuelto)
   const [recurrence, setRecurrence] = useState<RecurrenceValue>(NO_RECURRENCE);
+  // Siempre-actual: evita que un debounce en vuelo use un `recurrence.repeat`
+  // obsoleto si la recurrencia se setea DESPUÉS de nombre/hora (el efecto de
+  // auto-generado no la tiene en sus deps).
+  const recurrenceRepeatRef = useRef(recurrence.repeat);
+  recurrenceRepeatRef.current = recurrence.repeat;
   const [startsAtValue, setStartsAtValue] = useState(
     defaultDate && defaultHour ? `${defaultDate}T${String(defaultHour).padStart(2, "0")}:00` : ""
   );
@@ -165,7 +170,7 @@ export function CreateClassForm({ disciplines, instructors, defaultDate, default
     setMeetingLoading(true);
     try {
       const startTime = new Date(startsAt).toISOString();
-      const recurring = recurrence.repeat !== "none";
+      const recurring = recurrenceRepeatRef.current !== "none";
       const res = await createMeetingForClass(provider, { title, startTime, durationMinutes, recurring });
       setMeetingUrl(res.joinUrl);
       setMeetingExternalId(res.externalId);

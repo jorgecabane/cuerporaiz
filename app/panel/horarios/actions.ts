@@ -707,10 +707,14 @@ export async function deleteLiveClass(formData: FormData): Promise<void> {
   if (!id) return;
 
   const existing = await liveClassRepository.findById(id);
-  const meetingProvider = sanitizeMeetingProvider(existing?.meetingProvider);
+  if (!existing || existing.centerId !== centerId) {
+    redirect("/panel/horarios");
+  }
+
+  const meetingProvider = sanitizeMeetingProvider(existing.meetingProvider);
   // Sólo clases standalone: una serie comparte una reunión entre todas sus
   // instancias, así que borrarla acá rompería a las hermanas.
-  if (existing && !existing.seriesId && meetingProvider && existing.meetingExternalId) {
+  if (!existing.seriesId && meetingProvider && existing.meetingExternalId) {
     await deleteMeetingForClass(meetingProvider, existing.meetingExternalId);
   }
 

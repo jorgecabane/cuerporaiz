@@ -177,17 +177,24 @@ export function EditClassForm({
 
   // Firma de la última sincronización automática (evita PATCH/creación
   // fantasma cuando nada relevante cambió). Si la clase ya tenía una reunión
-  // persistida, se siembra con esos valores para no disparar un PATCH no-op
-  // al montar. `lastGeneratedUrlRef` guarda el último link que puso el propio
-  // sistema (generado o persistido): si el link en pantalla difiere, el admin
-  // lo editó a mano y el auto-sync no debe pisarlo.
+  // persistida Y RASTREADA (con `meetingExternalId`), se siembra con esos
+  // valores para no disparar un PATCH no-op al montar. `lastGeneratedUrlRef`
+  // guarda el último link que puso el propio sistema (generado o
+  // persistido-y-rastreado): si el link en pantalla difiere, el auto-sync no
+  // debe pisarlo. Una clase LEGACY (tiene `meetingUrl` pero no
+  // `meetingExternalId`) no está rastreada por el sistema — sembrar ambas
+  // refs en null evita que el efecto la confunda con un link propio y la
+  // regenere/sobrescriba sólo por abrir la edición.
   const initialProvider = sanitizeProvider(liveClass.meetingProvider);
+  const isTrackedMeeting = !!initialProvider && !!liveClass.meetingExternalId;
   const lastAutoSyncRef = useRef<string | null>(
-    initialProvider && liveClass.meetingExternalId
+    isTrackedMeeting
       ? `${initialProvider}|${liveClass.title}|${toLocalISO(new Date(liveClass.startsAt))}|${liveClass.durationMinutes}`
       : null
   );
-  const lastGeneratedUrlRef = useRef<string | null>(liveClass.meetingUrl ?? null);
+  const lastGeneratedUrlRef = useRef<string | null>(
+    isTrackedMeeting ? liveClass.meetingUrl ?? null : null
+  );
   // Siempre-actual: evita que un debounce en vuelo use un `recurrence.repeat`
   // obsoleto si la recurrencia cambia mientras el timer todavía no dispara.
   const recurrenceRepeatRef = useRef(recurrence.repeat);
@@ -455,7 +462,14 @@ export function EditClassForm({
   // Debounce ~600ms para no disparar una llamada por cada tecla. Si ya existe
   // una reunión (generada acá o persistida desde antes) para este provider,
   // sincroniza (PATCH) en vez de crear otra.
+  // Clases de serie quedan fuera: comparten `meetingExternalId`/`meetingProvider`
+  // entre todas las instancias, y ese link no depende de la hora de UNA
+  // instancia (mover una instancia no debe mover la reunión de las demás).
+  // La sincronización de la reunión a nivel serie ya la maneja
+  // `updateSeriesClasses` (server action), scope-aware. Los botones manuales
+  // siguen disponibles para clases de serie.
   useEffect(() => {
+    if (series) return;
     if (!isOnline || !singleProvider || !autoGenerateFieldsReady) return;
     if (meetingUrlValue.trim() !== (lastGeneratedUrlRef.current ?? "").trim()) return; // link editado a mano: no pisarlo
 

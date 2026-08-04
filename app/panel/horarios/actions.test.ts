@@ -507,4 +507,22 @@ describe("deleteLiveClass", () => {
     expect(mocks.liveClassRepository.delete).toHaveBeenCalledWith("c1", "center-1");
     expect(mocks.redirect).toHaveBeenCalledWith("/panel/horarios");
   });
+
+  it("clase de otro centro (cross-tenant) → NO borra la reunión ni la clase, sólo redirige", async () => {
+    mocks.liveClassRepository.findById.mockResolvedValue(
+      makeLiveClass({
+        centerId: "center-2",
+        seriesId: null,
+        meetingProvider: "zoom",
+        meetingExternalId: "zoom-123",
+      })
+    );
+
+    await deleteLiveClass(makeDeleteFormData("c1")).catch(() => {});
+
+    expect(mocks.deleteZoomMeeting).not.toHaveBeenCalled();
+    expect(mocks.deleteGoogleMeetMeeting).not.toHaveBeenCalled();
+    expect(mocks.liveClassRepository.delete).not.toHaveBeenCalled();
+    expect(mocks.redirect).toHaveBeenCalledWith("/panel/horarios");
+  });
 });
