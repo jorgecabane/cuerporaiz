@@ -23,6 +23,11 @@ import {
 } from "@/lib/application/series-edit";
 import { createZoomMeeting } from "@/lib/application/create-zoom-meeting";
 import { createGoogleMeetMeeting } from "@/lib/application/create-google-meet-meeting";
+import { updateZoomMeeting, deleteZoomMeeting } from "@/lib/application/update-zoom-meeting";
+import {
+  updateGoogleMeetMeeting,
+  deleteGoogleMeetMeeting,
+} from "@/lib/application/update-google-meet-meeting";
 import { runAfterResponse } from "@/lib/utils/run-after-response";
 import { sendEmailSafe } from "@/lib/application/send-email";
 import { closeWaitlistForCancelledClassUseCase } from "@/lib/application/close-waitlist-for-cancelled-class";
@@ -65,6 +70,43 @@ export async function createMeetingForClass(
     durationMinutes: params.durationMinutes,
   });
   return { joinUrl: result.joinUrl, externalId: result.externalId, provider };
+}
+
+/** Actualiza la reunión de Zoom o Google Meet existente (mismo link). Usado al editar una clase online. */
+export async function updateMeetingForClass(
+  provider: "zoom" | "meet",
+  externalId: string,
+  params: { title?: string; startTime?: string; durationMinutes?: number }
+): Promise<void> {
+  const centerId = await requireAdminCenterId();
+  const startTime = params.startTime ? new Date(params.startTime) : undefined;
+
+  if (provider === "zoom") {
+    await updateZoomMeeting(centerId, externalId, {
+      title: params.title,
+      startTime,
+      durationMinutes: params.durationMinutes,
+    });
+  } else {
+    await updateGoogleMeetMeeting(centerId, externalId, {
+      title: params.title,
+      startTime,
+      durationMinutes: params.durationMinutes,
+    });
+  }
+}
+
+/** Elimina la reunión de Zoom o Google Meet asociada a una clase. Best-effort: no lanza. */
+export async function deleteMeetingForClass(
+  provider: "zoom" | "meet",
+  externalId: string
+): Promise<void> {
+  const centerId = await requireAdminCenterId();
+  if (provider === "zoom") {
+    await deleteZoomMeeting(centerId, externalId);
+  } else {
+    await deleteGoogleMeetMeeting(centerId, externalId);
+  }
 }
 
 export interface CreateClassFormData {
