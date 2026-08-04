@@ -194,6 +194,12 @@ export function EditClassForm({
       maxCapacity,
       isOnline: !!meetingUrl,
       meetingUrl,
+      // El admin todavía no puede regenerar/despegar la reunión desde este
+      // formulario (eso llega en un formulario aparte) — se conservan los
+      // valores persistidos tal cual para que la sincronización "por debajo"
+      // (server action) los use al comparar contra la clase existente.
+      meetingProvider: liveClass.meetingProvider,
+      meetingExternalId: liveClass.meetingExternalId,
       acceptsTrialReservations,
       trialCapacity,
       color: effectiveColor,

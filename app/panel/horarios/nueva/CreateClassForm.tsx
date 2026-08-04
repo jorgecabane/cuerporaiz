@@ -42,6 +42,7 @@ export function CreateClassForm({ disciplines, instructors, defaultDate, default
   const hasVideoProvider = videoProviders.zoom || videoProviders.meet;
   const [isOnline, setIsOnline] = useState(false);
   const [meetingUrl, setMeetingUrl] = useState<string | null>(null);
+  const [meetingExternalId, setMeetingExternalId] = useState<string | null>(null);
   const [meetingError, setMeetingError] = useState<string | null>(null);
   const [meetingLoading, setMeetingLoading] = useState(false);
   const [lastUsedProvider, setLastUsedProvider] = useState<"zoom" | "meet" | null>(null);
@@ -95,11 +96,16 @@ export function CreateClassForm({ disciplines, instructors, defaultDate, default
       return;
     }
 
-    const meetingUrlToUse: string | null = manualMeetingUrl?.trim() || meetingUrl || null;
+    const manualUrl = manualMeetingUrl?.trim() || "";
+    const meetingUrlToUse: string | null = manualUrl || meetingUrl || null;
     if (isOnline && hasVideoProvider && !meetingUrlToUse) {
       setMeetingError("Genera el link con el botón de abajo o pega uno manualmente.");
       return;
     }
+    // Un link pegado a mano no tiene ID de reunión asociado (no lo generamos
+    // nosotros) — sólo persistimos provider/externalId cuando se usó el link
+    // recién generado con el botón.
+    const usingGeneratedMeeting = !manualUrl && !!meetingUrl;
 
     const startsAtIso = new Date(startsAt).toISOString();
 
@@ -113,6 +119,8 @@ export function CreateClassForm({ disciplines, instructors, defaultDate, default
         maxCapacity,
         isOnline: !!meetingUrlToUse,
         meetingUrl: meetingUrlToUse,
+        meetingProvider: usingGeneratedMeeting ? lastUsedProvider : null,
+        meetingExternalId: usingGeneratedMeeting ? meetingExternalId : null,
         acceptsTrialReservations,
         trialCapacity,
         color: effectiveColor,
@@ -143,6 +151,7 @@ export function CreateClassForm({ disciplines, instructors, defaultDate, default
       const startTime = new Date(startsAt).toISOString();
       const res = await createMeetingForClass(provider, { title, startTime, durationMinutes });
       setMeetingUrl(res.joinUrl);
+      setMeetingExternalId(res.externalId);
       setManualMeetingUrl("");
       setLastUsedProvider(provider);
       setMeetingFailCount(0);
