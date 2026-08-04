@@ -61,6 +61,8 @@ export function generateSeriesInstances(
       instructorId: series.instructorId,
       isOnline: series.isOnline,
       meetingUrl: series.meetingUrl,
+      meetingProvider: series.meetingProvider,
+      meetingExternalId: series.meetingExternalId,
       acceptsTrialReservations: series.acceptsTrialReservations,
       trialCapacity: series.trialCapacity,
       color: series.color,

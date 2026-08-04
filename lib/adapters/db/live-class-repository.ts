@@ -13,6 +13,8 @@ type PrismaLiveClass = {
   instructorId: string | null;
   isOnline: boolean;
   meetingUrl: string | null;
+  meetingProvider: string | null;
+  meetingExternalId: string | null;
   acceptsTrialReservations: boolean;
   trialCapacity: number | null;
   color: string | null;
@@ -36,6 +38,8 @@ function toDomain(c: PrismaLiveClass): LiveClass {
     instructorId: c.instructorId,
     isOnline: c.isOnline,
     meetingUrl: c.meetingUrl,
+    meetingProvider: c.meetingProvider,
+    meetingExternalId: c.meetingExternalId,
     acceptsTrialReservations: c.acceptsTrialReservations,
     trialCapacity: c.trialCapacity,
     color: c.color,
@@ -145,6 +149,8 @@ export const liveClassRepository: ILiveClassRepository = {
         instructorId: data.instructorId ?? null,
         isOnline: data.isOnline ?? false,
         meetingUrl: data.meetingUrl ?? null,
+        meetingProvider: data.meetingProvider ?? null,
+        meetingExternalId: data.meetingExternalId ?? null,
         acceptsTrialReservations: data.acceptsTrialReservations ?? false,
         trialCapacity: data.trialCapacity ?? null,
         color: data.color ?? null,
@@ -168,6 +174,8 @@ export const liveClassRepository: ILiveClassRepository = {
         instructorId: d.instructorId ?? null,
         isOnline: d.isOnline ?? false,
         meetingUrl: d.meetingUrl ?? null,
+        meetingProvider: d.meetingProvider ?? null,
+        meetingExternalId: d.meetingExternalId ?? null,
         acceptsTrialReservations: d.acceptsTrialReservations ?? false,
         trialCapacity: d.trialCapacity ?? null,
         color: d.color ?? null,
@@ -192,6 +200,8 @@ export const liveClassRepository: ILiveClassRepository = {
           ...(data.instructorId !== undefined && { instructorId: data.instructorId }),
           ...(data.isOnline !== undefined && { isOnline: data.isOnline }),
           ...(data.meetingUrl !== undefined && { meetingUrl: data.meetingUrl }),
+          ...(data.meetingProvider !== undefined && { meetingProvider: data.meetingProvider }),
+          ...(data.meetingExternalId !== undefined && { meetingExternalId: data.meetingExternalId }),
           ...(data.acceptsTrialReservations !== undefined && { acceptsTrialReservations: data.acceptsTrialReservations }),
           ...(data.trialCapacity !== undefined && { trialCapacity: data.trialCapacity }),
           ...(data.color !== undefined && { color: data.color }),
@@ -219,6 +229,8 @@ export const liveClassRepository: ILiveClassRepository = {
         ...(data.instructorId !== undefined && { instructorId: data.instructorId }),
         ...(data.isOnline !== undefined && { isOnline: data.isOnline }),
         ...(data.meetingUrl !== undefined && { meetingUrl: data.meetingUrl }),
+        ...(data.meetingProvider !== undefined && { meetingProvider: data.meetingProvider }),
+        ...(data.meetingExternalId !== undefined && { meetingExternalId: data.meetingExternalId }),
         ...(data.acceptsTrialReservations !== undefined && { acceptsTrialReservations: data.acceptsTrialReservations }),
         ...(data.trialCapacity !== undefined && { trialCapacity: data.trialCapacity }),
         ...(data.color !== undefined && { color: data.color }),
@@ -240,6 +252,8 @@ export const liveClassRepository: ILiveClassRepository = {
         ...(data.instructorId !== undefined && { instructorId: data.instructorId }),
         ...(data.isOnline !== undefined && { isOnline: data.isOnline }),
         ...(data.meetingUrl !== undefined && { meetingUrl: data.meetingUrl }),
+        ...(data.meetingProvider !== undefined && { meetingProvider: data.meetingProvider }),
+        ...(data.meetingExternalId !== undefined && { meetingExternalId: data.meetingExternalId }),
         ...(data.acceptsTrialReservations !== undefined && { acceptsTrialReservations: data.acceptsTrialReservations }),
         ...(data.trialCapacity !== undefined && { trialCapacity: data.trialCapacity }),
         ...(data.color !== undefined && { color: data.color }),

@@ -13,6 +13,8 @@ function makeSeries(overrides: Partial<LiveClassSeries> = {}): LiveClassSeries {
     durationMinutes: 60,
     isOnline: false,
     meetingUrl: null,
+    meetingProvider: null,
+    meetingExternalId: null,
     acceptsTrialReservations: false,
     trialCapacity: null,
     color: null,
@@ -651,5 +653,20 @@ describe("generateSeriesInstances — DST: serie cruza transición de offset", (
       expect(fmtCivilDay(inst.startsAt).slice(8)).toBe("15");
     }
     expect(instances.length).toBe(10); // mar a dic
+  });
+});
+
+describe("generateSeriesInstances — meeting provider propagation", () => {
+  it("propaga meetingProvider y meetingExternalId a cada instancia", () => {
+    const series = makeSeries({
+      isOnline: true,
+      meetingUrl: "https://zoom.us/j/123",
+      meetingProvider: "zoom",
+      meetingExternalId: "999888777",
+    });
+    const instances = generateSeriesInstances(series, undefined, "America/Santiago");
+    expect(instances.length).toBeGreaterThan(0);
+    expect(instances.every((i) => i.meetingProvider === "zoom")).toBe(true);
+    expect(instances.every((i) => i.meetingExternalId === "999888777")).toBe(true);
   });
 });
