@@ -106,3 +106,129 @@ test.describe("Nueva clase — auto-genera link con un solo proveedor conectado"
     expect(meetingCalls).toBeGreaterThan(0);
   });
 });
+
+/**
+ * Verifica el auto-generado + la guarda "online requiere link" en "Editar
+ * clase" (Task 6). Igual que en "Nueva clase", la llamada real de creación de
+ * reunión se intercepta a nivel de red — nunca se llama a Zoom/Meet real.
+ */
+test.describe("Editar clase — auto-genera link con un solo proveedor conectado", () => {
+  let centerId: string;
+
+  test.beforeAll(async () => {
+    const prisma = await getE2EPrisma();
+    const center = await prisma.center.findUnique({ where: { slug: CENTER_SLUG } });
+    if (!center) throw new Error("no existe el centro e2e-test");
+    centerId = center.id;
+    await prisma.centerZoomConfig.upsert({
+      where: { centerId },
+      update: { accessToken: "e2e-fake-access-token", enabled: true },
+      create: { centerId, accessToken: "e2e-fake-access-token", enabled: true },
+    });
+  });
+
+  test.afterAll(async () => {
+    const prisma = await getE2EPrisma();
+    await prisma.centerZoomConfig.deleteMany({ where: { centerId } });
+  });
+
+  test("marcar presencial → online genera el link solo (sin apretar botón)", async ({ page }) => {
+    const prisma = await getE2EPrisma();
+    const seed = await prisma.liveClass.create({
+      data: {
+        centerId,
+        title: `E2E editar-online ${Date.now().toString(36)}`,
+        startsAt: new Date(Date.now() + 24 * 3600 * 1000),
+        durationMinutes: 60,
+        maxCapacity: 10,
+      },
+    });
+
+    let meetingCalls = 0;
+    await page.route(`**/panel/horarios/${seed.id}`, async (route) => {
+      const handled = await fulfillMeetingAction(route, {
+        joinUrl: "https://zoom.us/j/E2E_EDIT_MOCKED_LINK",
+        externalId: "E2E_EDIT_MOCKED_EXTERNAL_ID",
+        provider: "zoom",
+      });
+      if (handled) {
+        meetingCalls++;
+        return;
+      }
+      await route.continue();
+    });
+
+    await page.goto(`/panel/horarios/${seed.id}`);
+    await expect(page.getByRole("heading", { name: /Editar clase/i })).toBeVisible({ timeout: 10000 });
+
+    await page.getByLabel("Clase online").check();
+
+    // Nombre y fecha/hora ya vienen precargados: el link llega solo, sin click.
+    await expect(page.getByText("Link de la reunión")).toBeVisible();
+    await expect(page.locator("#meetingUrl")).toHaveValue("https://zoom.us/j/E2E_EDIT_MOCKED_LINK", {
+      timeout: 5000,
+    });
+
+    expect(meetingCalls).toBeGreaterThan(0);
+  });
+});
+
+test.describe("Editar clase — guarda online requiere link", () => {
+  let centerId: string;
+
+  test.beforeAll(async () => {
+    const prisma = await getE2EPrisma();
+    const center = await prisma.center.findUnique({ where: { slug: CENTER_SLUG } });
+    if (!center) throw new Error("no existe el centro e2e-test");
+    centerId = center.id;
+    // Dos proveedores conectados → no hay auto-generado, se mantienen los
+    // botones manuales, así que marcar "online" sin generar ni pegar un link
+    // deja el form en el estado que la guarda debe bloquear.
+    await prisma.centerZoomConfig.upsert({
+      where: { centerId },
+      update: { accessToken: "e2e-fake-access-token", enabled: true },
+      create: { centerId, accessToken: "e2e-fake-access-token", enabled: true },
+    });
+    await prisma.centerGoogleMeetConfig.upsert({
+      where: { centerId },
+      update: { accessToken: "e2e-fake-access-token", enabled: true },
+      create: { centerId, accessToken: "e2e-fake-access-token", enabled: true },
+    });
+  });
+
+  test.afterAll(async () => {
+    const prisma = await getE2EPrisma();
+    await prisma.centerZoomConfig.deleteMany({ where: { centerId } });
+    await prisma.centerGoogleMeetConfig.deleteMany({ where: { centerId } });
+  });
+
+  test("guardar online sin link muestra el error de la guarda", async ({ page }) => {
+    const prisma = await getE2EPrisma();
+    const seed = await prisma.liveClass.create({
+      data: {
+        centerId,
+        title: `E2E editar-guarda ${Date.now().toString(36)}`,
+        startsAt: new Date(Date.now() + 24 * 3600 * 1000),
+        durationMinutes: 60,
+        maxCapacity: 10,
+      },
+    });
+
+    await page.goto(`/panel/horarios/${seed.id}`);
+    await expect(page.getByRole("heading", { name: /Editar clase/i })).toBeVisible({ timeout: 10000 });
+
+    await page.getByLabel("Clase online").check();
+    await expect(page.getByRole("button", { name: "Generar con Zoom" })).toBeVisible();
+
+    await page.getByRole("button", { name: /Guardar cambios/i }).click();
+
+    await expect(
+      page.getByText("Genera el link con el botón o pega uno manualmente.")
+    ).toBeVisible();
+    // No navegó: la guarda bloqueó el submit.
+    await expect(page).toHaveURL(new RegExp(`/panel/horarios/${seed.id}$`));
+
+    const after = await prisma.liveClass.findUnique({ where: { id: seed.id } });
+    expect(after!.isOnline).toBe(false);
+  });
+});
