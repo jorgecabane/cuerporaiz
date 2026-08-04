@@ -44,8 +44,8 @@ async function requireAdminCenterId(): Promise<string> {
 /** Crea una reunión en Zoom o Google Meet y devuelve la URL. Usado al marcar "Clase online". */
 export async function createMeetingForClass(
   provider: "zoom" | "meet",
-  params: { title: string; startTime: string; durationMinutes: number }
-): Promise<{ joinUrl: string }> {
+  params: { title: string; startTime: string; durationMinutes: number; recurring?: boolean }
+): Promise<{ joinUrl: string; externalId: string; provider: "zoom" | "meet" }> {
   const centerId = await requireAdminCenterId();
   const startTime = new Date(params.startTime);
 
@@ -54,8 +54,9 @@ export async function createMeetingForClass(
       title: params.title,
       startTime,
       durationMinutes: params.durationMinutes,
+      recurring: params.recurring,
     });
-    return { joinUrl: result.joinUrl };
+    return { joinUrl: result.joinUrl, externalId: result.externalId, provider };
   }
 
   const result = await createGoogleMeetMeeting(centerId, {
@@ -63,7 +64,7 @@ export async function createMeetingForClass(
     startTime,
     durationMinutes: params.durationMinutes,
   });
-  return { joinUrl: result.joinUrl };
+  return { joinUrl: result.joinUrl, externalId: result.externalId, provider };
 }
 
 export interface CreateClassFormData {

@@ -11,6 +11,7 @@ export interface CreateGoogleMeetMeetingParams {
 
 export interface CreateGoogleMeetMeetingResult {
   joinUrl: string;
+  externalId: string;
 }
 
 async function refreshGoogleMeetToken(centerId: string): Promise<string> {
@@ -118,11 +119,15 @@ export async function createGoogleMeetMeeting(
     throw new Error("No se pudo crear la reunión en Google Meet. Revisa la conexión o vuelve a conectar Meet en Plugins.");
   }
 
-  const data = (await res.json()) as { hangoutLink?: string; conferenceData?: { entryPoints?: Array<{ uri?: string }> } };
+  const data = (await res.json()) as {
+    id?: string;
+    hangoutLink?: string;
+    conferenceData?: { entryPoints?: Array<{ uri?: string }> };
+  };
   const joinUrl = data.hangoutLink ?? data.conferenceData?.entryPoints?.[0]?.uri;
-  if (!joinUrl) {
-    throw new Error("Google Meet no devolvió el link de la reunión.");
+  if (!joinUrl || !data.id) {
+    throw new Error("Google Meet no devolvió el link o el id del evento.");
   }
 
-  return { joinUrl };
+  return { joinUrl, externalId: data.id };
 }

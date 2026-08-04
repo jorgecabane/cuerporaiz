@@ -7,10 +7,12 @@ export interface CreateZoomMeetingParams {
   startTime: Date;
   durationMinutes: number;
   timezone?: string;
+  recurring?: boolean;
 }
 
 export interface CreateZoomMeetingResult {
   joinUrl: string;
+  externalId: string;
 }
 
 async function refreshZoomToken(centerId: string): Promise<string> {
@@ -89,13 +91,17 @@ export async function createZoomMeeting(
       "Content-Type": "application/json",
       Authorization: `Bearer ${accessToken}`,
     },
-    body: JSON.stringify({
-      topic: params.title,
-      type: 2, // scheduled
-      start_time: startTimeISO,
-      duration: params.durationMinutes,
-      timezone,
-    }),
+    body: JSON.stringify(
+      params.recurring
+        ? { topic: params.title, type: 3, timezone }
+        : {
+            topic: params.title,
+            type: 2, // scheduled
+            start_time: startTimeISO,
+            duration: params.durationMinutes,
+            timezone,
+          }
+    ),
   });
 
   if (!res.ok) {
@@ -104,10 +110,10 @@ export async function createZoomMeeting(
     throw new Error("No se pudo crear la reunión en Zoom. Revisa la conexión o vuelve a conectar Zoom en Plugins.");
   }
 
-  const data = (await res.json()) as { join_url?: string };
-  if (!data.join_url) {
-    throw new Error("Zoom no devolvió el link de la reunión.");
+  const data = (await res.json()) as { id?: number | string; join_url?: string };
+  if (!data.join_url || data.id == null) {
+    throw new Error("Zoom no devolvió el link o el id de la reunión.");
   }
 
-  return { joinUrl: data.join_url };
+  return { joinUrl: data.join_url, externalId: String(data.id) };
 }
