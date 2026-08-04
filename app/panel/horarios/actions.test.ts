@@ -24,6 +24,7 @@ const mocks = vi.hoisted(() => ({
     update: vi.fn(async () => ({}) as LiveClass),
     updateManyBySeriesId: vi.fn(async () => 0),
     deleteBySeriesIdFromDate: vi.fn(async () => 0),
+    delete: vi.fn(async () => true),
   },
   liveClassSeriesRepository: {
     findById: vi.fn(),
@@ -75,6 +76,7 @@ import {
   createLiveClass,
   updateLiveClass,
   updateSeriesClasses,
+  deleteLiveClass,
   type CreateClassFormData,
   type UpdateClassFormData,
   type EditSeriesFormData,
@@ -458,5 +460,51 @@ describe("updateSeriesClasses", () => {
         detachedFromSeriesId: "series-1",
       })
     );
+  });
+});
+
+describe("deleteLiveClass", () => {
+  function makeDeleteFormData(id: string): FormData {
+    const formData = new FormData();
+    formData.set("id", id);
+    return formData;
+  }
+
+  it("clase standalone con reunión → borra la reunión best-effort antes de eliminar", async () => {
+    mocks.liveClassRepository.findById.mockResolvedValue(
+      makeLiveClass({ seriesId: null, meetingProvider: "zoom", meetingExternalId: "zoom-123" })
+    );
+
+    await deleteLiveClass(makeDeleteFormData("c1")).catch(() => {});
+
+    expect(mocks.deleteZoomMeeting).toHaveBeenCalledWith("center-1", "zoom-123");
+    expect(mocks.liveClassRepository.delete).toHaveBeenCalledWith("c1", "center-1");
+    expect(mocks.redirect).toHaveBeenCalledWith("/panel/horarios");
+  });
+
+  it("clase de una serie (seriesId set) → NO borra la reunión compartida (safety de series)", async () => {
+    mocks.liveClassRepository.findById.mockResolvedValue(
+      makeLiveClass({ seriesId: "series-1", meetingProvider: "zoom", meetingExternalId: "zoom-123" })
+    );
+
+    await deleteLiveClass(makeDeleteFormData("c1")).catch(() => {});
+
+    expect(mocks.deleteZoomMeeting).not.toHaveBeenCalled();
+    expect(mocks.deleteGoogleMeetMeeting).not.toHaveBeenCalled();
+    expect(mocks.liveClassRepository.delete).toHaveBeenCalledWith("c1", "center-1");
+    expect(mocks.redirect).toHaveBeenCalledWith("/panel/horarios");
+  });
+
+  it("clase sin reunión → NO llama al borrado de reunión, sólo elimina la clase", async () => {
+    mocks.liveClassRepository.findById.mockResolvedValue(
+      makeLiveClass({ seriesId: null, meetingProvider: null, meetingExternalId: null })
+    );
+
+    await deleteLiveClass(makeDeleteFormData("c1")).catch(() => {});
+
+    expect(mocks.deleteZoomMeeting).not.toHaveBeenCalled();
+    expect(mocks.deleteGoogleMeetMeeting).not.toHaveBeenCalled();
+    expect(mocks.liveClassRepository.delete).toHaveBeenCalledWith("c1", "center-1");
+    expect(mocks.redirect).toHaveBeenCalledWith("/panel/horarios");
   });
 });
