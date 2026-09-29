@@ -8,16 +8,12 @@ import { emailBaseLayout, emailCtaStyle } from "./base-layout";
 import { escapeHtml } from "./utils";
 import { formatLongDateTime } from "./format-datetime";
 import type { EmailBranding } from "./branding";
+import { formatPriceOrFree } from "@/lib/domain/money";
 
 const DEFAULT_FROM = process.env.EMAIL_FROM ?? `Cuerpo Raíz <onboarding@resend.dev>`;
 
 function fromForBranding(b: EmailBranding): string {
   return process.env.EMAIL_FROM ?? `${b.centerName} <onboarding@resend.dev>`;
-}
-
-function formatAmount(amountCents: number, currency: string): string {
-  if (amountCents === 0) return "Gratis";
-  return new Intl.NumberFormat("es-CL", { style: "currency", currency }).format(amountCents);
 }
 
 export type EventTicketConfirmationKind = "purchase" | "addition";
@@ -96,7 +92,7 @@ export function buildEventTicketConfirmationEmail(
         <p style="margin:6px 0 0;font-size:14px;color:#5C5A56;">${escapeHtml(when)}</p>
         ${locationLine}
         ${detailLine}
-        <p style="margin:8px 0 0;font-size:13px;color:#8A8782;">Pagaste <strong style="color:#2A2A2A;">${escapeHtml(formatAmount(data.amountCents, data.currency))}</strong></p>
+        <p style="margin:8px 0 0;font-size:13px;color:#8A8782;">Pagaste <strong style="color:#2A2A2A;">${escapeHtml(formatPriceOrFree(data.amountCents, data.currency))}</strong></p>
       </td></tr>
     </table>
     ${ctaLine}`;
@@ -108,7 +104,7 @@ export function buildEventTicketConfirmationEmail(
     textIntro,
     `Fecha: ${when}`,
     data.location ? `Lugar: ${data.location}` : "",
-    `Valor pagado: ${formatAmount(data.amountCents, data.currency)}`,
+    `Valor pagado: ${formatPriceOrFree(data.amountCents, data.currency)}`,
     data.eventUrl ? `Ver detalles: ${data.eventUrl}` : "",
     `— ${branding.centerName}`,
   ].filter(Boolean).join("\n");

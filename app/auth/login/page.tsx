@@ -6,11 +6,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { SITE_NAME } from "@/lib/constants/copy";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
+import { safeCallbackUrl } from "@/lib/domain/auth-redirect";
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") ?? "/panel";
+  const callbackUrl = safeCallbackUrl(searchParams.get("callbackUrl"));
   const isReset = searchParams.get("reset") === "1";
   const isRegistered = searchParams.get("registered") === "1";
   const [email, setEmail] = useState("");
@@ -97,7 +98,7 @@ function LoginForm() {
           </p>
         )}
 
-        <GoogleSignInButton centerId={centerId} />
+        <GoogleSignInButton centerId={centerId} callbackUrl={callbackUrl} />
 
         <div className="my-[var(--space-5)] flex items-center gap-3">
           <div className="h-px flex-1 bg-[var(--color-border)]" />
@@ -180,7 +181,10 @@ function LoginForm() {
         </form>
         <p className="mt-[var(--space-5)] text-center text-sm text-[var(--color-text-muted)]">
           ¿No tienes cuenta?{" "}
-          <Link href="/auth/signup" className="text-[var(--color-secondary)] hover:underline">
+          <Link
+            href={callbackUrl === "/panel" ? "/auth/signup" : `/auth/signup?callbackUrl=${encodeURIComponent(callbackUrl)}`}
+            className="text-[var(--color-secondary)] hover:underline"
+          >
             Registrarse
           </Link>
         </p>

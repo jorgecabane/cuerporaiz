@@ -6,6 +6,7 @@ import {
   planRepository,
   disciplineRepository,
   onDemandCategoryRepository,
+  aboutPageRepository,
   prisma,
 } from "@/lib/adapters/db";
 import { buildSiteMetadata } from "@/lib/seo/metadata";
@@ -21,12 +22,17 @@ import {
   DisciplinesSection,
   ContactSection,
   EventsSection,
+  FaqSection,
+  GallerySection,
   type UpcomingEvent,
 } from "@/components/sections/home";
-import type { SiteSectionWithItems } from "@/lib/domain/site-config";
+import { toFaqItems, type SiteSectionWithItems } from "@/lib/domain/site-config";
 import { getPublicCenterTimezone } from "@/lib/datetime/center-timezone";
+import { formatMoney, formatPriceOrFree } from "@/lib/domain/money";
 
 export const revalidate = 60;
+
+const HOME_FAQ_LIMIT = 5;
 
 /* ─── Metadata ──────────────────────────────────────────────────────────── */
 
@@ -83,12 +89,14 @@ export default async function HomePage() {
   const tz = await getPublicCenterTimezone();
 
   // Parallel queries
-  const [siteConfig, sections, plans, disciplines] = await Promise.all([
+  const [siteConfig, sections, plans, disciplines, aboutPage] = await Promise.all([
     siteConfigRepository.findByCenterId(center.id),
     siteSectionRepository.findByCenterId(center.id),
     planRepository.findManyByCenterId(center.id),
     disciplineRepository.findActiveByCenterId(center.id),
+    aboutPageRepository.findByCenterId(center.id),
   ]);
+  const aboutVisible = aboutPage?.visible ?? false;
 
   // If no sections configured, show fallback with default order
   if (sections.length === 0) return <FallbackHome />;
@@ -114,6 +122,7 @@ export default async function HomePage() {
   const scheduleClasses = upcomingClasses.map((c) => ({
     time: c.startsAt.toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: tz }),
     type: c.discipline?.name ?? c.title,
+    description: c.discipline?.description ?? undefined,
     duration: `${c.durationMinutes} min`,
     spotsUsed: c.reservations.length,
     spotsTotal: c.maxCapacity,
@@ -140,7 +149,7 @@ export default async function HomePage() {
     ? Math.min(...libraryPlans.map((p) => p.amountCents))
     : null;
   const libraryPriceLabel =
-    minLibraryPrice != null ? `Desde $${minLibraryPrice.toLocaleString("es-CL")}` : undefined;
+    minLibraryPrice != null ? `Desde ${formatMoney(minLibraryPrice)}` : undefined;
 
   const publishedCategories = await onDemandCategoryRepository.findPublishedByCenterId(center.id);
   const libraryCategories = publishedCategories.slice(0, 3).map((c) => ({
@@ -169,12 +178,7 @@ export default async function HomePage() {
     location: e.location,
     imageUrl: e.imageUrl,
     tag: null,
-    priceLabel:
-      e.amountCents === 0
-        ? "Gratis"
-        : e.currency === "CLP"
-          ? `$${e.amountCents.toLocaleString("es-CL")}`
-          : `${(e.amountCents / 100).toFixed(2)} ${e.currency}`,
+    priceLabel: formatPriceOrFree(e.amountCents, e.currency),
   }));
 
   // Serialize disciplines for DisciplinesSection
@@ -262,6 +266,27 @@ export default async function HomePage() {
               />
             );
 
+          case "faq":
+            return (
+              <FaqSection
+                key={section.id}
+                title={section.title ?? undefined}
+                subtitle={section.subtitle ?? undefined}
+                items={toFaqItems(section.items)}
+                limit={HOME_FAQ_LIMIT}
+              />
+            );
+
+          case "gallery":
+            return aboutVisible && aboutPage ? (
+              <GallerySection
+                key={section.id}
+                title={section.title ?? undefined}
+                subtitle={section.subtitle ?? undefined}
+                images={aboutPage.images}
+              />
+            ) : null;
+
           case "testimonials":
             return (
               <TestimoniosSection
@@ -278,6 +303,7 @@ export default async function HomePage() {
                 title={section.title ?? undefined}
                 subtitle={section.subtitle ?? undefined}
                 items={items.length > 0 ? items : undefined}
+                historyHref={aboutVisible ? "/sobre" : undefined}
               />
             );
 

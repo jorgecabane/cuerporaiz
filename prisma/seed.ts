@@ -225,6 +225,8 @@ async function main() {
     { sectionKey: "testimonials", sortOrder: 9, title: null, subtitle: null },
     { sectionKey: "cta", sortOrder: 10, title: "El camino de regreso a ti.", subtitle: "El camino empieza aquí" },
     { sectionKey: "contact", sortOrder: 11, title: null, subtitle: null, visible: false },
+    { sectionKey: "faq", sortOrder: 12, title: "Preguntas frecuentes", subtitle: "Dudas comunes", visible: false },
+    { sectionKey: "gallery", sortOrder: 13, title: "En imágenes", subtitle: "Galería", visible: false },
   ] as const;
 
   const sectionRecords: Record<string, string> = {};

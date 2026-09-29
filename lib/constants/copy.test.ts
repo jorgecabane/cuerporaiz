@@ -14,7 +14,7 @@ describe("copy", () => {
 
   it("NAV_LINKS tiene enlaces esperados", () => {
     expect(NAV_LINKS.length).toBeGreaterThan(0);
-    expect(NAV_LINKS[0]).toEqual({ href: "/#como-funciona", label: "Cómo funciona" });
+    expect(NAV_LINKS[0]).toEqual({ href: "/eventos", label: "Eventos y Experiencias" });
   });
 
   it("CTAS tiene textos de llamada a la acción", () => {

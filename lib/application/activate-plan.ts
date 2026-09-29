@@ -11,6 +11,7 @@ import { getEmailBranding } from "@/lib/email/branding";
 import { formatLongDate } from "@/lib/email/format-datetime";
 import { getBaseUrl } from "@/lib/utils/base-url";
 import { shouldSendEmail } from "./check-email-preference";
+import { formatMoney } from "@/lib/domain/money";
 
 export function computeValidUntil(
   plan: Plan,
@@ -106,7 +107,7 @@ export async function activatePlanForOrder(
         toEmail: buyer.email,
         userName: buyer.name ?? buyer.email.split("@")[0],
         planName: plan.name,
-        amountFormatted: `$${plan.amountCents.toLocaleString("es-CL")}`,
+        amountFormatted: formatMoney(plan.amountCents, plan.currency),
         validUntil: validUntilStr,
         tiendaUrl: `${baseUrl}/panel/tienda`,
         preferencesUrl: `${baseUrl}/panel/mi-perfil?tab=correos`,

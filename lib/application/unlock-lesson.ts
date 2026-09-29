@@ -5,6 +5,7 @@ import type { IUserPlanRepository } from "@/lib/ports/user-plan-repository";
 import type { IPlanRepository } from "@/lib/ports/plan-repository";
 import type { IPlanCategoryQuotaRepository } from "@/lib/ports/plan-category-quota-repository";
 import type { LessonUnlock } from "@/lib/domain/on-demand";
+import type { UserPlan } from "@/lib/domain/user-plan";
 import { isUserPlanUsable } from "@/lib/domain/user-plan";
 
 export interface UnlockLessonResult {
@@ -53,22 +54,18 @@ export async function unlockLessonUseCase(
     return { success: false, code: "PRACTICE_NOT_FOUND" };
   }
 
-  // 3. Find usable on-demand plan
+  // 3. Find usable on-demand plans
   const activePlans = await userPlanRepo.findActiveByUserAndCenter(userId, centerId);
-  let selectedPlan = null;
-  let selectedPlanType = null;
-
+  const candidates: { userPlan: UserPlan; type: "ON_DEMAND" | "MEMBERSHIP_ON_DEMAND" }[] = [];
   for (const up of activePlans) {
     if (!isUserPlanUsable(up)) continue;
     const plan = await planRepo.findById(up.planId);
-    if (!plan) continue;
-    if (plan.type !== "ON_DEMAND" && plan.type !== "MEMBERSHIP_ON_DEMAND") continue;
-    selectedPlan = up;
-    selectedPlanType = plan.type;
-    break;
+    if (plan?.type === "ON_DEMAND" || plan?.type === "MEMBERSHIP_ON_DEMAND") {
+      candidates.push({ userPlan: up, type: plan.type });
+    }
   }
 
-  if (!selectedPlan || !selectedPlanType) {
+  if (candidates.length === 0) {
     return { success: false, code: "NO_ACTIVE_PLAN" };
   }
 
@@ -78,21 +75,29 @@ export async function unlockLessonUseCase(
     return { success: false, code: "ALREADY_UNLOCKED" };
   }
 
-  // 5. For ON_DEMAND: check quota
+  // 5. Pick the plan that covers this category: a membership (no quota to spend)
+  // or else the first ON_DEMAND pack with lessons left for this category.
+  const membership = candidates.find((c) => c.type === "MEMBERSHIP_ON_DEMAND");
+  let selectedPlan: UserPlan | null = membership?.userPlan ?? null;
   let remainingLessons: number | null = null;
+  let hasQuotaForCategory = false;
 
-  if (selectedPlanType === "ON_DEMAND") {
-    const quota = await quotaRepo.findByPlanAndCategory(selectedPlan.planId, practice.categoryId);
-    if (!quota) {
-      return { success: false, code: "NO_QUOTA_CONFIGURED" };
+  if (!selectedPlan) {
+    for (const { userPlan } of candidates) {
+      const quota = await quotaRepo.findByPlanAndCategory(userPlan.planId, practice.categoryId);
+      if (!quota) continue;
+      hasQuotaForCategory = true;
+      const used = await unlockRepo.countByUserPlanAndCategory(userPlan.id, practice.categoryId);
+      if (used < quota.maxLessons) {
+        selectedPlan = userPlan;
+        remainingLessons = quota.maxLessons - used - 1;
+        break;
+      }
     }
+  }
 
-    const used = await unlockRepo.countByUserPlanAndCategory(selectedPlan.id, practice.categoryId);
-    if (used >= quota.maxLessons) {
-      return { success: false, code: "QUOTA_EXHAUSTED" };
-    }
-
-    remainingLessons = quota.maxLessons - used - 1;
+  if (!selectedPlan) {
+    return { success: false, code: hasQuotaForCategory ? "QUOTA_EXHAUSTED" : "NO_QUOTA_CONFIGURED" };
   }
 
   // 6. Create unlock record — wrap in try/catch to handle concurrent duplicate inserts

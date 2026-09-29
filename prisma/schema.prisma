@@ -113,10 +113,11 @@ model User {
 
 // ─── Disciplinas (prácticas: Yoga, Pilates, TRX…) ─────────────────────────
 model Discipline {
-  id        String   @id @default(cuid())
-  centerId  String
-  name      String
-  color     String?
+  id          String   @id @default(cuid())
+  centerId    String
+  name        String
+  description String?  @db.Text
+  color       String?
   active    Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

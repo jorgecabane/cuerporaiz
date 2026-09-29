@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { QuantityStepper } from "@/components/ui/QuantityStepper";
 import { toast } from "@/components/ui/Toast";
+import { formatMoney } from "@/lib/domain/money";
 
 type Mode = "purchase" | "addition";
 
@@ -18,11 +19,6 @@ type Props = {
   /** "purchase" (default) o "addition" para re-compra. */
   mode?: Mode;
 };
-
-function formatPrice(cents: number, currency: string): string {
-  if (currency === "CLP") return `$${cents.toLocaleString("es-CL")}`;
-  return `${(cents / 100).toFixed(2)} ${currency}`;
-}
 
 export function ComprarEventoButton({
   eventId,
@@ -97,10 +93,10 @@ export function ComprarEventoButton({
     if (loading) return isFree ? "Reservando…" : "Procesando…";
     if (mode === "addition") {
       if (isFree) return quantity === 1 ? "Agregar 1 cupo" : `Agregar ${quantity} cupos`;
-      return `Agregar ${quantity} ${quantity === 1 ? "cupo" : "cupos"} — ${formatPrice(total, currency)}`;
+      return `Agregar ${quantity} ${quantity === 1 ? "cupo" : "cupos"} — ${formatMoney(total, currency)}`;
     }
     if (isFree) return quantity > 1 ? `Reservar ${quantity} cupos` : "Reservar (gratis)";
-    return `Comprar — ${formatPrice(total, currency)}`;
+    return `Comprar — ${formatMoney(total, currency)}`;
   }
 
   const showStepper = maxQuantity > 1;

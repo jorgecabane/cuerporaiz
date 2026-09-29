@@ -22,7 +22,13 @@ const mocks = vi.hoisted(() => ({
   },
   liveClassRepository: {
     findById: vi.fn(),
+    findByIds: vi.fn(async (): Promise<LiveClass[]> => []),
     countConfirmedReservations: vi.fn(),
+    countConfirmedByLiveClassIds: vi.fn(async () => new Map<string, number>()),
+  },
+  instructorRepository: { findByCenterId: vi.fn(async (): Promise<unknown[]> => []), findById: vi.fn() },
+  disciplineRepository: {
+    findManyByCenterId: vi.fn(async (): Promise<{ id: string; name: string; description: string | null }[]> => []),
   },
   centerRepository: { findById: vi.fn() },
   userPlanRepository: {
@@ -45,7 +51,8 @@ vi.mock("@/lib/adapters/db", () => ({
   reservationRepository: mocks.reservationRepository,
   userPlanRepository: mocks.userPlanRepository,
   userRepository: mocks.userRepository,
-  instructorRepository: { findByCenterId: vi.fn(), findById: vi.fn() },
+  instructorRepository: mocks.instructorRepository,
+  disciplineRepository: mocks.disciplineRepository,
   planRepository: mocks.planRepository,
   centerHolidayRepository: mocks.centerHolidayRepository,
   emailPreferenceRepository: mocks.emailPreferenceRepository,
@@ -252,6 +259,10 @@ describe("listMyReservationsPaginated", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.liveClassRepository.findByIds.mockResolvedValue([]);
+    mocks.liveClassRepository.countConfirmedByLiveClassIds.mockResolvedValue(new Map());
+    mocks.instructorRepository.findByCenterId.mockResolvedValue([]);
+    mocks.disciplineRepository.findManyByCenterId.mockResolvedValue([]);
     mocks.reservationRepository.findByUserIdAndCenterPaginated.mockResolvedValue({
       items: [],
       total: 0,
@@ -286,6 +297,35 @@ describe("listMyReservationsPaginated", () => {
         statuses: ["CONFIRMED", "CANCELLED", "LATE_CANCELLED", "ATTENDED", "NO_SHOW"],
       })
     );
+  });
+
+  it("carga clases, cupos y prácticas en lote (sin una query por reserva)", async () => {
+    mocks.reservationRepository.findByUserIdAndCenterPaginated.mockResolvedValue({
+      items: [
+        makeReservation({ id: "r-1", liveClassId: "lc-1" }),
+        makeReservation({ id: "r-2", liveClassId: "lc-1" }),
+        makeReservation({ id: "r-3", liveClassId: "lc-2" }),
+      ],
+      total: 3,
+    });
+    mocks.liveClassRepository.findByIds.mockResolvedValue([
+      makeLiveClass({ id: "lc-1", centerId, maxCapacity: 10, disciplineId: "d-1" }),
+      makeLiveClass({ id: "lc-2", centerId, maxCapacity: 8, disciplineId: null }),
+    ]);
+    mocks.liveClassRepository.countConfirmedByLiveClassIds.mockResolvedValue(new Map([["lc-1", 3]]));
+    mocks.disciplineRepository.findManyByCenterId.mockResolvedValue([
+      { id: "d-1", name: "Vinyasa", description: "Poder, activación." },
+    ]);
+
+    const result = await listMyReservationsPaginated(userId, centerId, { page: 1, pageSize: 10 });
+
+    expect(mocks.liveClassRepository.findByIds).toHaveBeenCalledTimes(1);
+    expect(mocks.liveClassRepository.findByIds).toHaveBeenCalledWith(["lc-1", "lc-2"]);
+    expect(mocks.liveClassRepository.countConfirmedByLiveClassIds).toHaveBeenCalledTimes(1);
+    expect(mocks.liveClassRepository.countConfirmedReservations).not.toHaveBeenCalled();
+    const byId = new Map(result.items.map((r) => [r.id, r.liveClass]));
+    expect(byId.get("r-1")).toMatchObject({ spotsLeft: 7, disciplineName: "Vinyasa", disciplineDescription: "Poder, activación." });
+    expect(byId.get("r-3")).toMatchObject({ spotsLeft: 8, disciplineName: null });
   });
 });
 

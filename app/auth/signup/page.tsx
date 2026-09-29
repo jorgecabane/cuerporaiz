@@ -1,13 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { SITE_NAME } from "@/lib/constants/copy";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
+import { safeCallbackUrl } from "@/lib/domain/auth-redirect";
 
-export default function SignupPage() {
+function SignupForm() {
   const router = useRouter();
+  const callbackUrl = safeCallbackUrl(useSearchParams().get("callbackUrl"));
+  const callbackQuery = callbackUrl === "/panel" ? "" : `callbackUrl=${encodeURIComponent(callbackUrl)}`;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
@@ -36,7 +39,7 @@ export default function SignupPage() {
         setLoading(false);
         return;
       }
-      router.push("/auth/login?registered=1");
+      router.push(`/auth/login?registered=1${callbackQuery ? `&${callbackQuery}` : ""}`);
       router.refresh();
     } catch {
       setError("Error de conexión");
@@ -51,7 +54,7 @@ export default function SignupPage() {
           Crear cuenta en {SITE_NAME}
         </h1>
 
-        <GoogleSignInButton centerId={centerId} />
+        <GoogleSignInButton centerId={centerId} callbackUrl={callbackUrl} />
 
         <div className="my-[var(--space-5)] flex items-center gap-3">
           <div className="h-px flex-1 bg-[var(--color-border)]" />
@@ -107,11 +110,22 @@ export default function SignupPage() {
         </form>
         <p className="mt-[var(--space-5)] text-center text-sm text-[var(--color-text-muted)]">
           ¿Ya tienes cuenta?{" "}
-          <Link href="/auth/login" className="text-[var(--color-secondary)] hover:underline">
+          <Link
+            href={callbackQuery ? `/auth/login?${callbackQuery}` : "/auth/login"}
+            className="text-[var(--color-secondary)] hover:underline"
+          >
             Entrar
           </Link>
         </p>
       </div>
     </div>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={<div className="min-h-[80vh] flex items-center justify-center">Cargando…</div>}>
+      <SignupForm />
+    </Suspense>
   );
 }

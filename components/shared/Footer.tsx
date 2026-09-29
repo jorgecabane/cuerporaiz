@@ -14,10 +14,11 @@ type ContactInfo = {
 
 type FooterProps = {
   centerName?: string;
+  navLinks?: readonly { href: string; label: string }[];
   contact?: ContactInfo;
 };
 
-export function Footer({ centerName, contact }: FooterProps) {
+export function Footer({ centerName, contact, navLinks = NAV_LINKS }: FooterProps) {
   const name = centerName ?? SITE_NAME;
   const supportEmail = contact?.email ?? process.env.NEXT_PUBLIC_SUPPORT_EMAIL ?? "cuerporaiztrinidad@gmail.com";
 
@@ -55,7 +56,7 @@ export function Footer({ centerName, contact }: FooterProps) {
             aria-label="Pie de página"
             className="grid grid-cols-2 gap-x-[var(--space-8)] gap-y-[var(--space-3)] md:flex md:flex-col md:gap-[var(--space-3)]"
           >
-            {NAV_LINKS.map(({ href, label }) => (
+            {navLinks.map(({ href, label }) => (
               <Link
                 key={href}
                 href={href}

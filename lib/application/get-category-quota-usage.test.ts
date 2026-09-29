@@ -7,6 +7,7 @@ import type { PlanCategoryQuota } from "@/lib/domain/on-demand";
 function makeQuotaRepo(overrides: Partial<IPlanCategoryQuotaRepository> = {}): IPlanCategoryQuotaRepository {
   return {
     findByPlanId: vi.fn(),
+    findByPlanIds: vi.fn(),
     findByPlanAndCategory: vi.fn(),
     upsertMany: vi.fn(),
     deleteByPlanId: vi.fn(),

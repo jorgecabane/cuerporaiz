@@ -9,3 +9,5 @@ export { DisciplinesSection } from "./DisciplinesSection";
 export { ContactSection } from "./ContactSection";
 export { LibrarySection } from "./LibrarySection";
 export { EventsSection, type UpcomingEvent } from "./EventsSection";
+export { FaqSection, type FaqItem } from "./FaqSection";
+export { GallerySection } from "./GallerySection";

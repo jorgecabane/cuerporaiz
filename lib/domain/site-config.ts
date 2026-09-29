@@ -11,6 +11,8 @@ export const SECTION_KEYS = [
   "testimonials",
   "cta",
   "contact",
+  "faq",
+  "gallery",
 ] as const;
 
 export type SectionKey = (typeof SECTION_KEYS)[number];
@@ -74,4 +76,12 @@ export interface SiteSectionItem {
 
 export interface SiteSectionWithItems extends SiteSection {
   items: SiteSectionItem[];
+}
+
+/** Preguntas frecuentes: title = pregunta, description = respuesta. Ignora ítems incompletos. */
+export function toFaqItems(items: SiteSectionItem[]): { question: string; answer: string }[] {
+  return items
+    .filter((i) => i.title?.trim() && i.description?.trim())
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+    .map((i) => ({ question: i.title!.trim(), answer: i.description!.trim() }));
 }

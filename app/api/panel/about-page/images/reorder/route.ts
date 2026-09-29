@@ -27,5 +27,6 @@ export async function PATCH(request: Request) {
 
   await aboutPageRepository.reorderImages(page.id, parsed.data.category, parsed.data.orderedIds);
   revalidatePath("/sobre");
+  revalidatePath("/");
   return new NextResponse(null, { status: 204 });
 }

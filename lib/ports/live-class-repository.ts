@@ -47,6 +47,7 @@ export interface ListByCenterOptions {
 
 export interface ILiveClassRepository {
   findById(id: string): Promise<LiveClass | null>;
+  findByIds(ids: string[]): Promise<LiveClass[]>;
   findByCenterId(centerId: string, from?: Date): Promise<LiveClass[]>;
   findByCenterIdPaginated(
     centerId: string,

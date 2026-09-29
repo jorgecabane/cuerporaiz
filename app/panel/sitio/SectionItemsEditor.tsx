@@ -348,6 +348,10 @@ const FIELD_LABELS: Record<string, {
     description: "Descripción del paso",
     linkUrl: "Número y etiqueta (ej: 01|Presencial)",
   },
+  faq: {
+    title: "Pregunta",
+    description: "Respuesta",
+  },
   "on-demand": {
     title: "Título de la tarjeta",
     description: "Descripción",

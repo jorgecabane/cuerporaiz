@@ -39,7 +39,6 @@ export default function BrandingForm({ config }: BrandingFormProps) {
       "heroSubtitle",
       "seoTitle",
       "seoDescription",
-      "headerNavLabelHowItWorks",
       "headerNavLabelInPerson",
       "headerNavLabelOnline",
       "headerNavLabelContact",
@@ -173,40 +172,26 @@ export default function BrandingForm({ config }: BrandingFormProps) {
           Cabecera del sitio
         </legend>
         <p className="text-xs text-[var(--color-text-muted)] -mt-2">
-          Personalizá los textos del menú principal. Los enlaces (URLs) son fijos. Vacío usa el default.
+          Personaliza los textos del menú principal. Los enlaces (URLs) son fijos. Vacío usa el default.
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label htmlFor="branding-navHowItWorks" className={labelCls}>
-              Link 1
-            </label>
-            <input
-              id="branding-navHowItWorks"
-              name="headerNavLabelHowItWorks"
-              defaultValue={config?.headerNavLabelHowItWorks ?? ""}
-              maxLength={40}
-              placeholder="Cómo funciona"
-              className={inputCls}
-            />
-            <p className="mt-1 text-[11px] font-mono text-[var(--color-text-muted)]">→ /#como-funciona</p>
-          </div>
-          <div>
             <label htmlFor="branding-navInPerson" className={labelCls}>
-              Link 2
+              Horarios
             </label>
             <input
               id="branding-navInPerson"
               name="headerNavLabelInPerson"
               defaultValue={config?.headerNavLabelInPerson ?? ""}
               maxLength={40}
-              placeholder="Clases presenciales"
+              placeholder="Horarios"
               className={inputCls}
             />
             <p className="mt-1 text-[11px] font-mono text-[var(--color-text-muted)]">→ /#agenda</p>
           </div>
           <div>
             <label htmlFor="branding-navOnline" className={labelCls}>
-              Link 3
+              Biblioteca
             </label>
             <input
               id="branding-navOnline"
@@ -220,7 +205,7 @@ export default function BrandingForm({ config }: BrandingFormProps) {
           </div>
           <div>
             <label htmlFor="branding-navContact" className={labelCls}>
-              Link 4
+              Contacto
             </label>
             <input
               id="branding-navContact"

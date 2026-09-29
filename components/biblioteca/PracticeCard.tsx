@@ -34,21 +34,21 @@ export function PracticeCard({
         className="hidden sm:flex flex-col bg-[var(--color-surface)] rounded-[var(--radius-lg)] border border-[var(--color-border)] overflow-hidden text-left hover:shadow-md transition-shadow cursor-pointer"
       >
         <div
-          className="h-20 flex items-end p-3"
+          className="h-36 w-full flex items-end p-3"
           style={{
             background: thumbnailUrl
               ? `url(${thumbnailUrl}) center/cover`
               : "linear-gradient(135deg, var(--color-primary), var(--color-primary-hover))",
           }}
         >
-          <span className="text-white text-sm font-bold drop-shadow-md">{name}</span>
+          <span className="text-white text-base font-bold drop-shadow-md">{name}</span>
         </div>
         <div className="p-3">
           <p className="text-xs text-[var(--color-text-muted)] mb-2">
             {lessonCount} {lessonCount === 1 ? "clase" : "clases"}
           </p>
           {description && (
-            <p className="text-[10px] text-[var(--color-text-muted)] line-clamp-2 mb-2">
+            <p className="text-sm text-[var(--color-text-muted)] line-clamp-2 mb-2">
               {description}
             </p>
           )}

@@ -4,14 +4,16 @@ import { signIn } from "next-auth/react";
 
 interface GoogleSignInButtonProps {
   centerId?: string;
+  /** Adónde volver después de entrar (ruta relativa ya validada). */
+  callbackUrl?: string;
 }
 
-export function GoogleSignInButton({ centerId }: GoogleSignInButtonProps) {
+export function GoogleSignInButton({ centerId, callbackUrl = "/panel" }: GoogleSignInButtonProps) {
   function handleClick() {
     if (centerId) {
       document.cookie = `auth.centerId=${centerId};path=/;max-age=600;samesite=lax`;
     }
-    signIn("google", { callbackUrl: "/panel" });
+    signIn("google", { callbackUrl });
   }
 
   return (
