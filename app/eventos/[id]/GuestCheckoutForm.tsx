@@ -4,6 +4,7 @@ import { useId, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { QuantityStepper } from "@/components/ui/QuantityStepper";
 import { toast } from "@/components/ui/Toast";
+import { formatMoney } from "@/lib/domain/money";
 
 type Props = {
   eventId: string;
@@ -13,11 +14,6 @@ type Props = {
   maxQuantity: number;
   loginHref: string;
 };
-
-function formatPrice(cents: number, currency: string): string {
-  if (currency === "CLP") return `$${cents.toLocaleString("es-CL")}`;
-  return `${(cents / 100).toFixed(2)} ${currency}`;
-}
 
 export function GuestCheckoutForm({
   eventId,
@@ -93,7 +89,7 @@ export function GuestCheckoutForm({
             <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">
               Total:{" "}
               <span className="font-semibold text-[var(--color-primary)]">
-                {formatPrice(total, currency)}
+                {formatMoney(total, currency)}
               </span>
             </p>
           )}

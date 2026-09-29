@@ -6,6 +6,7 @@ import { eventRepository, eventTicketRepository } from "@/lib/adapters/db";
 import { EVENT_STATUS_LABELS } from "@/lib/domain/event";
 import type { Event, EventTicket } from "@/lib/domain/event";
 import { getCenterTimezone } from "@/lib/datetime/center-timezone";
+import { formatPriceOrFree } from "@/lib/domain/money";
 
 function formatDateShort(date: Date, tz: string): string {
   return date.toLocaleDateString("es-CL", {
@@ -15,12 +16,6 @@ function formatDateShort(date: Date, tz: string): string {
     month: "short",
     year: "numeric",
   });
-}
-
-function formatPrice(cents: number, currency: string): string {
-  if (cents === 0) return "Gratis";
-  if (currency === "CLP") return `$${cents.toLocaleString("es-CL")}`;
-  return `${(cents / 100).toFixed(2)} ${currency}`;
 }
 
 function hasEventEnded(event: Pick<Event, "startsAt" | "endsAt">): boolean {
@@ -67,7 +62,7 @@ async function AdminEventCard({ event, hasEnded, tz }: { event: Event; hasEnded:
             {formatDateShort(event.endsAt, tz)}
           </p>
           <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
-            {formatPrice(event.amountCents, event.currency)}
+            {formatPriceOrFree(event.amountCents, event.currency)}
             {" · "}
             {event.maxCapacity != null
               ? `${paidCount} / ${event.maxCapacity} cupos`
@@ -117,7 +112,7 @@ function StudentEventCard({ event, userTicket, tz }: { event: Event; userTicket?
         </div>
         <div className="flex items-center justify-between gap-2 mt-auto">
           <span className="text-sm font-semibold text-[var(--color-primary)]">
-            {formatPrice(event.amountCents, event.currency)}
+            {formatPriceOrFree(event.amountCents, event.currency)}
           </span>
           <span className="rounded-[var(--radius-md)] bg-[var(--color-primary)] px-3 py-1.5 text-xs font-medium text-white">
             {hasPaidTicket

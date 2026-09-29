@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { disciplineRepository } from "@/lib/adapters/db";
 import { isAdminRole } from "@/lib/domain/role";
 
+const DESCRIPTION_MAX = 200;
+
 async function requireAdminCenterId(): Promise<string> {
   const session = await auth();
   if (!session?.user?.centerId || !isAdminRole(session.user.role)) {
@@ -13,12 +15,17 @@ async function requireAdminCenterId(): Promise<string> {
   return session.user.centerId;
 }
 
+function readDescription(formData: FormData): string | null {
+  return (formData.get("description") as string)?.trim().slice(0, DESCRIPTION_MAX) || null;
+}
+
 export async function createDiscipline(formData: FormData): Promise<void> {
   const centerId = await requireAdminCenterId();
   const name = (formData.get("name") as string)?.trim();
   if (!name) return;
   const color = (formData.get("color") as string)?.trim() || null;
-  await disciplineRepository.create(centerId, { name, color });
+  const description = readDescription(formData);
+  await disciplineRepository.create(centerId, { name, description, color });
   redirect("/panel/disciplinas");
 }
 
@@ -29,7 +36,8 @@ export async function updateDiscipline(formData: FormData): Promise<void> {
   if (!id || !name) return;
   const color = (formData.get("color") as string)?.trim() || null;
   const active = formData.getAll("active").includes("true");
-  await disciplineRepository.update(id, centerId, { name, color, active });
+  const description = readDescription(formData);
+  await disciplineRepository.update(id, centerId, { name, description, color, active });
   redirect("/panel/disciplinas");
 }
 

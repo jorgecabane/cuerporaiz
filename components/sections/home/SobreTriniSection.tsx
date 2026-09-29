@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { AnimateIn } from "@/components/ui/AnimateIn";
 
@@ -15,6 +16,8 @@ type SobreTriniSectionProps = {
   title?: string;
   subtitle?: string;
   items?: TeamItem[];
+  /** Link a la página "Sobre" completa; si no se pasa, no se muestra el botón. */
+  historyHref?: string;
 };
 
 const DEFAULT_PRACTICES = [
@@ -37,7 +40,7 @@ function parseBioAndTags(description: string | undefined) {
   return { bio, tags };
 }
 
-export function SobreTriniSection({ title, subtitle, items }: SobreTriniSectionProps) {
+export function SobreTriniSection({ title, subtitle, items, historyHref }: SobreTriniSectionProps) {
   const person = items?.[0];
   const personName = person?.title ?? "Trinidad Cáceres";
   const personImage = person?.imageUrl ?? "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800&q=80";
@@ -127,6 +130,17 @@ export function SobreTriniSection({ title, subtitle, items }: SobreTriniSectionP
                 ))}
               </ul>
             </AnimateIn>
+
+            {historyHref && (
+              <AnimateIn delay={0.5}>
+                <Link
+                  href={historyHref}
+                  className="inline-flex items-center gap-[var(--space-2)] rounded-[var(--radius-md)] bg-[var(--color-primary)] px-[var(--space-5)] py-[var(--space-3)] text-sm font-medium text-white transition-colors duration-[var(--duration-normal)] hover:bg-[var(--color-primary-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]"
+                >
+                  Conoce mi historia →
+                </Link>
+              </AnimateIn>
+            )}
           </div>
         </div>
       </div>

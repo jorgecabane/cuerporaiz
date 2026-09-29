@@ -9,11 +9,13 @@ export const TAGLINE =
   "cuerpo, respiración y placer. el camino de regreso a ti.";
 
 export const NAV_LINKS = [
-  { href: "/#como-funciona", label: "Cómo funciona" },
-  { href: "/#agenda", label: "Clases presenciales" },
-  { href: "/catalogo", label: "Online" },
+  { href: "/eventos", label: "Eventos y Experiencias" },
+  { href: "/#agenda", label: "Horarios" },
+  { href: "/catalogo", label: "Biblioteca Virtual" },
   { href: "/#contacto", label: "Contacto" },
 ] as const;
+
+export const FAQ_NAV_LINK = { href: "/preguntas-frecuentes", label: "Preguntas frecuentes" } as const;
 
 export const CTAS = {
   comenzarPractica: "Comenzar a practicar",

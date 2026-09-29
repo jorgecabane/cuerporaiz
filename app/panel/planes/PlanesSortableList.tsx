@@ -26,6 +26,7 @@ import { reorderPlans } from "./actions";
 import { DeletePlanForm } from "./DeletePlanForm";
 import { Button } from "@/components/ui/Button";
 import { toast } from "@/components/ui/Toast";
+import { formatMoney } from "@/lib/domain/money";
 
 type PlanRow = {
   id: string;
@@ -42,11 +43,6 @@ const TYPE_LABELS: Record<string, string> = {
   ON_DEMAND: "Biblioteca virtual",
   MEMBERSHIP_ON_DEMAND: "Membresía biblioteca virtual",
 };
-
-function formatPrice(cents: number, currency: string): string {
-  if (currency === "CLP") return `$${cents.toLocaleString("es-CL")}`;
-  return `${cents / 100} ${currency}`;
-}
 
 export function PlanesSortableList({ initialPlans }: { initialPlans: PlanRow[] }) {
   const [items, setItems] = useState<PlanRow[]>(initialPlans);
@@ -131,7 +127,7 @@ function SortablePlanRow({ plan }: { plan: PlanRow }) {
         </div>
         <p className="text-sm text-[var(--color-text-muted)]">
           {TYPE_LABELS[plan.type] ?? plan.type} · {plan.slug} ·{" "}
-          {formatPrice(plan.amountCents, plan.currency)}
+          {formatMoney(plan.amountCents, plan.currency)}
         </p>
       </div>
       <div className="flex gap-2">

@@ -8,6 +8,7 @@ import type { ClassRosterEntryDto } from "@/lib/dto/class-roster-dto";
 import { ClassRosterAccordion } from "./ClassRosterAccordion";
 import { Button } from "@/components/ui/Button";
 import { useTimezone } from "@/components/providers/TimezoneProvider";
+import { formatSpotsAvailable } from "@/lib/domain/spots";
 
 function formatDateAndTime(startsAtIso: string, durationMinutes: number, tz: string): string {
   const start = new Date(startsAtIso);
@@ -147,6 +148,9 @@ export function ClassCard({
           </div>
           {/* Fila 2: título */}
           <p className="mt-2 font-medium text-[var(--color-text)]">{c.title}</p>
+          {c.disciplineDescription && (
+            <p className="mt-0.5 text-sm text-[var(--color-text-muted)]">{c.disciplineDescription}</p>
+          )}
           {/* Fila 3: avatar (solo si hay nombre o imagen) + con [nombre profesor] o "Sin profesor asignado" */}
           <div className="mt-1 flex items-center gap-2">
             {c.instructorImageUrl ? (
@@ -178,10 +182,7 @@ export function ClassCard({
             </span>
             <span className="inline-flex items-center gap-1">
               <Users className="h-3.5 w-3.5" aria-hidden />
-              {c.maxCapacity} máx
-            </span>
-            <span>
-              {c.spotsLeft}/{c.maxCapacity} cupos
+              {formatSpotsAvailable(c.spotsLeft, c.maxCapacity)}
             </span>
           </p>
           {isStaff && (

@@ -58,6 +58,12 @@ export const liveClassRepository: ILiveClassRepository = {
     return c ? toDomain(c) : null;
   },
 
+  async findByIds(ids) {
+    if (ids.length === 0) return [];
+    const list = await prisma.liveClass.findMany({ where: { id: { in: ids } } });
+    return list.map(toDomain);
+  },
+
   async findByCenterId(centerId, from?) {
     const list = await prisma.liveClass.findMany({
       where: {

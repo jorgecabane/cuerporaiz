@@ -2,12 +2,14 @@ import type { Discipline } from "@/lib/domain";
 
 export interface CreateDisciplineInput {
   name: string;
+  description?: string | null;
   color?: string | null;
   active?: boolean;
 }
 
 export interface UpdateDisciplineInput {
   name?: string;
+  description?: string | null;
   color?: string | null;
   active?: boolean;
 }

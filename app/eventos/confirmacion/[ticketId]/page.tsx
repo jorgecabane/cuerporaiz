@@ -8,6 +8,7 @@ import {
 } from "@/lib/adapters/db";
 import { getCenterTimezone } from "@/lib/datetime/center-timezone";
 import { ClaimAccountForm } from "./ClaimAccountForm";
+import { formatPriceOrFree } from "@/lib/domain/money";
 
 export const dynamic = "force-dynamic";
 
@@ -84,9 +85,7 @@ export default async function EventConfirmationPage({
             {ticket.quantity} {ticket.quantity === 1 ? "entrada" : "entradas"}
           </span>
           <span className="font-display font-semibold text-[var(--color-primary)]">
-            {ticket.amountCents === 0
-              ? "Gratis"
-              : `$${ticket.amountCents.toLocaleString("es-CL")}`}
+            {formatPriceOrFree(ticket.amountCents)}
           </span>
         </div>
       </section>

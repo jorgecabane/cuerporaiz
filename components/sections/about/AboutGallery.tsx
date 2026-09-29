@@ -45,6 +45,7 @@ export function AboutGallery({ title = "En imágenes", subtitle, images }: Props
 
   return (
     <section
+      id="galeria"
       className="bg-[var(--color-surface)] px-[var(--space-4)] py-[var(--space-20)] md:px-[var(--space-8)] md:py-[var(--space-24)]"
       aria-labelledby="sobre-galeria-heading"
     >

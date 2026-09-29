@@ -7,6 +7,7 @@ import { AdaptiveSheet } from "@/components/ui/AdaptiveSheet";
 import { useIsMobile, usePrefersReducedMotion } from "@/components/ui/useMediaQuery";
 import { ComprarEventoButton } from "@/app/panel/eventos/[id]/ComprarEventoButton";
 import { GuestCheckoutForm } from "./GuestCheckoutForm";
+import { formatMoney } from "@/lib/domain/money";
 
 type Props = {
   eventId: string;
@@ -21,11 +22,6 @@ type Props = {
   hasEnded: boolean;
   eventTitle: string;
 };
-
-function formatPrice(cents: number, currency: string): string {
-  if (currency === "CLP") return `$${cents.toLocaleString("es-CL")}`;
-  return `${(cents / 100).toFixed(2)} ${currency}`;
-}
 
 export function EventPurchasePanel(props: Props) {
   const {
@@ -56,7 +52,7 @@ export function EventPurchasePanel(props: Props) {
           Entrada
         </p>
         <p className="font-display text-2xl font-semibold leading-none text-[var(--color-primary)]">
-          {isFree ? "Gratis" : formatPrice(amountCents, currency)}
+          {isFree ? "Gratis" : formatMoney(amountCents, currency)}
         </p>
       </div>
       {!isFree && <span className="text-sm text-[var(--color-text-muted)]">por persona</span>}

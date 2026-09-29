@@ -12,6 +12,7 @@ import { getCenterTimezone } from "@/lib/datetime/center-timezone";
 import { EventWaitlistButton } from "./EventWaitlistButton";
 import { AdminEventWaitlist } from "./AdminEventWaitlist";
 import { isActiveWaitlistStatus } from "@/lib/domain/waitlist";
+import { formatMoney } from "@/lib/domain/money";
 
 function formatDate(date: Date, tz: string): string {
   return date.toLocaleDateString("es-CL", {
@@ -23,11 +24,6 @@ function formatDate(date: Date, tz: string): string {
     hour: "2-digit",
     minute: "2-digit",
   });
-}
-
-function formatPrice(cents: number, currency: string): string {
-  if (currency === "CLP") return `$${cents.toLocaleString("es-CL")}`;
-  return `${(cents / 100).toFixed(2)} ${currency}`;
 }
 
 function hasEventEnded(startsAt: Date, endsAt: Date | null): boolean {
@@ -151,7 +147,7 @@ export default async function EventDetailPage({
                   <p>Inicio: {formatDate(event.startsAt, tz)}</p>
                   <p>Fin: {formatDate(event.endsAt, tz)}</p>
                   {event.location && <p>Lugar: {event.location}</p>}
-                  {!isFree && <p>Precio: {formatPrice(event.amountCents, event.currency)}</p>}
+                  {!isFree && <p>Precio: {formatMoney(event.amountCents, event.currency)}</p>}
                   <p>
                     Cupos:{" "}
                     {event.maxCapacity != null
@@ -294,7 +290,7 @@ export default async function EventDetailPage({
           <div className="flex gap-3">
             <span className="text-[var(--color-text-muted)] text-sm w-16 shrink-0">Precio</span>
             <span className="text-sm font-semibold text-[var(--color-primary)]">
-              {formatPrice(event.amountCents, event.currency)}
+              {formatMoney(event.amountCents, event.currency)}
             </span>
           </div>
         )}

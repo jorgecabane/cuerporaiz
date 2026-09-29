@@ -164,7 +164,7 @@ export function ListCalendar({
                             {c.title}
                           </p>
                           <p className="text-xs text-[var(--color-text-muted)]">
-                            {formatTime(c.startsAt, tz)} · {c.durationMinutes} min · {c.maxCapacity} cupos
+                            {formatTime(c.startsAt, tz)} · {c.durationMinutes} min · capacidad {c.maxCapacity}
                             {c.seriesId ? " · de serie" : ""}
                           </p>
                         </div>
@@ -187,7 +187,7 @@ export function ListCalendar({
                           {c.title}
                         </p>
                         <p className="text-xs text-[var(--color-text-muted)]">
-                          {formatTime(c.startsAt, tz)} · {c.durationMinutes} min · {c.maxCapacity} cupos
+                          {formatTime(c.startsAt, tz)} · {c.durationMinutes} min · capacidad {c.maxCapacity}
                         </p>
                       </div>
                       <span className="text-xs text-[var(--color-text-muted)]">→</span>
