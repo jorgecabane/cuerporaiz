@@ -352,6 +352,11 @@ const FIELD_LABELS: Record<string, {
     title: "Pregunta",
     description: "Respuesta",
   },
+  playlist: {
+    title: "Texto del botón secundario (opcional)",
+    description: "Texto",
+    linkUrl: "Link de Spotify (playlist, álbum o episodio)",
+  },
   "on-demand": {
     title: "Título de la tarjeta",
     description: "Descripción",

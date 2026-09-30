@@ -1,7 +1,8 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { isAdminRole } from "@/lib/domain/role";
-import { siteConfigRepository, aboutPageRepository } from "@/lib/adapters/db";
+import { siteConfigRepository, aboutPageRepository, newsletterSubscriberRepository, prisma } from "@/lib/adapters/db";
+import { getCenterTimezone } from "@/lib/datetime/center-timezone";
 import Link from "next/link";
 import BrandingForm from "./BrandingForm";
 import ContactForm from "./ContactForm";
@@ -9,12 +10,18 @@ import SectionsManager from "./SectionsManager";
 import AboutPageForm from "./AboutPageForm";
 import AboutPageGalleryManager from "./AboutPageGalleryManager";
 import BlogSettingsForm from "./BlogSettingsForm";
+import VisitPageForm from "./VisitPageForm";
+import FirstClassForm from "./FirstClassForm";
+import NewsletterSubscribers from "./NewsletterSubscribers";
 
 const TABS = [
   { key: "branding", label: "Marca" },
   { key: "secciones", label: "Secciones" },
   { key: "sobre", label: "Sobre mí" },
+  { key: "conocenos", label: "Conócenos" },
+  { key: "primera-clase", label: "Primera clase" },
   { key: "blog", label: "Blog" },
+  { key: "newsletter", label: "Newsletter" },
   { key: "contacto", label: "Contacto" },
 ] as const;
 
@@ -68,8 +75,26 @@ export default async function PanelSitioPage({
           {aboutPage && <AboutPageGalleryManager pageId={aboutPage.id} images={aboutPage.images} />}
         </div>
       )}
+      {activeTab === "conocenos" && <VisitPageForm config={config} />}
+      {activeTab === "primera-clase" && <FirstClassForm config={config} />}
       {activeTab === "blog" && <BlogSettingsForm config={config} />}
+      {activeTab === "newsletter" && <NewsletterTab centerId={session.user.centerId} />}
       {activeTab === "contacto" && <ContactForm config={config} />}
     </div>
   );
+}
+
+async function NewsletterTab({ centerId }: { centerId: string }) {
+  const [subscribers, studentsReceiving, timeZone] = await Promise.all([
+    newsletterSubscriberRepository.listByCenter(centerId),
+    prisma.userCenterRole.count({
+      where: {
+        centerId,
+        role: "STUDENT",
+        user: { NOT: { emailPreferences: { some: { centerId, blogPublished: false } } } },
+      },
+    }),
+    getCenterTimezone(centerId),
+  ]);
+  return <NewsletterSubscribers subscribers={subscribers} studentsReceiving={studentsReceiving} timeZone={timeZone} />;
 }

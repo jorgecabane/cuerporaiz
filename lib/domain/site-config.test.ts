@@ -18,10 +18,12 @@ describe("SECTION_KEYS", () => {
     expect(SECTION_KEYS).toContain("contact");
     expect(SECTION_KEYS).toContain("faq");
     expect(SECTION_KEYS).toContain("gallery");
+    expect(SECTION_KEYS).toContain("playlist");
+    expect(SECTION_KEYS).toContain("newsletter");
   });
 
   it("has 12 section keys", () => {
-    expect(SECTION_KEYS.length).toBe(14);
+    expect(SECTION_KEYS.length).toBe(16);
   });
 
   it("SectionKey type is satisfied by each element", () => {

@@ -6,7 +6,7 @@ import { Footer } from "./Footer";
 import type { NavItem } from "@/lib/domain/public-nav";
 
 /** Rutas que usan el cascarón público: contenido a alto completo, footer al final de la página. */
-const PUBLIC_SHELL_PATHS = ["/checkout", "/checkout-evento", "/auth", "/catalogo", "/sobre", "/blog", "/eventos", "/preguntas-frecuentes"];
+const PUBLIC_SHELL_PATHS = ["/checkout", "/checkout-evento", "/auth", "/catalogo", "/sobre", "/blog", "/eventos", "/preguntas-frecuentes", "/horarios", "/conocenos", "/newsletter"];
 
 export function LayoutWithPanel({
   children,

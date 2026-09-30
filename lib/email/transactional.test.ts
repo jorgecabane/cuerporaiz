@@ -71,3 +71,22 @@ describe("buildReservationConfirmationEmail — variante trial (isTrial=true)", 
     expect(dto.html).not.toMatch(/querés|podés|tenés/);
   });
 });
+
+describe("buildReservationConfirmationEmail — tu primera clase", () => {
+  it("incluye los consejos escapados cuando se pasan", () => {
+    const dto = buildReservationConfirmationEmail({
+      ...base,
+      isTrial: true,
+      firstClassTips: ["Llega 10 minutos antes", "Trae <tu> mat"],
+    });
+    expect(dto.html).toContain("Antes de tu primera clase");
+    expect(dto.html).toContain("Llega 10 minutos antes");
+    expect(dto.html).toContain("Trae &lt;tu&gt; mat");
+    expect(dto.text).toContain("- Llega 10 minutos antes");
+  });
+
+  it("no agrega el bloque sin consejos", () => {
+    const dto = buildReservationConfirmationEmail({ ...base, firstClassTips: [] });
+    expect(dto.html).not.toContain("Antes de tu primera clase");
+  });
+});

@@ -40,3 +40,4 @@ export type {
   PromoteToReservationResult,
   PromoteToEventHoldResult,
 } from "./waitlist-repository";
+export type { INewsletterSubscriberRepository, NewsletterSubscriber } from "./newsletter-subscriber-repository";

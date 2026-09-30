@@ -27,6 +27,7 @@ const mocks = vi.hoisted(() => ({
     countConfirmedByLiveClassIds: vi.fn(async () => new Map<string, number>()),
   },
   instructorRepository: { findByCenterId: vi.fn(async (): Promise<unknown[]> => []), findById: vi.fn() },
+  siteConfigRepository: { findByCenterId: vi.fn(async (): Promise<{ firstClassInfo: string | null } | null> => null) },
   disciplineRepository: {
     findManyByCenterId: vi.fn(async (): Promise<{ id: string; name: string; description: string | null }[]> => []),
   },
@@ -53,6 +54,7 @@ vi.mock("@/lib/adapters/db", () => ({
   userRepository: mocks.userRepository,
   instructorRepository: mocks.instructorRepository,
   disciplineRepository: mocks.disciplineRepository,
+  siteConfigRepository: mocks.siteConfigRepository,
   planRepository: mocks.planRepository,
   centerHolidayRepository: mocks.centerHolidayRepository,
   emailPreferenceRepository: mocks.emailPreferenceRepository,
@@ -60,10 +62,10 @@ vi.mock("@/lib/adapters/db", () => ({
 
 // Capturamos los emails enviados para que los tests puedan inspeccionarlos
 // sin gatillar el provider real ni leer process.env.
-const sentEmails = vi.hoisted(() => ({ list: [] as Array<{ subject: string; to: string[] }> }));
+const sentEmails = vi.hoisted(() => ({ list: [] as Array<{ subject: string; to: string[]; html?: string }> }));
 vi.mock("@/lib/application/send-email", () => ({
-  sendEmailSafe: vi.fn((dto: { subject: string; to: string[] }) => {
-    sentEmails.list.push({ subject: dto.subject, to: dto.to });
+  sendEmailSafe: vi.fn((dto: { subject: string; to: string[]; html?: string }) => {
+    sentEmails.list.push({ subject: dto.subject, to: dto.to, html: dto.html });
   }),
 }));
 vi.mock("@/lib/email/branding", () => ({
@@ -440,6 +442,21 @@ describe("reserveClassUseCase — clase de prueba (trial)", () => {
     // Email al cliente con variante trial + email al instructor (fallback contactEmail por sin instructor)
     expect(sentEmails.list.some((e) => e.subject.startsWith("Clase de prueba confirmada:"))).toBe(true);
     expect(sentEmails.list.some((e) => e.subject.startsWith("Clase de prueba:") && e.to.includes("contacto@test.cl"))).toBe(true);
+  });
+
+  it("la clase de prueba incluye 'Tu primera clase' en el correo del alumno", async () => {
+    mocks.liveClassRepository.findById.mockResolvedValue(
+      makeLiveClass({ startsAt: new Date("2026-06-10T14:00:00Z"), centerId, acceptsTrialReservations: true })
+    );
+    mocks.reservationRepository.hasTrialReservation.mockResolvedValue(false);
+    mocks.userPlanRepository.findActiveByUserAndCenter.mockResolvedValue([]);
+    mocks.siteConfigRepository.findByCenterId.mockResolvedValueOnce({ firstClassInfo: "Llega 10 minutos antes\nRopa cómoda" });
+
+    await reserveClassUseCase(userId, centerId, "lc-1");
+
+    const studentEmail = sentEmails.list.find((e) => e.subject.startsWith("Clase de prueba confirmada:"));
+    expect(studentEmail?.html).toContain("Antes de tu primera clase");
+    expect(studentEmail?.html).toContain("Ropa cómoda");
   });
 
   it("rechaza con TRIAL_ALREADY_USED si ya usó la clase de prueba", async () => {

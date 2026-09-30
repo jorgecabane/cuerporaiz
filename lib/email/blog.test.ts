@@ -61,4 +61,24 @@ describe("buildBlogPostPublishedEmail", () => {
     expect(result.html).toContain("&lt;script&gt;");
     expect(result.html).not.toContain("<img src=x onerror");
   });
+
+  it("incluye el link de baja (escapado) y lo omite si no se pasa", () => {
+    const base = {
+      toEmail: "ana@correo.cl",
+      postTitle: "Post",
+      excerpt: "Resumen",
+      postUrl: "https://cuerporaiz.cl/blog/post",
+      branding: defaultBranding(),
+    };
+    const withLink = buildBlogPostPublishedEmail({
+      ...base,
+      unsubscribeUrl: "https://cuerporaiz.cl/newsletter/baja?e=ana%40correo.cl&t=abc",
+    });
+    expect(withLink.html).toContain("Dejar de recibir novedades del blog");
+    expect(withLink.html).toContain("/newsletter/baja?e=ana%40correo.cl&amp;t=abc");
+    expect(withLink.text).toContain("Dejar de recibir novedades del blog: https://cuerporaiz.cl/newsletter/baja");
+
+    const without = buildBlogPostPublishedEmail(base);
+    expect(without.html).not.toContain("Dejar de recibir");
+  });
 });
