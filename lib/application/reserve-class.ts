@@ -20,7 +20,9 @@ import {
   instructorRepository,
   centerHolidayRepository,
   disciplineRepository,
+  siteConfigRepository,
 } from "@/lib/adapters/db";
+import { splitLines } from "@/lib/domain/embeds";
 import { planRepository } from "@/lib/adapters/db";
 import { runAfterResponse } from "@/lib/utils/run-after-response";
 import { sendEmailSafe } from "@/lib/application/send-email";
@@ -80,6 +82,23 @@ function toLiveClassDto(
     ...(opts?.disciplineName !== undefined ? { disciplineName: opts.disciplineName } : {}),
     ...(opts?.disciplineDescription !== undefined ? { disciplineDescription: opts.disciplineDescription } : {}),
   };
+}
+
+/**
+ * "Tu primera clase" (config del sitio) para la clase de prueba o la primera
+ * reserva del alumno en el centro. Vacío en el resto de las reservas.
+ */
+async function firstClassTipsFor(userId: string, centerId: string, isTrial: boolean): Promise<string[]> {
+  if (!isTrial) {
+    const { total } = await reservationRepository.findByUserIdAndCenterPaginated(userId, {
+      centerId,
+      limit: 1,
+      offset: 0,
+    });
+    if (total > 1) return [];
+  }
+  const config = await siteConfigRepository.findByCenterId(centerId);
+  return splitLines(config?.firstClassInfo);
 }
 
 /**
@@ -284,6 +303,9 @@ export async function reserveClassUseCase(
     // Respeta el switch del perfil. El aviso al profe (trial, abajo) NO se gatea:
     // es a staff, no una preferencia del estudiante.
     if (await shouldSendEmail(userId, centerId, "reservationConfirm")) {
+      const firstClassTips = liveClass.isOnline
+        ? []
+        : await firstClassTipsFor(userId, centerId, reservation.isTrial);
       sendEmailSafe(
         buildReservationConfirmationEmail({
           toEmail: user.email,
@@ -295,6 +317,7 @@ export async function reserveClassUseCase(
           myReservationsUrl: `${baseUrl}/panel/reservas`,
           branding,
           isTrial: reservation.isTrial,
+          firstClassTips,
         })
       );
     }

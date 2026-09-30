@@ -6,6 +6,7 @@ import { resolveGuestUser } from "@/lib/application/resolve-guest-user";
 import { allowGuestCheckout } from "@/lib/application/guest-checkout-rate-limit";
 import { guestCheckoutBodySchema } from "@/lib/dto/guest-checkout-dto";
 import { centerRepository } from "@/lib/adapters/db";
+import { getClientIp } from "@/lib/utils/client-ip";
 
 function getBaseUrl(request: Request): string {
   const u = new URL(request.url);
@@ -15,12 +16,6 @@ function getBaseUrl(request: Request): string {
   const proto = (xfProto ?? u.protocol.replace(":", "") ?? "http").split(",")[0].trim();
   const resolvedHost = (xfHost ?? host ?? u.host).split(",")[0].trim();
   return `${proto}://${resolvedHost}`;
-}
-
-function getClientIp(request: Request): string | null {
-  const xff = request.headers.get("x-forwarded-for");
-  if (xff) return xff.split(",")[0].trim();
-  return request.headers.get("x-real-ip");
 }
 
 const checkoutBodySchema = z

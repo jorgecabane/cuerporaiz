@@ -9,7 +9,7 @@
 import type { SendEmailDto } from "@/lib/dto/email-dto";
 import { buildGoogleCalendarUrl, getAddToCalendarInstruction } from "@/lib/email/calendar";
 import { emailBaseLayout, emailCtaStyle } from "./base-layout";
-import { plainTextToHtmlParagraphs } from "./utils";
+import { escapeHtml, plainTextToHtmlParagraphs } from "./utils";
 import { formatLongDateTime, formatLongDate } from "./format-datetime";
 import type { EmailBranding } from "./branding";
 
@@ -35,6 +35,8 @@ export interface ReservationConfirmationData {
    * Se calcula desde `reservation.isTrial`.
    */
   isTrial?: boolean;
+  /** "Tu primera clase" (una idea por ítem): solo en la clase de prueba o primera reserva. */
+  firstClassTips?: string[];
 }
 
 export function buildReservationConfirmationEmail(
@@ -58,6 +60,11 @@ export function buildReservationConfirmationEmail(
   const intro = isTrial
     ? "Tu clase de prueba quedó confirmada. Te esperamos para que conozcas el espacio y la práctica."
     : "Tu reserva quedó confirmada.";
+  const tips = data.firstClassTips ?? [];
+  const tipsBlock = tips.length
+    ? `<p style="margin:24px 0 8px;font-weight:600;color:${branding.colorPrimary};">Antes de tu primera clase</p>
+    <ul style="margin:0;padding-left:20px;font-size:14px;color:#2A2A2A;">${tips.map((t) => `<li style="margin:4px 0;">${escapeHtml(t)}</li>`).join("")}</ul>`
+    : "";
   const trialFooter = isTrial
     ? `<p style="margin-top:24px;font-size:14px;color:#5C5A56;">Si quieres seguir después de la prueba, puedes ver los planes disponibles en nuestra web.</p>`
     : "";
@@ -73,6 +80,7 @@ export function buildReservationConfirmationEmail(
     </table>
     <p style="text-align:center;margin:24px 0;"><a href="${calendarUrl}" style="${cta}">Añadir a Google Calendar</a></p>
     ${data.myReservationsUrl ? `<p style="text-align:center;font-size:13px;"><a href="${data.myReservationsUrl}" style="color:${branding.colorPrimary};">Ver mis reservas</a></p>` : ""}
+    ${tipsBlock}
     ${trialFooter}
     <p style="margin-top:24px;">Nos vemos en la práctica.</p>`;
   const html = emailBaseLayout({ body, branding });
@@ -82,6 +90,7 @@ export function buildReservationConfirmationEmail(
     `${data.className} | ${when} | ${data.location}`,
     getAddToCalendarInstruction(calendarUrl),
     data.myReservationsUrl ? `Ver mis reservas: ${data.myReservationsUrl}` : "",
+    tips.length ? `Antes de tu primera clase:\n${tips.map((t) => `- ${t}`).join("\n")}` : "",
     isTrial ? "Si quieres seguir después de la prueba, puedes ver los planes disponibles en nuestra web." : "",
     `— ${branding.centerName}`,
   ].filter(Boolean);

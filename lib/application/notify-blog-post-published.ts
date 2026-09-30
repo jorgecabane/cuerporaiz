@@ -1,13 +1,15 @@
 /**
- * Notifica a los estudiantes del centro cuando se publica una nueva entrada del
- * blog (gatillado por el webhook de Sanity). Respeta el switch `blogPublished`
+ * Notifica a los estudiantes del centro y a los suscriptores del newsletter cuando
+ * se publica una nueva entrada del blog (gatillado por el webhook de Sanity). Respeta el switch `blogPublished`
  * del perfil y dedup por `postId` para no reenviar al editar un post ya notificado.
  */
 
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
 
-import { centerRepository, prisma } from "@/lib/adapters/db";
+import { centerRepository, newsletterSubscriberRepository, prisma } from "@/lib/adapters/db";
+import { buildUnsubscribeUrl } from "@/lib/application/newsletter-token";
+import { mergeBlogRecipients } from "@/lib/domain/newsletter";
 import { sendEmailSafe } from "@/lib/application/send-email";
 import { buildBlogPostPublishedEmail } from "@/lib/email/blog";
 import { getEmailBranding } from "@/lib/email/branding";
@@ -76,19 +78,20 @@ export async function notifyBlogPostPublishedUseCase(
     },
   });
 
-  let notified = 0;
-  const seen = new Set<string>();
-  for (const { user } of roles) {
-    if (seen.has(user.id)) continue;
-    seen.add(user.id);
-    if (!user.email) continue;
-    const wantsBlog = user.emailPreferences[0]?.blogPublished ?? true;
-    if (!wantsBlog) continue;
+  const recipients = mergeBlogRecipients(
+    roles.map(({ user }) => ({
+      email: user.email,
+      name: user.name,
+      blogPublished: user.emailPreferences[0]?.blogPublished ?? null,
+    })),
+    await newsletterSubscriberRepository.listActiveEmails(center.id)
+  );
 
+  for (const recipient of recipients) {
     sendEmailSafe(
       buildBlogPostPublishedEmail({
-        toEmail: user.email,
-        userName: user.name ?? undefined,
+        toEmail: recipient.email,
+        userName: recipient.name,
         postTitle: payload.title,
         excerpt: payload.excerpt,
         coverImageUrl,
@@ -96,12 +99,12 @@ export async function notifyBlogPostPublishedUseCase(
         readingMinutes: payload.readingMinutes ?? undefined,
         authorName: payload.authorName ?? undefined,
         postUrl,
-        preferencesUrl,
+        preferencesUrl: recipient.isStudent ? preferencesUrl : undefined,
+        unsubscribeUrl: buildUnsubscribeUrl(baseUrl, center.id, recipient.email),
         branding,
       })
     );
-    notified++;
   }
 
-  return { status: "sent", notified };
+  return { status: "sent", notified: recipients.length };
 }

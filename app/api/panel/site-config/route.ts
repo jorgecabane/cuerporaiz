@@ -43,6 +43,14 @@ export async function GET() {
       libraryHeroDescription: null,
       libraryHeroImageUrl: null,
       heroOverlayEnabled: true,
+      firstClassInfo: null,
+      visitVisible: false,
+      visitTitle: null,
+      visitIntro: null,
+      visitHeroImageUrl: null,
+      visitVideoUrl: null,
+      visitParking: null,
+      visitTransit: null,
     }
   );
 }
@@ -61,6 +69,7 @@ export async function PATCH(request: Request) {
   }
 
   const config = await siteConfigRepository.upsert(centerId, parsed.data);
-  revalidatePath("/");
+  // Layout: el header/footer dependen de la config (labels, Conócenos visible).
+  revalidatePath("/", "layout");
   return NextResponse.json(config);
 }

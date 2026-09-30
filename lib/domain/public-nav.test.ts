@@ -9,7 +9,12 @@ describe("buildPublicNav", () => {
     expect(nav.map((i) => i.label)).toEqual(["Nosotros", "Practica", "Blog", "Contacto"]);
     const [about, practice] = nav as NavGroup[];
     expect(about.children.map((c) => c.href)).toEqual(["/sobre", "/preguntas-frecuentes"]);
-    expect(practice.children.map((c) => c.href)).toEqual(["/#agenda", "/catalogo", "/eventos"]);
+    expect(practice.children.map((c) => c.href)).toEqual(["/horarios", "/catalogo", "/eventos"]);
+  });
+
+  it("suma Conócenos a Nosotros cuando está visible", () => {
+    const about = buildPublicNav({ ...full, visitEnabled: true })[0] as NavGroup;
+    expect(about.children.map((c) => c.href)).toEqual(["/sobre", "/conocenos", "/preguntas-frecuentes"]);
   });
 
   it("aplica los nombres personalizados del panel", () => {
@@ -30,7 +35,7 @@ describe("flattenNav / isNavGroup", () => {
   it("expande grupos para el footer", () => {
     const flat = flattenNav(buildPublicNav(full));
     expect(flat.map((l) => l.href)).toEqual([
-      "/sobre", "/preguntas-frecuentes", "/#agenda", "/catalogo", "/eventos", "/blog", "/#contacto",
+      "/sobre", "/preguntas-frecuentes", "/horarios", "/catalogo", "/eventos", "/blog", "/#contacto",
     ]);
     expect(flat.every((l) => !isNavGroup(l))).toBe(true);
   });

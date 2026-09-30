@@ -11,3 +11,5 @@ export { LibrarySection } from "./LibrarySection";
 export { EventsSection, type UpcomingEvent } from "./EventsSection";
 export { FaqSection, type FaqItem } from "./FaqSection";
 export { GallerySection } from "./GallerySection";
+export { PlaylistSection } from "./PlaylistSection";
+export { NewsletterSection } from "./NewsletterSection";

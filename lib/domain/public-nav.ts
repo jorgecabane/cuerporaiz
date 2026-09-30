@@ -19,6 +19,8 @@ export function flattenNav(items: NavItem[]): NavLink[] {
 export interface PublicNavOptions {
   /** Label del link a /sobre, o null si la página no está visible en el header. */
   aboutLabel: string | null;
+  /** Página "Conócenos" visible. */
+  visitEnabled?: boolean;
   faqEnabled: boolean;
   /** Label del blog, o null si está deshabilitado. */
   blogLabel: string | null;
@@ -28,13 +30,14 @@ export interface PublicNavOptions {
 
 export const NAV_GROUP_LABELS = { about: "Nosotros", practice: "Practica" } as const;
 
-export function buildPublicNav({ aboutLabel, faqEnabled, blogLabel, labels = {} }: PublicNavOptions): NavItem[] {
+export function buildPublicNav({ aboutLabel, visitEnabled = false, faqEnabled, blogLabel, labels = {} }: PublicNavOptions): NavItem[] {
   const about: NavLink[] = [
     ...(aboutLabel ? [{ href: "/sobre", label: aboutLabel, description: "Mi historia y propuesta" }] : []),
+    ...(visitEnabled ? [{ href: "/conocenos", label: "Conócenos", description: "La sala y cómo llegar" }] : []),
     ...(faqEnabled ? [{ href: "/preguntas-frecuentes", label: "Preguntas frecuentes", description: "Dudas antes de venir" }] : []),
   ];
   const practice: NavLink[] = [
-    { href: "/#agenda", label: labels.inPerson || "Horarios", description: "Calendario, planes y clases presenciales" },
+    { href: "/horarios", label: labels.inPerson || "Horarios", description: "Calendario, planes y clases presenciales" },
     { href: "/catalogo", label: labels.online || "Biblioteca Virtual", description: "Clases grabadas, tuyas para siempre" },
     { href: "/eventos", label: "Eventos y Experiencias", description: "Círculos, retiros y talleres" },
   ];

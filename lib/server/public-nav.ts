@@ -31,6 +31,7 @@ export async function getPublicNavLinks(): Promise<NavItem[]> {
 
     return buildPublicNav({
       aboutLabel: aboutPage?.visible && aboutPage.showInHeader ? aboutPage.headerLabel : null,
+      visitEnabled: siteConfig?.visitVisible ?? false,
       faqEnabled: Boolean(faq?.visible && toFaqItems(faq.items).length > 0),
       blogLabel: siteConfig?.blogEnabled && isSanityConfigured() ? siteConfig.blogLabel : null,
       labels: {

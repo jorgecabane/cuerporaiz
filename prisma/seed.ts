@@ -227,6 +227,9 @@ async function main() {
     { sectionKey: "contact", sortOrder: 11, title: null, subtitle: null, visible: false },
     { sectionKey: "faq", sortOrder: 12, title: "Preguntas frecuentes", subtitle: "Dudas comunes", visible: false },
     { sectionKey: "gallery", sortOrder: 13, title: "En imágenes", subtitle: "Galería", visible: false },
+    { sectionKey: "playlist", sortOrder: 14, title: "Escucha nuestra playlist", subtitle: "Para practicar en casa", visible: false },
+    // Visible en E2E: e2e/newsletter.spec.ts se suscribe desde la home.
+    { sectionKey: "newsletter", sortOrder: 15, title: "Lo nuevo del blog, en tu correo", subtitle: "Novedades", visible: true },
   ] as const;
 
   const sectionRecords: Record<string, string> = {};

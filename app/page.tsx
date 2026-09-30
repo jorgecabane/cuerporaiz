@@ -24,10 +24,13 @@ import {
   EventsSection,
   FaqSection,
   GallerySection,
+  PlaylistSection,
+  NewsletterSection,
   type UpcomingEvent,
 } from "@/components/sections/home";
 import { toFaqItems, type SiteSectionWithItems } from "@/lib/domain/site-config";
 import { getPublicCenterTimezone } from "@/lib/datetime/center-timezone";
+import { loadWeekSchedule, toLivePlans } from "@/lib/server/schedule";
 import { formatMoney, formatPriceOrFree } from "@/lib/domain/money";
 
 export const revalidate = 60;
@@ -108,38 +111,8 @@ export default async function HomePage() {
     .filter((s) => s.visible)
     .sort((a, b) => a.sortOrder - b.sortOrder);
 
-  // Query upcoming live classes for schedule section (next 7 days)
-  const now = new Date();
-  const weekFromNow = new Date(now);
-  weekFromNow.setDate(weekFromNow.getDate() + 7);
-  const upcomingClasses = await prisma.liveClass.findMany({
-    where: { centerId: center.id, startsAt: { gte: now, lte: weekFromNow }, status: "ACTIVE" },
-    include: { discipline: true, reservations: { where: { status: "CONFIRMED" } } },
-    orderBy: { startsAt: "asc" },
-    take: 50,
-  });
-
-  const scheduleClasses = upcomingClasses.map((c) => ({
-    time: c.startsAt.toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: tz }),
-    type: c.discipline?.name ?? c.title,
-    description: c.discipline?.description ?? undefined,
-    duration: `${c.durationMinutes} min`,
-    spotsUsed: c.reservations.length,
-    spotsTotal: c.maxCapacity,
-    dayOfWeek: new Date(c.startsAt.toLocaleString("en-US", { timeZone: tz })).getDay(),
-  }));
-
-  // Prepare live plans for AgendaSection
-  const livePlans = plans
-    .filter((p) => p.type === "LIVE")
-    .map((p) => ({
-      name: p.name,
-      amountCents: p.amountCents,
-      currency: p.currency,
-      validityDays: p.validityDays ?? undefined,
-      maxReservations: p.maxReservations ?? undefined,
-      highlight: false,
-    }));
+  const { classes: scheduleClasses } = await loadWeekSchedule(center.id, tz);
+  const livePlans = toLivePlans(plans);
 
   // Biblioteca virtual: datos para el bento (hero + categorías)
   const libraryPlans = plans.filter(
@@ -159,6 +132,7 @@ export default async function HomePage() {
   }));
 
   // Próximos eventos (ventana de 60 días, máx 4)
+  const now = new Date();
   const sixtyDaysFromNow = new Date(now);
   sixtyDaysFromNow.setDate(sixtyDaysFromNow.getDate() + 60);
   const upcomingEventRows = await prisma.event.findMany({
@@ -232,7 +206,8 @@ export default async function HomePage() {
                 title={section.title ?? undefined}
                 subtitle={siteConfig?.contactAddress ? `Presencial — ${siteConfig.contactAddress}` : (section.subtitle ?? undefined)}
                 livePlans={livePlans.length > 0 ? livePlans : undefined}
-                classes={scheduleClasses.length > 0 ? scheduleClasses : undefined}
+                classes={scheduleClasses}
+                fullScheduleHref="/horarios"
               />
             );
 
@@ -286,6 +261,25 @@ export default async function HomePage() {
                 images={aboutPage.images}
               />
             ) : null;
+
+          case "playlist":
+            return (
+              <PlaylistSection
+                key={section.id}
+                title={section.title ?? undefined}
+                subtitle={section.subtitle ?? undefined}
+                item={items[0]}
+              />
+            );
+
+          case "newsletter":
+            return (
+              <NewsletterSection
+                key={section.id}
+                title={section.title ?? undefined}
+                subtitle={section.subtitle ?? undefined}
+              />
+            );
 
           case "testimonials":
             return (

@@ -13,6 +13,8 @@ export const SECTION_KEYS = [
   "contact",
   "faq",
   "gallery",
+  "playlist",
+  "newsletter",
 ] as const;
 
 export type SectionKey = (typeof SECTION_KEYS)[number];
@@ -50,6 +52,14 @@ export interface SiteConfig {
   seoTitle: string | null;
   seoDescription: string | null;
   heroOverlayEnabled: boolean;
+  firstClassInfo: string | null;
+  visitVisible: boolean;
+  visitTitle: string | null;
+  visitIntro: string | null;
+  visitHeroImageUrl: string | null;
+  visitVideoUrl: string | null;
+  visitParking: string | null;
+  visitTransit: string | null;
 }
 
 export interface SiteSection {

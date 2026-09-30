@@ -40,6 +40,10 @@ type AgendaSectionProps = {
   subtitle?: string;
   livePlans?: LivePlan[];
   classes?: ScheduleClass[];
+  /** "h1" en /horarios (la sección es el contenido principal). */
+  headingLevel?: "h1" | "h2";
+  /** Link "Ver horarios completos" (home → /horarios). */
+  fullScheduleHref?: string;
 };
 
 /* ─── Datos de horario por día de semana (0 = domingo) ───────────────────── */
@@ -117,7 +121,15 @@ function planNote(plan: LivePlan): string {
 }
 
 /* ─── Componente ─────────────────────────────────────────────────────────── */
-export function AgendaSection({ title, subtitle, livePlans, classes: classesProp }: AgendaSectionProps) {
+export function AgendaSection({
+  title,
+  subtitle,
+  livePlans,
+  classes: classesProp,
+  headingLevel = "h2",
+  fullScheduleHref,
+}: AgendaSectionProps) {
+  const Heading = headingLevel;
   const days = useMemo(() => getUpcomingDays(7), []);
   const [selectedIdx, setSelectedIdx] = useState(0);
 
@@ -147,12 +159,12 @@ export function AgendaSection({ title, subtitle, livePlans, classes: classesProp
           </p>
         </AnimateIn>
         <AnimateIn delay={0.1}>
-          <h2
+          <Heading
             id="agenda-heading"
             className="mt-[var(--space-3)] text-section font-display font-semibold text-[var(--color-primary)]"
           >
             {title ?? "Reserva tu lugar"}
-          </h2>
+          </Heading>
         </AnimateIn>
 
         {/* Layout 2 columnas en desktop */}
@@ -280,6 +292,15 @@ export function AgendaSection({ title, subtitle, livePlans, classes: classesProp
                   })
                 )}
               </div>
+
+              {fullScheduleHref && (
+                <a
+                  href={fullScheduleHref}
+                  className="mt-[var(--space-6)] inline-flex text-sm font-medium text-[var(--color-secondary)] underline underline-offset-4"
+                >
+                  Ver horarios completos y tipos de clase →
+                </a>
+              )}
 
               {/* Clase de prueba */}
               <div className="mt-[var(--space-8)] rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-tertiary)] p-[var(--space-6)]">

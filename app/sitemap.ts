@@ -43,6 +43,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
 
     entries.push({
+      url: absoluteUrl("/horarios"),
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.8,
+    });
+
+    if (siteConfig?.visitVisible) {
+      entries.push({
+        url: absoluteUrl("/conocenos"),
+        lastModified: now,
+        changeFrequency: "monthly",
+        priority: 0.6,
+      });
+    }
+
+    entries.push({
       url: absoluteUrl("/eventos"),
       lastModified: now,
       changeFrequency: "weekly",

@@ -57,6 +57,14 @@ export const upsertSiteConfigSchema = z.object({
   seoTitle: z.string().trim().max(120).nullable().optional(),
   seoDescription: z.string().trim().max(300).nullable().optional(),
   heroOverlayEnabled: z.boolean().optional(),
+  firstClassInfo: z.string().trim().max(1000).nullable().optional(),
+  visitVisible: z.boolean().optional(),
+  visitTitle: z.string().trim().max(120).nullable().optional(),
+  visitIntro: z.string().trim().max(600).nullable().optional(),
+  visitHeroImageUrl: assetUrlSchema,
+  visitVideoUrl: httpsUrlSchema,
+  visitParking: z.string().trim().max(200).nullable().optional(),
+  visitTransit: z.string().trim().max(200).nullable().optional(),
 });
 export type UpsertSiteConfigInput = z.infer<typeof upsertSiteConfigSchema>;
 
