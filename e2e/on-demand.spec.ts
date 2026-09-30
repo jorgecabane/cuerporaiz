@@ -7,7 +7,7 @@ test.describe("On-demand / Replay", () => {
 
     test("muestra heading Biblioteca virtual", async ({ page }) => {
       await page.goto("/catalogo");
-      await expect(page.getByRole("heading", { name: /Biblioteca virtual/i })).toBeVisible({
+      await expect(page.getByRole("heading", { level: 1, name: /Biblioteca virtual/i })).toBeVisible({
         timeout: 15000,
       });
     });
@@ -16,7 +16,7 @@ test.describe("On-demand / Replay", () => {
       await page.route("**/catalogo**", async (route) => route.fallback());
 
       await page.goto("/catalogo");
-      await expect(page.getByRole("heading", { name: /Biblioteca virtual/i })).toBeVisible({
+      await expect(page.getByRole("heading", { level: 1, name: /Biblioteca virtual/i })).toBeVisible({
         timeout: 15000,
       });
 

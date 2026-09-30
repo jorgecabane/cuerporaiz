@@ -49,7 +49,7 @@ export default async function ConocenosPage() {
   const address = config.contactAddress;
 
   return (
-    <div className="pt-[var(--header-height)]">
+    <div>
       <section className="px-[var(--space-4)] py-[var(--space-16)] md:px-[var(--space-8)]" aria-labelledby="visit-heading">
         <div className="mx-auto grid max-w-6xl items-center gap-[var(--space-10)] md:grid-cols-2">
           <div>

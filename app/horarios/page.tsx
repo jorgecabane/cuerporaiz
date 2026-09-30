@@ -39,7 +39,7 @@ export default async function HorariosPage() {
   const livePlans = toLivePlans(plans);
 
   return (
-    <div className="pt-[var(--header-height)]">
+    <div>
       <AgendaSection
         headingLevel="h1"
         title="Horarios"

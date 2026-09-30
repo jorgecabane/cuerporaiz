@@ -23,7 +23,7 @@ export default async function NewsletterUnsubscribePage({ searchParams }: Props)
   const valid = Boolean(center && email && token && verifyNewsletterToken(center.id, email, token));
 
   return (
-    <div className="flex min-h-[70vh] items-center justify-center px-[var(--space-4)] pt-[var(--header-height)]">
+    <div className="flex min-h-[70vh] items-center justify-center px-[var(--space-4)]">
       <div className="w-full max-w-md rounded-[var(--radius-xl)] bg-[var(--color-surface)] p-[var(--space-8)] text-center shadow-[var(--shadow-md)]">
         {!valid || estado === "invalido" ? (
           <>

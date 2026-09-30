@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { onDemandCategoryRepository, centerRepository } from "@/lib/adapters/db";
 import { prisma } from "@/lib/adapters/db/prisma";
-import { Suspense } from "react";
-import { BibliotecaShell } from "@/components/biblioteca/BibliotecaShell";
+import { PublicCatalog } from "@/components/biblioteca/PublicCatalog";
 import type { CategoryData } from "@/components/biblioteca/types";
 import { buildSiteMetadata } from "@/lib/seo/metadata";
 import { getLibraryPacks } from "@/lib/application/get-library-packs";
@@ -64,18 +63,5 @@ export default async function CatalogoPage() {
     })),
   }));
 
-  return (
-    <div className="px-4 py-6 sm:py-12 pt-[calc(var(--header-height)+var(--space-4))]">
-      <Suspense fallback={null}>
-        <BibliotecaShell
-          categories={categories}
-          mode={{ kind: "public" }}
-          packs={packs}
-          routingMode="path"
-          basePath="/catalogo"
-          subtitle="Practica a tu ritmo con clases grabadas"
-        />
-      </Suspense>
-    </div>
-  );
+  return <PublicCatalog categories={categories} packs={packs} />;
 }
