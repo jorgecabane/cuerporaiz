@@ -27,7 +27,7 @@ export default async function PreguntasFrecuentesPage() {
   if (items.length === 0) notFound();
 
   return (
-    <div className="pt-[var(--header-height)]">
+    <div>
       <FaqSection
         title={faq?.title ?? undefined}
         subtitle={faq?.subtitle ?? undefined}

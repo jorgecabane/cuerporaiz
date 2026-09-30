@@ -11,6 +11,7 @@ import type { BibliotecaMode, RoutingMode, CategoryData, NavigationTarget } from
 import { buildBibliotecaHref } from "./types";
 import { LibraryPackOffers, CategoryPackNote } from "./LibraryPacks";
 import type { LibraryPack } from "@/lib/domain/library-pack";
+import { formatCount } from "@/lib/domain/format-count";
 
 interface BibliotecaShellProps {
   categories: CategoryData[];
@@ -366,8 +367,8 @@ export function BibliotecaShell({
                   {cat.name}
                 </h2>
                 <span className="text-xs text-[var(--color-text-muted)]">
-                  {cat.practices.reduce((a, p) => a + p.lessons.length, 0)} clases ·{" "}
-                  {cat.practices.length} prácticas
+                  {formatCount(cat.practices.reduce((a, p) => a + p.lessons.length, 0), "clase", "clases")} ·{" "}
+                  {formatCount(cat.practices.length, "práctica", "prácticas")}
                 </span>
               </div>
             </div>
