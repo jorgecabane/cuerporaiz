@@ -12,7 +12,6 @@ type LibraryCategory = {
 type LibrarySectionProps = {
   title?: string;
   subtitle?: string;
-  heroTag?: string;
   heroTitle?: string;
   heroDescription?: string;
   heroImage?: string;
@@ -47,7 +46,6 @@ const DEFAULT_CATEGORIES: LibraryCategory[] = [
 export function LibrarySection({
   title,
   subtitle,
-  heroTag,
   heroTitle,
   heroDescription,
   heroImage,
@@ -91,7 +89,8 @@ export function LibrarySection({
               href={href}
               className="group relative block h-full overflow-hidden rounded-[var(--radius-xl)] bg-[var(--color-primary)] shadow-[var(--shadow-md)] transition-shadow duration-[var(--duration-slow)] hover:shadow-[var(--shadow-lg)]"
             >
-              <div className="relative aspect-[4/3] md:aspect-auto md:h-full">
+              {/* aspect-ratio actúa como alto mínimo: si el texto no cabe, la tarjeta crece */}
+              <div className="relative flex aspect-[4/3] flex-col justify-end md:aspect-auto md:h-full">
                 <Image
                   src={heroImage ?? DEFAULT_HERO_IMAGE}
                   alt={heroTitle ?? "Biblioteca virtual de clases grabadas"}
@@ -99,12 +98,9 @@ export function LibrarySection({
                   className="object-cover transition-transform duration-[var(--duration-slow)] group-hover:scale-[1.03]"
                   sizes="(max-width: 768px) 100vw, 66vw"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-[var(--color-primary)]/90 via-[var(--color-primary)]/30 to-transparent" />
-                <div className="absolute inset-x-0 bottom-0 p-[var(--space-6)] md:p-[var(--space-8)]">
-                  <span className="inline-block rounded-full bg-white/20 px-[var(--space-3)] py-[var(--space-1)] text-xs font-medium text-white backdrop-blur-sm">
-                    {heroTag ?? "Acceso ilimitado"}
-                  </span>
-                  <h3 className="mt-[var(--space-4)] font-display text-3xl font-semibold text-white md:text-4xl">
+                <div className="absolute inset-0 bg-gradient-to-t from-[var(--color-primary)]/90 via-[var(--color-primary)]/50 to-[var(--color-primary)]/10" />
+                <div className="relative p-[var(--space-6)] pt-[var(--space-16)] md:p-[var(--space-8)]">
+                  <h3 className="font-display text-3xl font-semibold text-white md:text-4xl">
                     {heroTitle ?? "Una biblioteca que crece contigo"}
                   </h3>
                   <p className="mt-[var(--space-3)] max-w-md text-sm leading-relaxed text-white/85 md:text-base">
