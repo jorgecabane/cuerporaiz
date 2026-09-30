@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   SITE_NAME,
   TAGLINE,
-  NAV_LINKS,
+  DEFAULT_NAV,
   CTAS,
 } from "@/lib/constants/copy";
 
@@ -12,9 +12,8 @@ describe("copy", () => {
     expect(TAGLINE).toContain("cuerpo");
   });
 
-  it("NAV_LINKS tiene enlaces esperados", () => {
-    expect(NAV_LINKS.length).toBeGreaterThan(0);
-    expect(NAV_LINKS[0]).toEqual({ href: "/eventos", label: "Eventos y Experiencias" });
+  it("DEFAULT_NAV agrupa Practica y termina en Contacto", () => {
+    expect(DEFAULT_NAV.map((i) => i.label)).toEqual(["Practica", "Contacto"]);
   });
 
   it("CTAS tiene textos de llamada a la acción", () => {

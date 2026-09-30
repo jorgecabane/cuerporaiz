@@ -5,22 +5,22 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { Menu, X } from "lucide-react";
-import { SITE_NAME, NAV_LINKS, CTAS } from "@/lib/constants/copy";
+import { SITE_NAME, DEFAULT_NAV, CTAS } from "@/lib/constants/copy";
+import { isNavGroup, type NavItem } from "@/lib/domain/public-nav";
 import { SiteLogoMark } from "./SiteLogoMark";
-
-type HeaderNavLink = { href: string; label: string };
+import { NavDropdown } from "./NavDropdown";
 
 interface HeaderProps {
-  navLinks?: HeaderNavLink[];
+  navLinks?: NavItem[];
   logoUrl?: string | null;
   centerName?: string;
 }
 
 /** Rutas que usan cascarón público: header siempre sólido (buen contraste en fondo claro). */
-const PUBLIC_SHELL_PATHS = ["/checkout", "/auth", "/catalogo", "/sobre", "/blog", "/eventos"];
+const PUBLIC_SHELL_PATHS = ["/checkout", "/auth", "/catalogo", "/sobre", "/blog", "/eventos", "/preguntas-frecuentes"];
 
 export function Header({ navLinks, logoUrl = null, centerName = SITE_NAME }: HeaderProps = {}) {
-  const links: readonly HeaderNavLink[] = navLinks ?? NAV_LINKS;
+  const items: NavItem[] = navLinks ?? DEFAULT_NAV;
   const hasLogo = Boolean(logoUrl);
   const pathname = usePathname();
   const [isScrolled, setIsScrolled] = useState(false);
@@ -102,17 +102,21 @@ export function Header({ navLinks, logoUrl = null, centerName = SITE_NAME }: Hea
 
           {/* Desktop nav */}
           <nav className="hidden items-center gap-[var(--space-6)] lg:flex" aria-label="Principal">
-            {links.map(({ href, label }) => (
-              <Link
-                key={href}
-                href={href}
-                className={`text-sm font-medium transition-colors duration-[var(--duration-normal)] hover:text-[var(--color-secondary)] ${
-                  solid ? "text-[var(--color-text-muted)]" : "text-white/80"
-                }`}
-              >
-                {label}
-              </Link>
-            ))}
+            {items.map((item) =>
+              isNavGroup(item) ? (
+                <NavDropdown key={item.label} group={item} solid={solid} />
+              ) : (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`text-sm font-medium transition-colors duration-[var(--duration-normal)] hover:text-[var(--color-secondary)] ${
+                    solid ? "text-[var(--color-text-muted)]" : "text-white/80"
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              )
+            )}
             <Link
               href="/panel"
               className={`rounded-[var(--radius-md)] px-[var(--space-5)] py-[var(--space-3)] text-sm font-medium transition-all duration-[var(--duration-normal)] ${
@@ -150,30 +154,34 @@ export function Header({ navLinks, logoUrl = null, centerName = SITE_NAME }: Hea
             className="fixed inset-0 z-40 flex flex-col bg-[var(--color-primary)] lg:hidden"
           >
             <nav
-              className="flex flex-col items-center justify-center gap-[var(--space-8)] pt-[var(--header-height)]"
+              className="flex flex-col items-center gap-[var(--space-6)] overflow-y-auto px-[var(--space-6)] pb-[var(--space-12)] pt-[calc(var(--header-height)+var(--space-8))] text-center"
               style={{ minHeight: "100dvh" }}
               aria-label="Menú móvil"
             >
-              {links.map(({ href, label }, i) => (
+              {items.map((item, i) => (
                 <motion.div
-                  key={href}
+                  key={item.label}
                   initial={{ opacity: 0, y: 16 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 + i * 0.07, duration: 0.35 }}
+                  className="flex flex-col items-center gap-[var(--space-3)]"
                 >
-                  <Link
-                    href={href}
-                    onClick={() => setIsOpen(false)}
-                    className="font-display text-4xl font-semibold text-white/70 transition-colors hover:text-white"
-                  >
-                    {label}
-                  </Link>
+                  {isNavGroup(item) ? (
+                    <>
+                      <p className="text-xs font-medium uppercase tracking-[0.22em] text-white/60">{item.label}</p>
+                      {item.children.map((link) => (
+                        <MobileNavLink key={link.href} href={link.href} label={link.label} onNavigate={() => setIsOpen(false)} />
+                      ))}
+                    </>
+                  ) : (
+                    <MobileNavLink href={item.href} label={item.label} onNavigate={() => setIsOpen(false)} />
+                  )}
                 </motion.div>
               ))}
               <motion.div
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 + links.length * 0.07, duration: 0.35 }}
+                transition={{ delay: 0.1 + items.length * 0.07, duration: 0.35 }}
                 className="mt-[var(--space-4)]"
               >
                 <Link
@@ -189,5 +197,17 @@ export function Header({ navLinks, logoUrl = null, centerName = SITE_NAME }: Hea
         )}
       </AnimatePresence>
     </>
+  );
+}
+
+function MobileNavLink({ href, label, onNavigate }: { href: string; label: string; onNavigate: () => void }) {
+  return (
+    <Link
+      href={href}
+      onClick={onNavigate}
+      className="font-display text-3xl font-semibold text-white/75 transition-colors hover:text-white"
+    >
+      {label}
+    </Link>
   );
 }

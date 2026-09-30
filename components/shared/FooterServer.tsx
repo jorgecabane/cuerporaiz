@@ -1,8 +1,9 @@
 import { centerRepository, siteConfigRepository } from "@/lib/adapters/db";
 import { Footer } from "./Footer";
-import type { PublicNavLink } from "@/lib/server/public-nav";
+import { flattenNav, type NavItem } from "@/lib/domain/public-nav";
 
-export async function FooterServer({ navLinks }: { navLinks?: PublicNavLink[] }) {
+export async function FooterServer({ navItems }: { navItems?: NavItem[] }) {
+  const navLinks = navItems ? flattenNav(navItems) : undefined;
   const slug = process.env.NEXT_PUBLIC_DEFAULT_CENTER_SLUG;
   if (!slug) return <Footer navLinks={navLinks} />;
 

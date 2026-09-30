@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { SITE_NAME, NAV_LINKS } from "@/lib/constants/copy";
+import { SITE_NAME, DEFAULT_NAV } from "@/lib/constants/copy";
+import { flattenNav } from "@/lib/domain/public-nav";
 import { Mail, Phone, MapPin, MessageCircle, Instagram, Facebook, Youtube } from "lucide-react";
 
 type ContactInfo = {
@@ -18,7 +19,7 @@ type FooterProps = {
   contact?: ContactInfo;
 };
 
-export function Footer({ centerName, contact, navLinks = NAV_LINKS }: FooterProps) {
+export function Footer({ centerName, contact, navLinks = flattenNav(DEFAULT_NAV) }: FooterProps) {
   const name = centerName ?? SITE_NAME;
   const supportEmail = contact?.email ?? process.env.NEXT_PUBLIC_SUPPORT_EMAIL ?? "cuerporaiztrinidad@gmail.com";
 
