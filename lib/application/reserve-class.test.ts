@@ -22,7 +22,14 @@ const mocks = vi.hoisted(() => ({
   },
   liveClassRepository: {
     findById: vi.fn(),
+    findByIds: vi.fn(async (): Promise<LiveClass[]> => []),
     countConfirmedReservations: vi.fn(),
+    countConfirmedByLiveClassIds: vi.fn(async () => new Map<string, number>()),
+  },
+  instructorRepository: { findByCenterId: vi.fn(async (): Promise<unknown[]> => []), findById: vi.fn() },
+  siteConfigRepository: { findByCenterId: vi.fn(async (): Promise<{ firstClassInfo: string | null } | null> => null) },
+  disciplineRepository: {
+    findManyByCenterId: vi.fn(async (): Promise<{ id: string; name: string; description: string | null }[]> => []),
   },
   centerRepository: { findById: vi.fn() },
   userPlanRepository: {
@@ -45,7 +52,9 @@ vi.mock("@/lib/adapters/db", () => ({
   reservationRepository: mocks.reservationRepository,
   userPlanRepository: mocks.userPlanRepository,
   userRepository: mocks.userRepository,
-  instructorRepository: { findByCenterId: vi.fn(), findById: vi.fn() },
+  instructorRepository: mocks.instructorRepository,
+  disciplineRepository: mocks.disciplineRepository,
+  siteConfigRepository: mocks.siteConfigRepository,
   planRepository: mocks.planRepository,
   centerHolidayRepository: mocks.centerHolidayRepository,
   emailPreferenceRepository: mocks.emailPreferenceRepository,
@@ -53,10 +62,10 @@ vi.mock("@/lib/adapters/db", () => ({
 
 // Capturamos los emails enviados para que los tests puedan inspeccionarlos
 // sin gatillar el provider real ni leer process.env.
-const sentEmails = vi.hoisted(() => ({ list: [] as Array<{ subject: string; to: string[] }> }));
+const sentEmails = vi.hoisted(() => ({ list: [] as Array<{ subject: string; to: string[]; html?: string }> }));
 vi.mock("@/lib/application/send-email", () => ({
-  sendEmailSafe: vi.fn((dto: { subject: string; to: string[] }) => {
-    sentEmails.list.push({ subject: dto.subject, to: dto.to });
+  sendEmailSafe: vi.fn((dto: { subject: string; to: string[]; html?: string }) => {
+    sentEmails.list.push({ subject: dto.subject, to: dto.to, html: dto.html });
   }),
 }));
 vi.mock("@/lib/email/branding", () => ({
@@ -96,6 +105,8 @@ function makeLiveClass(overrides: Partial<LiveClass> = {}): LiveClass {
     instructorId: null,
     isOnline: false,
     meetingUrl: null,
+    meetingProvider: null,
+    meetingExternalId: null,
     acceptsTrialReservations: false,
     trialCapacity: null,
     color: null,
@@ -250,6 +261,10 @@ describe("listMyReservationsPaginated", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.liveClassRepository.findByIds.mockResolvedValue([]);
+    mocks.liveClassRepository.countConfirmedByLiveClassIds.mockResolvedValue(new Map());
+    mocks.instructorRepository.findByCenterId.mockResolvedValue([]);
+    mocks.disciplineRepository.findManyByCenterId.mockResolvedValue([]);
     mocks.reservationRepository.findByUserIdAndCenterPaginated.mockResolvedValue({
       items: [],
       total: 0,
@@ -284,6 +299,35 @@ describe("listMyReservationsPaginated", () => {
         statuses: ["CONFIRMED", "CANCELLED", "LATE_CANCELLED", "ATTENDED", "NO_SHOW"],
       })
     );
+  });
+
+  it("carga clases, cupos y prácticas en lote (sin una query por reserva)", async () => {
+    mocks.reservationRepository.findByUserIdAndCenterPaginated.mockResolvedValue({
+      items: [
+        makeReservation({ id: "r-1", liveClassId: "lc-1" }),
+        makeReservation({ id: "r-2", liveClassId: "lc-1" }),
+        makeReservation({ id: "r-3", liveClassId: "lc-2" }),
+      ],
+      total: 3,
+    });
+    mocks.liveClassRepository.findByIds.mockResolvedValue([
+      makeLiveClass({ id: "lc-1", centerId, maxCapacity: 10, disciplineId: "d-1" }),
+      makeLiveClass({ id: "lc-2", centerId, maxCapacity: 8, disciplineId: null }),
+    ]);
+    mocks.liveClassRepository.countConfirmedByLiveClassIds.mockResolvedValue(new Map([["lc-1", 3]]));
+    mocks.disciplineRepository.findManyByCenterId.mockResolvedValue([
+      { id: "d-1", name: "Vinyasa", description: "Poder, activación." },
+    ]);
+
+    const result = await listMyReservationsPaginated(userId, centerId, { page: 1, pageSize: 10 });
+
+    expect(mocks.liveClassRepository.findByIds).toHaveBeenCalledTimes(1);
+    expect(mocks.liveClassRepository.findByIds).toHaveBeenCalledWith(["lc-1", "lc-2"]);
+    expect(mocks.liveClassRepository.countConfirmedByLiveClassIds).toHaveBeenCalledTimes(1);
+    expect(mocks.liveClassRepository.countConfirmedReservations).not.toHaveBeenCalled();
+    const byId = new Map(result.items.map((r) => [r.id, r.liveClass]));
+    expect(byId.get("r-1")).toMatchObject({ spotsLeft: 7, disciplineName: "Vinyasa", disciplineDescription: "Poder, activación." });
+    expect(byId.get("r-3")).toMatchObject({ spotsLeft: 8, disciplineName: null });
   });
 });
 
@@ -398,6 +442,21 @@ describe("reserveClassUseCase — clase de prueba (trial)", () => {
     // Email al cliente con variante trial + email al instructor (fallback contactEmail por sin instructor)
     expect(sentEmails.list.some((e) => e.subject.startsWith("Clase de prueba confirmada:"))).toBe(true);
     expect(sentEmails.list.some((e) => e.subject.startsWith("Clase de prueba:") && e.to.includes("contacto@test.cl"))).toBe(true);
+  });
+
+  it("la clase de prueba incluye 'Tu primera clase' en el correo del alumno", async () => {
+    mocks.liveClassRepository.findById.mockResolvedValue(
+      makeLiveClass({ startsAt: new Date("2026-06-10T14:00:00Z"), centerId, acceptsTrialReservations: true })
+    );
+    mocks.reservationRepository.hasTrialReservation.mockResolvedValue(false);
+    mocks.userPlanRepository.findActiveByUserAndCenter.mockResolvedValue([]);
+    mocks.siteConfigRepository.findByCenterId.mockResolvedValueOnce({ firstClassInfo: "Llega 10 minutos antes\nRopa cómoda" });
+
+    await reserveClassUseCase(userId, centerId, "lc-1");
+
+    const studentEmail = sentEmails.list.find((e) => e.subject.startsWith("Clase de prueba confirmada:"));
+    expect(studentEmail?.html).toContain("Antes de tu primera clase");
+    expect(studentEmail?.html).toContain("Ropa cómoda");
   });
 
   it("rechaza con TRIAL_ALREADY_USED si ya usó la clase de prueba", async () => {

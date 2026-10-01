@@ -3,11 +3,10 @@
 import { usePathname } from "next/navigation";
 import { Header } from "./Header";
 import { Footer } from "./Footer";
-
-type NavLink = { href: string; label: string };
+import type { NavItem } from "@/lib/domain/public-nav";
 
 /** Rutas que usan el cascarón público: contenido a alto completo, footer al final de la página. */
-const PUBLIC_SHELL_PATHS = ["/checkout", "/checkout-evento", "/auth", "/catalogo", "/sobre", "/blog", "/eventos"];
+const PUBLIC_SHELL_PATHS = ["/checkout", "/checkout-evento", "/auth", "/catalogo", "/sobre", "/blog", "/eventos", "/preguntas-frecuentes", "/horarios", "/conocenos", "/newsletter"];
 
 export function LayoutWithPanel({
   children,
@@ -18,7 +17,7 @@ export function LayoutWithPanel({
 }: {
   children: React.ReactNode;
   footer?: React.ReactNode;
-  navLinks?: NavLink[];
+  navLinks?: NavItem[];
   logoUrl?: string | null;
   centerName?: string;
 }) {

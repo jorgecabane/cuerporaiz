@@ -9,6 +9,9 @@ import { LessonCard } from "./LessonCard";
 import { Player } from "./Player";
 import type { BibliotecaMode, RoutingMode, CategoryData, NavigationTarget } from "./types";
 import { buildBibliotecaHref } from "./types";
+import { LibraryPackOffers, CategoryPackNote } from "./LibraryPacks";
+import type { LibraryPack } from "@/lib/domain/library-pack";
+import { formatCount } from "@/lib/domain/format-count";
 
 interface BibliotecaShellProps {
   categories: CategoryData[];
@@ -26,6 +29,8 @@ interface BibliotecaShellProps {
   selectedLessonId?: string | null;
   title?: string;
   subtitle?: string;
+  /** Packs a la venta (solo se muestran en modo public). */
+  packs?: LibraryPack[];
 }
 
 export function BibliotecaShell({
@@ -38,7 +43,9 @@ export function BibliotecaShell({
   selectedLessonId: propLessonId = null,
   title = "Biblioteca virtual",
   subtitle,
+  packs = [],
 }: BibliotecaShellProps) {
+  const publicPacks = mode.kind === "public" ? packs : [];
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -340,6 +347,8 @@ export function BibliotecaShell({
 
       {compactQuota}
 
+      {!selectedCategory && <LibraryPackOffers packs={publicPacks} />}
+
       {visibleCategories.map((cat) => (
         <div key={cat.id} className="mb-6">
           <div className="flex items-center justify-between gap-3 mb-1">
@@ -358,8 +367,8 @@ export function BibliotecaShell({
                   {cat.name}
                 </h2>
                 <span className="text-xs text-[var(--color-text-muted)]">
-                  {cat.practices.reduce((a, p) => a + p.lessons.length, 0)} clases ·{" "}
-                  {cat.practices.length} prácticas
+                  {formatCount(cat.practices.reduce((a, p) => a + p.lessons.length, 0), "clase", "clases")} ·{" "}
+                  {formatCount(cat.practices.length, "práctica", "prácticas")}
                 </span>
               </div>
             </div>
@@ -377,7 +386,8 @@ export function BibliotecaShell({
               {cat.description}
             </p>
           )}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <CategoryPackNote packs={publicPacks} categoryId={cat.id} />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {cat.practices.map((practice) => {
               const unlockedCount = practice.lessons.filter((l) => unlockedIds.has(l.id)).length;
               return (
@@ -403,7 +413,7 @@ export function BibliotecaShell({
       {mode.kind === "public" && visibleCategories.length > 0 && (
         <div className="mt-8 rounded-[var(--radius-lg)] bg-[var(--color-primary)] text-white p-6 text-center">
           <p className="text-sm sm:text-base mb-3">
-            <strong>¿Te interesa una práctica?</strong> Inicia sesión o crea tu cuenta gratis para canjear clases.
+            <strong>¿Ya compraste un pack?</strong> Inicia sesión para canjear tus clases.
           </p>
           <Link
             href={buildPublicCtaHref(

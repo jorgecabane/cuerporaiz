@@ -6,6 +6,7 @@ import {
   centerRepository,
   eventRepository,
   eventTicketRepository,
+  siteConfigRepository,
 } from "@/lib/adapters/db";
 import { getCenterTimezone } from "@/lib/datetime/center-timezone";
 import { buildSiteMetadata } from "@/lib/seo/metadata";
@@ -68,10 +69,11 @@ export default async function PublicEventDetailPage({
   if (!data) notFound();
   const { center, event } = data;
 
-  const [paidCount, tz, session] = await Promise.all([
+  const [paidCount, tz, session, siteConfig] = await Promise.all([
     eventTicketRepository.countPaidByEventId(id),
     getCenterTimezone(center.id),
     auth(),
+    siteConfigRepository.findByCenterId(center.id),
   ]);
 
   const isAuthenticated = !!session?.user?.id && session.user.centerId === center.id;
@@ -145,6 +147,19 @@ export default async function PublicEventDetailPage({
               hasEnded={hasEnded}
               eventTitle={event.title}
             />
+            {siteConfig?.whatsappUrl && (
+              <p className="mt-[var(--space-4)] text-center text-sm text-[var(--color-text-muted)]">
+                ¿Dudas sobre el evento?{" "}
+                <a
+                  href={siteConfig.whatsappUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium text-[var(--color-primary)] underline underline-offset-4"
+                >
+                  Escríbenos por WhatsApp<span className="sr-only"> (se abre en otra pestaña)</span>
+                </a>
+              </p>
+            )}
           </div>
         </aside>
       </div>

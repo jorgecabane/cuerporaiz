@@ -19,10 +19,14 @@ const SECTION_LABELS: Record<string, string> = {
   testimonials: "Testimonios",
   cta: "Llamado a la acción",
   contact: "Contacto",
+  faq: "Preguntas frecuentes",
+  gallery: "Galería (fotos de Sobre mí)",
+  playlist: "Playlist (Spotify)",
+  newsletter: "Newsletter del blog",
 };
 
 /** Sections con sub-items repetibles (team, testimonios, etc.) */
-const HAS_ITEMS_SECTIONS = new Set(["team", "testimonials", "about", "how-it-works", "cta"]);
+const HAS_ITEMS_SECTIONS = new Set(["team", "testimonials", "about", "how-it-works", "cta", "faq", "playlist"]);
 /** Sections con un editor especial: hero singleton (on-demand combina título + subtítulo + hero). */
 const HAS_HERO_EDITOR_SECTIONS = new Set(["on-demand"]);
 /** Sections que muestran botón expandible (suma items + hero editors). */
@@ -31,7 +35,7 @@ const HAS_EXPANDABLE_EDITOR = new Set([...HAS_ITEMS_SECTIONS, ...HAS_HERO_EDITOR
 /** Sections donde el título/subtítulo se editan inline con el lápiz. */
 const HAS_TITLE_SECTIONS = new Set([
   "about", "how-it-works", "schedule", "plans", "on-demand", "events",
-  "disciplines", "team", "testimonials", "cta",
+  "disciplines", "team", "testimonials", "cta", "faq", "gallery", "playlist", "newsletter",
 ]);
 
 const INPUT_CLASS =

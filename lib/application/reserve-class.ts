@@ -8,7 +8,7 @@ import type {
   ReservationDto,
   LiveClassDto,
 } from "@/lib/dto/reservation-dto";
-import type { Reservation, ReservationStatus } from "@/lib/domain";
+import type { LiveClass, Reservation, ReservationStatus } from "@/lib/domain";
 import { isUserPlanUsable } from "@/lib/domain/user-plan";
 import { canRebookReservation } from "@/lib/domain/reservation";
 import {
@@ -19,7 +19,10 @@ import {
   userRepository,
   instructorRepository,
   centerHolidayRepository,
+  disciplineRepository,
+  siteConfigRepository,
 } from "@/lib/adapters/db";
+import { splitLines } from "@/lib/domain/embeds";
 import { planRepository } from "@/lib/adapters/db";
 import { runAfterResponse } from "@/lib/utils/run-after-response";
 import { sendEmailSafe } from "@/lib/application/send-email";
@@ -55,7 +58,14 @@ function toLiveClassDto(
   durationMinutes: number,
   maxCapacity: number,
   spotsLeft: number,
-  opts?: { acceptsTrialReservations?: boolean; isOnline?: boolean; instructorName?: string | null; instructorImageUrl?: string | null }
+  opts?: {
+    acceptsTrialReservations?: boolean;
+    isOnline?: boolean;
+    instructorName?: string | null;
+    instructorImageUrl?: string | null;
+    disciplineName?: string | null;
+    disciplineDescription?: string | null;
+  }
 ): LiveClassDto {
   return {
     id,
@@ -69,7 +79,26 @@ function toLiveClassDto(
     ...(opts?.isOnline !== undefined ? { isOnline: opts.isOnline } : {}),
     ...(opts?.instructorName !== undefined ? { instructorName: opts.instructorName } : {}),
     ...(opts?.instructorImageUrl !== undefined ? { instructorImageUrl: opts.instructorImageUrl } : {}),
+    ...(opts?.disciplineName !== undefined ? { disciplineName: opts.disciplineName } : {}),
+    ...(opts?.disciplineDescription !== undefined ? { disciplineDescription: opts.disciplineDescription } : {}),
   };
+}
+
+/**
+ * "Tu primera clase" (config del sitio) para la clase de prueba o la primera
+ * reserva del alumno en el centro. Vacío en el resto de las reservas.
+ */
+async function firstClassTipsFor(userId: string, centerId: string, isTrial: boolean): Promise<string[]> {
+  if (!isTrial) {
+    const { total } = await reservationRepository.findByUserIdAndCenterPaginated(userId, {
+      centerId,
+      limit: 1,
+      offset: 0,
+    });
+    if (total > 1) return [];
+  }
+  const config = await siteConfigRepository.findByCenterId(centerId);
+  return splitLines(config?.firstClassInfo);
 }
 
 /**
@@ -274,6 +303,9 @@ export async function reserveClassUseCase(
     // Respeta el switch del perfil. El aviso al profe (trial, abajo) NO se gatea:
     // es a staff, no una preferencia del estudiante.
     if (await shouldSendEmail(userId, centerId, "reservationConfirm")) {
+      const firstClassTips = liveClass.isOnline
+        ? []
+        : await firstClassTipsFor(userId, centerId, reservation.isTrial);
       sendEmailSafe(
         buildReservationConfirmationEmail({
           toEmail: user.email,
@@ -285,6 +317,7 @@ export async function reserveClassUseCase(
           myReservationsUrl: `${baseUrl}/panel/reservas`,
           branding,
           isTrial: reservation.isTrial,
+          firstClassTips,
         })
       );
     }
@@ -484,31 +517,55 @@ export async function cancelReservationByStaffUseCase(
 }
 
 /**
- * Listar reservas del usuario en el centro (confirmadas por defecto).
+ * DTOs de varias clases con consultas en lote: profesores, prácticas y cupos
+ * se cargan una sola vez (no una query por clase). Mantiene el orden de `classes`.
  */
-export async function listMyReservationsUseCase(
-  userId: string,
+async function buildLiveClassDtos(
   centerId: string,
-  options?: { status?: "CONFIRMED" | "CANCELLED" | "LATE_CANCELLED" | "ATTENDED" | "NO_SHOW" }
-): Promise<ReservationDto[]> {
-  const reservations = await reservationRepository.findByUserId(userId, options);
+  classes: LiveClass[],
+  showTrial = true
+): Promise<LiveClassDto[]> {
+  if (classes.length === 0) return [];
+  const [instructors, disciplines, confirmedById] = await Promise.all([
+    instructorRepository.findByCenterId(centerId),
+    disciplineRepository.findManyByCenterId(centerId),
+    liveClassRepository.countConfirmedByLiveClassIds(classes.map((c) => c.id)),
+  ]);
+  // LiveClass.instructorId en BD es User.id (userId), no el id del rol
+  const instructorByUserId = new Map(instructors.map((i) => [i.userId, i]));
+  const disciplineById = new Map(disciplines.map((d) => [d.id, d]));
+  return classes.map((c) => {
+    const instructor = c.instructorId ? instructorByUserId.get(c.instructorId) : undefined;
+    const discipline = c.disciplineId ? disciplineById.get(c.disciplineId) : undefined;
+    return toLiveClassDto(
+      c.id,
+      c.centerId,
+      c.title,
+      c.startsAt,
+      c.durationMinutes,
+      c.maxCapacity,
+      c.maxCapacity - (confirmedById.get(c.id) ?? 0),
+      {
+        acceptsTrialReservations: c.acceptsTrialReservations && showTrial,
+        isOnline: c.isOnline,
+        instructorName: instructor?.name ?? null,
+        instructorImageUrl: instructor?.imageUrl ?? null,
+        disciplineName: discipline?.name ?? null,
+        disciplineDescription: discipline?.description ?? null,
+      }
+    );
+  });
+}
+
+/** Reservas → DTOs con su clase (cargadas en lote), ordenadas por fecha de la clase. */
+async function buildReservationDtos(centerId: string, reservations: Reservation[]): Promise<ReservationDto[]> {
+  const ids = [...new Set(reservations.map((r) => r.liveClassId))];
+  const classes = (await liveClassRepository.findByIds(ids)).filter((c) => c.centerId === centerId);
+  const dtoById = new Map((await buildLiveClassDtos(centerId, classes)).map((d) => [d.id, d]));
   const dtos: ReservationDto[] = [];
   for (const r of reservations) {
-    const liveClass = await liveClassRepository.findById(r.liveClassId);
-    if (!liveClass || liveClass.centerId !== centerId) continue;
-    const confirmed = await liveClassRepository.countConfirmedReservations(r.liveClassId);
-    const spotsLeft = liveClass.maxCapacity - confirmed;
-    const liveClassDto = toLiveClassDto(
-      liveClass.id,
-      liveClass.centerId,
-      liveClass.title,
-      liveClass.startsAt,
-      liveClass.durationMinutes,
-      liveClass.maxCapacity,
-      spotsLeft,
-      { acceptsTrialReservations: liveClass.acceptsTrialReservations, isOnline: liveClass.isOnline }
-    );
-    dtos.push(toReservationDto(r, liveClassDto));
+    const liveClassDto = dtoById.get(r.liveClassId);
+    if (liveClassDto) dtos.push(toReservationDto(r, liveClassDto));
   }
   return dtos.sort(
     (a, b) =>
@@ -517,38 +574,23 @@ export async function listMyReservationsUseCase(
 }
 
 /**
+ * Listar reservas del usuario en el centro (confirmadas por defecto).
+ */
+export async function listMyReservationsUseCase(
+  userId: string,
+  centerId: string,
+  options?: { status?: "CONFIRMED" | "CANCELLED" | "LATE_CANCELLED" | "ATTENDED" | "NO_SHOW" }
+): Promise<ReservationDto[]> {
+  const reservations = await reservationRepository.findByUserId(userId, options);
+  return buildReservationDtos(centerId, reservations);
+}
+
+/**
  * Listar clases en vivo del centro (futuras).
  */
 export async function listLiveClassesUseCase(centerId: string): Promise<LiveClassDto[]> {
-  const from = new Date();
-  const [classes, instructors] = await Promise.all([
-    liveClassRepository.findByCenterId(centerId, from),
-    instructorRepository.findByCenterId(centerId),
-  ]);
-  const nameByUserId = new Map(instructors.map((i) => [i.userId, i.name ?? null]));
-  const imageUrlByUserId = new Map(instructors.map((i) => [i.userId, i.imageUrl ?? null]));
-  const dtos: LiveClassDto[] = [];
-  for (const c of classes) {
-    const confirmed = await liveClassRepository.countConfirmedReservations(c.id);
-    dtos.push(
-      toLiveClassDto(
-        c.id,
-        c.centerId,
-        c.title,
-        c.startsAt,
-        c.durationMinutes,
-        c.maxCapacity,
-        c.maxCapacity - confirmed,
-        {
-          acceptsTrialReservations: c.acceptsTrialReservations,
-          isOnline: c.isOnline,
-          instructorName: c.instructorId ? nameByUserId.get(c.instructorId) ?? null : null,
-          instructorImageUrl: c.instructorId ? imageUrlByUserId.get(c.instructorId) ?? null : null,
-        }
-      )
-    );
-  }
-  return dtos;
+  const classes = await liveClassRepository.findByCenterId(centerId, new Date());
+  return buildLiveClassDtos(centerId, classes);
 }
 
 const DEFAULT_PAGE_SIZE = 10;
@@ -574,36 +616,12 @@ export async function listLiveClassesPaginated(
   const page = Math.max(1, opts.page ?? 1);
   const pageSize = Math.min(50, Math.max(1, opts.pageSize ?? DEFAULT_PAGE_SIZE));
   const offset = (page - 1) * pageSize;
-  const [result, instructors, showTrialForViewer] = await Promise.all([
+  const [{ items: classes, total }, showTrialForViewer] = await Promise.all([
     liveClassRepository.findByCenterIdPaginated(centerId, from, { limit: pageSize, offset }),
-    instructorRepository.findByCenterId(centerId),
     opts.viewerUserId ? isUserTrialEligible(opts.viewerUserId, centerId) : Promise.resolve(true),
   ]);
-  const { items: classes, total } = result;
-  const nameByUserId = new Map(instructors.map((i) => [i.userId, i.name ?? null]));
-  const imageUrlByUserId = new Map(instructors.map((i) => [i.userId, i.imageUrl ?? null]));
-  const dtos: LiveClassDto[] = [];
-  for (const c of classes) {
-    const confirmed = await liveClassRepository.countConfirmedReservations(c.id);
-    dtos.push(
-      toLiveClassDto(
-        c.id,
-        c.centerId,
-        c.title,
-        c.startsAt,
-        c.durationMinutes,
-        c.maxCapacity,
-        c.maxCapacity - confirmed,
-        {
-          acceptsTrialReservations: c.acceptsTrialReservations && showTrialForViewer,
-          isOnline: c.isOnline,
-          instructorName: c.instructorId ? nameByUserId.get(c.instructorId) ?? null : null,
-          instructorImageUrl: c.instructorId ? imageUrlByUserId.get(c.instructorId) ?? null : null,
-        }
-      )
-    );
-  }
-  return { items: dtos, total, page, pageSize };
+  const items = await buildLiveClassDtos(centerId, classes, showTrialForViewer);
+  return { items, total, page, pageSize };
 }
 
 /**
@@ -619,36 +637,11 @@ export async function listLiveClassesByRange(
   instructorId?: string,
   viewerUserId?: string
 ): Promise<LiveClassDto[]> {
-  const [classes, instructors, showTrialForViewer] = await Promise.all([
+  const [classes, showTrialForViewer] = await Promise.all([
     liveClassRepository.findByCenterIdAndRange(centerId, from, to, instructorId),
-    instructorRepository.findByCenterId(centerId),
     viewerUserId ? isUserTrialEligible(viewerUserId, centerId) : Promise.resolve(true),
   ]);
-  // LiveClass.instructorId en BD es User.id (userId), no el id del rol
-  const nameByUserId = new Map(instructors.map((i) => [i.userId, i.name ?? null]));
-  const imageUrlByUserId = new Map(instructors.map((i) => [i.userId, i.imageUrl ?? null]));
-  const dtos: LiveClassDto[] = [];
-  for (const c of classes) {
-    const confirmed = await liveClassRepository.countConfirmedReservations(c.id);
-    dtos.push(
-      toLiveClassDto(
-        c.id,
-        c.centerId,
-        c.title,
-        c.startsAt,
-        c.durationMinutes,
-        c.maxCapacity,
-        c.maxCapacity - confirmed,
-        {
-          acceptsTrialReservations: c.acceptsTrialReservations && showTrialForViewer,
-          isOnline: c.isOnline,
-          instructorName: c.instructorId ? nameByUserId.get(c.instructorId) ?? null : null,
-          instructorImageUrl: c.instructorId ? imageUrlByUserId.get(c.instructorId) ?? null : null,
-        }
-      )
-    );
-  }
-  return dtos;
+  return buildLiveClassDtos(centerId, classes, showTrialForViewer);
 }
 
 export interface ListReservationsPaginatedResult {
@@ -674,29 +667,8 @@ export async function listMyReservationsPaginated(
     userId,
     { centerId, limit: pageSize, offset, ...(opts.statuses?.length ? { statuses: opts.statuses } : {}) }
   );
-  const dtos: ReservationDto[] = [];
-  for (const r of reservations) {
-    const liveClass = await liveClassRepository.findById(r.liveClassId);
-    if (!liveClass) continue;
-    const confirmed = await liveClassRepository.countConfirmedReservations(r.liveClassId);
-    const spotsLeft = liveClass.maxCapacity - confirmed;
-    const liveClassDto = toLiveClassDto(
-      liveClass.id,
-      liveClass.centerId,
-      liveClass.title,
-      liveClass.startsAt,
-      liveClass.durationMinutes,
-      liveClass.maxCapacity,
-      spotsLeft,
-      { acceptsTrialReservations: liveClass.acceptsTrialReservations, isOnline: liveClass.isOnline }
-    );
-    dtos.push(toReservationDto(r, liveClassDto));
-  }
-  const sorted = dtos.sort(
-    (a, b) =>
-      new Date(a.liveClass?.startsAt ?? 0).getTime() - new Date(b.liveClass?.startsAt ?? 0).getTime()
-  );
-  return { items: sorted, total, page, pageSize };
+  const items = await buildReservationDtos(centerId, reservations);
+  return { items, total, page, pageSize };
 }
 
 const DEFAULT_CENTER_PAGE_SIZE = 50;
@@ -716,29 +688,8 @@ export async function listCenterReservationsPaginated(
     offset,
     ...(opts.statuses?.length ? { statuses: opts.statuses } : {}),
   });
-  const dtos: ReservationDto[] = [];
-  for (const r of reservations) {
-    const liveClass = await liveClassRepository.findById(r.liveClassId);
-    if (!liveClass) continue;
-    const confirmed = await liveClassRepository.countConfirmedReservations(r.liveClassId);
-    const spotsLeft = liveClass.maxCapacity - confirmed;
-    const liveClassDto = toLiveClassDto(
-      liveClass.id,
-      liveClass.centerId,
-      liveClass.title,
-      liveClass.startsAt,
-      liveClass.durationMinutes,
-      liveClass.maxCapacity,
-      spotsLeft,
-      { acceptsTrialReservations: liveClass.acceptsTrialReservations, isOnline: liveClass.isOnline }
-    );
-    dtos.push(toReservationDto(r, liveClassDto));
-  }
-  const sorted = dtos.sort(
-    (a, b) =>
-      new Date(a.liveClass?.startsAt ?? 0).getTime() - new Date(b.liveClass?.startsAt ?? 0).getTime()
-  );
-  return { items: sorted, total, page, pageSize };
+  const items = await buildReservationDtos(centerId, reservations);
+  return { items, total, page, pageSize };
 }
 
 /**
@@ -765,14 +716,11 @@ export async function canShowTrialCta(
     });
   if (reservationCount > 0) return false;
 
-  const from = new Date();
-  const classes = await liveClassRepository.findByCenterId(centerId, from);
-  for (const c of classes) {
-    if (!c.acceptsTrialReservations) continue;
-    const confirmed = await liveClassRepository.countConfirmedReservations(c.id);
-    if (c.maxCapacity - confirmed > 0) return true;
-  }
-  return false;
+  const trialClasses = (await liveClassRepository.findByCenterId(centerId, new Date())).filter(
+    (c) => c.acceptsTrialReservations
+  );
+  const confirmedById = await liveClassRepository.countConfirmedByLiveClassIds(trialClasses.map((c) => c.id));
+  return trialClasses.some((c) => c.maxCapacity - (confirmedById.get(c.id) ?? 0) > 0);
 }
 
 /**

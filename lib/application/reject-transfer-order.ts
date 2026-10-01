@@ -14,6 +14,7 @@ import { notifyWaitlistOnSpotFreed } from "./notify-waitlist-on-spot-freed";
 import { buildTransferRejectedEmail } from "@/lib/email";
 import { getEmailBranding } from "@/lib/email/branding";
 import { getBaseUrl } from "@/lib/utils/base-url";
+import { formatMoney } from "@/lib/domain/money";
 
 const MIN_REASON_LENGTH = 10;
 const SUPPORT_FALLBACK = process.env.NEXT_PUBLIC_SUPPORT_EMAIL ?? "cuerporaiztrinidad@gmail.com";
@@ -108,7 +109,7 @@ export async function rejectTransferOrder(input: RejectTransferOrderInput): Prom
         toEmail: buyer.email,
         userName: buyer.name ?? buyer.email.split("@")[0],
         itemName: plan.name,
-        amountFormatted: `$${order.amountCents.toLocaleString("es-CL")}`,
+        amountFormatted: formatMoney(order.amountCents),
         reason,
         contactEmail,
         tiendaUrl: `${getBaseUrl()}/panel/tienda`,
@@ -189,7 +190,7 @@ export async function rejectTransferEventTicket(
         toEmail: buyer.email,
         userName: buyer.name ?? buyer.email.split("@")[0],
         itemName: ticket.event.title,
-        amountFormatted: `$${ticket.amountCents.toLocaleString("es-CL")}`,
+        amountFormatted: formatMoney(ticket.amountCents),
         reason,
         contactEmail,
         tiendaUrl: `${getBaseUrl()}/panel/eventos`,

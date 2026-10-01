@@ -1,3 +1,5 @@
+import { formatCount } from "@/lib/domain/format-count";
+
 interface PracticeCardProps {
   id: string;
   name: string;
@@ -34,21 +36,22 @@ export function PracticeCard({
         className="hidden sm:flex flex-col bg-[var(--color-surface)] rounded-[var(--radius-lg)] border border-[var(--color-border)] overflow-hidden text-left hover:shadow-md transition-shadow cursor-pointer"
       >
         <div
-          className="h-20 flex items-end p-3"
+          className="h-36 w-full flex items-end p-3"
           style={{
+            // Degradado inferior: el título blanco se lee aunque la foto sea clara.
             background: thumbnailUrl
-              ? `url(${thumbnailUrl}) center/cover`
+              ? `linear-gradient(to top, rgba(0,0,0,0.6), transparent 65%), url(${thumbnailUrl}) center/cover`
               : "linear-gradient(135deg, var(--color-primary), var(--color-primary-hover))",
           }}
         >
-          <span className="text-white text-sm font-bold drop-shadow-md">{name}</span>
+          <span className="text-white text-base font-bold drop-shadow-md">{name}</span>
         </div>
         <div className="p-3">
           <p className="text-xs text-[var(--color-text-muted)] mb-2">
-            {lessonCount} {lessonCount === 1 ? "clase" : "clases"}
+            {lessonCount === 0 ? "Próximamente" : formatCount(lessonCount, "clase", "clases")}
           </p>
           {description && (
-            <p className="text-[10px] text-[var(--color-text-muted)] line-clamp-2 mb-2">
+            <p className="text-sm text-[var(--color-text-muted)] line-clamp-2 mb-2">
               {description}
             </p>
           )}
@@ -76,8 +79,9 @@ export function PracticeCard({
         <div
           className="w-20 h-full flex-shrink-0 flex items-end p-1.5"
           style={{
+            // Degradado inferior: el título blanco se lee aunque la foto sea clara.
             background: thumbnailUrl
-              ? `url(${thumbnailUrl}) center/cover`
+              ? `linear-gradient(to top, rgba(0,0,0,0.6), transparent 65%), url(${thumbnailUrl}) center/cover`
               : "linear-gradient(135deg, var(--color-primary), var(--color-primary-hover))",
           }}
         >
@@ -87,7 +91,7 @@ export function PracticeCard({
         </div>
         <div className="flex-1 px-3 py-2 flex flex-col justify-center min-w-0">
           <p className="text-xs text-[var(--color-text-muted)] mb-1">
-            {lessonCount} {lessonCount === 1 ? "clase" : "clases"}
+            {lessonCount === 0 ? "Próximamente" : formatCount(lessonCount, "clase", "clases")}
           </p>
           {description && (
             <p className="text-[10px] text-[var(--color-text-muted)] line-clamp-2 mb-1">

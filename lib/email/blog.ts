@@ -26,6 +26,8 @@ export interface BlogPostPublishedEmailData {
   /** URL pública del artículo: {baseUrl}/blog/{slug}. */
   postUrl: string;
   preferencesUrl?: string;
+  /** Link de baja en 1 click (sin login). */
+  unsubscribeUrl?: string;
   branding: EmailBranding;
 }
 
@@ -60,7 +62,12 @@ export function buildBlogPostPublishedEmail(
     ${authorBlock}
     <p style="text-align:center;margin:28px 0 4px;"><a href="${data.postUrl}" style="${cta}">Seguir leyendo →</a></p>`;
 
-  const html = emailBaseLayout({ body, branding, preferencesUrl: data.preferencesUrl });
+  const html = emailBaseLayout({
+    body,
+    branding,
+    preferencesUrl: data.preferencesUrl,
+    unsubscribeUrl: data.unsubscribeUrl,
+  });
 
   const text = [
     `${data.userName ? `Hola ${data.userName}` : "Hola"}, hay una nueva entrada en el blog.`,
@@ -71,6 +78,7 @@ export function buildBlogPostPublishedEmail(
     "",
     `Seguir leyendo: ${data.postUrl}`,
     `— ${branding.centerName}`,
+    data.unsubscribeUrl ? `\nDejar de recibir novedades del blog: ${data.unsubscribeUrl}` : "",
   ]
     .filter(Boolean)
     .join("\n");

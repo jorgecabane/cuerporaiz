@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { safeCallbackUrl } from "@/lib/domain/auth-redirect";
 
 const SESSION_COOKIE_NAME = "cuerporaiz.session";
 
@@ -15,15 +16,12 @@ export function middleware(req: NextRequest) {
     const callbackUrl =
       req.nextUrl.searchParams.get("callbackUrl") ??
       req.nextUrl.searchParams.get("next");
-    const safeCallback =
-      callbackUrl && callbackUrl.startsWith("/") && !callbackUrl.startsWith("//")
-        ? callbackUrl
-        : "/panel";
-    return NextResponse.redirect(new URL(safeCallback, req.url));
+    return NextResponse.redirect(new URL(safeCallbackUrl(callbackUrl), req.url));
   }
   if (isPanel && !hasSessionCookie) {
     const login = new URL("/auth/login", req.url);
-    login.searchParams.set("callbackUrl", pathname);
+    // Incluye la query (ej. /panel/tienda?plan=…) para no perder el contexto.
+    login.searchParams.set("callbackUrl", pathname + req.nextUrl.search);
     return NextResponse.redirect(login);
   }
   return NextResponse.next();

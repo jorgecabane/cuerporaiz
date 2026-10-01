@@ -3,6 +3,7 @@ import Link from "next/link";
 import { centerRepository, prisma } from "@/lib/adapters/db";
 import { getPublicCenterTimezone } from "@/lib/datetime/center-timezone";
 import { buildSiteMetadata } from "@/lib/seo/metadata";
+import { formatPriceOrFree } from "@/lib/domain/money";
 
 export const revalidate = 60;
 
@@ -24,10 +25,6 @@ function formatDateTime(date: Date, tz: string): string {
       minute: "2-digit",
     })
     .replace(".", "");
-}
-
-function priceLabel(amountCents: number): string {
-  return amountCents === 0 ? "Gratis" : `$${amountCents.toLocaleString("es-CL")}`;
 }
 
 export default async function PublicEventsPage() {
@@ -103,7 +100,7 @@ export default async function PublicEventsPage() {
                       </span>
                     )}
                     <span className="font-display text-sm font-semibold text-[var(--color-primary)]">
-                      {priceLabel(ev.amountCents)}
+                      {formatPriceOrFree(ev.amountCents, ev.currency)}
                     </span>
                   </div>
                 </div>

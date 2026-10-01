@@ -3,6 +3,8 @@
 import { useState, useMemo } from "react";
 import { AnimateIn } from "@/components/ui/AnimateIn";
 import { CTAS } from "@/lib/constants/copy";
+import { formatSpotsAvailable, spotsFillRatio } from "@/lib/domain/spots";
+import { formatMoney } from "@/lib/domain/money";
 
 /* ─── Tipos ──────────────────────────────────────────────────────────────── */
 type ClassItem = {
@@ -11,6 +13,7 @@ type ClassItem = {
   duration: string;
   spotsUsed: number;
   spotsTotal: number;
+  description?: string;
 };
 
 type LivePlan = {
@@ -28,6 +31,7 @@ type ScheduleClass = {
   duration: string;
   spotsUsed: number;
   spotsTotal: number;
+  description?: string;
   dayOfWeek: number; // 0=dom, 1=lun...6=sáb
 };
 
@@ -36,6 +40,10 @@ type AgendaSectionProps = {
   subtitle?: string;
   livePlans?: LivePlan[];
   classes?: ScheduleClass[];
+  /** "h1" en /horarios (la sección es el contenido principal). */
+  headingLevel?: "h1" | "h2";
+  /** Link "Ver horarios completos" (home → /horarios). */
+  fullScheduleHref?: string;
 };
 
 /* ─── Datos de horario por día de semana (0 = domingo) ───────────────────── */
@@ -101,18 +109,6 @@ function availabilityStyle(used: number, total: number): string {
   return "text-[var(--color-text-muted)]";
 }
 
-function availabilityLabel(used: number, total: number): string {
-  if (used >= total) return "Completo";
-  return `${total - used} ${total - used === 1 ? "cupo" : "cupos"}`;
-}
-
-function formatPrice(amountCents: number, currency: string): string {
-  if (currency === "CLP") {
-    return `$${amountCents.toLocaleString("es-CL")}`;
-  }
-  return `${amountCents / 100} ${currency}`;
-}
-
 function planNote(plan: LivePlan): string {
   const parts: string[] = [];
   if (plan.validityDays) {
@@ -125,7 +121,15 @@ function planNote(plan: LivePlan): string {
 }
 
 /* ─── Componente ─────────────────────────────────────────────────────────── */
-export function AgendaSection({ title, subtitle, livePlans, classes: classesProp }: AgendaSectionProps) {
+export function AgendaSection({
+  title,
+  subtitle,
+  livePlans,
+  classes: classesProp,
+  headingLevel = "h2",
+  fullScheduleHref,
+}: AgendaSectionProps) {
+  const Heading = headingLevel;
   const days = useMemo(() => getUpcomingDays(7), []);
   const [selectedIdx, setSelectedIdx] = useState(0);
 
@@ -155,12 +159,12 @@ export function AgendaSection({ title, subtitle, livePlans, classes: classesProp
           </p>
         </AnimateIn>
         <AnimateIn delay={0.1}>
-          <h2
+          <Heading
             id="agenda-heading"
             className="mt-[var(--space-3)] text-section font-display font-semibold text-[var(--color-primary)]"
           >
             {title ?? "Reserva tu lugar"}
-          </h2>
+          </Heading>
         </AnimateIn>
 
         {/* Layout 2 columnas en desktop */}
@@ -236,32 +240,39 @@ export function AgendaSection({ title, subtitle, livePlans, classes: classesProp
                     return (
                       <div
                         key={`${c.time}-${c.type}-${i}`}
-                        className="grid grid-cols-[3.5rem_1fr_auto] items-center gap-[var(--space-4)] py-[var(--space-5)] sm:grid-cols-[3.5rem_1fr_auto_auto]"
+                        className="grid grid-cols-[3.5rem_1fr_auto] items-center gap-[var(--space-4)] py-[var(--space-5)]"
                       >
                         {/* Hora */}
                         <span className="font-display text-lg font-semibold text-[var(--color-primary)]">
                           {c.time}
                         </span>
 
-                        {/* Tipo + duración */}
-                        <div>
+                        {/* Tipo, descripción, duración y cupos */}
+                        <div className="min-w-0">
                           <span className="block font-medium text-[var(--color-text)]">
                             {c.type}
                           </span>
-                          <span className="text-xs text-[var(--color-text-muted)]">
-                            {c.duration}
+                          {c.description && (
+                            <span className="block text-sm text-[var(--color-text-muted)]">
+                              {c.description}
+                            </span>
+                          )}
+                          <span className="mt-[var(--space-1)] flex flex-wrap items-center gap-x-[var(--space-3)] gap-y-[var(--space-1)] text-xs">
+                            <span className="text-[var(--color-text-muted)]">{c.duration}</span>
+                            <span className={availabilityStyle(c.spotsUsed, c.spotsTotal)}>
+                              {formatSpotsAvailable(c.spotsTotal - c.spotsUsed, c.spotsTotal)}
+                            </span>
+                          </span>
+                          <span
+                            className="mt-[var(--space-2)] block h-1 w-full max-w-[10rem] overflow-hidden rounded-full bg-[var(--color-border)]"
+                            aria-hidden
+                          >
+                            <span
+                              className="block h-full rounded-full bg-[var(--color-primary)]"
+                              style={{ width: `${spotsFillRatio(c.spotsTotal - c.spotsUsed, c.spotsTotal) * 100}%` }}
+                            />
                           </span>
                         </div>
-
-                        {/* Cupos — oculto en mobile xs, visible en sm */}
-                        <span
-                          className={`hidden text-sm sm:block ${availabilityStyle(
-                            c.spotsUsed,
-                            c.spotsTotal
-                          )}`}
-                        >
-                          {availabilityLabel(c.spotsUsed, c.spotsTotal)}
-                        </span>
 
                         {/* Acción */}
                         {isFull ? (
@@ -281,6 +292,15 @@ export function AgendaSection({ title, subtitle, livePlans, classes: classesProp
                   })
                 )}
               </div>
+
+              {fullScheduleHref && (
+                <a
+                  href={fullScheduleHref}
+                  className="mt-[var(--space-6)] inline-flex text-sm font-medium text-[var(--color-secondary)] underline underline-offset-4"
+                >
+                  Ver horarios completos y tipos de clase →
+                </a>
+              )}
 
               {/* Clase de prueba */}
               <div className="mt-[var(--space-8)] rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-tertiary)] p-[var(--space-6)]">
@@ -338,7 +358,7 @@ export function AgendaSection({ title, subtitle, livePlans, classes: classesProp
                       </span>
                     </div>
                     <span className="font-display text-base font-semibold text-[var(--color-primary)]">
-                      {formatPrice(plan.amountCents, plan.currency)}
+                      {formatMoney(plan.amountCents, plan.currency)}
                     </span>
                   </li>
                 ))}

@@ -62,6 +62,8 @@ function makeLiveClass(overrides: Partial<LiveClass> = {}): LiveClass {
     instructorId: null,
     isOnline: false,
     meetingUrl: null,
+    meetingProvider: null,
+    meetingExternalId: null,
     acceptsTrialReservations: false,
     trialCapacity: null,
     color: null,

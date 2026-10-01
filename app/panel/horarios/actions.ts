@@ -23,6 +23,11 @@ import {
 } from "@/lib/application/series-edit";
 import { createZoomMeeting } from "@/lib/application/create-zoom-meeting";
 import { createGoogleMeetMeeting } from "@/lib/application/create-google-meet-meeting";
+import { updateZoomMeeting, deleteZoomMeeting } from "@/lib/application/update-zoom-meeting";
+import {
+  updateGoogleMeetMeeting,
+  deleteGoogleMeetMeeting,
+} from "@/lib/application/update-google-meet-meeting";
 import { runAfterResponse } from "@/lib/utils/run-after-response";
 import { sendEmailSafe } from "@/lib/application/send-email";
 import { closeWaitlistForCancelledClassUseCase } from "@/lib/application/close-waitlist-for-cancelled-class";
@@ -41,11 +46,32 @@ async function requireAdminCenterId(): Promise<string> {
   return session.user.centerId;
 }
 
+/**
+ * `meetingProvider` es una columna de texto libre. Sólo persistimos valores
+ * conocidos — cualquier otro string (o vacío) se guarda como `null`.
+ */
+function sanitizeMeetingProvider(value: string | null | undefined): "zoom" | "meet" | null {
+  return value === "zoom" || value === "meet" ? value : null;
+}
+
+/**
+ * Sanitiza el par provider+externalId a persistir: si el provider no es uno
+ * conocido, el externalId tampoco se guarda (evita un ID de reunión huérfano
+ * sin proveedor válido para usarlo).
+ */
+function sanitizeMeetingFields(
+  provider: string | null | undefined,
+  externalId: string | null | undefined
+): { meetingProvider: "zoom" | "meet" | null; meetingExternalId: string | null } {
+  const meetingProvider = sanitizeMeetingProvider(provider);
+  return { meetingProvider, meetingExternalId: meetingProvider ? externalId || null : null };
+}
+
 /** Crea una reunión en Zoom o Google Meet y devuelve la URL. Usado al marcar "Clase online". */
 export async function createMeetingForClass(
   provider: "zoom" | "meet",
-  params: { title: string; startTime: string; durationMinutes: number }
-): Promise<{ joinUrl: string }> {
+  params: { title: string; startTime: string; durationMinutes: number; recurring?: boolean }
+): Promise<{ joinUrl: string; externalId: string; provider: "zoom" | "meet" }> {
   const centerId = await requireAdminCenterId();
   const startTime = new Date(params.startTime);
 
@@ -54,8 +80,9 @@ export async function createMeetingForClass(
       title: params.title,
       startTime,
       durationMinutes: params.durationMinutes,
+      recurring: params.recurring,
     });
-    return { joinUrl: result.joinUrl };
+    return { joinUrl: result.joinUrl, externalId: result.externalId, provider };
   }
 
   const result = await createGoogleMeetMeeting(centerId, {
@@ -63,7 +90,44 @@ export async function createMeetingForClass(
     startTime,
     durationMinutes: params.durationMinutes,
   });
-  return { joinUrl: result.joinUrl };
+  return { joinUrl: result.joinUrl, externalId: result.externalId, provider };
+}
+
+/** Actualiza la reunión de Zoom o Google Meet existente (mismo link). Usado al editar una clase online. */
+export async function updateMeetingForClass(
+  provider: "zoom" | "meet",
+  externalId: string,
+  params: { title?: string; startTime?: string; durationMinutes?: number }
+): Promise<void> {
+  const centerId = await requireAdminCenterId();
+  const startTime = params.startTime ? new Date(params.startTime) : undefined;
+
+  if (provider === "zoom") {
+    await updateZoomMeeting(centerId, externalId, {
+      title: params.title,
+      startTime,
+      durationMinutes: params.durationMinutes,
+    });
+  } else {
+    await updateGoogleMeetMeeting(centerId, externalId, {
+      title: params.title,
+      startTime,
+      durationMinutes: params.durationMinutes,
+    });
+  }
+}
+
+/** Elimina la reunión de Zoom o Google Meet asociada a una clase. Best-effort: no lanza. */
+export async function deleteMeetingForClass(
+  provider: "zoom" | "meet",
+  externalId: string
+): Promise<void> {
+  const centerId = await requireAdminCenterId();
+  if (provider === "zoom") {
+    await deleteZoomMeeting(centerId, externalId);
+  } else {
+    await deleteGoogleMeetMeeting(centerId, externalId);
+  }
 }
 
 export interface CreateClassFormData {
@@ -75,6 +139,8 @@ export interface CreateClassFormData {
   maxCapacity: number;
   isOnline: boolean;
   meetingUrl: string | null;
+  meetingProvider: string | null;
+  meetingExternalId: string | null;
   acceptsTrialReservations: boolean;
   trialCapacity: number | null;
   color: string | null;
@@ -95,6 +161,8 @@ export async function createLiveClass(data: CreateClassFormData): Promise<void> 
     throw new Error("No se pueden agendar clases en el pasado.");
   }
 
+  const meeting = sanitizeMeetingFields(data.meetingProvider, data.meetingExternalId);
+
   if (data.repeat === "none") {
     await liveClassRepository.create(centerId, {
       title: data.title,
@@ -105,6 +173,8 @@ export async function createLiveClass(data: CreateClassFormData): Promise<void> 
       instructorId: data.instructorId || null,
       isOnline: data.isOnline,
       meetingUrl: data.meetingUrl || null,
+      meetingProvider: meeting.meetingProvider,
+      meetingExternalId: meeting.meetingExternalId,
       acceptsTrialReservations: data.acceptsTrialReservations,
       trialCapacity: data.trialCapacity,
       color: data.color || null,
@@ -127,6 +197,8 @@ export async function createLiveClass(data: CreateClassFormData): Promise<void> 
       durationMinutes: data.durationMinutes,
       isOnline: data.isOnline,
       meetingUrl: data.meetingUrl || null,
+      meetingProvider: meeting.meetingProvider,
+      meetingExternalId: meeting.meetingExternalId,
       acceptsTrialReservations: data.acceptsTrialReservations,
       trialCapacity: data.trialCapacity,
       color: data.color || null,
@@ -166,9 +238,81 @@ export interface UpdateClassFormData {
   maxCapacity: number;
   isOnline: boolean;
   meetingUrl: string | null;
+  meetingProvider: string | null;
+  meetingExternalId: string | null;
   acceptsTrialReservations: boolean;
   trialCapacity: number | null;
   color: string | null;
+}
+
+/**
+ * Antes de persistir una edición, sincroniza la reunión de Zoom/Meet "por
+ * debajo" cuando la clase ya tiene una reunión con ID persistido (legacy-safe:
+ * filas con `meetingUrl` pero sin `meetingExternalId` nunca se tocan).
+ *
+ * - Se desmarcó online (o quedó sin link) → borra la reunión (best-effort,
+ *   nunca lanza) y limpia provider/externalId.
+ * - Sigue online y cambió título y/o horario → PATCH a la misma reunión
+ *   (mismo link). Si el PATCH falla, lanza un error claro y NO se persiste
+ *   nada — no guardamos una clase online con la reunión desincronizada.
+ *
+ * Devuelve los valores finales de provider/externalId a persistir.
+ */
+async function syncMeetingOnUpdate(
+  existing: LiveClass,
+  data: {
+    title: string;
+    startsAt: Date;
+    durationMinutes: number;
+    isOnline: boolean;
+    meetingUrl: string | null;
+    meetingProvider: string | null;
+    meetingExternalId: string | null;
+  }
+): Promise<{ meetingProvider: "zoom" | "meet" | null; meetingExternalId: string | null }> {
+  const existingProvider = sanitizeMeetingProvider(existing.meetingProvider);
+  if (!existingProvider || !existing.meetingExternalId) {
+    // Sin reunión previa que sincronizar: pasa de largo lo que venga del form
+    // (una reunión recién generada al marcar online, o — si es legacy con
+    // `meetingUrl` pero sin ID — se deja tal cual, sin intentar PATCH).
+    return sanitizeMeetingFields(data.meetingProvider, data.meetingExternalId);
+  }
+
+  const stillOnline = data.isOnline && !!data.meetingUrl;
+  if (!stillOnline) {
+    await deleteMeetingForClass(existingProvider, existing.meetingExternalId).catch((err) => {
+      console.error("[meeting] borrado best-effort falló", err, {
+        provider: existingProvider,
+        externalId: existing.meetingExternalId,
+      });
+    });
+    return { meetingProvider: null, meetingExternalId: null };
+  }
+
+  const titleChanged = data.title !== existing.title;
+  const timeChanged =
+    data.startsAt.getTime() !== existing.startsAt.getTime() ||
+    data.durationMinutes !== existing.durationMinutes;
+
+  if (titleChanged || timeChanged) {
+    try {
+      await updateMeetingForClass(existingProvider, existing.meetingExternalId, {
+        ...(titleChanged && { title: data.title }),
+        // Hora y duración SIEMPRE viajan juntas (nunca una sola): Google Meet
+        // no hace nada si sólo recibe una de las dos.
+        ...(timeChanged && {
+          startTime: data.startsAt.toISOString(),
+          durationMinutes: data.durationMinutes,
+        }),
+      });
+    } catch {
+      throw new Error(
+        "No pudimos actualizar la reunión online. Revisa la conexión con el proveedor e intenta de nuevo."
+      );
+    }
+  }
+
+  return { meetingProvider: existingProvider, meetingExternalId: existing.meetingExternalId };
 }
 
 export async function updateLiveClass(data: UpdateClassFormData): Promise<void> {
@@ -181,6 +325,16 @@ export async function updateLiveClass(data: UpdateClassFormData): Promise<void> 
 
   const startsAt = new Date(data.startsAt);
 
+  const { meetingProvider, meetingExternalId } = await syncMeetingOnUpdate(existing, {
+    title: data.title,
+    startsAt,
+    durationMinutes: data.durationMinutes,
+    isOnline: data.isOnline,
+    meetingUrl: data.meetingUrl || null,
+    meetingProvider: data.meetingProvider,
+    meetingExternalId: data.meetingExternalId,
+  });
+
   await liveClassRepository.update(data.id, centerId, {
     title: data.title,
     startsAt,
@@ -190,6 +344,8 @@ export async function updateLiveClass(data: UpdateClassFormData): Promise<void> 
     instructorId: data.instructorId || null,
     isOnline: data.isOnline,
     meetingUrl: data.meetingUrl || null,
+    meetingProvider,
+    meetingExternalId,
     acceptsTrialReservations: data.acceptsTrialReservations,
     trialCapacity: data.trialCapacity,
     color: data.color || null,
@@ -373,6 +529,7 @@ export async function updateSeriesClasses(
   const ctx = await loadSeriesEditTarget(data);
   const { centerId, series } = ctx;
 
+  const meeting = sanitizeMeetingFields(data.meetingProvider, data.meetingExternalId);
   const classUpdate = {
     title: data.title,
     durationMinutes: data.durationMinutes,
@@ -381,19 +538,26 @@ export async function updateSeriesClasses(
     instructorId: data.instructorId || null,
     isOnline: data.isOnline,
     meetingUrl: data.meetingUrl || null,
+    meetingProvider: meeting.meetingProvider,
+    meetingExternalId: meeting.meetingExternalId,
     acceptsTrialReservations: data.acceptsTrialReservations,
     trialCapacity: data.trialCapacity,
     color: data.color || null,
   };
 
   // Scope "this": desvincula y mueve sólo esta instancia (conserva el origen
-  // para poder avisar luego al editar la serie).
+  // para poder avisar luego al editar la serie). NO se hace PATCH a la reunión
+  // compartida de la serie: la instancia conserva el link heredado (meetingUrl)
+  // pero pierde el ID compartido — queda "legacy suelta" (sin PATCH futuro). Su
+  // propia reunión independiente se genera desde el formulario (Task 6).
   if (data.scope === "this") {
     await liveClassRepository.update(data.id, centerId, {
       ...classUpdate,
       startsAt: new Date(data.startsAt),
       seriesId: null,
       detachedFromSeriesId: series.id,
+      meetingProvider: null,
+      meetingExternalId: null,
     });
     return { ok: true };
   }
@@ -408,6 +572,20 @@ export async function updateSeriesClasses(
   const { fields, now, tz, holidayKeys, preview } = await planSeriesEdit(data, ctx);
   if (preview.conflict) {
     return { ok: false, conflict: preview.conflict };
+  }
+
+  // El link de una serie es compartido y no depende de la hora (Zoom recurrente
+  // sin hora fija / evento de Google reutilizado) — sólo el título dispara PATCH,
+  // una sola vez, antes de tocar la base de datos (si falla, no se persiste nada).
+  const seriesProvider = sanitizeMeetingProvider(series.meetingProvider);
+  if (seriesProvider && series.meetingExternalId && data.title !== series.title) {
+    try {
+      await updateMeetingForClass(seriesProvider, series.meetingExternalId, { title: data.title });
+    } catch {
+      throw new Error(
+        "No pudimos actualizar la reunión online de la serie. Revisa la conexión con el proveedor e intenta de nuevo."
+      );
+    }
   }
 
   const seriesUpdate: UpdateSeriesInput = { ...classUpdate };
@@ -527,6 +705,19 @@ export async function deleteLiveClass(formData: FormData): Promise<void> {
   const centerId = await requireAdminCenterId();
   const id = formData.get("id") as string;
   if (!id) return;
+
+  const existing = await liveClassRepository.findById(id);
+  if (!existing || existing.centerId !== centerId) {
+    redirect("/panel/horarios");
+  }
+
+  const meetingProvider = sanitizeMeetingProvider(existing.meetingProvider);
+  // Sólo clases standalone: una serie comparte una reunión entre todas sus
+  // instancias, así que borrarla acá rompería a las hermanas.
+  if (!existing.seriesId && meetingProvider && existing.meetingExternalId) {
+    await deleteMeetingForClass(meetingProvider, existing.meetingExternalId);
+  }
+
   await liveClassRepository.delete(id, centerId);
   redirect("/panel/horarios");
 }

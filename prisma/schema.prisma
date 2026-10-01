@@ -66,6 +66,7 @@ model Center {
   emailPreferences       EmailPreference[]
   siteConfig             CenterSiteConfig?
   siteSections           CenterSiteSection[]
+  newsletterSubscribers  NewsletterSubscriber[]
   aboutPage              CenterAboutPage?
   onDemandCategories     OnDemandCategory[]
   lessonUnlocks          LessonUnlock[]
@@ -113,10 +114,11 @@ model User {
 
 // ─── Disciplinas (prácticas: Yoga, Pilates, TRX…) ─────────────────────────
 model Discipline {
-  id        String   @id @default(cuid())
-  centerId  String
-  name      String
-  color     String?
+  id          String   @id @default(cuid())
+  centerId    String
+  name        String
+  description String?  @db.Text
+  color       String?
   active    Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -146,6 +148,8 @@ model LiveClassSeries {
   durationMinutes    Int             @default(60)
   isOnline           Boolean         @default(false)
   meetingUrl         String?
+  meetingProvider    String?  // "zoom" | "meet"
+  meetingExternalId  String?  // Zoom meetingId | Google eventId
   acceptsTrialReservations Boolean    @default(false)
   trialCapacity      Int?
   color              String?
@@ -180,6 +184,8 @@ model LiveClass {
   instructorId      String?
   isOnline          Boolean  @default(false)
   meetingUrl        String?
+  meetingProvider   String?  // "zoom" | "meet"
+  meetingExternalId String?  // Zoom meetingId | Google eventId
   acceptsTrialReservations Boolean @default(false)
   trialCapacity     Int?
   color             String?
@@ -930,10 +936,35 @@ model CenterSiteConfig {
   seoTitle                 String?
   seoDescription           String?
   heroOverlayEnabled       Boolean  @default(true)
+  /// "Tu primera clase": una idea por línea (Horarios, Conócenos y correo de 1ª reserva)
+  firstClassInfo           String?  @db.Text
+  /// Página "Conócenos" (/conocenos)
+  visitVisible             Boolean  @default(false)
+  visitTitle               String?
+  visitIntro               String?  @db.Text
+  visitHeroImageUrl        String?
+  visitVideoUrl            String?
+  visitParking             String?
+  visitTransit             String?
   createdAt                DateTime @default(now())
   updatedAt                DateTime @updatedAt
 
   center Center @relation(fields: [centerId], references: [id], onDelete: Cascade)
+}
+
+/// Suscriptores al newsletter del blog (visitantes sin cuenta). Los alumnos
+/// reciben los artículos vía EmailPreference.blogPublished.
+model NewsletterSubscriber {
+  id             String    @id @default(cuid())
+  centerId       String
+  email          String
+  subscribedAt   DateTime  @default(now())
+  unsubscribedAt DateTime?
+
+  center Center @relation(fields: [centerId], references: [id], onDelete: Cascade)
+
+  @@unique([centerId, email])
+  @@index([centerId])
 }
 
 model CenterSiteSection {

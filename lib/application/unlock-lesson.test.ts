@@ -166,6 +166,7 @@ function makeDeps() {
     },
     quotaRepo: {
       findByPlanId: vi.fn(),
+      findByPlanIds: vi.fn(),
       findByPlanAndCategory: vi.fn(),
       upsertMany: vi.fn(),
       deleteByPlanId: vi.fn(),
@@ -324,4 +325,30 @@ describe("unlockLessonUseCase", () => {
     expect(result.success).toBe(false);
     expect(result.code).toBe("LESSON_NOT_FOUND");
   });
+
+  it("usa el pack que cubre la categoría aunque no sea el primero", async () => {
+    const deps = makeDeps();
+    deps.lessonRepo.findById.mockResolvedValue(makeLesson());
+    deps.practiceRepo.findById.mockResolvedValue(makePractice({ categoryId: "cat-2" }));
+    deps.userPlanRepo.findActiveByUserAndCenter.mockResolvedValue([
+      makeUserPlan({ id: "up-a", planId: "plan-a" }),
+      makeUserPlan({ id: "up-b", planId: "plan-b" }),
+    ]);
+    deps.planRepo.findById.mockImplementation(async (id: string) => makePlan({ id }));
+    deps.unlockRepo.findByUserAndLesson.mockResolvedValue(null);
+    deps.quotaRepo.findByPlanAndCategory.mockImplementation(async (planId: string) =>
+      planId === "plan-b"
+        ? { id: "q", planId, categoryId: "cat-2", maxLessons: 2, createdAt: new Date(), updatedAt: new Date() }
+        : null
+    );
+    deps.unlockRepo.countByUserPlanAndCategory.mockResolvedValue(0);
+    deps.unlockRepo.create.mockResolvedValue(makeLessonUnlock({ userPlanId: "up-b" }));
+
+    const result = await unlockLessonUseCase("user-1", "center-1", "lesson-1", deps);
+
+    expect(result.code).toBe("UNLOCKED");
+    expect(result.remainingLessons).toBe(1);
+    expect(deps.unlockRepo.create).toHaveBeenCalledWith(expect.objectContaining({ userPlanId: "up-b" }));
+  });
 });
+

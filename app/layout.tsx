@@ -60,7 +60,7 @@ export default async function RootLayout({
           Saltar al contenido principal
         </a>
         <LayoutWithPanel
-          footer={<FooterServer />}
+          footer={<FooterServer navItems={navLinks} />}
           navLinks={navLinks}
           logoUrl={branding.logoUrl}
           centerName={branding.centerName}

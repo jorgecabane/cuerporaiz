@@ -74,6 +74,9 @@ export interface LiveClassDto {
   instructorName?: string | null;
   /** URL de la imagen del profesor (avatar) */
   instructorImageUrl?: string | null;
+  /** Práctica (disciplina) de la clase y su descripción corta */
+  disciplineName?: string | null;
+  disciplineDescription?: string | null;
 }
 
 export interface ReservationDto {

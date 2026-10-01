@@ -4,7 +4,9 @@ import {
   siteConfigRepository,
   aboutPageRepository,
   onDemandCategoryRepository,
+  siteSectionRepository,
 } from "@/lib/adapters/db";
+import { toFaqItems } from "@/lib/domain/site-config";
 import { isSanityConfigured, sanityFetch } from "@/lib/sanity/client";
 import { QUERY_POST_SLUGS } from "@/lib/sanity/queries";
 import { absoluteUrl } from "@/lib/seo/urls";
@@ -24,10 +26,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const center = await centerRepository.findBySlug(slug);
     if (!center) return entries;
 
-    const [aboutPage, siteConfig, categories] = await Promise.all([
+    const [aboutPage, siteConfig, categories, sections] = await Promise.all([
       aboutPageRepository.findByCenterId(center.id),
       siteConfigRepository.findByCenterId(center.id),
       onDemandCategoryRepository.findPublishedByCenterId(center.id),
+      siteSectionRepository.findByCenterId(center.id),
     ]);
 
     if (aboutPage?.visible) {
@@ -36,6 +39,39 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         lastModified: now,
         changeFrequency: "monthly",
         priority: 0.7,
+      });
+    }
+
+    entries.push({
+      url: absoluteUrl("/horarios"),
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.8,
+    });
+
+    if (siteConfig?.visitVisible) {
+      entries.push({
+        url: absoluteUrl("/conocenos"),
+        lastModified: now,
+        changeFrequency: "monthly",
+        priority: 0.6,
+      });
+    }
+
+    entries.push({
+      url: absoluteUrl("/eventos"),
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.7,
+    });
+
+    const faq = sections.find((s) => s.sectionKey === "faq");
+    if (faq?.visible && toFaqItems(faq.items).length > 0) {
+      entries.push({
+        url: absoluteUrl("/preguntas-frecuentes"),
+        lastModified: now,
+        changeFrequency: "monthly",
+        priority: 0.6,
       });
     }
 

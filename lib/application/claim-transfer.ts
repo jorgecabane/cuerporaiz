@@ -16,6 +16,7 @@ import { sendEmailSafe } from "./send-email";
 import { buildTransferReceivedEmail } from "@/lib/email";
 import { getEmailBranding } from "@/lib/email/branding";
 import { getBaseUrl } from "@/lib/utils/base-url";
+import { formatMoney } from "@/lib/domain/money";
 
 export type ClaimTransferErrorCode =
   | "NOT_FOUND"
@@ -106,7 +107,7 @@ export async function claimTransferForOrder(
         toEmail: buyer.email,
         userName: buyer.name ?? buyer.email.split("@")[0],
         itemName: plan.name,
-        amountFormatted: `$${order.amountCents.toLocaleString("es-CL")}`,
+        amountFormatted: formatMoney(order.amountCents),
         misPagosUrl: `${getBaseUrl()}/panel/mis-pagos`,
         branding,
       }),
@@ -217,7 +218,7 @@ export async function claimTransferForEventTicket(
         toEmail: buyer.email,
         userName: buyer.name ?? buyer.email.split("@")[0],
         itemName: eventDoc.title,
-        amountFormatted: `$${ticket.amountCents.toLocaleString("es-CL")}`,
+        amountFormatted: formatMoney(ticket.amountCents),
         misPagosUrl: `${getBaseUrl()}/panel/mis-pagos`,
         branding,
       }),

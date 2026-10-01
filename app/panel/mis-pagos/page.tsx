@@ -13,11 +13,7 @@ import type { OrderStatus } from "@/lib/ports";
 import { ORDER_STATUS_LABELS } from "@/lib/ports";
 import { computeDateRangeUtc, parsePaymentsSearchParams } from "@/lib/panel/payments-query";
 import { getCenterTimezone } from "@/lib/datetime/center-timezone";
-
-function formatPrice(cents: number, currency: string): string {
-  if (currency === "CLP") return `$${cents.toLocaleString("es-CL")}`;
-  return `${cents / 100} ${currency}`;
-}
+import { formatMoney } from "@/lib/domain/money";
 
 type TicketWithEvent = {
   ticket: import("@/lib/domain/event").EventTicket;
@@ -61,7 +57,7 @@ function EventTicketCard({
           })}
         </p>
         <p className="text-xs text-[var(--color-text-muted)]">
-          Total pagado: {formatPrice(ticket.amountCents, ticket.currency)}
+          Total pagado: {formatMoney(ticket.amountCents, ticket.currency)}
         </p>
         {ticket.pendingAdditionQuantity > 0 && (
           <p className="text-xs text-[var(--color-text-muted)]">
@@ -84,8 +80,6 @@ function sortTicketsByEvent(tickets: TicketWithEvent[], nowMs: number): TicketWi
       : b.event.startsAt.getTime() - a.event.startsAt.getTime();
   });
 }
-
-
 
 function buildQuery(
   base: Record<string, string | undefined>,
@@ -382,7 +376,7 @@ export default async function PanelMisPagosPage({
                     {planMap[order.planId]?.name ?? order.planId}
                   </td>
                   <td className="p-3">
-                    {formatPrice(order.amountCents, order.currency)}
+                    {formatMoney(order.amountCents, order.currency)}
                   </td>
                   <td className="p-3">
                     {isTransferPending ? (
@@ -435,7 +429,7 @@ export default async function PanelMisPagosPage({
                   <td className="p-3">
                     {p.planName ?? (p.userPlanId ? p.userPlanId : "Pago suelto")}
                   </td>
-                  <td className="p-3">{formatPrice(p.amountCents, p.currency)}</td>
+                  <td className="p-3">{formatMoney(p.amountCents, p.currency)}</td>
                   <td className="p-3">{p.method}</td>
                   <td className="p-3 text-[var(--color-text-muted)]">{p.note ?? "—"}</td>
                 </tr>

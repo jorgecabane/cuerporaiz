@@ -13,11 +13,7 @@ import { ORDER_STATUS_LABELS } from "@/lib/ports";
 import { isAdminRole } from "@/lib/domain";
 import { computeDateRangeUtc, parsePaymentsSearchParams } from "@/lib/panel/payments-query";
 import { getCenterTimezone } from "@/lib/datetime/center-timezone";
-
-function formatPrice(cents: number, currency: string): string {
-  if (currency === "CLP") return `$${cents.toLocaleString("es-CL")}`;
-  return `${cents / 100} ${currency}`;
-}
+import { formatMoney } from "@/lib/domain/money";
 
 function buildQuery(
   base: Record<string, string | undefined>,
@@ -377,7 +373,7 @@ export default async function PanelPagosPage({
                   ? ` · ${row.quantity} cupos`
                   : "";
               const buyerName = buyer?.email ?? row.userId;
-              const amountFormatted = formatPrice(row.amountCents, row.currency);
+              const amountFormatted = formatMoney(row.amountCents, row.currency);
               const receiptInfo = receiptByTransferId[row.id];
               return (
                 <div
@@ -494,7 +490,7 @@ export default async function PanelPagosPage({
                     {planMap[order.planId]?.name ?? order.planId}
                   </td>
                   <td className="p-3">
-                    {formatPrice(order.amountCents, order.currency)}
+                    {formatMoney(order.amountCents, order.currency)}
                   </td>
                   <td className="p-3">
                     <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${methodClass}`}>
@@ -548,7 +544,7 @@ export default async function PanelPagosPage({
                   <td className="p-3">
                     {p.planName ?? (p.userPlanId ? p.userPlanId : "Pago suelto")}
                   </td>
-                  <td className="p-3">{formatPrice(p.amountCents, p.currency)}</td>
+                  <td className="p-3">{formatMoney(p.amountCents, p.currency)}</td>
                   <td className="p-3">{p.method}</td>
                   <td className="p-3 text-[var(--color-text-muted)]">{p.note ?? "—"}</td>
                 </tr>

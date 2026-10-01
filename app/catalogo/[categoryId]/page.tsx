@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { BibliotecaShell } from "@/components/biblioteca/BibliotecaShell";
 import type { CategoryData } from "@/components/biblioteca/types";
 import { buildSiteMetadata } from "@/lib/seo/metadata";
+import { getLibraryPacks } from "@/lib/application/get-library-packs";
 
 export const revalidate = 300;
 
@@ -33,7 +34,10 @@ export default async function CatalogoCategoryPage({ params }: Props) {
 
   // El shell se renderiza con TODAS las categorías del centro: así, en la vista 2 (práctica)
   // el shell tiene contexto suficiente para resolver categoryName y armar breadcrumb.
-  const tree = await onDemandCategoryRepository.findPublishedTreeByCenterId(category.centerId);
+  const [tree, packs] = await Promise.all([
+    onDemandCategoryRepository.findPublishedTreeByCenterId(category.centerId),
+    getLibraryPacks(category.centerId),
+  ]);
   const filtered = tree.filter((c) => c.id === categoryId);
   const categories: CategoryData[] = filtered.map((cat) => ({
     id: cat.id,
@@ -70,6 +74,7 @@ export default async function CatalogoCategoryPage({ params }: Props) {
         <BibliotecaShell
           categories={categories}
           mode={{ kind: "public" }}
+          packs={packs}
           routingMode="path"
           basePath="/catalogo"
           selectedCategoryId={categoryId}

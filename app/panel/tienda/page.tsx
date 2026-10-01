@@ -8,16 +8,22 @@ import { MisPlansTabs } from "@/app/planes/MisPlansTabs";
 import type { MisPlanItem, PendingTransferItem } from "@/app/planes/MisPlansTabs";
 import { TiendaPlans } from "./TiendaPlans";
 import type { SerializedPlan } from "./TiendaPlans";
+import { getLibraryPacks } from "@/lib/application/get-library-packs";
+import { describePackContents } from "@/lib/domain/library-pack";
 
-export default async function TiendaPage() {
+type Props = { searchParams: Promise<{ plan?: string }> };
+
+export default async function TiendaPage({ searchParams }: Props) {
+  const { plan: highlightPlanId } = await searchParams;
   const session = await auth();
   if (!session?.user?.centerId) {
-    redirect("/auth/login?callbackUrl=/panel/tienda");
+    const target = highlightPlanId ? `/panel/tienda?plan=${highlightPlanId}` : "/panel/tienda";
+    redirect(`/auth/login?callbackUrl=${encodeURIComponent(target)}`);
   }
   const centerId = session.user.centerId;
   const userId = session.user.id;
 
-  const [plans, userPlans, pendingOrders, pendingTickets] = await Promise.all([
+  const [plans, userPlans, pendingOrders, pendingTickets, libraryPacks] = await Promise.all([
     planRepository.findManyByCenterId(centerId),
     userPlanRepository.findByUserAndCenter(userId, centerId),
     prisma.order.findMany({
@@ -42,7 +48,9 @@ export default async function TiendaPage() {
       include: { event: { select: { title: true } } },
       orderBy: { transferClaimedAt: "desc" },
     }),
+    getLibraryPacks(centerId),
   ]);
+  const packByPlanId = new Map(libraryPacks.map((p) => [p.planId, p]));
 
   const pendingTransfers: PendingTransferItem[] = [
     ...pendingOrders.map((o) => ({
@@ -97,6 +105,7 @@ export default async function TiendaPage() {
     maxReservationsPerDay: p.maxReservationsPerDay,
     maxReservationsPerWeek: p.maxReservationsPerWeek,
     isPopular: p.isPopular,
+    packContents: packByPlanId.has(p.id) ? describePackContents(packByPlanId.get(p.id)!) : null,
   }));
 
   return (
@@ -130,7 +139,7 @@ export default async function TiendaPage() {
           </div>
         ) : (
           <Suspense fallback={null}>
-            <TiendaPlans plans={serializedPlans} />
+            <TiendaPlans plans={serializedPlans} highlightPlanId={highlightPlanId ?? null} />
           </Suspense>
         )}
       </section>

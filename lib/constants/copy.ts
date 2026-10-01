@@ -3,17 +3,15 @@
  * Principio: nunca sonar a carrito. La experiencia primero.
  */
 
+import { buildPublicNav, type NavItem } from "@/lib/domain/public-nav";
+
 export const SITE_NAME = "Cuerpo Raíz";
 
 export const TAGLINE =
   "cuerpo, respiración y placer. el camino de regreso a ti.";
 
-export const NAV_LINKS = [
-  { href: "/#como-funciona", label: "Cómo funciona" },
-  { href: "/#agenda", label: "Clases presenciales" },
-  { href: "/catalogo", label: "Online" },
-  { href: "/#contacto", label: "Contacto" },
-] as const;
+/** Menú por defecto (sin centro configurado): solo lo que siempre existe. */
+export const DEFAULT_NAV: NavItem[] = buildPublicNav({ aboutLabel: null, faqEnabled: false, blogLabel: null });
 
 export const CTAS = {
   comenzarPractica: "Comenzar a practicar",

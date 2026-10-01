@@ -12,6 +12,8 @@ type PrismaSeries = {
   durationMinutes: number;
   isOnline: boolean;
   meetingUrl: string | null;
+  meetingProvider: string | null;
+  meetingExternalId: string | null;
   acceptsTrialReservations: boolean;
   trialCapacity: number | null;
   color: string | null;
@@ -39,6 +41,8 @@ function toDomain(s: PrismaSeries): LiveClassSeries {
     durationMinutes: s.durationMinutes,
     isOnline: s.isOnline,
     meetingUrl: s.meetingUrl,
+    meetingProvider: s.meetingProvider,
+    meetingExternalId: s.meetingExternalId,
     acceptsTrialReservations: s.acceptsTrialReservations,
     trialCapacity: s.trialCapacity,
     color: s.color,
@@ -81,6 +85,8 @@ export const liveClassSeriesRepository: ILiveClassSeriesRepository = {
         durationMinutes: data.durationMinutes,
         isOnline: data.isOnline ?? false,
         meetingUrl: data.meetingUrl ?? null,
+        meetingProvider: data.meetingProvider ?? null,
+        meetingExternalId: data.meetingExternalId ?? null,
         acceptsTrialReservations: data.acceptsTrialReservations ?? false,
         trialCapacity: data.trialCapacity ?? null,
         color: data.color ?? null,
@@ -110,6 +116,8 @@ export const liveClassSeriesRepository: ILiveClassSeriesRepository = {
           ...(data.durationMinutes !== undefined && { durationMinutes: data.durationMinutes }),
           ...(data.isOnline !== undefined && { isOnline: data.isOnline }),
           ...(data.meetingUrl !== undefined && { meetingUrl: data.meetingUrl }),
+          ...(data.meetingProvider !== undefined && { meetingProvider: data.meetingProvider }),
+          ...(data.meetingExternalId !== undefined && { meetingExternalId: data.meetingExternalId }),
           ...(data.acceptsTrialReservations !== undefined && { acceptsTrialReservations: data.acceptsTrialReservations }),
           ...(data.trialCapacity !== undefined && { trialCapacity: data.trialCapacity }),
           ...(data.color !== undefined && { color: data.color }),

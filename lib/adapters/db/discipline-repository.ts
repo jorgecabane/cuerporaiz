@@ -6,6 +6,7 @@ function toDomain(d: {
   id: string;
   centerId: string;
   name: string;
+  description: string | null;
   color: string | null;
   active: boolean;
   createdAt: Date;
@@ -15,6 +16,7 @@ function toDomain(d: {
     id: d.id,
     centerId: d.centerId,
     name: d.name,
+    description: d.description,
     color: d.color,
     active: d.active,
     createdAt: d.createdAt,
@@ -49,6 +51,7 @@ export const disciplineRepository: IDisciplineRepository = {
       data: {
         centerId,
         name: data.name,
+        description: data.description ?? null,
         color: data.color ?? null,
         active: data.active ?? true,
       },
@@ -62,6 +65,7 @@ export const disciplineRepository: IDisciplineRepository = {
         where: { id, centerId },
         data: {
           ...(data.name !== undefined && { name: data.name }),
+          ...(data.description !== undefined && { description: data.description }),
           ...(data.color !== undefined && { color: data.color }),
           ...(data.active !== undefined && { active: data.active }),
         },

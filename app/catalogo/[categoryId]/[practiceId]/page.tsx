@@ -8,6 +8,7 @@ import { Suspense } from "react";
 import { BibliotecaShell } from "@/components/biblioteca/BibliotecaShell";
 import type { CategoryData } from "@/components/biblioteca/types";
 import { buildSiteMetadata } from "@/lib/seo/metadata";
+import { getLibraryPacks } from "@/lib/application/get-library-packs";
 
 export const revalidate = 300;
 
@@ -53,7 +54,10 @@ export default async function CatalogoPracticePage({ params }: Props) {
 
   // Tree filtrado a la categoría actual (la vista 2 del shell solo necesita la práctica
   // y sus hermanas para la barra "back").
-  const tree = await onDemandCategoryRepository.findPublishedTreeByCenterId(category.centerId);
+  const [tree, packs] = await Promise.all([
+    onDemandCategoryRepository.findPublishedTreeByCenterId(category.centerId),
+    getLibraryPacks(category.centerId),
+  ]);
   const filtered = tree.filter((c) => c.id === categoryId);
   const categories: CategoryData[] = filtered.map((cat) => ({
     id: cat.id,
@@ -90,6 +94,7 @@ export default async function CatalogoPracticePage({ params }: Props) {
         <BibliotecaShell
           categories={categories}
           mode={{ kind: "public" }}
+          packs={packs}
           routingMode="path"
           basePath="/catalogo"
           selectedCategoryId={categoryId}

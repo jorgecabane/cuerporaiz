@@ -30,5 +30,6 @@ export async function POST(request: Request) {
 
   const img = await aboutPageRepository.createImage(page.id, parsed.data);
   revalidatePath("/sobre");
+  revalidatePath("/");
   return NextResponse.json(img, { status: 201 });
 }

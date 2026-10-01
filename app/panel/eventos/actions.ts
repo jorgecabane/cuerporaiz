@@ -13,6 +13,13 @@ async function requireAdminCenterId(): Promise<string> {
   return session.user.centerId;
 }
 
+/** Home (sección de eventos), listado público y detalle. */
+function revalidatePublicEvents(id?: string) {
+  revalidatePath("/");
+  revalidatePath("/eventos");
+  if (id) revalidatePath(`/eventos/${id}`);
+}
+
 export async function createEvent(data: {
   title: string;
   description?: string | null;
@@ -29,6 +36,7 @@ export async function createEvent(data: {
   const centerId = await requireAdminCenterId();
   const event = await eventRepository.create(centerId, data);
   revalidatePath("/panel/eventos");
+  revalidatePublicEvents();
   redirect(`/panel/eventos/${event.id}`);
 }
 
@@ -52,11 +60,13 @@ export async function updateEvent(
   await eventRepository.update(id, centerId, data);
   revalidatePath("/panel/eventos");
   revalidatePath(`/panel/eventos/${id}`);
+  revalidatePublicEvents(id);
 }
 
 export async function deleteEvent(id: string): Promise<void> {
   const centerId = await requireAdminCenterId();
   await eventRepository.delete(id, centerId);
   revalidatePath("/panel/eventos");
+  revalidatePublicEvents(id);
   redirect("/panel/eventos");
 }

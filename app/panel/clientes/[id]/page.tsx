@@ -18,6 +18,7 @@ import { EditClientForm } from "./EditClientForm";
 import { PlanActions } from "./PlanActions";
 import { RegisterManualPayment } from "./RegisterManualPayment";
 import { getCenterTimezone } from "@/lib/datetime/center-timezone";
+import { formatMoney } from "@/lib/domain/money";
 
 const ORDER_STATUS_LABELS: Record<string, string> = {
   PENDING: "Pendiente",
@@ -28,11 +29,6 @@ const ORDER_STATUS_LABELS: Record<string, string> = {
 };
 
 const SEX_LABELS: Record<string, string> = { F: "Femenino", M: "Masculino", X: "Otro" };
-
-function formatPrice(cents: number, currency: string): string {
-  if (currency === "CLP") return `$${cents.toLocaleString("es-CL")}`;
-  return `${cents / 100} ${currency}`;
-}
 
 function formatDateOnlyUtc(date: Date): string {
   return date.toLocaleDateString("es-CL", { timeZone: "UTC" });
@@ -254,7 +250,7 @@ export default async function ClientDetailPage({
                   >
                     <div>
                       <span className="font-medium">
-                        {formatPrice(mp.amountCents, mp.currency)}
+                        {formatMoney(mp.amountCents, mp.currency)}
                       </span>
                       {linkedPlanName && (
                         <span className="text-[var(--color-text-muted)]"> · {linkedPlanName}</span>
@@ -288,7 +284,7 @@ export default async function ClientDetailPage({
                       {planMap[order.planId]?.name ?? order.planId}
                     </span>
                     {" · "}
-                    {formatPrice(order.amountCents, order.currency)}
+                    {formatMoney(order.amountCents, order.currency)}
                   </div>
                   <div className="flex items-center gap-2">
                     <span

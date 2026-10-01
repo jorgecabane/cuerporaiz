@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { onDemandCategoryRepository, centerRepository } from "@/lib/adapters/db";
 import { prisma } from "@/lib/adapters/db/prisma";
-import { Suspense } from "react";
-import { BibliotecaShell } from "@/components/biblioteca/BibliotecaShell";
+import { PublicCatalog } from "@/components/biblioteca/PublicCatalog";
 import type { CategoryData } from "@/components/biblioteca/types";
 import { buildSiteMetadata } from "@/lib/seo/metadata";
+import { getLibraryPacks } from "@/lib/application/get-library-packs";
 
 export const revalidate = 300;
 
@@ -30,7 +30,10 @@ export default async function CatalogoPage() {
   const center = await resolveCenter();
   if (!center) return <p className="p-8 text-[var(--color-text-muted)]">Centro no configurado.</p>;
 
-  const categoriesTree = await onDemandCategoryRepository.findPublishedTreeByCenterId(center.id);
+  const [categoriesTree, packs] = await Promise.all([
+    onDemandCategoryRepository.findPublishedTreeByCenterId(center.id),
+    getLibraryPacks(center.id),
+  ]);
   const categories: CategoryData[] = categoriesTree.map((cat) => ({
     id: cat.id,
     name: cat.name,
@@ -60,17 +63,5 @@ export default async function CatalogoPage() {
     })),
   }));
 
-  return (
-    <div className="px-4 py-6 sm:py-12 pt-[calc(var(--header-height)+var(--space-4))]">
-      <Suspense fallback={null}>
-        <BibliotecaShell
-          categories={categories}
-          mode={{ kind: "public" }}
-          routingMode="path"
-          basePath="/catalogo"
-          subtitle="Practica a tu ritmo con clases grabadas"
-        />
-      </Suspense>
-    </div>
-  );
+  return <PublicCatalog categories={categories} packs={packs} />;
 }

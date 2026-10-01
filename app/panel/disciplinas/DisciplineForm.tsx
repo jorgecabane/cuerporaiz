@@ -44,6 +44,23 @@ export function DisciplineForm({ discipline }: { discipline?: Discipline }) {
         />
       </div>
       <div>
+        <label htmlFor="description" className="block text-sm font-medium text-[var(--color-text)] mb-1">
+          Descripción corta (opcional)
+        </label>
+        <textarea
+          id="description"
+          name="description"
+          rows={2}
+          maxLength={200}
+          defaultValue={discipline?.description ?? ""}
+          aria-describedby="description-help"
+          className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-[var(--color-text)]"
+        />
+        <p id="description-help" className="mt-1 text-xs text-[var(--color-text-muted)]">
+          Se muestra junto a cada clase en el calendario. Ej.: “Poder, activación, energía vital y creativa.”
+        </p>
+      </div>
+      <div>
         <label htmlFor="color" className="block text-sm font-medium text-[var(--color-text)] mb-1">
           Color (opcional)
         </label>

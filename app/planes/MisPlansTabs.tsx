@@ -6,6 +6,7 @@ import { Hourglass } from "lucide-react";
 import { USER_PLAN_STATUS_LABELS } from "@/lib/domain/user-plan";
 import type { UserPlanStatus } from "@/lib/domain/user-plan";
 import { useTimezone } from "@/components/providers/TimezoneProvider";
+import { formatMoney } from "@/lib/domain/money";
 
 export interface MisPlanItem {
   id: string;
@@ -36,10 +37,6 @@ function formatDate(iso: string, tz: string) {
     month: "short",
     year: "numeric",
   }).format(new Date(iso));
-}
-
-function formatAmount(cents: number) {
-  return `$${new Intl.NumberFormat("es-CL").format(cents)}`;
 }
 
 type Tab = "active" | "pending" | "history";
@@ -243,7 +240,7 @@ function PendingTransfersList({ items, tz }: { items: PendingTransferItem[]; tz:
               </span>
             </div>
             <p className="mt-1 text-sm text-[#92400E]">
-              {formatAmount(item.amountCents)} · enviada {formatDate(item.claimedAt, tz)}
+              {formatMoney(item.amountCents)} · enviada {formatDate(item.claimedAt, tz)}
             </p>
           </div>
           <Link

@@ -5,6 +5,8 @@ export interface EmailLayoutOptions {
   body: string;
   branding: EmailBranding;
   preferencesUrl?: string;
+  /** Link de baja en 1 click (newsletter del blog). */
+  unsubscribeUrl?: string;
 }
 
 /** Estilo inline para botones CTA. Recibe el secondary del branding. */
@@ -18,7 +20,7 @@ export function emailCtaStyle(secondary: string): string {
 export const EMAIL_CTA_STYLE = emailCtaStyle("#B85C38");
 
 /** Layout base con branding por centro. Mobile-friendly via tablas + max-width 600px. */
-export function emailBaseLayout({ body, branding, preferencesUrl }: EmailLayoutOptions): string {
+export function emailBaseLayout({ body, branding, preferencesUrl, unsubscribeUrl }: EmailLayoutOptions): string {
   const b = branding ?? defaultBranding();
 
   // Header: logo (si existe) + nombre del centro en línea, ambos centrados sin fondo.
@@ -45,8 +47,15 @@ export function emailBaseLayout({ body, branding, preferencesUrl }: EmailLayoutO
     ? `<p style="margin:8px 0 0;font-size:12px;">${socials.join(" &middot; ")}</p>`
     : "";
 
-  const prefsBlock = preferencesUrl
-    ? `<p style="margin:12px 0 0;"><a href="${preferencesUrl}" style="color:#8A8782;font-size:11px;text-decoration:underline;">Preferencias de correo</a></p>`
+  const footerLinks: string[] = [];
+  if (unsubscribeUrl) {
+    footerLinks.push(`<a href="${escapeAttr(unsubscribeUrl)}" style="color:#8A8782;font-size:11px;text-decoration:underline;">Dejar de recibir novedades del blog</a>`);
+  }
+  if (preferencesUrl) {
+    footerLinks.push(`<a href="${preferencesUrl}" style="color:#8A8782;font-size:11px;text-decoration:underline;">Preferencias de correo</a>`);
+  }
+  const prefsBlock = footerLinks.length
+    ? `<p style="margin:12px 0 0;">${footerLinks.join(` <span style="color:#8A8782;font-size:11px;">&middot;</span> `)}</p>`
     : "";
 
   return `<!DOCTYPE html>

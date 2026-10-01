@@ -21,6 +21,7 @@ import {
 } from "@/lib/email";
 import { getEmailBranding } from "@/lib/email/branding";
 import { formatLongDate } from "@/lib/email/format-datetime";
+import { formatMoney } from "@/lib/domain/money";
 
 /** Maps MP preapproval status → our SubscriptionStatus */
 export function mapMpStatusToSubscription(mpStatus: string): SubscriptionStatus {
@@ -185,7 +186,7 @@ export async function processAuthorizedPaymentWebhook(
       toEmail: user.email,
       userName: user.name ?? user.email.split("@")[0],
       planName: plan.name,
-      amountFormatted: `$${payment.transactionAmount.toLocaleString("es-CL")}`,
+      amountFormatted: formatMoney(payment.transactionAmount),
       nextChargeDate,
       branding,
     }));
@@ -235,7 +236,7 @@ async function handleFirstAuthorizedPayment(
       toEmail: user.email,
       userName: user.name ?? user.email.split("@")[0],
       planName: plan.name,
-      amountFormatted: `$${payment.transactionAmount.toLocaleString("es-CL")}`,
+      amountFormatted: formatMoney(payment.transactionAmount),
       nextChargeDate,
       branding,
     }));

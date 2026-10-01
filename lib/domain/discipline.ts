@@ -6,6 +6,8 @@ export interface Discipline {
   id: DisciplineId;
   centerId: CenterId;
   name: string;
+  /** Texto corto que se muestra junto a cada clase de esta práctica. */
+  description: string | null;
   color: string | null;
   active: boolean;
   createdAt: Date;

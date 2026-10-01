@@ -19,6 +19,7 @@ import { WaitlistPromoteDialog } from "@/components/panel/reservas/WaitlistPromo
 import { localYmdFromDate } from "@/lib/datetime/local-ymd";
 import { CalendarHomeSkeleton } from "@/components/ui/PanelSkeletons";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { formatPriceOrFree } from "@/lib/domain/money";
 
 const RESERVATIONS_PAGE_SIZE = 50;
 
@@ -726,11 +727,7 @@ export function PanelHomeCalendar({
                   {ev.title}
                 </p>
                 <p className="text-xs text-[var(--color-text-muted)]">
-                  {ev.amountCents === 0
-                    ? "Gratis"
-                    : ev.currency === "CLP"
-                      ? `$${ev.amountCents.toLocaleString("es-CL")}`
-                      : `${(ev.amountCents / 100).toFixed(2)} ${ev.currency}`}
+                  {formatPriceOrFree(ev.amountCents, ev.currency)}
                 </p>
               </div>
               {ev.hasTicket && (

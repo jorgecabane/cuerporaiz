@@ -1,12 +1,13 @@
 "use client";
 
-import { useTransition, useState, useMemo, useRef } from "react";
+import { useTransition, useState, useMemo, useRef, useEffect } from "react";
 import {
   updateLiveClass,
   cancelLiveClassWithScope,
   previewCancelScope,
   updateSeriesClasses,
   createMeetingForClass,
+  updateMeetingForClass,
 } from "../actions";
 import type { EditScope, CancelScopePreview, EditSeriesFormData } from "../actions";
 import { Button } from "@/components/ui/Button";
@@ -67,6 +68,14 @@ function toLocalISO(d: Date): string {
 
 function toLocalDateInput(d: Date): string {
   return toLocalISO(d).slice(0, 10);
+}
+
+function providerLabel(provider: "zoom" | "meet"): string {
+  return provider === "zoom" ? "Zoom" : "Meet";
+}
+
+function sanitizeProvider(value: string | null): "zoom" | "meet" | null {
+  return value === "zoom" || value === "meet" ? value : null;
 }
 
 /** Mapea una serie persistida al valor inicial del editor de recurrencia. */
@@ -144,12 +153,52 @@ export function EditClassForm({
   );
   const [isOnline, setIsOnline] = useState(liveClass.isOnline && !!liveClass.meetingUrl);
   const [meetingUrlValue, setMeetingUrlValue] = useState(liveClass.meetingUrl ?? "");
+  const [meetingExternalId, setMeetingExternalId] = useState<string | null>(liveClass.meetingExternalId);
   const [meetingError, setMeetingError] = useState<string | null>(null);
   const [generatingMeeting, setGeneratingMeeting] = useState(false);
-  const [lastUsedProvider, setLastUsedProvider] = useState<"zoom" | "meet" | null>(null);
+  const [lastUsedProvider, setLastUsedProvider] = useState<"zoom" | "meet" | null>(
+    sanitizeProvider(liveClass.meetingProvider)
+  );
   const formRef = useRef<HTMLFormElement>(null);
 
+  // Espejo mínimo de nombre/duración en estado sólo para poder disparar el
+  // auto-generado/auto-sincronizado (el resto del form sigue no controlado
+  // vía FormData, salvo estos dos campos).
+  const [titleValue, setTitleValue] = useState(liveClass.title);
+  const [durationValue, setDurationValue] = useState(liveClass.durationMinutes);
+
+  // Con exactamente un proveedor conectado, la generación/sincronización es
+  // automática (sin botón). Con los dos conectados, se mantienen los botones
+  // manuales.
   const hasVideoProvider = videoProviders.zoom || videoProviders.meet;
+  const singleProvider: "zoom" | "meet" | null =
+    videoProviders.zoom !== videoProviders.meet ? (videoProviders.zoom ? "zoom" : "meet") : null;
+  const autoGenerateFieldsReady = !!titleValue.trim() && !!startsAtValue;
+
+  // Firma de la última sincronización automática (evita PATCH/creación
+  // fantasma cuando nada relevante cambió). Si la clase ya tenía una reunión
+  // persistida Y RASTREADA (con `meetingExternalId`), se siembra con esos
+  // valores para no disparar un PATCH no-op al montar. `lastGeneratedUrlRef`
+  // guarda el último link que puso el propio sistema (generado o
+  // persistido-y-rastreado): si el link en pantalla difiere, el auto-sync no
+  // debe pisarlo. Una clase LEGACY (tiene `meetingUrl` pero no
+  // `meetingExternalId`) no está rastreada por el sistema — sembrar ambas
+  // refs en null evita que el efecto la confunda con un link propio y la
+  // regenere/sobrescriba sólo por abrir la edición.
+  const initialProvider = sanitizeProvider(liveClass.meetingProvider);
+  const isTrackedMeeting = !!initialProvider && !!liveClass.meetingExternalId;
+  const lastAutoSyncRef = useRef<string | null>(
+    isTrackedMeeting
+      ? `${initialProvider}|${liveClass.title}|${toLocalISO(new Date(liveClass.startsAt))}|${liveClass.durationMinutes}`
+      : null
+  );
+  const lastGeneratedUrlRef = useRef<string | null>(
+    isTrackedMeeting ? liveClass.meetingUrl ?? null : null
+  );
+  // Siempre-actual: evita que un debounce en vuelo use un `recurrence.repeat`
+  // obsoleto si la recurrencia cambia mientras el timer todavía no dispara.
+  const recurrenceRepeatRef = useRef(recurrence.repeat);
+  recurrenceRepeatRef.current = recurrence.repeat;
 
   const disciplineColor = useMemo(() => {
     if (!selectedDisciplineId) return null;
@@ -182,8 +231,19 @@ export function EditClassForm({
       : null;
 
     if (!title || !startsAt) return;
-    const startsAtIso = new Date(startsAt).toISOString();
+
     const meetingUrl = isOnline ? (meetingUrlValue?.trim() || null) : null;
+    if (isOnline && hasVideoProvider && !meetingUrl) {
+      setError("Genera el link con el botón o pega uno manualmente.");
+      return;
+    }
+
+    const startsAtIso = new Date(startsAt).toISOString();
+    // Un link editado a mano (distinto del último generado/persistido por el
+    // sistema) no tiene un ID de reunión confiable asociado — sólo persistimos
+    // provider/externalId cuando el link en pantalla es el que el propio
+    // sistema generó o ya tenía guardado.
+    const usingTrackedMeeting = !!meetingUrl && meetingUrl === lastGeneratedUrlRef.current;
     const formPayload = {
       id: liveClass.id,
       title,
@@ -194,6 +254,14 @@ export function EditClassForm({
       maxCapacity,
       isOnline: !!meetingUrl,
       meetingUrl,
+      // Valores dinámicos: reflejan la última reunión generada/sincronizada
+      // en este form (no los originales estáticos de `liveClass`), para que
+      // un link recién generado al marcar "online" durante esta edición se
+      // persista. La sincronización "por debajo" (server action
+      // `updateLiveClass`) los usa además como respaldo si la clase ya tenía
+      // reunión propia.
+      meetingProvider: usingTrackedMeeting ? lastUsedProvider : null,
+      meetingExternalId: usingTrackedMeeting ? meetingExternalId : null,
       acceptsTrialReservations,
       trialCapacity,
       color: effectiveColor,
@@ -342,21 +410,88 @@ export function EditClassForm({
     const startsAt = fd.get("startsAt") as string;
     const durationMinutes = Number(fd.get("durationMinutes")) || defaultDuration;
     if (!title || !startsAt) {
-      setMeetingError("Completa nombre y fecha/hora.");
+      setMeetingError("Completa nombre y fecha/hora para generar el link.");
       setGeneratingMeeting(false);
       return;
     }
     try {
       const startTime = new Date(startsAt).toISOString();
-      const res = await createMeetingForClass(provider, { title, startTime, durationMinutes });
+      const recurring = recurrenceRepeatRef.current !== "none";
+      const res = await createMeetingForClass(provider, { title, startTime, durationMinutes, recurring });
       setMeetingUrlValue(res.joinUrl);
+      setMeetingExternalId(res.externalId);
       setLastUsedProvider(provider);
+      lastGeneratedUrlRef.current = res.joinUrl;
+      lastAutoSyncRef.current = `${provider}|${title}|${startsAt}|${durationMinutes}`;
     } catch (err) {
       setMeetingError(err instanceof Error ? err.message : "No se pudo crear la reunión.");
     } finally {
       setGeneratingMeeting(false);
     }
   }
+
+  /**
+   * Sincroniza la reunión ya generada/persistida con los datos actuales del
+   * form (título y/o horario), en vez de crear una nueva — evita una reunión
+   * "fantasma" huérfana cada vez que el admin sigue ajustando la clase.
+   */
+  async function handleUpdateGeneratedMeeting(
+    provider: "zoom" | "meet",
+    externalId: string,
+    title: string,
+    startsAt: string,
+    durationMinutes: number
+  ) {
+    setMeetingError(null);
+    setGeneratingMeeting(true);
+    try {
+      await updateMeetingForClass(provider, externalId, {
+        title,
+        startTime: new Date(startsAt).toISOString(),
+        durationMinutes,
+      });
+      lastAutoSyncRef.current = `${provider}|${title}|${startsAt}|${durationMinutes}`;
+    } catch (err) {
+      setMeetingError(err instanceof Error ? err.message : "No se pudo actualizar la reunión.");
+    } finally {
+      setGeneratingMeeting(false);
+    }
+  }
+
+  // Auto-generar/auto-sincronizar (sin botón) cuando la clase es online, hay
+  // exactamente un proveedor conectado y ya están los campos mínimos.
+  // Debounce ~600ms para no disparar una llamada por cada tecla. Si ya existe
+  // una reunión (generada acá o persistida desde antes) para este provider,
+  // sincroniza (PATCH) en vez de crear otra.
+  // Clases de serie quedan fuera: comparten `meetingExternalId`/`meetingProvider`
+  // entre todas las instancias, y ese link no depende de la hora de UNA
+  // instancia (mover una instancia no debe mover la reunión de las demás).
+  // La sincronización de la reunión a nivel serie ya la maneja
+  // `updateSeriesClasses` (server action), scope-aware. Los botones manuales
+  // siguen disponibles para clases de serie.
+  useEffect(() => {
+    if (series) return;
+    if (!isOnline || !singleProvider || !autoGenerateFieldsReady) return;
+    if (meetingUrlValue.trim() !== (lastGeneratedUrlRef.current ?? "").trim()) return; // link editado a mano: no pisarlo
+
+    const title = titleValue.trim();
+    const startsAt = startsAtValue;
+    const durationMinutes = durationValue || defaultDuration;
+    const signature = `${singleProvider}|${title}|${startsAt}|${durationMinutes}`;
+
+    const timer = setTimeout(() => {
+      if (signature === lastAutoSyncRef.current) return;
+      lastAutoSyncRef.current = signature;
+      if (meetingExternalId && lastUsedProvider === singleProvider) {
+        void handleUpdateGeneratedMeeting(singleProvider, meetingExternalId, title, startsAt, durationMinutes);
+      } else {
+        void handleGenerateMeeting(singleProvider);
+      }
+    }, 600);
+
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOnline, singleProvider, autoGenerateFieldsReady, titleValue, startsAtValue, durationValue, meetingUrlValue]);
 
   return (
     <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
@@ -411,6 +546,7 @@ export function EditClassForm({
           name="title"
           required
           defaultValue={liveClass.title}
+          onChange={(e) => setTitleValue(e.target.value)}
           className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-[var(--color-text)]"
         />
       </div>
@@ -485,6 +621,7 @@ export function EditClassForm({
             type="number"
             min={15}
             defaultValue={liveClass.durationMinutes}
+            onChange={(e) => setDurationValue(Number(e.target.value) || liveClass.durationMinutes)}
             className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-[var(--color-text)]"
           />
         </div>
@@ -545,10 +682,12 @@ export function EditClassForm({
               checked={isOnline}
               onChange={(e) => {
                 setIsOnline(e.target.checked);
-                if (!e.target.checked) {
-                  setMeetingUrlValue("");
-                  setMeetingError(null);
-                }
+                setMeetingError(null);
+                // No se limpia el link/reunión al desmarcar: si el admin
+                // vuelve a marcar "online" sin guardar, recupera la reunión
+                // ya generada/persistida en vez de crear una huérfana nueva.
+                // Al guardar desmarcado, `handleSubmit` igual envía
+                // `meetingUrl: null`.
               }}
               className="rounded border-[var(--color-border)]"
             />
@@ -586,7 +725,23 @@ export function EditClassForm({
         <label htmlFor="meetingUrl" className="block text-sm font-medium text-[var(--color-text)]">
           Link de la reunión
         </label>
-        <div className="flex flex-wrap gap-2">
+        {singleProvider ? (
+          !autoGenerateFieldsReady && (
+            <div className="flex flex-col gap-1">
+              <button
+                type="button"
+                disabled
+                className="w-fit rounded-[var(--radius-md)] border border-[var(--color-border)] px-3 py-2 text-sm font-medium text-[var(--color-text)] opacity-50"
+              >
+                Generar link con {providerLabel(singleProvider)}
+              </button>
+              <span className="text-xs text-[var(--color-text-muted)]">
+                Completa nombre y fecha/hora para generar el link.
+              </span>
+            </div>
+          )
+        ) : (
+          <div className="flex flex-wrap gap-2">
             {videoProviders.zoom && (
               <button
                 type="button"
@@ -608,6 +763,7 @@ export function EditClassForm({
               </button>
             )}
           </div>
+        )}
         {generatingMeeting && (
           <div className="space-y-2">
             <Skeleton className="h-10 w-full" />

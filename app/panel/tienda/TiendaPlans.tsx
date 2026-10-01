@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ComprarPlanButton } from "@/app/planes/ComprarPlanButton";
 import SuscribirmeButton from "@/app/planes/SuscribirmeButton";
+import { formatMoney } from "@/lib/domain/money";
 
 /* ─── Types ──────────────────────────────────────────────────────────────── */
 
@@ -21,6 +22,8 @@ export type SerializedPlan = {
   maxReservationsPerDay: number | null;
   maxReservationsPerWeek: number | null;
   isPopular: boolean;
+  /** Packs de biblioteca: qué incluye (ej. "3 clases de Yoga + 1 clase de Meditaciones"). */
+  packContents: string | null;
 };
 
 /* ─── Constants ──────────────────────────────────────────────────────────── */
@@ -34,11 +37,6 @@ const TYPE_LABELS: Record<SerializedPlan["type"], string> = {
 const TYPE_ORDER: SerializedPlan["type"][] = ["LIVE", "ON_DEMAND", "MEMBERSHIP_ON_DEMAND"];
 
 /* ─── Helpers ────────────────────────────────────────────────────────────── */
-
-function formatPrice(cents: number, currency: string): string {
-  if (currency === "CLP") return `$${cents.toLocaleString("es-CL")}`;
-  return `${(cents / 100).toFixed(2)} ${currency}`;
-}
 
 function recurringPrice(plan: SerializedPlan): number {
   const discount = plan.recurringDiscountPercent ?? 0;
@@ -83,13 +81,39 @@ function FilterChips({
 
 /* ─── Plan Card ──────────────────────────────────────────────────────────── */
 
+function planFeatures(plan: SerializedPlan, showMonthly: boolean): string[] {
+  const isLibrary = plan.type !== "LIVE";
+  const features: string[] = [];
+  if (isLibrary) {
+    features.push(plan.packContents ?? "Acceso a toda la biblioteca");
+  } else {
+    features.push(plan.maxReservations != null ? `Máx. ${plan.maxReservations} clases` : "Clases ilimitadas");
+    if (plan.maxReservationsPerDay != null) features.push(`Máx. ${plan.maxReservationsPerDay} por día`);
+    if (plan.maxReservationsPerWeek != null) features.push(`Máx. ${plan.maxReservationsPerWeek} por semana`);
+  }
+  if (showMonthly) {
+    features.push("Se renueva automáticamente");
+  } else if (plan.validityDays != null) {
+    features.push(`Válido ${plan.validityDays} días`);
+  } else if (isLibrary && plan.validityPeriod == null) {
+    features.push("Tuyas para siempre, sin vencimiento");
+  }
+  return features;
+}
+
 function PlanCard({
   plan,
   isPopular,
+  highlighted,
 }: {
   plan: SerializedPlan;
   isPopular: boolean;
+  highlighted: boolean;
 }) {
+  const cardRef = useRef<HTMLLIElement>(null);
+  useEffect(() => {
+    if (highlighted) cardRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [highlighted]);
   const canBoth = plan.billingMode === "BOTH";
   const canOneTime = plan.billingMode === "ONE_TIME" || canBoth;
   const canRecurring = plan.billingMode === "RECURRING" || canBoth;
@@ -102,28 +126,14 @@ function PlanCard({
   const activePrice = showMonthly ? recPrice : plan.amountCents;
   const priceSuffix = showMonthly ? "/mes" : "pago único";
 
-  // Features
-  const features: string[] = [];
-  if (plan.maxReservations != null) {
-    features.push(`Máx. ${plan.maxReservations} clases`);
-  } else {
-    features.push("Clases ilimitadas");
-  }
-  if (plan.maxReservationsPerDay != null) {
-    features.push(`Máx. ${plan.maxReservationsPerDay} por día`);
-  }
-  if (plan.maxReservationsPerWeek != null) {
-    features.push(`Máx. ${plan.maxReservationsPerWeek} por semana`);
-  }
-  if (showMonthly) {
-    features.push("Se renueva automáticamente");
-  } else if (plan.validityDays != null) {
-    features.push(`Válido ${plan.validityDays} días`);
-  }
+  const features = planFeatures(plan, showMonthly);
 
   return (
     <li
+      ref={cardRef}
       className={`rounded-[var(--radius-lg)] bg-[var(--color-surface)] p-5 sm:p-6 flex flex-col gap-4 ${
+        highlighted ? "ring-2 ring-[var(--color-secondary)] ring-offset-2 " : ""
+      }${
         isPopular
           ? "border-2 border-[var(--color-primary)] shadow-[var(--shadow-md)]"
           : "border border-[var(--color-border)]"
@@ -161,7 +171,7 @@ function PlanCard({
                 : "text-[var(--color-text-muted)]"
             }`}
           >
-            {formatPrice(plan.amountCents, plan.currency)}
+            {formatMoney(plan.amountCents, plan.currency)}
           </button>
           <button
             type="button"
@@ -172,7 +182,7 @@ function PlanCard({
                 : "text-[var(--color-text-muted)]"
             }`}
           >
-            {formatPrice(recPrice, plan.currency)}/m
+            {formatMoney(recPrice, plan.currency)}/m
             {hasDiscount && (
               <span className="text-[var(--color-secondary)] text-[10px] font-semibold">
                 -{plan.recurringDiscountPercent}%
@@ -187,7 +197,7 @@ function PlanCard({
         <div>
           <div className="flex items-baseline gap-1.5">
             <span className="text-3xl font-bold text-[var(--color-primary)]">
-              {formatPrice(activePrice, plan.currency)}
+              {formatMoney(activePrice, plan.currency)}
             </span>
             <span className="text-sm text-[var(--color-text-muted)]">{priceSuffix}</span>
           </div>
@@ -223,7 +233,14 @@ function PlanCard({
 
 /* ─── Main Component ─────────────────────────────────────────────────────── */
 
-export function TiendaPlans({ plans }: { plans: SerializedPlan[] }) {
+export function TiendaPlans({
+  plans,
+  highlightPlanId = null,
+}: {
+  plans: SerializedPlan[];
+  highlightPlanId?: string | null;
+}) {
+  const highlightedPlan = plans.find((p) => p.id === highlightPlanId) ?? null;
   // Determine which types exist
   const availableTypes = TYPE_ORDER.filter((type) =>
     plans.some((p) => p.type === type)
@@ -231,7 +248,7 @@ export function TiendaPlans({ plans }: { plans: SerializedPlan[] }) {
 
   // All types active by default
   const [activeTypes, setActiveTypes] = useState<Set<SerializedPlan["type"]>>(
-    () => new Set(availableTypes)
+    () => new Set(highlightedPlan ? [highlightedPlan.type] : availableTypes)
   );
 
   const toggleType = (type: SerializedPlan["type"]) => {
@@ -272,6 +289,7 @@ export function TiendaPlans({ plans }: { plans: SerializedPlan[] }) {
             key={plan.id}
             plan={plan}
             isPopular={plan.id === popularPlanId}
+            highlighted={plan.id === highlightPlanId}
           />
         ))}
       </ul>

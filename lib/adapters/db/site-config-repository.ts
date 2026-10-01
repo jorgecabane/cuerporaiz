@@ -36,6 +36,14 @@ function toDomain(r: {
   seoTitle: string | null;
   seoDescription: string | null;
   heroOverlayEnabled: boolean;
+  firstClassInfo: string | null;
+  visitVisible: boolean;
+  visitTitle: string | null;
+  visitIntro: string | null;
+  visitHeroImageUrl: string | null;
+  visitVideoUrl: string | null;
+  visitParking: string | null;
+  visitTransit: string | null;
 }): SiteConfig {
   return {
     id: r.id,
@@ -70,6 +78,14 @@ function toDomain(r: {
     seoTitle: r.seoTitle,
     seoDescription: r.seoDescription,
     heroOverlayEnabled: r.heroOverlayEnabled,
+    firstClassInfo: r.firstClassInfo,
+    visitVisible: r.visitVisible,
+    visitTitle: r.visitTitle,
+    visitIntro: r.visitIntro,
+    visitHeroImageUrl: r.visitHeroImageUrl,
+    visitVideoUrl: r.visitVideoUrl,
+    visitParking: r.visitParking,
+    visitTransit: r.visitTransit,
   };
 }
 

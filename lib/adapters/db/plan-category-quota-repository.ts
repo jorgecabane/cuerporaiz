@@ -29,6 +29,15 @@ export const planCategoryQuotaRepository: IPlanCategoryQuotaRepository = {
     return list.map(toDomain);
   },
 
+  async findByPlanIds(planIds: string[]) {
+    if (planIds.length === 0) return [];
+    const list = await prisma.planCategoryQuota.findMany({
+      where: { planId: { in: planIds } },
+      orderBy: { createdAt: "asc" },
+    });
+    return list.map(toDomain);
+  },
+
   async findByPlanAndCategory(planId: string, categoryId: string) {
     const r = await prisma.planCategoryQuota.findUnique({
       where: { planId_categoryId: { planId, categoryId } },
