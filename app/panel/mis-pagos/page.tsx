@@ -53,6 +53,7 @@ function EventTicketCard({
             month: "short",
             hour: "2-digit",
             minute: "2-digit",
+            hour12: false,
           })}
         </p>
         <p className="text-xs text-[var(--color-text-muted)]">
@@ -369,7 +370,7 @@ export default async function PanelMisPagosPage({
                   }`}
                 >
                   <td className="p-3 text-[var(--color-text-muted)]">
-                    {order.createdAt.toLocaleString("es-CL", { timeZone: tz })}
+                    {order.createdAt.toLocaleString("es-CL", { timeZone: tz, hour12: false })}
                   </td>
                   <td className="p-3">
                     {planMap[order.planId]?.name ?? order.planId}
@@ -423,7 +424,7 @@ export default async function PanelMisPagosPage({
               {manualPayments.map((p) => (
                 <tr key={p.id} className="border-b border-[var(--color-border)] last:border-0">
                   <td className="p-3 text-[var(--color-text-muted)]">
-                    {p.paidAt.toLocaleString("es-CL", { timeZone: tz })}
+                    {p.paidAt.toLocaleString("es-CL", { timeZone: tz, hour12: false })}
                   </td>
                   <td className="p-3">
                     {p.planName ?? (p.userPlanId ? p.userPlanId : "Pago suelto")}

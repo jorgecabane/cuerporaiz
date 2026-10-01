@@ -15,7 +15,7 @@ function formatDate(d: Date, tz: string): string {
 }
 
 function formatTime(d: Date, tz: string): string {
-  return new Date(d).toLocaleTimeString("es-CL", { timeZone: tz, hour: "2-digit", minute: "2-digit" });
+  return new Date(d).toLocaleTimeString("es-CL", { timeZone: tz, hour: "2-digit", minute: "2-digit", hour12: false });
 }
 
 function formatDateKey(d: Date): string {

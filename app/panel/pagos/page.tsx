@@ -406,7 +406,7 @@ export default async function PanelPagosPage({
                           {buyerName}
                         </Link>
                         {" · "}
-                        Transferida {row.claimedAt.toLocaleString("es-CL", { timeZone: tz })}
+                        Transferida {row.claimedAt.toLocaleString("es-CL", { timeZone: tz, hour12: false })}
                       </p>
                       <div className="mt-3">
                         <TransferReceiptViewer info={receiptInfo} />
@@ -476,7 +476,7 @@ export default async function PanelPagosPage({
                 return (
                 <tr key={order.id} className="border-b border-[var(--color-border)] last:border-0">
                   <td className="p-3 text-[var(--color-text-muted)]">
-                    {order.createdAt.toLocaleString("es-CL", { timeZone: tz })}
+                    {order.createdAt.toLocaleString("es-CL", { timeZone: tz, hour12: false })}
                   </td>
                   <td className="p-3">
                     <Link
@@ -531,7 +531,7 @@ export default async function PanelPagosPage({
               {manualPayments.map((p) => (
                 <tr key={p.id} className="border-b border-[var(--color-border)] last:border-0">
                   <td className="p-3 text-[var(--color-text-muted)]">
-                    {p.paidAt.toLocaleString("es-CL", { timeZone: tz })}
+                    {p.paidAt.toLocaleString("es-CL", { timeZone: tz, hour12: false })}
                   </td>
                   <td className="p-3">
                     <Link

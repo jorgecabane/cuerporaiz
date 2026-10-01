@@ -25,7 +25,7 @@ function formatRange(startIso: string, durationMinutes: number): string {
     day: "numeric",
     month: "long",
   });
-  const time = `${start.toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" })} – ${end.toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" })}`;
+  const time = `${start.toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit", hour12: false })} – ${end.toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit", hour12: false })}`;
   return `${date}, ${time}`;
 }
 
