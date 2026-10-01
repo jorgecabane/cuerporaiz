@@ -1,4 +1,8 @@
 import { AnimateIn } from "@/components/ui/AnimateIn";
+import { splitParagraphs } from "@/lib/domain/text";
+
+const DEFAULT_BODY =
+  "El cuerpo sana cuando se siente seguro. Vinimos a hacerlo en compañía, en comunidad. Aquí encontrarás clases para practicar a tu ritmo, con la misma dedicación que en una clase presencial.";
 
 type PropuestaItem = {
   title?: string;
@@ -48,11 +52,13 @@ export function PropuestaSection({ title, subtitle, items }: PropuestaSectionPro
           />
         </AnimateIn>
 
-        {/* Párrafo de cuerpo */}
+        {/* Cuerpo: un párrafo por cada bloque separado por línea en blanco en el panel */}
         <AnimateIn delay={0.3}>
-          <p className="max-w-2xl text-lg leading-relaxed text-[var(--color-text-muted)]">
-            {body ?? subtitle ?? "El cuerpo sana cuando se siente seguro. Vinimos a hacerlo en compañía, en comunidad. Aquí encontrarás clases para practicar a tu ritmo, con la misma dedicación que en una clase presencial."}
-          </p>
+          <div className="max-w-2xl space-y-[var(--space-4)] text-lg leading-relaxed text-[var(--color-text-muted)]">
+            {splitParagraphs(body ?? subtitle ?? DEFAULT_BODY).map((paragraph) => (
+              <p key={paragraph} className="whitespace-pre-line">{paragraph}</p>
+            ))}
+          </div>
         </AnimateIn>
       </div>
     </section>

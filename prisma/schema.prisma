@@ -118,6 +118,8 @@ model Discipline {
   centerId    String
   name        String
   description String?  @db.Text
+  /// Descripción completa ("Nuestras disciplinas", Horarios). `description` es la frase corta del calendario.
+  longDescription String? @db.Text
   color       String?
   active    Boolean  @default(true)
   createdAt DateTime @default(now())

@@ -1,18 +1,18 @@
 import { describe, it, expect } from "vitest";
-import { buildPublicNav, flattenNav, isNavGroup, type NavGroup } from "./public-nav";
+import { buildPublicNav, flattenNav, isNavGroup, NAV_GROUP_LABELS, type NavGroup } from "./public-nav";
 
 const full = { aboutLabel: "Sobre Trini", faqEnabled: true, blogLabel: "Blog" };
 
 describe("buildPublicNav", () => {
-  it("agrupa en Nosotros y Practica, seguido de Blog y Contacto", () => {
+  it("agrupa en los dos submenús, seguido de Blog y Contacto", () => {
     const nav = buildPublicNav(full);
-    expect(nav.map((i) => i.label)).toEqual(["Nosotros", "Practica", "Blog", "Contacto"]);
+    expect(nav.map((i) => i.label)).toEqual([NAV_GROUP_LABELS.about, NAV_GROUP_LABELS.practice, "Blog", "Contacto"]);
     const [about, practice] = nav as NavGroup[];
     expect(about.children.map((c) => c.href)).toEqual(["/sobre", "/preguntas-frecuentes"]);
     expect(practice.children.map((c) => c.href)).toEqual(["/horarios", "/catalogo", "/eventos"]);
   });
 
-  it("suma Conócenos a Nosotros cuando está visible", () => {
+  it("suma Conócenos al grupo about cuando está visible", () => {
     const about = buildPublicNav({ ...full, visitEnabled: true })[0] as NavGroup;
     expect(about.children.map((c) => c.href)).toEqual(["/sobre", "/conocenos", "/preguntas-frecuentes"]);
   });
@@ -27,7 +27,7 @@ describe("buildPublicNav", () => {
   it("un grupo con un solo link se muestra como link directo; sin links, desaparece", () => {
     expect(buildPublicNav({ ...full, faqEnabled: false })[0]).toEqual({ href: "/sobre", label: "Sobre Trini" });
     const nav = buildPublicNav({ aboutLabel: null, faqEnabled: false, blogLabel: null });
-    expect(nav.map((i) => i.label)).toEqual(["Practica", "Contacto"]);
+    expect(nav.map((i) => i.label)).toEqual([NAV_GROUP_LABELS.practice, "Contacto"]);
   });
 });
 

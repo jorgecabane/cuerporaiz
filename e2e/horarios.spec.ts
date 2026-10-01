@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { NAV_GROUP_LABELS } from "../lib/domain/public-nav";
 
 /** Página /horarios: calendario + "Acerca de las clases" + "Tu primera clase" (configurable). */
 test.describe("Horarios", () => {
@@ -6,7 +7,7 @@ test.describe("Horarios", () => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto("/catalogo");
     const nav = page.getByRole("navigation", { name: "Principal" });
-    await nav.getByRole("button", { name: /Practica/ }).click();
+    await nav.getByRole("button", { name: NAV_GROUP_LABELS.practice }).click();
     await nav.getByRole("link", { name: /^Horarios/ }).click();
     await page.waitForURL(/\/horarios$/);
     await expect(page.getByRole("heading", { level: 1, name: "Horarios" })).toBeVisible();

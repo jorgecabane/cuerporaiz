@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
+import { NAV_GROUP_LABELS } from "../lib/domain/public-nav";
 
-/** Header público agrupado: "Nosotros" / "Practica" + Blog + Contacto. */
+/** Header público agrupado: submenús (NAV_GROUP_LABELS) + Blog + Contacto. */
 test.describe("Header público agrupado", () => {
   test.use({ storageState: { cookies: [], origins: [] } });
 
@@ -8,7 +9,7 @@ test.describe("Header público agrupado", () => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto("/catalogo");
     const nav = page.getByRole("navigation", { name: "Principal" });
-    const practica = nav.getByRole("button", { name: /Practica/ });
+    const practica = nav.getByRole("button", { name: NAV_GROUP_LABELS.practice });
 
     await expect(practica).toHaveAttribute("aria-expanded", "false");
     await practica.click();
@@ -29,7 +30,7 @@ test.describe("Header público agrupado", () => {
     await page.goto("/catalogo");
     await page.getByRole("button", { name: "Abrir menú" }).click();
     const menu = page.getByRole("navigation", { name: "Menú móvil" });
-    await expect(menu.getByText("Practica", { exact: true })).toBeVisible();
+    await expect(menu.getByText(NAV_GROUP_LABELS.practice, { exact: true })).toBeVisible();
     await expect(menu.getByRole("link", { name: /Biblioteca Virtual|Online/ })).toBeVisible();
     await expect(menu.getByRole("link", { name: "Contacto" })).toBeVisible();
   });

@@ -8,6 +8,8 @@ export interface Discipline {
   name: string;
   /** Texto corto que se muestra junto a cada clase de esta práctica. */
   description: string | null;
+  /** Descripción completa (sección "Nuestras disciplinas" y Horarios). */
+  longDescription: string | null;
   color: string | null;
   active: boolean;
   createdAt: Date;

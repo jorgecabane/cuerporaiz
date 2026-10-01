@@ -3,6 +3,7 @@ import type { Discipline } from "@/lib/domain";
 export interface CreateDisciplineInput {
   name: string;
   description?: string | null;
+  longDescription?: string | null;
   color?: string | null;
   active?: boolean;
 }
@@ -10,6 +11,7 @@ export interface CreateDisciplineInput {
 export interface UpdateDisciplineInput {
   name?: string;
   description?: string | null;
+  longDescription?: string | null;
   color?: string | null;
   active?: boolean;
 }

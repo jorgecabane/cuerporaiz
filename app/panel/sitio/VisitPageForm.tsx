@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { SiteConfig } from "@/lib/domain/site-config";
 import { SanityImagePicker } from "@/components/panel/SanityImagePicker";
 import { usePatchSiteConfig } from "./usePatchSiteConfig";
+import { NAV_GROUP_LABELS } from "@/lib/domain/public-nav";
 
 const inputCls =
   "w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)]";
@@ -36,7 +37,7 @@ export default function VisitPageForm({ config }: { config: SiteConfig | null })
           onChange={(e) => setVisible(e.target.checked)}
           className="h-4 w-4 accent-[var(--color-primary)]"
         />
-        <span className="text-sm text-[var(--color-text)]">Página visible y en el menú (Nosotros → Conócenos)</span>
+        <span className="text-sm text-[var(--color-text)]">Página visible y en el menú ({NAV_GROUP_LABELS.about} → Conócenos)</span>
       </label>
 
       <div>

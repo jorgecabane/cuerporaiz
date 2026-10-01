@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import type { NavGroup } from "@/lib/domain/public-nav";
 
-/** Submenú del header desktop (ej. "Nosotros", "Practica"). */
+/** Submenú del header desktop (títulos en NAV_GROUP_LABELS). */
 export function NavDropdown({ group, solid }: { group: NavGroup; solid: boolean }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);

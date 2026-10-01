@@ -159,6 +159,8 @@ export default async function HomePage() {
   const serializedDisciplines = disciplines.map((d) => ({
     name: d.name,
     color: d.color,
+    description: d.description,
+    longDescription: d.longDescription,
   }));
 
   return (
