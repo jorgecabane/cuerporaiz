@@ -53,6 +53,7 @@ export default async function HorariosPage() {
           name: d.name,
           color: d.color,
           description: d.description,
+          longDescription: d.longDescription,
           schedule: schedule.scheduleByDiscipline.get(d.id) ?? null,
         }))}
       />

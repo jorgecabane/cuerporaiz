@@ -45,7 +45,7 @@ export function DisciplineForm({ discipline }: { discipline?: Discipline }) {
       </div>
       <div>
         <label htmlFor="description" className="block text-sm font-medium text-[var(--color-text)] mb-1">
-          Descripción corta (opcional)
+          Frase corta (opcional)
         </label>
         <textarea
           id="description"
@@ -58,6 +58,23 @@ export function DisciplineForm({ discipline }: { discipline?: Discipline }) {
         />
         <p id="description-help" className="mt-1 text-xs text-[var(--color-text-muted)]">
           Se muestra junto a cada clase en el calendario. Ej.: “Poder, activación, energía vital y creativa.”
+        </p>
+      </div>
+      <div>
+        <label htmlFor="longDescription" className="block text-sm font-medium text-[var(--color-text)] mb-1">
+          Descripción completa (opcional)
+        </label>
+        <textarea
+          id="longDescription"
+          name="longDescription"
+          rows={5}
+          maxLength={800}
+          defaultValue={discipline?.longDescription ?? ""}
+          aria-describedby="long-description-help"
+          className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-[var(--color-text)]"
+        />
+        <p id="long-description-help" className="mt-1 text-xs text-[var(--color-text-muted)]">
+          Qué se siente y qué se hace en la clase. Se muestra en “Nuestras disciplinas” (home) y en Horarios. Deja una línea en blanco para separar párrafos.
         </p>
       </div>
       <div>

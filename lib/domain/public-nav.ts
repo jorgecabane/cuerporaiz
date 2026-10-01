@@ -1,6 +1,7 @@
 /**
  * Menú público agrupado por intención:
- * "Nosotros" (conocer el espacio) · "Practica" (reservar / comprar) · Blog · Contacto.
+ * grupo "about" (conocer el espacio) · grupo "practice" (reservar / comprar) · Blog · Contacto.
+ * Los títulos de los grupos están en NAV_GROUP_LABELS.
  */
 
 export type NavLink = { href: string; label: string; description?: string };
@@ -28,7 +29,8 @@ export interface PublicNavOptions {
   labels?: { inPerson?: string | null; online?: string | null; contact?: string | null };
 }
 
-export const NAV_GROUP_LABELS = { about: "Nosotros", practice: "Practica" } as const;
+/** Títulos de los submenús del header (único lugar donde se definen). */
+export const NAV_GROUP_LABELS = { about: "Sobre Cuerpo Raíz", practice: "Practica" } as const;
 
 export function buildPublicNav({ aboutLabel, visitEnabled = false, faqEnabled, blogLabel, labels = {} }: PublicNavOptions): NavItem[] {
   const about: NavLink[] = [

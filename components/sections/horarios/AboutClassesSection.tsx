@@ -1,10 +1,14 @@
 import { AnimateIn } from "@/components/ui/AnimateIn";
+import { splitParagraphs } from "@/lib/domain/text";
 
 export type ClassTypeInfo = {
   id: string;
   name: string;
   color: string | null;
+  /** Frase corta (calendario). */
   description: string | null;
+  /** Descripción completa, en párrafos (si no hay, se muestra solo la frase corta). */
+  longDescription: string | null;
   /** "Lunes y miércoles 08:00" (próximos 7 días), o null si no hay clases esta semana. */
   schedule: string | null;
 };
@@ -37,7 +41,14 @@ export function AboutClassesSection({ classTypes }: { classTypes: ClassTypeInfo[
                 {c.color && <span aria-hidden className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: c.color }} />}
                 {c.name}
               </h3>
-              {c.description && <p className="mt-[var(--space-2)] text-[var(--color-text-muted)]">{c.description}</p>}
+              {c.description && (
+                <p className="mt-[var(--space-2)] font-display text-lg italic text-[var(--color-secondary)]">{c.description}</p>
+              )}
+              {splitParagraphs(c.longDescription).map((paragraph) => (
+                <p key={paragraph} className="mt-[var(--space-3)] whitespace-pre-line text-[var(--color-text-muted)]">
+                  {paragraph}
+                </p>
+              ))}
               {c.schedule && <p className="mt-[var(--space-3)] text-sm text-[var(--color-text-muted)]">{c.schedule}</p>}
             </li>
           ))}

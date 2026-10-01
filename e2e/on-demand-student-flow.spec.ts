@@ -145,7 +145,7 @@ test.describe("Catálogo público — navegación completa", () => {
 
     // Click first practice card — PracticeCard renders a <button> (client-side
     // router.push navigation), not an <a>.
-    // Acotado a <main>: el header también tiene botones (submenús Nosotros/Practica).
+    // Acotado a <main>: el header también tiene botones (submenús del menú agrupado).
     const practiceLink = page
       .getByRole("main")
       .getByRole("button")
