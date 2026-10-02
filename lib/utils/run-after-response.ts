@@ -19,3 +19,16 @@ export function runAfterResponse(promise: Promise<unknown>): void {
     promise.catch(() => {});
   }
 }
+
+/**
+ * Corre trabajo async (cargar datos + enviar correos) sin bloquear la respuesta.
+ * Registra after() en el MISMO tick de la llamada, mientras el request sigue
+ * vivo: si se registrara recién después de los primeros await, el request ya
+ * podría haber respondido y Next lo ignora en silencio (el trabajo se pierde).
+ * Las tareas deben esperar (await) sus envíos para que queden dentro.
+ */
+export function runInBackground(task: () => Promise<void>): Promise<void> {
+  const work = task();
+  runAfterResponse(work);
+  return work;
+}
