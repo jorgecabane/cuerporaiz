@@ -122,6 +122,7 @@ export async function approveEventTicketManually(formData: FormData): Promise<vo
     amountCents: ticket.amountCents,
     currency: ticket.currency,
     quantity: ticket.quantity,
+    notifyAdmin: false, // la aprobación la hizo el admin
   }).catch((err) => console.error("[approve-event-ticket] confirm email", err));
 
   redirect("/panel/pagos");
