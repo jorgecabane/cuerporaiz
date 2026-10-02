@@ -75,6 +75,7 @@ export async function POST(
       centerId: event.centerId,
       amountCents: event.amountCents,
       currency: event.currency,
+      notifyAdmin: false, // la entrada la emitió el admin
     }).catch((err) => console.error("[manual-ticket] confirm email", err));
 
     return NextResponse.json(paid ?? ticket, { status: 201 });

@@ -1,5 +1,6 @@
 /**
- * Helper compartido: dispara el correo de confirmación de entrada a un evento.
+ * Helper compartido: dispara el correo de confirmación de entrada a un evento
+ * y el aviso de nueva inscripción al admin del centro (email de contacto).
  * Llamado desde:
  *   - event-checkout (eventos gratis activan PAID inmediatamente; re-compra
  *     free incrementa quantity)
@@ -10,12 +11,13 @@
 import { sendEmailSafe } from "./send-email";
 import {
   buildEventTicketConfirmationEmail,
+  buildEventRegistrationNoticeToAdminEmail,
   type EventTicketConfirmationKind,
 } from "@/lib/email/event";
 import { getEmailBranding } from "@/lib/email/branding";
 import { getBaseUrl } from "@/lib/utils/base-url";
 import { runInBackground } from "@/lib/utils/run-after-response";
-import { eventRepository, userRepository } from "@/lib/adapters/db";
+import { eventRepository, eventTicketRepository, userRepository } from "@/lib/adapters/db";
 
 /** Los callers no esperan esta promesa: el trabajo se registra en after() al llamarla. */
 export function notifyEventTicketConfirmation(input: {
@@ -30,6 +32,8 @@ export function notifyEventTicketConfirmation(input: {
   kind?: EventTicketConfirmationKind;
   /** Cupos agregados (sólo relevante con kind="addition"). */
   addedQuantity?: number;
+  /** Avisar al admin del centro (email de contacto). false cuando la acción la hizo el admin. Default true. */
+  notifyAdmin?: boolean;
 }): Promise<void> {
   return runInBackground(() => sendConfirmation(input));
 }
@@ -57,6 +61,28 @@ async function sendConfirmation(input: Parameters<typeof notifyEventTicketConfir
       addedQuantity: input.addedQuantity,
       eventUrl: `${getBaseUrl()}/eventos/${event.id}`,
       preferencesUrl: `${getBaseUrl()}/panel/mi-perfil?tab=correos`,
+      branding,
+    })
+  );
+
+  if (input.notifyAdmin === false || !branding.contactEmail) return;
+  const paidSeats = await eventTicketRepository.countPaidByEventId(event.id);
+  const kind = input.kind ?? "purchase";
+  await sendEmailSafe(
+    buildEventRegistrationNoticeToAdminEmail({
+      toEmail: branding.contactEmail,
+      eventTitle: event.title,
+      startsAt: event.startsAt,
+      buyerName: user.name ?? user.email.split("@")[0],
+      buyerEmail: user.email,
+      buyerPhone: user.phone,
+      quantity: kind === "addition" ? (input.addedQuantity ?? 1) : (input.quantity ?? 1),
+      kind,
+      amountCents: input.amountCents,
+      currency: input.currency,
+      paidSeats,
+      maxCapacity: event.maxCapacity,
+      adminEventUrl: `${getBaseUrl()}/panel/eventos/${event.id}`,
       branding,
     })
   );

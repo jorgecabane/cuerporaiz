@@ -118,4 +118,72 @@ export function buildEventTicketConfirmationEmail(
   };
 }
 
+export interface EventRegistrationNoticeEmailData {
+  /** Email de contacto del centro (admin). */
+  toEmail: string;
+  eventTitle: string;
+  startsAt: Date;
+  buyerName: string;
+  buyerEmail: string;
+  buyerPhone?: string | null;
+  /** Cupos de esta operación (compra inicial o agregados). */
+  quantity: number;
+  kind: EventTicketConfirmationKind;
+  amountCents: number;
+  currency: string;
+  /** Cupos confirmados del evento después de esta inscripción. */
+  paidSeats: number;
+  maxCapacity: number | null;
+  adminEventUrl: string;
+  branding: EmailBranding;
+}
+
+/** Aviso al admin del centro: alguien se inscribió (o sumó cupos) a un evento. */
+export function buildEventRegistrationNoticeToAdminEmail(data: EventRegistrationNoticeEmailData): SendEmailDto {
+  const { branding } = data;
+  const when = formatLongDateTime(data.startsAt, branding.timezone);
+  const cta = emailCtaStyle(branding.colorSecondary);
+  const seats = `${data.quantity} ${data.quantity === 1 ? "cupo" : "cupos"}`;
+  const isAddition = data.kind === "addition";
+  const headline = isAddition
+    ? `${data.buyerName} sumó ${seats} a su inscripción.`
+    : `${data.buyerName} se inscribió (${seats}).`;
+  const occupancy =
+    data.maxCapacity != null
+      ? `${data.paidSeats} de ${data.maxCapacity} cupos confirmados`
+      : `${data.paidSeats} ${data.paidSeats === 1 ? "cupo confirmado" : "cupos confirmados"}`;
+  const price = formatPriceOrFree(data.amountCents, data.currency);
+  const contact = [data.buyerEmail, data.buyerPhone].filter(Boolean).join(" · ");
+
+  const body = `
+    <p><strong>${escapeHtml(headline)}</strong></p>
+    <table role="presentation" width="100%" style="margin:16px 0;background:#F5F0E9;border-radius:10px;padding:16px;">
+      <tr><td>
+        <p style="margin:0;font-size:16px;font-weight:600;color:${branding.colorPrimary};">${escapeHtml(data.eventTitle)}</p>
+        <p style="margin:6px 0 0;font-size:14px;color:#5C5A56;">${escapeHtml(when)}</p>
+        <p style="margin:10px 0 0;font-size:14px;color:#2A2A2A;">${escapeHtml(data.buyerName)}</p>
+        <p style="margin:2px 0 0;font-size:13px;color:#5C5A56;">${escapeHtml(contact)}</p>
+        <p style="margin:10px 0 0;font-size:13px;color:#5C5A56;">Valor: <strong style="color:#2A2A2A;">${escapeHtml(price)}</strong> · ${escapeHtml(occupancy)}</p>
+      </td></tr>
+    </table>
+    <p style="text-align:center;margin:24px 0;"><a href="${data.adminEventUrl}" style="${cta}">Ver inscritos</a></p>`;
+
+  const text = [
+    headline,
+    `${data.eventTitle} — ${when}`,
+    `${data.buyerName} (${contact})`,
+    `Valor: ${price} · ${occupancy}`,
+    `Ver inscritos: ${data.adminEventUrl}`,
+    `— ${branding.centerName}`,
+  ].join("\n");
+
+  return {
+    from: fromForBranding(branding),
+    to: [data.toEmail],
+    subject: `${isAddition ? "Cupos adicionales" : "Nueva inscripción"}: ${data.eventTitle} — ${data.buyerName}`,
+    html: emailBaseLayout({ body, branding }),
+    text,
+  };
+}
+
 export { DEFAULT_FROM };

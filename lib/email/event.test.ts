@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildEventTicketConfirmationEmail } from "./event";
+import { buildEventTicketConfirmationEmail, buildEventRegistrationNoticeToAdminEmail } from "./event";
 import { defaultBranding } from "./branding";
 
 const BASE_DATA = {
@@ -144,5 +144,51 @@ describe("buildEventTicketConfirmationEmail", () => {
 
     expect(result.text).toContain("Agregaste 1 cupo a");
     expect(result.text).toContain("4 entradas");
+  });
+});
+
+
+describe("buildEventRegistrationNoticeToAdminEmail", () => {
+  const base = {
+    toEmail: "admin@centro.cl",
+    eventTitle: "Clase Recuperativa",
+    startsAt: new Date("2026-10-02T21:30:00Z"),
+    buyerName: "Ana Pérez",
+    buyerEmail: "ana@correo.cl",
+    buyerPhone: "+56911111111",
+    quantity: 2,
+    kind: "purchase" as const,
+    amountCents: 0,
+    currency: "CLP",
+    paidSeats: 9,
+    maxCapacity: 12,
+    adminEventUrl: "https://cuerporaiz.cl/panel/eventos/e1",
+    branding: defaultBranding("Cuerpo Raíz"),
+  };
+
+  it("avisa nueva inscripción con contacto, valor y ocupación", () => {
+    const dto = buildEventRegistrationNoticeToAdminEmail(base);
+    expect(dto.to).toEqual(["admin@centro.cl"]);
+    expect(dto.subject).toBe("Nueva inscripción: Clase Recuperativa — Ana Pérez");
+    expect(dto.html).toContain("Ana Pérez se inscribió (2 cupos).");
+    expect(dto.html).toContain("ana@correo.cl · +56911111111");
+    expect(dto.html).toContain("Gratis");
+    expect(dto.html).toContain("9 de 12 cupos confirmados");
+    expect(dto.html).toContain("/panel/eventos/e1");
+    expect(dto.text).toContain("Ver inscritos: https://cuerporaiz.cl/panel/eventos/e1");
+  });
+
+  it("cupos adicionales, sin capacidad máxima y sin teléfono", () => {
+    const dto = buildEventRegistrationNoticeToAdminEmail({ ...base, kind: "addition", quantity: 1, buyerPhone: null, maxCapacity: null, paidSeats: 1 });
+    expect(dto.subject).toBe("Cupos adicionales: Clase Recuperativa — Ana Pérez");
+    expect(dto.html).toContain("Ana Pérez sumó 1 cupo a su inscripción.");
+    expect(dto.html).toContain("1 cupo confirmado");
+    expect(dto.html).not.toContain("·  ");
+  });
+
+  it("escapa HTML del nombre", () => {
+    const dto = buildEventRegistrationNoticeToAdminEmail({ ...base, buyerName: "<b>x</b>" });
+    expect(dto.html).not.toContain("<b>x</b>");
+    expect(dto.html).toContain("&lt;b&gt;x&lt;/b&gt;");
   });
 });
