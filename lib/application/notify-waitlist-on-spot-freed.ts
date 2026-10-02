@@ -23,20 +23,15 @@ import { shouldSendEmail } from "@/lib/application/check-email-preference";
 import { buildSpotFreedEmail } from "@/lib/email/waitlist";
 import { getEmailBranding } from "@/lib/email/branding";
 import { getBaseUrl } from "@/lib/utils/base-url";
+import { runInBackground } from "@/lib/utils/run-after-response";
 import { shouldThrottleNotification } from "@/lib/domain/waitlist";
 import { releaseExpiredEventHolds } from "./release-expired-event-holds";
 
 export type SpotFreedKind = "class" | "event";
 
-export async function notifyWaitlistOnSpotFreed(
-  kind: SpotFreedKind,
-  itemId: string
-): Promise<void> {
-  if (kind === "class") {
-    await notifyClass(itemId);
-  } else {
-    await notifyEvent(itemId);
-  }
+/** Los callers no esperan esta promesa: el trabajo se registra en after() al llamarla. */
+export function notifyWaitlistOnSpotFreed(kind: SpotFreedKind, itemId: string): Promise<void> {
+  return runInBackground(() => (kind === "class" ? notifyClass(itemId) : notifyEvent(itemId)));
 }
 
 async function notifyClass(liveClassId: string): Promise<void> {
@@ -82,7 +77,7 @@ async function notifyClass(liveClassId: string): Promise<void> {
     // un email pero el próximo trigger respeta el throttle. Es preferible perder
     // un aviso a inundar al usuario con duplicados si la lambda muere mid-batch.
     await waitlistRepository.markNotified(entry.id, now);
-    sendEmailSafe(
+    await sendEmailSafe(
       buildSpotFreedEmail({
         toEmail: user.email,
         userName: user.name ?? undefined,
@@ -137,7 +132,7 @@ async function notifyEvent(eventId: string): Promise<void> {
     if (!(await shouldSendEmail(user.id, center.id, "spotFreed"))) continue;
     // Marcar notificado ANTES de despachar el correo (ver nota en notifyClass).
     await waitlistRepository.markNotified(entry.id, nowIter);
-    sendEmailSafe(
+    await sendEmailSafe(
       buildSpotFreedEmail({
         toEmail: user.email,
         userName: user.name ?? undefined,

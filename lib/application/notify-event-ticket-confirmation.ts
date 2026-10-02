@@ -14,9 +14,11 @@ import {
 } from "@/lib/email/event";
 import { getEmailBranding } from "@/lib/email/branding";
 import { getBaseUrl } from "@/lib/utils/base-url";
+import { runInBackground } from "@/lib/utils/run-after-response";
 import { eventRepository, userRepository } from "@/lib/adapters/db";
 
-export async function notifyEventTicketConfirmation(input: {
+/** Los callers no esperan esta promesa: el trabajo se registra en after() al llamarla. */
+export function notifyEventTicketConfirmation(input: {
   eventId: string;
   userId: string;
   centerId: string;
@@ -29,6 +31,10 @@ export async function notifyEventTicketConfirmation(input: {
   /** Cupos agregados (sólo relevante con kind="addition"). */
   addedQuantity?: number;
 }): Promise<void> {
+  return runInBackground(() => sendConfirmation(input));
+}
+
+async function sendConfirmation(input: Parameters<typeof notifyEventTicketConfirmation>[0]): Promise<void> {
   const [event, user, branding] = await Promise.all([
     eventRepository.findById(input.eventId),
     userRepository.findById(input.userId),
@@ -36,7 +42,7 @@ export async function notifyEventTicketConfirmation(input: {
   ]);
   if (!event || !user) return;
 
-  sendEmailSafe(
+  await sendEmailSafe(
     buildEventTicketConfirmationEmail({
       toEmail: user.email,
       userName: user.name ?? user.email.split("@")[0],

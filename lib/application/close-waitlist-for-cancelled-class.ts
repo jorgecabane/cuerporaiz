@@ -12,10 +12,14 @@ import {
 import { sendEmailSafe } from "@/lib/application/send-email";
 import { buildWaitlistClassCancelledEmail } from "@/lib/email/waitlist";
 import { getEmailBranding } from "@/lib/email/branding";
+import { runInBackground } from "@/lib/utils/run-after-response";
 
-export async function closeWaitlistForCancelledClassUseCase(
-  liveClassId: string
-): Promise<void> {
+/** Los callers no esperan esta promesa: el trabajo se registra en after() al llamarla. */
+export function closeWaitlistForCancelledClassUseCase(liveClassId: string): Promise<void> {
+  return runInBackground(() => closeWaitlist(liveClassId));
+}
+
+async function closeWaitlist(liveClassId: string): Promise<void> {
   const liveClass = await liveClassRepository.findById(liveClassId);
   if (liveClass === null) return;
 
@@ -30,7 +34,7 @@ export async function closeWaitlistForCancelledClassUseCase(
   for (const entry of cancelledEntries) {
     const user = await userRepository.findById(entry.userId);
     if (user === null) continue;
-    sendEmailSafe(
+    await sendEmailSafe(
       buildWaitlistClassCancelledEmail({
         toEmail: user.email,
         userName: user.name ?? undefined,
