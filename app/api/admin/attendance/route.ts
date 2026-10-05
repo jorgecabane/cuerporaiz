@@ -4,7 +4,9 @@ import { isAdminRole, isInstructorRole } from "@/lib/domain";
 import {
   markAttendanceUseCase,
   listClassAttendanceUseCase,
+  listAttendanceForClassesUseCase,
 } from "@/lib/application/attendance";
+import { liveClassIdsQuerySchema, MAX_BATCH_CLASS_IDS } from "@/lib/dto/class-roster-dto";
 
 export async function GET(request: Request) {
   const session = await auth();
@@ -17,6 +19,17 @@ export async function GET(request: Request) {
   }
 
   const { searchParams } = new URL(request.url);
+
+  // Lote: ?liveClassIds=a,b,c → { [liveClassId]: attendees[] } (una llamada por día del calendario).
+  const idsParam = searchParams.get("liveClassIds");
+  if (idsParam !== null) {
+    const ids = liveClassIdsQuerySchema.safeParse(idsParam);
+    if (!ids.success) {
+      return NextResponse.json({ error: `liveClassIds inválido (1 a ${MAX_BATCH_CLASS_IDS} ids)` }, { status: 400 });
+    }
+    return NextResponse.json(await listAttendanceForClassesUseCase(ids.data, session.user.centerId));
+  }
+
   const liveClassId = searchParams.get("liveClassId");
   if (!liveClassId) {
     return NextResponse.json({ error: "liveClassId requerido" }, { status: 400 });

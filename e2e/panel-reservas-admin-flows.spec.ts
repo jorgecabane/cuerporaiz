@@ -54,19 +54,22 @@ test.describe("Panel reservas (admin) flujos críticos", () => {
       });
     });
 
-    await page.route(`**/api/admin/attendance?liveClassId=${liveClassId}`, async (route) => {
+    // El calendario pide la asistencia de todas las clases del día en una llamada.
+    await page.route(`**/api/admin/attendance?liveClassIds=*`, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify([
-          {
-            reservationId,
-            userId: "user_e2e_1",
-            userName: "Ana",
-            userEmail: "ana@e2e.cl",
-            status: "CONFIRMED",
-          },
-        ]),
+        body: JSON.stringify({
+          [liveClassId]: [
+            {
+              reservationId,
+              userId: "user_e2e_1",
+              userName: "Ana",
+              userEmail: "ana@e2e.cl",
+              status: "CONFIRMED",
+            },
+          ],
+        }),
       });
     });
 

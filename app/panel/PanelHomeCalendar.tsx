@@ -144,17 +144,13 @@ export function PanelHomeCalendar({
     const byDay = groupClassesByDay(staffClassesOnly);
     const classesOfDay = byDay.get(dayKey) ?? [];
     if (classesOfDay.length === 0) return;
-    const results = await Promise.all(
-      classesOfDay.map(async (c) => {
-        const attRes = await fetch(`/api/admin/attendance?liveClassId=${encodeURIComponent(c.id)}`);
-        const raw = attRes.ok ? await attRes.json() : [];
-        const attendees: ClassAttendanceDto[] = Array.isArray(raw) ? raw : [];
-        return { id: c.id, attendees } as const;
-      })
-    );
+    // Una sola llamada para todas las clases del día (antes: una por clase).
+    const ids = classesOfDay.map((c) => c.id).join(",");
+    const res = await fetch(`/api/admin/attendance?liveClassIds=${encodeURIComponent(ids)}`);
+    const byClass: Record<string, ClassAttendanceDto[]> = res.ok ? await res.json() : {};
     setStaffAttendeesByClass((prev) => {
       const next = { ...prev };
-      for (const { id, attendees } of results) next[id] = attendees;
+      for (const c of classesOfDay) next[c.id] = Array.isArray(byClass[c.id]) ? byClass[c.id] : [];
       return next;
     });
   }, [staffClassesOnly]);
@@ -164,17 +160,13 @@ export function PanelHomeCalendar({
       const byDay = groupClassesByDay(liveClasses);
       const classesOfDay = byDay.get(dayKey) ?? [];
       if (classesOfDay.length === 0) return;
-      const results = await Promise.all(
-        classesOfDay.map(async (c) => {
-          const res = await fetch(`/api/reservations/roster?liveClassId=${encodeURIComponent(c.id)}`);
-          const raw = res.ok ? await res.json() : [];
-          const roster: ClassRosterEntryDto[] = Array.isArray(raw) ? raw : [];
-          return { id: c.id, roster } as const;
-        })
-      );
+      // Una sola llamada para todas las clases del día (antes: una por clase).
+      const ids = classesOfDay.map((c) => c.id).join(",");
+      const res = await fetch(`/api/reservations/roster?liveClassIds=${encodeURIComponent(ids)}`);
+      const byClass: Record<string, ClassRosterEntryDto[]> = res.ok ? await res.json() : {};
       setRosterByClassId((prev) => {
         const next = { ...prev };
-        for (const { id, roster } of results) next[id] = roster;
+        for (const c of classesOfDay) next[c.id] = Array.isArray(byClass[c.id]) ? byClass[c.id] : [];
         return next;
       });
     },

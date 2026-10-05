@@ -10,6 +10,13 @@ export const classRosterQuerySchema = z.object({
 
 export type ClassRosterQuery = z.infer<typeof classRosterQuerySchema>;
 
+/** `?liveClassIds=a,b,c` (calendario: todas las clases del día en una llamada). */
+export const MAX_BATCH_CLASS_IDS = 50;
+export const liveClassIdsQuerySchema = z
+  .string()
+  .transform((raw) => [...new Set(raw.split(",").map((id) => id.trim()).filter(Boolean))])
+  .pipe(z.array(z.string().min(1)).min(1).max(MAX_BATCH_CLASS_IDS));
+
 export interface ClassRosterEntryDto {
   userId: string;
   name: string | null;
