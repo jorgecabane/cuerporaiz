@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/Button";
 import { AdaptiveSheet } from "@/components/ui/AdaptiveSheet";
@@ -15,9 +15,6 @@ type Props = {
   currency: string;
   isFree: boolean;
   availableSeats: number | null;
-  isAuthenticated: boolean;
-  userHasTicket: boolean;
-  userTicketQty: number;
   isFull: boolean;
   hasEnded: boolean;
   eventTitle: string;
@@ -30,9 +27,6 @@ export function EventPurchasePanel(props: Props) {
     currency,
     isFree,
     availableSeats,
-    isAuthenticated,
-    userHasTicket,
-    userTicketQty,
     isFull,
     hasEnded,
     eventTitle,
@@ -41,6 +35,10 @@ export function EventPurchasePanel(props: Props) {
   const isMobile = useIsMobile();
   const prefersReducedMotion = usePrefersReducedMotion();
   const [open, setOpen] = useState(false);
+  const { viewer, reload } = useEventViewer(eventId);
+  const isAuthenticated = viewer?.authenticated ?? false;
+  const userHasTicket = viewer?.hasTicket ?? false;
+  const userTicketQty = viewer?.quantity ?? 0;
 
   const maxQuantity = availableSeats == null ? 200 : Math.max(1, availableSeats);
   const loginHref = `/auth/login?callbackUrl=${encodeURIComponent(`/eventos/${eventId}`)}`;
@@ -67,6 +65,20 @@ export function EventPurchasePanel(props: Props) {
         <p className="mt-[var(--space-4)] rounded-[var(--radius-md)] bg-[var(--color-tertiary)] px-[var(--space-4)] py-[var(--space-3)] text-center text-sm font-medium text-[var(--color-text-muted)]">
           Este evento ya finalizó
         </p>
+      </Panel>
+    );
+  }
+
+  // Mientras se sabe si hay sesión/entrada: placeholder del botón (sin parpadeo).
+  if (viewer === null) {
+    return (
+      <Panel>
+        {priceBlock}
+        <div
+          aria-busy="true"
+          aria-label="Cargando"
+          className="mt-[var(--space-4)] h-12 w-full animate-pulse rounded-[var(--radius-md)] bg-[var(--color-tertiary)]"
+        />
       </Panel>
     );
   }
@@ -106,6 +118,7 @@ export function EventPurchasePanel(props: Props) {
             currency={currency}
             isFree={isFree}
             availableSeats={availableSeats}
+            onPurchased={reload}
           />
         </div>
       </Panel>
@@ -183,4 +196,19 @@ function Panel({ children }: { children: React.ReactNode }) {
       {children}
     </div>
   );
+}
+
+type Viewer = { authenticated: boolean; hasTicket: boolean; quantity: number };
+
+/** Sesión y entrada del visitante (la página es ISR: esto no puede venir del servidor). */
+function useEventViewer(eventId: string): { viewer: Viewer | null; reload: () => void } {
+  const [viewer, setViewer] = useState<Viewer | null>(null);
+  const reload = useCallback(() => {
+    fetch(`/api/events/${eventId}/my-ticket`, { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: Viewer | null) => setViewer(data ?? { authenticated: false, hasTicket: false, quantity: 0 }))
+      .catch(() => setViewer({ authenticated: false, hasTicket: false, quantity: 0 }));
+  }, [eventId]);
+  useEffect(reload, [reload]);
+  return { viewer, reload };
 }

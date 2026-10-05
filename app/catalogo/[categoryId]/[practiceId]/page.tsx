@@ -12,6 +12,11 @@ import { getLibraryPacks } from "@/lib/application/get-library-packs";
 
 export const revalidate = 300;
 
+/** Sin rutas pre-generadas: cada página se genera en la primera visita y queda en caché (ISR). */
+export async function generateStaticParams() {
+  return [];
+}
+
 interface Props {
   params: Promise<{ categoryId: string; practiceId: string }>;
 }

@@ -9,7 +9,7 @@ import {
   AboutCTA,
 } from "@/components/sections/about";
 
-export const revalidate = 60;
+export const revalidate = 3600;
 
 export async function generateMetadata(): Promise<Metadata> {
   const slug = process.env.NEXT_PUBLIC_DEFAULT_CENTER_SLUG;

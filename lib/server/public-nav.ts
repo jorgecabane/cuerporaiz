@@ -1,9 +1,5 @@
-import {
-  centerRepository,
-  aboutPageRepository,
-  siteConfigRepository,
-  siteSectionRepository,
-} from "@/lib/adapters/db";
+import { aboutPageRepository, siteSectionRepository } from "@/lib/adapters/db";
+import { getSiteContext } from "@/lib/seo/metadata";
 import { DEFAULT_NAV } from "@/lib/constants/copy";
 import { buildPublicNav, type NavItem } from "@/lib/domain/public-nav";
 import { toFaqItems } from "@/lib/domain/site-config";
@@ -15,16 +11,13 @@ import { isSanityConfigured } from "@/sanity/env";
  * esté habilitado. Server-only. Nunca lanza: ante error cae a DEFAULT_NAV.
  */
 export async function getPublicNavLinks(): Promise<NavItem[]> {
-  const slug = process.env.NEXT_PUBLIC_DEFAULT_CENTER_SLUG;
-  if (!slug) return DEFAULT_NAV;
-
   try {
-    const center = await centerRepository.findBySlug(slug);
-    if (!center) return DEFAULT_NAV;
+    const ctx = await getSiteContext();
+    if (!ctx) return DEFAULT_NAV;
+    const { center, siteConfig } = ctx;
 
-    const [aboutPage, siteConfig, sections] = await Promise.all([
+    const [aboutPage, sections] = await Promise.all([
       aboutPageRepository.findByCenterId(center.id),
-      siteConfigRepository.findByCenterId(center.id),
       siteSectionRepository.findByCenterId(center.id),
     ]);
     const faq = sections.find((s) => s.sectionKey === "faq");

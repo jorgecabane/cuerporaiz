@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { auth } from "@/auth";
 import {
   centerRepository,
   eventRepository,
@@ -13,6 +12,11 @@ import { buildSiteMetadata } from "@/lib/seo/metadata";
 import { EventPurchasePanel } from "./EventPurchasePanel";
 
 export const revalidate = 60;
+
+/** Sin rutas pre-generadas: cada página se genera en la primera visita y queda en caché (ISR). */
+export async function generateStaticParams() {
+  return [];
+}
 
 const FALLBACK_IMAGE =
   "https://images.unsplash.com/photo-1599901860904-17e6ed7083a0?w=1200&q=80";
@@ -69,21 +73,13 @@ export default async function PublicEventDetailPage({
   if (!data) notFound();
   const { center, event } = data;
 
-  const [paidCount, tz, session, siteConfig] = await Promise.all([
+  // Sin auth() aquí: la página queda en caché (ISR). La sesión y la entrada del
+  // visitante las resuelve EventPurchasePanel en el cliente (/api/events/[id]/my-ticket).
+  const [paidCount, tz, siteConfig] = await Promise.all([
     eventTicketRepository.countPaidByEventId(id),
     getCenterTimezone(center.id),
-    auth(),
     siteConfigRepository.findByCenterId(center.id),
   ]);
-
-  const isAuthenticated = !!session?.user?.id && session.user.centerId === center.id;
-  let userHasTicket = false;
-  let userTicketQty = 0;
-  if (isAuthenticated && session?.user?.id) {
-    const ticket = await eventTicketRepository.findByEventAndUser(id, session.user.id);
-    userHasTicket = ticket?.status === "PAID";
-    userTicketQty = ticket?.quantity ?? 0;
-  }
 
   const isFree = event.amountCents === 0;
   const isFull = event.maxCapacity !== null && paidCount >= event.maxCapacity;
@@ -140,9 +136,6 @@ export default async function PublicEventDetailPage({
               currency={event.currency}
               isFree={isFree}
               availableSeats={availableSeats}
-              isAuthenticated={isAuthenticated}
-              userHasTicket={userHasTicket}
-              userTicketQty={userTicketQty}
               isFull={isFull}
               hasEnded={hasEnded}
               eventTitle={event.title}

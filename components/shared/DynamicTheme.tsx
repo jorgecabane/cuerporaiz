@@ -1,16 +1,10 @@
-import { siteConfigRepository, centerRepository } from "@/lib/adapters/db";
+import { getSiteContext } from "@/lib/seo/metadata";
 import { sanitizeHexColor, hexToRgb, darkenHex } from "@/lib/domain/color-utils";
 
 const DEFAULTS = { primary: "#2D3B2A", secondary: "#B85C38", accent: "#D4A574" };
 
 export default async function DynamicTheme() {
-  const slug = process.env.NEXT_PUBLIC_DEFAULT_CENTER_SLUG;
-  if (!slug) return null;
-
-  const center = await centerRepository.findBySlug(slug);
-  if (!center) return null;
-
-  const config = await siteConfigRepository.findByCenterId(center.id);
+  const config = (await getSiteContext())?.siteConfig;
   if (!config?.colorPrimary && !config?.colorSecondary && !config?.colorAccent) return null;
 
   const primary = sanitizeHexColor(config.colorPrimary, DEFAULTS.primary);

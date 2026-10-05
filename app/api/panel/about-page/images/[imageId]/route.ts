@@ -29,6 +29,7 @@ export async function PATCH(
     return NextResponse.json({ error: "Imagen no encontrada" }, { status: 404 });
   }
   revalidatePath("/sobre");
+  revalidatePath("/conocenos");
   revalidatePath("/");
   return NextResponse.json(updated);
 }
@@ -48,6 +49,7 @@ export async function DELETE(
     return NextResponse.json({ error: "Imagen no encontrada" }, { status: 404 });
   }
   revalidatePath("/sobre");
+  revalidatePath("/conocenos");
   revalidatePath("/");
   return new NextResponse(null, { status: 204 });
 }

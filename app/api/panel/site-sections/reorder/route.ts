@@ -20,5 +20,6 @@ export async function PATCH(request: Request) {
 
   await siteSectionRepository.reorder(centerId, parsed.data.orderedIds);
   revalidatePath("/");
+  revalidatePath("/preguntas-frecuentes");
   return NextResponse.json({ ok: true });
 }

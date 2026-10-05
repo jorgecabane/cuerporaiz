@@ -3,6 +3,7 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { revalidatePublicSchedule } from "@/lib/utils/revalidate-public-schedule";
 import {
   liveClassRepository,
   liveClassSeriesRepository,
@@ -225,6 +226,7 @@ export async function createLiveClass(data: CreateClassFormData): Promise<void> 
     }
   }
 
+  revalidatePublicSchedule();
   redirect("/panel/horarios");
 }
 
@@ -351,6 +353,7 @@ export async function updateLiveClass(data: UpdateClassFormData): Promise<void> 
     color: data.color || null,
   });
 
+  revalidatePublicSchedule();
   redirect(`/panel/horarios`);
 }
 
@@ -377,6 +380,7 @@ export async function batchCancelLiveClasses(ids: string[]): Promise<BatchCancel
 
   if (affectedReservations.length === 0) {
     revalidatePath("/panel/horarios");
+    revalidatePublicSchedule();
     return { cancelledCount, notifiedCount: 0 };
   }
 
@@ -424,6 +428,8 @@ export async function batchCancelLiveClasses(ids: string[]): Promise<BatchCancel
   }
 
   revalidatePath("/panel/horarios");
+
+  revalidatePublicSchedule();
   return { cancelledCount, notifiedCount };
 }
 
@@ -559,6 +565,7 @@ export async function updateSeriesClasses(
       meetingProvider: null,
       meetingExternalId: null,
     });
+    revalidatePublicSchedule();
     return { ok: true };
   }
 
@@ -595,6 +602,7 @@ export async function updateSeriesClasses(
     // Sólo propiedades: actualiza serie + instancias activas, preserva reservas.
     await liveClassSeriesRepository.update(series.id, centerId, seriesUpdate);
     await liveClassRepository.updateManyBySeriesId(series.id, centerId, classUpdate);
+    revalidatePublicSchedule();
     return { ok: true };
   }
 
@@ -613,6 +621,7 @@ export async function updateSeriesClasses(
     await liveClassRepository.deleteBySeriesIdFromDate(series.id, centerId, now);
     const future = generateFuture(updated ?? series, holidayKeys, tz, now);
     if (future.length > 0) await liveClassRepository.createMany(centerId, future);
+    revalidatePublicSchedule();
     return { ok: true };
   }
 
@@ -635,6 +644,7 @@ export async function updateSeriesClasses(
   });
   const future = generateFuture(newSeries, holidayKeys, tz, now);
   if (future.length > 0) await liveClassRepository.createMany(centerId, future);
+  revalidatePublicSchedule();
   return { ok: true };
 }
 
@@ -719,5 +729,6 @@ export async function deleteLiveClass(formData: FormData): Promise<void> {
   }
 
   await liveClassRepository.delete(id, centerId);
+  revalidatePublicSchedule();
   redirect("/panel/horarios");
 }

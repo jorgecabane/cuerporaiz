@@ -33,7 +33,7 @@ import { getPublicCenterTimezone } from "@/lib/datetime/center-timezone";
 import { loadWeekSchedule, toLivePlans } from "@/lib/server/schedule";
 import { formatMoney, formatPriceOrFree } from "@/lib/domain/money";
 
-export const revalidate = 60;
+export const revalidate = 300;
 
 const HOME_FAQ_LIMIT = 5;
 

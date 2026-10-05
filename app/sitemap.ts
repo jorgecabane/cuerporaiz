@@ -11,7 +11,8 @@ import { isSanityConfigured, sanityFetch } from "@/lib/sanity/client";
 import { QUERY_POST_SLUGS } from "@/lib/sanity/queries";
 import { absoluteUrl } from "@/lib/seo/urls";
 
-export const revalidate = 600;
+// Lo consultan sobre todo bots: con 1 día basta (ISR).
+export const revalidate = 86400;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
@@ -99,7 +100,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority: 0.8,
       });
       const slugs =
-        (await sanityFetch<string[]>(QUERY_POST_SLUGS, {}, { revalidate: 300 })) ?? [];
+        (await sanityFetch<string[]>(QUERY_POST_SLUGS, {}, { revalidate: 86400 })) ?? [];
       for (const postSlug of slugs) {
         entries.push({
           url: absoluteUrl(`/blog/${postSlug}`),

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { auth } from "@/auth";
 import { createEventCheckout } from "@/lib/application/event-checkout";
@@ -172,6 +173,11 @@ async function handleGuest(request: Request, id: string) {
 }
 
 function respond(result: Awaited<ReturnType<typeof createEventCheckout>>) {
+  // Entrada confirmada al tiro (gratis): refresca los cupos de las páginas públicas (ISR).
+  if (result.success && result.ticket?.status === "PAID") {
+    revalidatePath(`/eventos/${result.ticket.eventId}`);
+    revalidatePath("/eventos");
+  }
   if (!result.success) {
     const status = statusByCode[result.code] ?? 500;
     return NextResponse.json({ code: result.code, message: result.message }, { status });

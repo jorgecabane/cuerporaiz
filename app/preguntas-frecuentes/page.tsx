@@ -5,7 +5,7 @@ import { buildSiteMetadata } from "@/lib/seo/metadata";
 import { FaqSection } from "@/components/sections/home";
 import { toFaqItems } from "@/lib/domain/site-config";
 
-export const revalidate = 60;
+export const revalidate = 3600;
 
 export async function generateMetadata(): Promise<Metadata> {
   return buildSiteMetadata({ path: "/preguntas-frecuentes", title: "Preguntas frecuentes" });
