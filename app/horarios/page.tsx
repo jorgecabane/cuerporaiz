@@ -14,7 +14,7 @@ import { FirstClassSection } from "@/components/sections/horarios/FirstClassSect
 import { loadWeekSchedule, toLivePlans } from "@/lib/server/schedule";
 import { splitLines } from "@/lib/domain/embeds";
 
-export const revalidate = 60;
+export const revalidate = 300;
 
 export async function generateMetadata(): Promise<Metadata> {
   return buildSiteMetadata({

@@ -26,5 +26,6 @@ export async function POST(
     return NextResponse.json({ error: "Sección no encontrada" }, { status: 404 });
   }
   revalidatePath("/");
+  revalidatePath("/preguntas-frecuentes");
   return NextResponse.json(item, { status: 201 });
 }

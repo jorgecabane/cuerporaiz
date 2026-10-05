@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { isValidSignature, SIGNATURE_HEADER_NAME } from "@sanity/webhook";
 
 import {
@@ -50,6 +51,8 @@ export async function POST(request: Request) {
       { status: 400 }
     );
   }
+
+  revalidatePath("/blog", "layout");
 
   try {
     const result = await notifyBlogPostPublishedUseCase(parsed.data);

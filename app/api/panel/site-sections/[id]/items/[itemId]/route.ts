@@ -26,6 +26,7 @@ export async function PATCH(
     return NextResponse.json({ error: "Ítem no encontrado" }, { status: 404 });
   }
   revalidatePath("/");
+  revalidatePath("/preguntas-frecuentes");
   return NextResponse.json(item);
 }
 
@@ -44,5 +45,6 @@ export async function DELETE(
     return NextResponse.json({ error: "Ítem no encontrado" }, { status: 404 });
   }
   revalidatePath("/");
+  revalidatePath("/preguntas-frecuentes");
   return new NextResponse(null, { status: 204 });
 }

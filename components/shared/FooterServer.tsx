@@ -1,16 +1,12 @@
-import { centerRepository, siteConfigRepository } from "@/lib/adapters/db";
+import { getSiteContext } from "@/lib/seo/metadata";
 import { Footer } from "./Footer";
 import { flattenNav, type NavItem } from "@/lib/domain/public-nav";
 
 export async function FooterServer({ navItems }: { navItems?: NavItem[] }) {
   const navLinks = navItems ? flattenNav(navItems) : undefined;
-  const slug = process.env.NEXT_PUBLIC_DEFAULT_CENTER_SLUG;
-  if (!slug) return <Footer navLinks={navLinks} />;
-
-  const center = await centerRepository.findBySlug(slug);
-  if (!center) return <Footer navLinks={navLinks} />;
-
-  const config = await siteConfigRepository.findByCenterId(center.id);
+  const ctx = await getSiteContext();
+  if (!ctx) return <Footer navLinks={navLinks} />;
+  const { center, siteConfig: config } = ctx;
 
   return (
     <Footer

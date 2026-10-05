@@ -14,7 +14,7 @@ import { PostGrid } from "@/components/blog/PostGrid";
 import { centerRepository, siteConfigRepository } from "@/lib/adapters/db";
 import { getPublicCenterTimezone } from "@/lib/datetime/center-timezone";
 
-export const revalidate = 60;
+export const revalidate = 3600;
 
 const DEFAULT_HERO_TITLE = "Ideas sobre cuerpo, respiración y el camino de regreso a ti.";
 const DEFAULT_HERO_SUBTITLE =

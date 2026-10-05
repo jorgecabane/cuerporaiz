@@ -23,7 +23,7 @@ import { formatPostDate, estimateReadingMinutes } from "@/components/blog/utils"
 import { getPublicCenterTimezone } from "@/lib/datetime/center-timezone";
 import { absoluteUrl } from "@/lib/seo/urls";
 
-export const revalidate = 60;
+export const revalidate = 3600;
 
 export async function generateStaticParams() {
   if (!isSanityConfigured()) return [];

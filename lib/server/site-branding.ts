@@ -1,5 +1,6 @@
 import { centerRepository, siteConfigRepository } from "@/lib/adapters/db";
 import { SITE_NAME } from "@/lib/constants/copy";
+import { getSiteContext } from "@/lib/seo/metadata";
 
 export interface SiteBranding {
   /** URL del logo configurado en /panel/sitio (Sanity CDN). null si el admin no subió. */
@@ -15,19 +16,12 @@ export interface SiteBranding {
  */
 export async function getPublicSiteBranding(): Promise<SiteBranding> {
   const fallback: SiteBranding = { logoUrl: null, centerName: SITE_NAME };
-  const slug = process.env.NEXT_PUBLIC_DEFAULT_CENTER_SLUG;
-  if (!slug) return fallback;
-  try {
-    const center = await centerRepository.findBySlug(slug);
-    if (!center) return fallback;
-    const config = await siteConfigRepository.findByCenterId(center.id);
-    return {
-      logoUrl: config?.logoUrl ?? null,
-      centerName: center.name || SITE_NAME,
-    };
-  } catch {
-    return fallback;
-  }
+  const ctx = await getSiteContext();
+  if (!ctx) return fallback;
+  return {
+    logoUrl: ctx.siteConfig?.logoUrl ?? null,
+    centerName: ctx.center.name || SITE_NAME,
+  };
 }
 
 /**

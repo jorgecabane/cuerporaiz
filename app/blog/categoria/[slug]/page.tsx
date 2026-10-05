@@ -12,7 +12,12 @@ import { CategoryFilter } from "@/components/blog/CategoryFilter";
 import { PostGrid } from "@/components/blog/PostGrid";
 import { getPublicCenterTimezone } from "@/lib/datetime/center-timezone";
 
-export const revalidate = 60;
+export const revalidate = 3600;
+
+/** Sin rutas pre-generadas: cada página se genera en la primera visita y queda en caché (ISR). */
+export async function generateStaticParams() {
+  return [];
+}
 
 type Params = { slug: string };
 

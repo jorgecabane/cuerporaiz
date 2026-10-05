@@ -5,7 +5,7 @@ import type { SiteConfig } from "@/lib/domain/site-config";
 import { absoluteUrl, getSiteUrl, resolveImageUrl } from "./urls";
 import { withSanityImageParams } from "@/lib/sanity/image";
 
-type Center = { id: string; name: string; slug: string };
+type Center = { id: string; name: string; slug: string; timezone: string };
 type SiteContext = { center: Center; siteConfig: SiteConfig | null };
 
 export const getSiteContext = cache(async (): Promise<SiteContext | null> => {
@@ -16,7 +16,7 @@ export const getSiteContext = cache(async (): Promise<SiteContext | null> => {
     if (!center) return null;
     const siteConfig = await siteConfigRepository.findByCenterId(center.id);
     return {
-      center: { id: center.id, name: center.name, slug: center.slug },
+      center: { id: center.id, name: center.name, slug: center.slug, timezone: center.timezone },
       siteConfig,
     };
   } catch {

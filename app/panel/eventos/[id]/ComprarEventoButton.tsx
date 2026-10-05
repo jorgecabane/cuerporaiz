@@ -18,6 +18,8 @@ type Props = {
   availableSeats: number | null;
   /** "purchase" (default) o "addition" para re-compra. */
   mode?: Mode;
+  /** Tras una compra gratis exitosa (la página pública es ISR: refresca su estado en el cliente). */
+  onPurchased?: () => void;
 };
 
 export function ComprarEventoButton({
@@ -27,6 +29,7 @@ export function ComprarEventoButton({
   isFree,
   availableSeats,
   mode = "purchase",
+  onPurchased,
 }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -81,6 +84,7 @@ export function ComprarEventoButton({
           ? `¡Agregaste ${quantity} ${quantity === 1 ? "cupo" : "cupos"}!`
           : "¡Inscripción confirmada!"
       );
+      onPurchased?.();
       router.refresh();
     } catch {
       toast.error("Error de conexión");

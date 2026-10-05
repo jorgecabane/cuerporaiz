@@ -5,7 +5,7 @@ import { getPublicCenterTimezone } from "@/lib/datetime/center-timezone";
 import { buildSiteMetadata } from "@/lib/seo/metadata";
 import { formatPriceOrFree } from "@/lib/domain/money";
 
-export const revalidate = 60;
+export const revalidate = 300;
 
 export async function generateMetadata(): Promise<Metadata> {
   return buildSiteMetadata({ path: "/eventos", type: "website" });

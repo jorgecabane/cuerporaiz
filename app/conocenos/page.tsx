@@ -6,7 +6,7 @@ import { buildSiteMetadata } from "@/lib/seo/metadata";
 import { FirstClassSection } from "@/components/sections/horarios/FirstClassSection";
 import { googleMapsEmbedUrl, googleMapsLink, splitLines, videoEmbedUrl } from "@/lib/domain/embeds";
 
-export const revalidate = 60;
+export const revalidate = 3600;
 
 const DEFAULT_TITLE = "Conócenos";
 

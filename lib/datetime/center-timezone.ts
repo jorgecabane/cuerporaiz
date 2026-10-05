@@ -6,6 +6,7 @@
  * resuelve el mismo campo. Esta utilidad es la equivalente para UI/server pages.
  */
 import { centerRepository } from "@/lib/adapters/db";
+import { getSiteContext } from "@/lib/seo/metadata";
 
 export const DEFAULT_TIMEZONE = "America/Santiago";
 
@@ -23,12 +24,6 @@ export async function getCenterTimezone(
 
 /** Timezone del centro público por defecto (resolvido via env var). */
 export async function getPublicCenterTimezone(): Promise<string> {
-  const slug = process.env.NEXT_PUBLIC_DEFAULT_CENTER_SLUG;
-  if (!slug) return DEFAULT_TIMEZONE;
-  try {
-    const center = await centerRepository.findBySlug(slug);
-    return center?.timezone ?? DEFAULT_TIMEZONE;
-  } catch {
-    return DEFAULT_TIMEZONE;
-  }
+  const ctx = await getSiteContext();
+  return ctx?.center.timezone ?? DEFAULT_TIMEZONE;
 }

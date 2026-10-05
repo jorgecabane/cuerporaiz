@@ -22,6 +22,7 @@ export async function PUT(request: Request) {
 
   const page = await aboutPageRepository.upsert(session.user.centerId, parsed.data);
   revalidatePath("/sobre");
+  revalidatePath("/conocenos");
   revalidatePath("/");
   return NextResponse.json(page);
 }

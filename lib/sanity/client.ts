@@ -71,7 +71,7 @@ export async function sanityFetch<T>(
 ): Promise<T | null> {
   if (!isSanityConfigured()) return null;
 
-  const { revalidate = 60, tags, draft = false } = options;
+  const { revalidate = 3600, tags, draft = false } = options;
   const client = draft ? getDraftClient() : sanityClient;
   if (!client) return null;
 
