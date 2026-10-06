@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { listClassRosterUseCase } from "@/lib/application/class-roster";
-import { classRosterQuerySchema } from "@/lib/dto/class-roster-dto";
+import { listClassRosterUseCase, listClassRostersUseCase } from "@/lib/application/class-roster";
+import { classRosterQuerySchema, liveClassIdsQuerySchema, MAX_BATCH_CLASS_IDS } from "@/lib/dto/class-roster-dto";
 
 export async function GET(request: Request) {
   const session = await auth();
@@ -10,6 +10,22 @@ export async function GET(request: Request) {
   }
 
   const { searchParams } = new URL(request.url);
+
+  // Lote: ?liveClassIds=a,b,c → { [liveClassId]: roster[] } (una llamada por día del calendario).
+  const idsParam = searchParams.get("liveClassIds");
+  if (idsParam !== null) {
+    const ids = liveClassIdsQuerySchema.safeParse(idsParam);
+    if (!ids.success) {
+      return NextResponse.json(
+        { code: "VALIDATION_ERROR", message: `liveClassIds inválido (1 a ${MAX_BATCH_CLASS_IDS} ids)` },
+        { status: 400 }
+      );
+    }
+    const batch = await listClassRostersUseCase(ids.data, session.user.centerId);
+    if (!batch.success) return NextResponse.json({ code: batch.code, message: batch.message }, { status: 403 });
+    return NextResponse.json(batch.rosters);
+  }
+
   const parsed = classRosterQuerySchema.safeParse({
     liveClassId: searchParams.get("liveClassId") ?? undefined,
   });

@@ -72,18 +72,43 @@ export async function listClassAttendanceUseCase(
 
   const { prisma } = await import("@/lib/adapters/db/prisma");
   const reservations = await prisma.reservation.findMany({
-    where: { liveClassId, status: { in: ["CONFIRMED", "ATTENDED", "NO_SHOW"] } },
+    where: { liveClassId, status: { in: ["CONFIRMED", "ATTENDED", "NO_SHOW"] as ReservationStatus[] } },
     include: { user: { select: { id: true, name: true, email: true } } },
     orderBy: { createdAt: "asc" },
   });
 
-  const attendees: ClassAttendanceDto[] = reservations.map((r) => ({
-    reservationId: r.id,
-    userId: r.user.id,
-    userName: r.user.name,
-    userEmail: r.user.email,
-    status: r.status as ReservationStatus,
-  }));
+  return { success: true, attendees: reservations.map(toAttendanceDto) };
+}
 
-  return { success: true, attendees };
+const ATTENDANCE_STATUSES: ReservationStatus[] = ["CONFIRMED", "ATTENDED", "NO_SHOW"];
+
+function toAttendanceDto(r: {
+  id: string;
+  status: string;
+  user: { id: string; name: string | null; email: string };
+}): ClassAttendanceDto {
+  return { reservationId: r.id, userId: r.user.id, userName: r.user.name, userEmail: r.user.email, status: r.status as ReservationStatus };
+}
+
+/**
+ * Asistencia de varias clases en una sola consulta (calendario del staff:
+ * antes era una llamada por clase). Ignora clases de otro centro.
+ */
+export async function listAttendanceForClassesUseCase(
+  liveClassIds: string[],
+  centerId: string
+): Promise<Record<string, ClassAttendanceDto[]>> {
+  const classes = liveClassIds.length ? await liveClassRepository.findByIds(liveClassIds) : [];
+  const allowed = classes.filter((c) => c.centerId === centerId).map((c) => c.id);
+  const byClass: Record<string, ClassAttendanceDto[]> = Object.fromEntries(allowed.map((id) => [id, []]));
+  if (allowed.length === 0) return byClass;
+
+  const { prisma } = await import("@/lib/adapters/db/prisma");
+  const reservations = await prisma.reservation.findMany({
+    where: { liveClassId: { in: allowed }, status: { in: ATTENDANCE_STATUSES } },
+    include: { user: { select: { id: true, name: true, email: true } } },
+    orderBy: { createdAt: "asc" },
+  });
+  for (const r of reservations) byClass[r.liveClassId].push(toAttendanceDto(r));
+  return byClass;
 }
