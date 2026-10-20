@@ -58,7 +58,7 @@ async function refreshZoomToken(centerId: string): Promise<string> {
 export async function getValidZoomAccessToken(centerId: string): Promise<string> {
   const config = await zoomConfigRepository.findByCenterId(centerId);
   if (!config) {
-    throw new Error("Zoom no está conectado para este centro. Configuralo en Plugins.");
+    throw new Error("Zoom no está conectado para este centro. Configúralo en Plugins.");
   }
 
   const now = new Date();

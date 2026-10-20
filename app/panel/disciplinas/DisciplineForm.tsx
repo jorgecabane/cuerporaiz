@@ -74,7 +74,7 @@ export function DisciplineForm({ discipline }: { discipline?: Discipline }) {
           className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-[var(--color-text)]"
         />
         <p id="long-description-help" className="mt-1 text-xs text-[var(--color-text-muted)]">
-          Qué se siente y qué se hace en la clase. Se muestra en “Nuestras disciplinas” (home) y en Horarios. Deja una línea en blanco para separar párrafos.
+          Qué se siente y qué se hace en la clase. Se muestra en “Disciplinas” (home) y en Horarios. Deja una línea en blanco para separar párrafos.
         </p>
       </div>
       <div>

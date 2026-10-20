@@ -262,7 +262,7 @@ export default function BrandingForm({ config }: BrandingFormProps) {
       <fieldset className="space-y-4">
         <legend className="text-sm font-semibold text-[var(--color-text)] mb-2">SEO</legend>
         <p className="text-xs text-[var(--color-text-muted)]">
-          Aparece cuando alguien comparte tu sitio en WhatsApp, redes o buscadores. Si dejás los
+          Aparece cuando alguien comparte tu sitio en WhatsApp, redes o buscadores. Si dejas los
           campos vacíos, usamos el título y la descripción por defecto.
         </p>
         <div>

@@ -29,7 +29,7 @@ export function DisciplinesSection({ title, subtitle, disciplines }: Disciplines
       <div className="mx-auto max-w-6xl">
         <AnimateIn>
           <h2 id="disciplines-heading" className="text-section font-display font-semibold text-[var(--color-primary)]">
-            {title ?? "Nuestras disciplinas"}
+            {title ?? "Disciplinas"}
           </h2>
         </AnimateIn>
 

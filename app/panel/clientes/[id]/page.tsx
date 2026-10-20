@@ -17,6 +17,7 @@ import { AssignPlanForm } from "./AssignPlanForm";
 import { EditClientForm } from "./EditClientForm";
 import { PlanActions } from "./PlanActions";
 import { RegisterManualPayment } from "./RegisterManualPayment";
+import { manualPaymentMethodLabel } from "./payment-methods";
 import { getCenterTimezone } from "@/lib/datetime/center-timezone";
 import { formatMoney } from "@/lib/domain/money";
 
@@ -260,7 +261,7 @@ export default async function ClientDetailPage({
                       )}
                     </div>
                     <div className="flex items-center gap-2 text-xs text-[var(--color-text-muted)]">
-                      <span className="capitalize">{mp.method}</span>
+                      <span>{manualPaymentMethodLabel(mp.method)}</span>
                       <span>{mp.paidAt.toLocaleDateString("es-CL", { timeZone: tz })}</span>
                     </div>
                   </li>

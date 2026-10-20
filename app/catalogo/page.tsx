@@ -13,7 +13,7 @@ export async function generateMetadata(): Promise<Metadata> {
     path: "/catalogo",
     title: "Catálogo de prácticas — Cuerpo Raíz",
     description:
-      "Explora nuestras categorías de prácticas de yoga on demand: clases grabadas para practicar a tu ritmo, donde y cuando quieras.",
+      "Explora las categorías de prácticas de yoga on demand: clases grabadas para practicar a tu ritmo, donde y cuando quieras.",
   });
 }
 

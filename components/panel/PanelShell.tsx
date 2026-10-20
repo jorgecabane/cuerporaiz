@@ -30,7 +30,6 @@ import {
   Globe,
   Ticket,
 } from "lucide-react";
-import { SITE_NAME } from "@/lib/constants/copy";
 import { PANEL_NAV_ITEMS, PANEL_ADMIN_ITEMS } from "@/lib/panel-nav";
 import { SiteLogoMark } from "@/components/shared/SiteLogoMark";
 
@@ -233,7 +232,7 @@ export function PanelShell({
                 className="hidden md:block"
               />
             )}
-            <span>{SITE_NAME}</span>
+            <span>{centerName}</span>
           </Link>
         </div>
 
@@ -338,7 +337,7 @@ export function PanelShell({
             >
               <div className="flex h-14 shrink-0 items-center justify-between border-b border-[var(--color-border)] px-4">
                 <span className="font-display text-lg font-semibold text-[var(--color-primary)]">
-                  {SITE_NAME}
+                  {centerName}
                 </span>
                 <button
                   type="button"

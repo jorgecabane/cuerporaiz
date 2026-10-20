@@ -31,7 +31,7 @@ test.describe("Panel admin - Planes", () => {
     await expect(page.getByRole("link", { name: /^Planes$/i }).first()).toBeVisible();
     await page.getByRole("link", { name: /^Planes$/i }).first().click();
     await expect(page).toHaveURL(/\/panel\/planes/);
-    await expect(page.getByRole("heading", { name: /Planes \(admin\)/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /^Planes$/i })).toBeVisible();
   });
 
   test("admin puede crear un plan", async ({ page }) => {
