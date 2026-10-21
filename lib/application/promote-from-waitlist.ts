@@ -25,7 +25,6 @@ import {
 } from "@/lib/adapters/db";
 import { canPromoteWaitlistEntry, EVENT_HOLD_MINUTES } from "@/lib/domain/waitlist";
 import { isUserPlanUsable } from "@/lib/domain/user-plan";
-import { revalidatePublicSchedule } from "@/lib/utils/revalidate-public-schedule";
 
 export interface PromoteFromWaitlistInput {
   userId: string;
@@ -196,7 +195,6 @@ async function promoteClass(params: {
     return { success: false, code: "SPOT_TAKEN", message: "El cupo ya fue tomado" };
   }
 
-  revalidatePublicSchedule();
   return { success: true, kind: "class", reservationId: result.reservationId };
 }
 

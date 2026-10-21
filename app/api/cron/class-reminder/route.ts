@@ -12,7 +12,10 @@ const REMINDER_HOURS_BEFORE = 2;
  *
  * En Vercel Hobby los crons tienen precisión ±59 min y solo pueden correr
  * 1 vez por día. Para cubrir el día entero usamos múltiples entradas en
- * vercel.json (cada hora desde 06:00 hasta 22:00). Cada disparo cubre una
+ * vercel.json: cada hora UTC salvo 04–07 (00–03 en Chile), donde no hay clases
+ * en la ventana de ningún disparo (las clases van de 10 a 03 UTC en verano,
+ * 11 a 04 UTC en invierno). Si se agregan clases muy temprano o muy tarde,
+ * hay que volver a agregar esas horas. Cada disparo cubre una
  * ventana de 2h adelante (1h–3h) y se apoya en `Reservation.reminderSentAt`
  * para evitar duplicados.
  *

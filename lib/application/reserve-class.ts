@@ -35,7 +35,6 @@ import { getEmailBranding } from "@/lib/email/branding";
 import { getBaseUrl } from "@/lib/utils/base-url";
 import { formatMinutesAsShortSpanish } from "@/lib/domain/center-policy";
 import { notifyWaitlistOnSpotFreed } from "./notify-waitlist-on-spot-freed";
-import { revalidatePublicSchedule } from "@/lib/utils/revalidate-public-schedule";
 
 function toReservationDto(r: Reservation, liveClassDto?: LiveClassDto): ReservationDto {
   return {
@@ -348,7 +347,6 @@ export async function reserveClassUseCase(
     }
   }
 
-  revalidatePublicSchedule();
   return {
     success: true,
     reservation: toReservationDto(reservation, liveClassDto),
@@ -434,7 +432,6 @@ export async function cancelReservationUseCase(
     liveClass.maxCapacity, // no recalculamos spots aquí
     { acceptsTrialReservations: liveClass.acceptsTrialReservations, isOnline: liveClass.isOnline }
   );
-  revalidatePublicSchedule();
   return {
     success: true,
     reservation: toReservationDto(updated, liveClassDto),
@@ -513,7 +510,6 @@ export async function cancelReservationByStaffUseCase(
     liveClass.maxCapacity,
     { acceptsTrialReservations: liveClass.acceptsTrialReservations, isOnline: liveClass.isOnline }
   );
-  revalidatePublicSchedule();
   return {
     success: true,
     reservation: toReservationDto(updated, liveClassDto),

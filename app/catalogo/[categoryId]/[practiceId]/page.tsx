@@ -10,7 +10,7 @@ import type { CategoryData } from "@/components/biblioteca/types";
 import { buildSiteMetadata } from "@/lib/seo/metadata";
 import { getLibraryPacks } from "@/lib/application/get-library-packs";
 
-export const revalidate = 300;
+export const revalidate = 3600;
 
 /** Sin rutas pre-generadas: cada página se genera en la primera visita y queda en caché (ISR). */
 export async function generateStaticParams() {

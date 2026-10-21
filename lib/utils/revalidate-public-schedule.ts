@@ -1,8 +1,10 @@
 import { revalidatePath } from "next/cache";
 
 /**
- * La agenda pública (home y /horarios) es ISR: se refresca cuando cambian
- * clases o cupos, sin esperar el ciclo de revalidate. Fuera de un request
+ * La agenda pública (home y /horarios) es ISR: se refresca cuando el panel
+ * cambia clases, sin esperar el ciclo de revalidate. Reservas y cancelaciones
+ * no invalidan (cada una regeneraba dos páginas); los cupos se ponen al día
+ * con el revalidate de 10 min. Fuera de un request
  * (tests, scripts) revalidatePath lanza: se ignora.
  */
 export function revalidatePublicSchedule(): void {
