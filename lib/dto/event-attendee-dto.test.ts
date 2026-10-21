@@ -20,6 +20,13 @@ describe("eventAttendeesSchema", () => {
     ]);
   });
 
+  it("acepta null (campos sin tocar en el formulario)", () => {
+    expect(eventAttendeesSchema.parse([{ name: "Ana", email: null }, { name: null, email: null }])).toEqual([
+      { name: "Ana", email: null },
+      { name: null, email: null },
+    ]);
+  });
+
   it("correo inválido → error", () => {
     expect(eventAttendeesSchema.safeParse([{ email: "no-es-correo" }]).success).toBe(false);
   });

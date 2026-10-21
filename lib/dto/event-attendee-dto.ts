@@ -5,13 +5,13 @@
 import { z } from "zod";
 
 const optionalName = z
-  .preprocess((v) => (typeof v === "string" ? v.trim() : v), z.string().max(120).optional())
+  .preprocess((v) => (typeof v === "string" ? v.trim() : v), z.string().max(120).nullish())
   .transform((v) => v || null);
 
 const optionalEmail = z
   .preprocess(
     (v) => (typeof v === "string" ? v.trim().toLowerCase() : v),
-    z.union([z.literal(""), z.string().email().max(200)]).optional()
+    z.union([z.literal(""), z.string().email().max(200)]).nullish()
   )
   .transform((v) => v || null);
 
