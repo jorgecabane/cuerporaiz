@@ -1,80 +1,80 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-
-/**
- * Regresión: los callers NO esperan esta promesa (fire-and-forget). Si after()
- * se registra recién después de cargar datos, el request ya respondió y Next
- * lo ignora en silencio → el correo nunca sale. Debe registrarse en el mismo
- * tick de la llamada, y el envío debe quedar dentro de esa promesa.
- */
-const mocks = vi.hoisted(() => ({
-  after: vi.fn(),
-  send: vi.fn(async (dto: { subject: string; to: string[] }) => ({ success: true, id: dto.subject })),
-  eventRepository: { findById: vi.fn() },
-  eventTicketRepository: { countPaidByEventId: vi.fn(async () => 9) },
-  userRepository: { findById: vi.fn() },
-  contactEmail: "admin@centro.cl" as string | null,
-}));
-vi.mock("next/server", () => ({ after: mocks.after }));
-vi.mock("@/lib/adapters/email", () => ({ resendEmailAdapter: { send: mocks.send } }));
-vi.mock("@/lib/adapters/db", () => ({
-  eventRepository: mocks.eventRepository,
-  eventTicketRepository: mocks.eventTicketRepository,
-  userRepository: mocks.userRepository,
-}));
-vi.mock("@/lib/email/branding", () => ({
-  getEmailBranding: vi.fn(async () => ({
-    centerId: "c1", centerName: "Cuerpo Raíz", timezone: "America/Santiago", logoUrl: null,
-    colorPrimary: "#a35644", colorSecondary: "#b27362", contactEmail: mocks.contactEmail, contactPhone: null,
-    contactAddress: "Vitacura", whatsappUrl: null, instagramUrl: null,
-  })),
-}));
-
 import { notifyEventTicketConfirmation } from "./notify-event-ticket-confirmation";
 
-describe("notifyEventTicketConfirmation", () => {
+const mocks = vi.hoisted(() => ({
+  eventRepository: { findById: vi.fn() },
+  userRepository: { findById: vi.fn() },
+  eventTicketRepository: { findByEventAndUser: vi.fn(), countPaidByEventId: vi.fn() },
+  ensureEventAttendees: vi.fn(),
+  sendEmailSafe: vi.fn(),
+}));
+
+vi.mock("@/lib/adapters/db", () => ({
+  eventRepository: mocks.eventRepository,
+  userRepository: mocks.userRepository,
+  eventTicketRepository: mocks.eventTicketRepository,
+}));
+vi.mock("./ensure-event-attendees", () => ({ ensureEventAttendees: mocks.ensureEventAttendees }));
+vi.mock("./send-email", () => ({ sendEmailSafe: mocks.sendEmailSafe }));
+vi.mock("@/lib/utils/run-after-response", () => ({ runInBackground: (fn: () => Promise<void>) => fn() }));
+vi.mock("@/lib/email/branding", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/email/branding")>("@/lib/email/branding");
+  return { getEmailBranding: async () => actual.defaultBranding("Centro") };
+});
+
+const attendee = (seat: number, email: string | null) => ({
+  id: `a${seat}`, ticketId: "t1", seat, token: `tok${seat}`, name: email ? "Ana" : null, email,
+  firstEnteredAt: null, lastEnteredAt: null, revokedAt: null,
+});
+
+const INPUT = { eventId: "e1", userId: "u1", centerId: "c1", amountCents: 0, currency: "CLP", quantity: 2, notifyAdmin: false };
+const sentTo = () => mocks.sendEmailSafe.mock.calls.map(([email]) => email.to[0]);
+
+describe("notifyEventTicketConfirmation — evento online", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.eventRepository.findById.mockResolvedValue({
-      id: "e1", title: "Clase Recuperativa", startsAt: new Date("2026-10-10T21:30:00Z"),
-      endsAt: new Date("2026-10-10T22:30:00Z"), location: null,
+      id: "e1", title: "Círculo", startsAt: new Date(), endsAt: new Date(), location: null,
+      isOnline: true, meetingUrl: "https://zoom.us/j/1", maxCapacity: null,
     });
-    mocks.userRepository.findById.mockResolvedValue({ id: "u1", email: "ana@correo.cl", name: "Ana", phone: null });
-    mocks.contactEmail = "admin@centro.cl";
+    mocks.userRepository.findById.mockResolvedValue({ id: "u1", email: "yo@correo.cl", name: "Jorge" });
+    mocks.eventTicketRepository.findByEventAndUser.mockResolvedValue({ id: "t1", quantity: 2 });
+    mocks.ensureEventAttendees.mockResolvedValue([attendee(1, null), attendee(2, "ana@correo.cl")]);
   });
 
-  it("registra after() en el mismo tick (antes de cargar datos) y el envío queda dentro", async () => {
-    const promise = notifyEventTicketConfirmation({ eventId: "e1", userId: "u1", centerId: "c1", amountCents: 0, currency: "CLP" });
-
-    // Sin await todavía: el request podría responder ahora mismo.
-    expect(mocks.after).toHaveBeenCalledTimes(1);
-    expect(mocks.after.mock.calls[0][0]).toBeInstanceOf(Promise);
-
-    await mocks.after.mock.calls[0][0];
-    expect(mocks.send).toHaveBeenCalledWith(expect.objectContaining({ to: ["ana@correo.cl"] }));
-    await promise;
+  it("compra: confirmación con los links + correo directo al asistente con correo", async () => {
+    await notifyEventTicketConfirmation(INPUT);
+    expect(mocks.ensureEventAttendees).toHaveBeenCalledWith({ id: "t1", quantity: 2 }, expect.objectContaining({ isOnline: true }));
+    expect(sentTo()).toEqual(["yo@correo.cl", "ana@correo.cl"]);
+    expect(mocks.sendEmailSafe.mock.calls[0][0].html).toContain("/eventos/entrar/tok2");
   });
 
-  it("si el evento o el usuario no existen, no envía", async () => {
-    mocks.userRepository.findById.mockResolvedValue(null);
-    await notifyEventTicketConfirmation({ eventId: "e1", userId: "u1", centerId: "c1", amountCents: 0, currency: "CLP" });
-    expect(mocks.send).not.toHaveBeenCalled();
+  it("re-compra: confirmación con todos los links, sin reenviar a asistentes", async () => {
+    await notifyEventTicketConfirmation({ ...INPUT, kind: "addition", addedQuantity: 1 });
+    expect(sentTo()).toEqual(["yo@correo.cl"]);
+    expect(mocks.sendEmailSafe.mock.calls[0][0].html).toContain("/eventos/entrar/tok1");
   });
 
-  it("avisa al admin (email de contacto) con el total de cupos confirmados", async () => {
-    await notifyEventTicketConfirmation({ eventId: "e1", userId: "u1", centerId: "c1", amountCents: 0, currency: "CLP", quantity: 2 });
-    expect(mocks.send.mock.calls.map(([dto]) => dto)).toEqual([
-      expect.objectContaining({ to: ["ana@correo.cl"], subject: "Confirmación: Clase Recuperativa" }),
-      expect.objectContaining({ to: ["admin@centro.cl"], subject: "Nueva inscripción: Clase Recuperativa — Ana" }),
-    ]);
+  it("si falla crear cupos, igual manda la confirmación (sin links)", async () => {
+    mocks.ensureEventAttendees.mockRejectedValue(new Error("db down"));
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    await notifyEventTicketConfirmation(INPUT);
+    expect(sentTo()).toEqual(["yo@correo.cl"]);
+    expect(mocks.sendEmailSafe.mock.calls[0][0].html).not.toContain("Tus entradas");
   });
 
-  it("no avisa al admin si la acción la hizo el admin o si no hay email de contacto", async () => {
-    await notifyEventTicketConfirmation({ eventId: "e1", userId: "u1", centerId: "c1", amountCents: 0, currency: "CLP", notifyAdmin: false });
-    expect(mocks.send).toHaveBeenCalledTimes(1);
+  it("sin ubicación, la confirmación dice Online (no la dirección del centro)", async () => {
+    await notifyEventTicketConfirmation(INPUT);
+    expect(mocks.sendEmailSafe.mock.calls[0][0].text).toContain("Lugar: Online");
+  });
 
-    mocks.send.mockClear();
-    mocks.contactEmail = null;
-    await notifyEventTicketConfirmation({ eventId: "e1", userId: "u1", centerId: "c1", amountCents: 0, currency: "CLP" });
-    expect(mocks.send).toHaveBeenCalledTimes(1);
+  it("evento presencial: no toca cupos", async () => {
+    mocks.eventRepository.findById.mockResolvedValue({
+      id: "e1", title: "Retiro", startsAt: new Date(), endsAt: new Date(), location: "Sala",
+      isOnline: false, meetingUrl: null, maxCapacity: null,
+    });
+    await notifyEventTicketConfirmation(INPUT);
+    expect(mocks.ensureEventAttendees).not.toHaveBeenCalled();
+    expect(sentTo()).toEqual(["yo@correo.cl"]);
   });
 });

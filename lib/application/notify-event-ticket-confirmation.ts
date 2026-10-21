@@ -1,6 +1,8 @@
 /**
  * Helper compartido: dispara el correo de confirmación de entrada a un evento
  * y el aviso de nueva inscripción al admin del centro (email de contacto).
+ * En eventos online asegura un cupo con link personal por entrada, los lista en
+ * la confirmación y, en la compra inicial, manda su link a cada asistente con correo.
  * Llamado desde:
  *   - event-checkout (eventos gratis activan PAID inmediatamente; re-compra
  *     free incrementa quantity)
@@ -18,6 +20,10 @@ import { getEmailBranding } from "@/lib/email/branding";
 import { getBaseUrl } from "@/lib/utils/base-url";
 import { runInBackground } from "@/lib/utils/run-after-response";
 import { eventRepository, eventTicketRepository, userRepository } from "@/lib/adapters/db";
+import type { Event, EventAttendee } from "@/lib/domain/event";
+import { ensureEventAttendees } from "./ensure-event-attendees";
+import { buildEventAttendeeLinkEmail, entryLinksFor } from "@/lib/email/event-online";
+import { eventEntryUrl } from "@/lib/utils/event-entry-url";
 
 /** Los callers no esperan esta promesa: el trabajo se registra en after() al llamarla. */
 export function notifyEventTicketConfirmation(input: {
@@ -45,6 +51,8 @@ async function sendConfirmation(input: Parameters<typeof notifyEventTicketConfir
     getEmailBranding(input.centerId),
   ]);
   if (!event || !user) return;
+  const attendees = await loadOnlineAttendees(event, user.id);
+  const kind = input.kind ?? "purchase";
 
   await sendEmailSafe(
     buildEventTicketConfirmationEmail({
@@ -53,7 +61,7 @@ async function sendConfirmation(input: Parameters<typeof notifyEventTicketConfir
       eventTitle: event.title,
       startsAt: event.startsAt,
       endsAt: event.endsAt,
-      location: event.location ?? branding.contactAddress,
+      location: event.location ?? (event.isOnline ? "Online" : branding.contactAddress),
       amountCents: input.amountCents,
       currency: input.currency,
       quantity: input.quantity ?? 1,
@@ -61,13 +69,32 @@ async function sendConfirmation(input: Parameters<typeof notifyEventTicketConfir
       addedQuantity: input.addedQuantity,
       eventUrl: `${getBaseUrl()}/eventos/${event.id}`,
       preferencesUrl: `${getBaseUrl()}/panel/mi-perfil?tab=correos`,
+      entryLinks: attendees.length ? entryLinksFor(attendees, user.email) : undefined,
       branding,
     })
   );
 
+  // Compra inicial: cada asistente con correo propio recibe su link directo.
+  if (kind === "purchase") {
+    const buyerName = user.name ?? user.email.split("@")[0];
+    for (const a of attendees) {
+      if (!a.email || a.email === user.email) continue;
+      await sendEmailSafe(
+        buildEventAttendeeLinkEmail({
+          toEmail: a.email,
+          attendeeName: a.name,
+          buyerName,
+          eventTitle: event.title,
+          startsAt: event.startsAt,
+          entryUrl: eventEntryUrl(a.token),
+          branding,
+        })
+      );
+    }
+  }
+
   if (input.notifyAdmin === false || !branding.contactEmail) return;
   const paidSeats = await eventTicketRepository.countPaidByEventId(event.id);
-  const kind = input.kind ?? "purchase";
   await sendEmailSafe(
     buildEventRegistrationNoticeToAdminEmail({
       toEmail: branding.contactEmail,
@@ -86,4 +113,16 @@ async function sendConfirmation(input: Parameters<typeof notifyEventTicketConfir
       branding,
     })
   );
+}
+
+/** Cupos con link personal del ticket; si falla, la confirmación sale igual sin links. */
+async function loadOnlineAttendees(event: Event, userId: string): Promise<EventAttendee[]> {
+  if (!event.isOnline) return [];
+  try {
+    const ticket = await eventTicketRepository.findByEventAndUser(event.id, userId);
+    return ticket ? await ensureEventAttendees(ticket, event) : [];
+  } catch (err) {
+    console.error("[notify-event-ticket] ensure attendees", err instanceof Error ? err.message : err);
+    return [];
+  }
 }

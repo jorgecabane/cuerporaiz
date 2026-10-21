@@ -13,6 +13,9 @@ import { EventWaitlistButton } from "./EventWaitlistButton";
 import { AdminEventWaitlist } from "./AdminEventWaitlist";
 import { isActiveWaitlistStatus } from "@/lib/domain/waitlist";
 import { getVideoProviders } from "@/lib/application/get-video-providers";
+import { ensureEventAttendees } from "@/lib/application/ensure-event-attendees";
+import { entryLinksFor } from "@/lib/email/event-online";
+import { EntryLinksList } from "@/components/events/EntryLinksList";
 import { formatMoney } from "@/lib/domain/money";
 
 function formatDate(date: Date, tz: string): string {
@@ -232,6 +235,10 @@ export default async function EventDetailPage({
   }
 
   /* ── Student view ── */
+  const entryLinks =
+    userHasTicket && event.isOnline
+      ? entryLinksFor(await ensureEventAttendees(userTicket!, event), session.user.email ?? "")
+      : [];
   return (
     <div className="mx-auto max-w-2xl px-4 py-12">
       <div className="mb-6">
@@ -317,6 +324,7 @@ export default async function EventDetailPage({
                 ? "Tienes tu entrada"
                 : `Tienes ${userTicket!.quantity} entradas para este evento`}
             </div>
+            {entryLinks.length > 0 && <EntryLinksList links={entryLinks} />}
             {userTicket!.pendingAdditionQuantity > 0 ? (
               <p className="text-sm text-[var(--color-text-muted)]">
                 Pago pendiente de {userTicket!.pendingAdditionQuantity}{" "}
