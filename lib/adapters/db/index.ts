@@ -30,5 +30,6 @@ export { authTokenRepository } from "./auth-token-repository";
 export { loginAttemptRepository } from "./login-attempt-repository";
 export { eventRepository } from "./event-repository";
 export { eventTicketRepository } from "./event-ticket-repository";
+export { eventAttendeeRepository } from "./event-attendee-repository";
 export { waitlistRepository } from "./waitlist-repository";
 export { newsletterSubscriberRepository } from "./newsletter-subscriber-repository";

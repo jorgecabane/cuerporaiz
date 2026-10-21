@@ -62,6 +62,8 @@ function makeEvent(overrides: Partial<Event> = {}): Event {
     maxCapacity: null,
     status: "PUBLISHED",
     color: null,
+    isOnline: false,
+    meetingUrl: null,
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides,
