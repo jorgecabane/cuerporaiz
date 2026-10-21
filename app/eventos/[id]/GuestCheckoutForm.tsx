@@ -4,6 +4,8 @@ import { useId, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { QuantityStepper } from "@/components/ui/QuantityStepper";
 import { toast } from "@/components/ui/Toast";
+import { AttendeeFields } from "@/components/events/AttendeeFields";
+import type { EventAttendeeInput } from "@/lib/ports/event-attendee-repository";
 import { formatMoney } from "@/lib/domain/money";
 
 type Props = {
@@ -13,6 +15,7 @@ type Props = {
   isFree: boolean;
   maxQuantity: number;
   loginHref: string;
+  isOnline: boolean;
 };
 
 export function GuestCheckoutForm({
@@ -22,6 +25,7 @@ export function GuestCheckoutForm({
   isFree,
   maxQuantity,
   loginHref,
+  isOnline,
 }: Props) {
   const fieldId = useId();
   const [quantity, setQuantity] = useState(1);
@@ -30,6 +34,7 @@ export function GuestCheckoutForm({
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const [needsLogin, setNeedsLogin] = useState(false);
+  const [attendees, setAttendees] = useState<EventAttendeeInput[]>([]);
 
   const total = amountCents * quantity;
 
@@ -41,7 +46,13 @@ export function GuestCheckoutForm({
       const res = await fetch(`/api/events/${eventId}/checkout`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, phone, quantity }),
+        body: JSON.stringify({
+          name,
+          email,
+          phone,
+          quantity,
+          attendees: isOnline ? attendees.slice(0, quantity - 1) : undefined,
+        }),
       });
       const data = await res.json();
 
@@ -170,11 +181,15 @@ export function GuestCheckoutForm({
         </div>
       </div>
 
+      {isOnline && (
+        <AttendeeFields quantity={quantity} value={attendees} onChange={setAttendees} disabled={loading} />
+      )}
+
       <Button type="submit" variant="primary" disabled={loading} className="w-full min-h-[48px]">
         {submitLabel}
       </Button>
       <p className="text-center text-xs text-[var(--color-text-muted)]">
-        Te enviaremos tu entrada a este correo.
+        {isOnline ? "Te enviaremos tus links de acceso a este correo." : "Te enviaremos tu entrada a este correo."}
       </p>
     </form>
   );

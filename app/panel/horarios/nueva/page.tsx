@@ -1,7 +1,8 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { isAdminRole } from "@/lib/domain/role";
-import { disciplineRepository, instructorRepository, centerRepository, zoomConfigRepository, googleMeetConfigRepository } from "@/lib/adapters/db";
+import { disciplineRepository, instructorRepository, centerRepository } from "@/lib/adapters/db";
+import { getVideoProviders } from "@/lib/application/get-video-providers";
 import { Button } from "@/components/ui/Button";
 import { CreateClassForm } from "./CreateClassForm";
 
@@ -15,18 +16,12 @@ export default async function NuevaClasePage({ searchParams }: Props) {
   if (!isAdminRole(session.user.role)) redirect("/panel");
   const centerId = session.user.centerId as string;
 
-  const [disciplines, instructors, center, zoomStatus, meetStatus] = await Promise.all([
+  const [disciplines, instructors, center, videoProviders] = await Promise.all([
     disciplineRepository.findActiveByCenterId(centerId),
     instructorRepository.findByCenterId(centerId),
     centerRepository.findById(centerId),
-    zoomConfigRepository.findStatusByCenterId(centerId),
-    googleMeetConfigRepository.findStatusByCenterId(centerId),
+    getVideoProviders(centerId),
   ]);
-
-  const videoProviders = {
-    zoom: !!(zoomStatus?.enabled && zoomStatus?.hasCredentials),
-    meet: !!(meetStatus?.enabled && meetStatus?.hasCredentials),
-  };
 
   const params = await searchParams;
 

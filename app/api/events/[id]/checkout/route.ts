@@ -6,6 +6,7 @@ import { createEventCheckout } from "@/lib/application/event-checkout";
 import { resolveGuestUser } from "@/lib/application/resolve-guest-user";
 import { allowGuestCheckout } from "@/lib/application/guest-checkout-rate-limit";
 import { guestCheckoutBodySchema } from "@/lib/dto/guest-checkout-dto";
+import { eventAttendeesSchema } from "@/lib/dto/event-attendee-dto";
 import { centerRepository } from "@/lib/adapters/db";
 import { getClientIp } from "@/lib/utils/client-ip";
 
@@ -23,6 +24,7 @@ const checkoutBodySchema = z
   .object({
     quantity: z.number().int().min(1).max(200).optional(),
     mode: z.enum(["purchase", "addition"]).optional(),
+    attendees: eventAttendeesSchema,
   })
   .optional();
 
@@ -103,6 +105,7 @@ async function handleAuthenticated(
       payerEmail: user.email ?? undefined,
       payerFirstName,
       payerLastName,
+      attendees: parsedBody?.attendees,
     });
     return respond(result);
   } catch (err) {
@@ -134,7 +137,7 @@ async function handleGuest(request: Request, id: string) {
         { status: 400 }
       );
     }
-    const { name, email, phone, quantity } = parsed.data;
+    const { name, email, phone, quantity, attendees } = parsed.data;
 
     const slug = process.env.NEXT_PUBLIC_DEFAULT_CENTER_SLUG;
     const center = slug ? await centerRepository.findBySlug(slug) : null;
@@ -165,6 +168,7 @@ async function handleGuest(request: Request, id: string) {
       payerEmail: email,
       payerFirstName,
       payerLastName,
+      attendees,
     });
     return respond(result);
   } catch (err) {

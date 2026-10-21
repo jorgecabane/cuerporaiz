@@ -53,3 +53,17 @@ export const createEventTicketSchema = z.object({
 });
 
 export type CreateEventTicketBody = z.infer<typeof createEventTicketSchema>;
+
+const httpsUrl = z.string().trim().url().startsWith("https://");
+
+/** Evento online: exige link https; presencial: lo limpia. */
+export const eventOnlineSchema = z
+  .object({
+    isOnline: z.boolean(),
+    meetingUrl: z.literal("").transform(() => null).or(httpsUrl.nullable()),
+  })
+  .refine((d) => !d.isOnline || !!d.meetingUrl, {
+    message: "Genera el link o pega uno manualmente.",
+    path: ["meetingUrl"],
+  })
+  .transform((d) => ({ isOnline: d.isOnline, meetingUrl: d.isOnline ? d.meetingUrl : null }));

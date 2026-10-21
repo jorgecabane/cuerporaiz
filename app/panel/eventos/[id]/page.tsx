@@ -12,6 +12,7 @@ import { getCenterTimezone } from "@/lib/datetime/center-timezone";
 import { EventWaitlistButton } from "./EventWaitlistButton";
 import { AdminEventWaitlist } from "./AdminEventWaitlist";
 import { isActiveWaitlistStatus } from "@/lib/domain/waitlist";
+import { getVideoProviders } from "@/lib/application/get-video-providers";
 import { formatMoney } from "@/lib/domain/money";
 
 function formatDate(date: Date, tz: string): string {
@@ -110,6 +111,7 @@ export default async function EventDetailPage({
 
   /* ── Admin view ── */
   if (isAdmin) {
+    const videoProviders = await getVideoProviders(centerId);
     return (
       <div className="mx-auto max-w-2xl px-4 py-12">
         <div className="mb-6">
@@ -147,6 +149,7 @@ export default async function EventDetailPage({
                   <p>Inicio: {formatDate(event.startsAt, tz)}</p>
                   <p>Fin: {formatDate(event.endsAt, tz)}</p>
                   {event.location && <p>Lugar: {event.location}</p>}
+                  {event.isOnline && <p className="break-all">Online: {event.meetingUrl}</p>}
                   {!isFree && <p>Precio: {formatMoney(event.amountCents, event.currency)}</p>}
                   <p>
                     Cupos:{" "}
@@ -157,7 +160,7 @@ export default async function EventDetailPage({
                 </div>
               </div>
             }
-            editContent={<EventForm mode="edit" event={event} />}
+            editContent={<EventForm mode="edit" event={event} videoProviders={videoProviders} />}
           />
         </div>
 

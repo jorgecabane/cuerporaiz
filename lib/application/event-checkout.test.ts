@@ -26,6 +26,9 @@ const mocks = vi.hoisted(() => ({
   mercadoPagoPaymentAdapter: {
     createPreference: vi.fn(),
   },
+  eventAttendeeRepository: {
+    replaceForTicket: vi.fn(),
+  },
 }));
 
 vi.mock("@/lib/adapters/db", () => ({
@@ -33,6 +36,7 @@ vi.mock("@/lib/adapters/db", () => ({
   eventTicketRepository: mocks.eventTicketRepository,
   mercadopagoConfigRepository: mocks.mercadopagoConfigRepository,
   centerRepository: mocks.centerRepository,
+  eventAttendeeRepository: mocks.eventAttendeeRepository,
 }));
 
 vi.mock("@/lib/adapters/payment", () => ({
@@ -568,5 +572,47 @@ describe("createEventCheckout", () => {
 
     expect(result.success).toBe(false);
     expect(mocks.eventTicketRepository.clearPendingAddition).toHaveBeenCalled();
+  });
+
+  describe("evento online: asistentes", () => {
+    const online = { isOnline: true, meetingUrl: "https://zoom.us/j/1" };
+    const extra = [{ name: "Ana", email: "ana@correo.cl" }];
+
+    it("guarda el cupo 1 (comprador) + asistentes, recortado a la cantidad", async () => {
+      mocks.eventRepository.findById.mockResolvedValue(makeEvent(online));
+      await createEventCheckout({
+        ...BASE_INPUT,
+        quantity: 2,
+        attendees: [...extra, { name: "Sobra", email: null }],
+      });
+      expect(mocks.eventAttendeeRepository.replaceForTicket).toHaveBeenCalledWith("ticket-1", [
+        { name: null, email: null },
+        { name: "Ana", email: "ana@correo.cl" },
+      ]);
+    });
+
+    it("evento gratis: guarda los cupos antes de marcar PAID", async () => {
+      mocks.eventRepository.findById.mockResolvedValue(makeEvent({ ...online, amountCents: 0 }));
+      mocks.eventTicketRepository.updateStatus.mockResolvedValue(makeTicket({ status: "PAID" }));
+      await createEventCheckout({ ...BASE_INPUT, quantity: 2, attendees: extra });
+      const saved = mocks.eventAttendeeRepository.replaceForTicket.mock.invocationCallOrder[0];
+      const paid = mocks.eventTicketRepository.updateStatus.mock.invocationCallOrder[0];
+      expect(saved).toBeLessThan(paid);
+    });
+
+    it("reintento con ticket PENDING reusado reemplaza los cupos (no duplica)", async () => {
+      mocks.eventRepository.findById.mockResolvedValue(makeEvent(online));
+      mocks.eventTicketRepository.findByEventAndUser.mockResolvedValue(makeTicket({ status: "PENDING" }));
+      await createEventCheckout({ ...BASE_INPUT, quantity: 1, attendees: extra });
+      expect(mocks.eventTicketRepository.resetPending).toHaveBeenCalled();
+      expect(mocks.eventAttendeeRepository.replaceForTicket).toHaveBeenCalledWith("ticket-1", [
+        { name: null, email: null },
+      ]);
+    });
+
+    it("evento presencial: no toca asistentes", async () => {
+      await createEventCheckout({ ...BASE_INPUT, attendees: extra });
+      expect(mocks.eventAttendeeRepository.replaceForTicket).not.toHaveBeenCalled();
+    });
   });
 });

@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { QuantityStepper } from "@/components/ui/QuantityStepper";
 import { toast } from "@/components/ui/Toast";
+import { AttendeeFields } from "@/components/events/AttendeeFields";
+import type { EventAttendeeInput } from "@/lib/ports/event-attendee-repository";
 import { formatMoney } from "@/lib/domain/money";
 
 type Mode = "purchase" | "addition";
@@ -20,6 +22,8 @@ type Props = {
   mode?: Mode;
   /** Tras una compra gratis exitosa (la página pública es ISR: refresca su estado en el cliente). */
   onPurchased?: () => void;
+  /** Evento online: en compra inicial pide asistentes opcionales. */
+  isOnline?: boolean;
 };
 
 export function ComprarEventoButton({
@@ -30,10 +34,13 @@ export function ComprarEventoButton({
   availableSeats,
   mode = "purchase",
   onPurchased,
+  isOnline = false,
 }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [quantity, setQuantity] = useState(1);
+  const [attendees, setAttendees] = useState<EventAttendeeInput[]>([]);
+  const asksAttendees = isOnline && mode === "purchase";
 
   const maxQuantity = useMemo(() => {
     // Si el admin no puso maxCapacity dejamos un techo razonable de 200 para
@@ -50,7 +57,11 @@ export function ComprarEventoButton({
       const res = await fetch(`/api/events/${eventId}/checkout`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ quantity, mode }),
+        body: JSON.stringify({
+          quantity,
+          mode,
+          attendees: asksAttendees ? attendees.slice(0, quantity - 1) : undefined,
+        }),
       });
       const data = await res.json();
 
@@ -106,29 +117,34 @@ export function ComprarEventoButton({
   const showStepper = maxQuantity > 1;
 
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-      {showStepper && (
-        <label className="flex items-center gap-3 text-sm text-[var(--color-text)]">
-          <span>Cupos</span>
-          <QuantityStepper
-            value={quantity}
-            onChange={setQuantity}
-            min={1}
-            max={maxQuantity}
-            disabled={loading}
-            ariaLabel="Cantidad de cupos"
-          />
-        </label>
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        {showStepper && (
+          <label className="flex items-center gap-3 text-sm text-[var(--color-text)]">
+            <span>Cupos</span>
+            <QuantityStepper
+              value={quantity}
+              onChange={setQuantity}
+              min={1}
+              max={maxQuantity}
+              disabled={loading}
+              ariaLabel="Cantidad de cupos"
+            />
+          </label>
+        )}
+        <Button
+          type="button"
+          variant="primary"
+          disabled={loading}
+          onClick={handleClick}
+          className="w-full sm:w-auto min-h-[44px]"
+        >
+          {getLabel()}
+        </Button>
+      </div>
+      {asksAttendees && (
+        <AttendeeFields quantity={quantity} value={attendees} onChange={setAttendees} disabled={loading} />
       )}
-      <Button
-        type="button"
-        variant="primary"
-        disabled={loading}
-        onClick={handleClick}
-        className="w-full sm:w-auto min-h-[44px]"
-      >
-        {getLabel()}
-      </Button>
     </div>
   );
 }

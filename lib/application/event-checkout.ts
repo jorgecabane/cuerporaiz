@@ -15,9 +15,11 @@ import {
   eventTicketRepository,
   mercadopagoConfigRepository,
   centerRepository,
+  eventAttendeeRepository,
 } from "@/lib/adapters/db";
 import { mercadoPagoPaymentAdapter } from "@/lib/adapters/payment";
-import type { EventTicket } from "@/lib/domain/event";
+import type { Event, EventTicket } from "@/lib/domain/event";
+import type { EventAttendeeInput } from "@/lib/ports/event-attendee-repository";
 
 export type EventCheckoutErrorCode =
   | "EVENT_NOT_FOUND"
@@ -54,6 +56,20 @@ export interface CreateEventCheckoutInput {
    * públicas en vez del panel.
    */
   isGuest?: boolean;
+  /** Evento online: datos opcionales de los cupos 2…N (el cupo 1 es el comprador). */
+  attendees?: EventAttendeeInput[];
+}
+
+/** Evento online: deja un cupo por entrada con los datos opcionales recibidos. */
+async function saveCheckoutAttendees(
+  event: Event,
+  ticketId: string,
+  quantity: number,
+  extra: EventAttendeeInput[] = []
+): Promise<void> {
+  if (!event.isOnline) return;
+  const seats = [{ name: null, email: null }, ...extra.slice(0, quantity - 1)];
+  await eventAttendeeRepository.replaceForTicket(ticketId, seats);
 }
 
 /** Token aleatorio opaco para acceso público a un ticket guest. */
@@ -182,6 +198,7 @@ export async function createEventCheckout(
       quantity,
       claimToken,
     });
+    await saveCheckoutAttendees(event, pending.id, quantity, input.attendees);
     const paid = await eventTicketRepository.updateStatus(pending.id, "PAID", { paidAt: new Date() });
     const ticket = paid ?? pending;
     const { notifyEventTicketConfirmation } = await import("./notify-event-ticket-confirmation");
@@ -221,6 +238,7 @@ export async function createEventCheckout(
       currency: event.currency,
       quantity,
     });
+    await saveCheckoutAttendees(event, ticket.id, quantity, input.attendees);
     return {
       success: true,
       ticket,
@@ -243,6 +261,7 @@ export async function createEventCheckout(
     quantity,
     claimToken,
   });
+  await saveCheckoutAttendees(event, ticket.id, quantity, input.attendees);
 
   const externalRef = `evt_${crypto.randomUUID()}`;
   await eventTicketRepository.setExternalReference(ticket.id, externalRef);
