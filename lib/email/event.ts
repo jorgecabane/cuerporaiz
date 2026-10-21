@@ -9,6 +9,7 @@ import { escapeHtml } from "./utils";
 import { formatLongDateTime } from "./format-datetime";
 import type { EmailBranding } from "./branding";
 import { formatPriceOrFree } from "@/lib/domain/money";
+import { entryLinksHtml, entryLinksText, type EntryLink } from "./event-online";
 
 const DEFAULT_FROM = process.env.EMAIL_FROM ?? `Cuerpo Raíz <onboarding@resend.dev>`;
 
@@ -35,6 +36,8 @@ export interface EventTicketConfirmationEmailData {
   addedQuantity?: number;
   eventUrl?: string;
   preferencesUrl?: string;
+  /** Evento online: links personales de cada cupo. */
+  entryLinks?: EntryLink[];
   branding: EmailBranding;
 }
 
@@ -95,6 +98,7 @@ export function buildEventTicketConfirmationEmail(
         <p style="margin:8px 0 0;font-size:13px;color:#8A8782;">Pagaste <strong style="color:#2A2A2A;">${escapeHtml(formatPriceOrFree(data.amountCents, data.currency))}</strong></p>
       </td></tr>
     </table>
+    ${data.entryLinks?.length ? entryLinksHtml(data.entryLinks, branding.colorPrimary) : ""}
     ${ctaLine}`;
 
   const html = emailBaseLayout({ body, branding, preferencesUrl: data.preferencesUrl });
@@ -105,6 +109,7 @@ export function buildEventTicketConfirmationEmail(
     `Fecha: ${when}`,
     data.location ? `Lugar: ${data.location}` : "",
     `Valor pagado: ${formatPriceOrFree(data.amountCents, data.currency)}`,
+    data.entryLinks?.length ? `Tus entradas:\n${entryLinksText(data.entryLinks)}` : "",
     data.eventUrl ? `Ver detalles: ${data.eventUrl}` : "",
     `— ${branding.centerName}`,
   ].filter(Boolean).join("\n");

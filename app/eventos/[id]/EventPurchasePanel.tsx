@@ -18,6 +18,7 @@ type Props = {
   isFull: boolean;
   hasEnded: boolean;
   eventTitle: string;
+  isOnline: boolean;
 };
 
 export function EventPurchasePanel(props: Props) {
@@ -30,6 +31,7 @@ export function EventPurchasePanel(props: Props) {
     isFull,
     hasEnded,
     eventTitle,
+    isOnline,
   } = props;
 
   const isMobile = useIsMobile();
@@ -119,6 +121,7 @@ export function EventPurchasePanel(props: Props) {
             isFree={isFree}
             availableSeats={availableSeats}
             onPurchased={reload}
+            isOnline={isOnline}
           />
         </div>
       </Panel>
@@ -134,6 +137,7 @@ export function EventPurchasePanel(props: Props) {
       isFree={isFree}
       maxQuantity={maxQuantity}
       loginHref={loginHref}
+      isOnline={isOnline}
     />
   );
 

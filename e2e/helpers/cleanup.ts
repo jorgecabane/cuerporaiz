@@ -412,6 +412,8 @@ export async function seedEvent(opts: {
   /** Si se pasa, overridea el default (7 días, 10:00 local del server). */
   startsAt?: Date;
   endsAt?: Date;
+  isOnline?: boolean;
+  meetingUrl?: string | null;
 }): Promise<{ id: string; title: string } | null> {
   const prisma = await getPrisma();
   if (!prisma) return null;
@@ -441,9 +443,18 @@ export async function seedEvent(opts: {
       currency: "CLP",
       maxCapacity: opts.maxCapacity ?? null,
       status: "PUBLISHED",
+      isOnline: opts.isOnline ?? false,
+      meetingUrl: opts.meetingUrl ?? null,
     },
   });
   return { id: event.id, title: event.title };
+}
+
+/** Mueve las fechas de un evento (p.ej. para abrir la ventana del link personal). */
+export async function setEventTimes(eventId: string, startsAt: Date, endsAt: Date): Promise<void> {
+  const prisma = await getPrisma();
+  if (!prisma) return;
+  await prisma.event.update({ where: { id: eventId }, data: { startsAt, endsAt } });
 }
 
 /**

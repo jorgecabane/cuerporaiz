@@ -12,6 +12,8 @@ export interface EventCreateInput {
   maxCapacity?: number | null;
   status?: EventStatus;
   color?: string | null;
+  isOnline?: boolean;
+  meetingUrl?: string | null;
 }
 
 export interface EventUpdateInput {
@@ -26,6 +28,8 @@ export interface EventUpdateInput {
   maxCapacity?: number | null;
   status?: EventStatus;
   color?: string | null;
+  isOnline?: boolean;
+  meetingUrl?: string | null;
 }
 
 export interface IEventRepository {

@@ -3,10 +3,12 @@ import { redirect } from "next/navigation";
 import { isAdminRole } from "@/lib/domain/role";
 import Link from "next/link";
 import { EventForm } from "./EventForm";
+import { getVideoProviders } from "@/lib/application/get-video-providers";
 
 export default async function NuevoEventoPage() {
   const session = await auth();
   if (!session?.user?.centerId || !isAdminRole(session.user.role)) redirect("/panel");
+  const videoProviders = await getVideoProviders(session.user.centerId);
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-12">
@@ -27,7 +29,7 @@ export default async function NuevoEventoPage() {
       </p>
 
       <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
-        <EventForm mode="create" />
+        <EventForm mode="create" videoProviders={videoProviders} />
       </div>
     </div>
   );

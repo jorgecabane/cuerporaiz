@@ -9,6 +9,9 @@ import {
 import { getCenterTimezone } from "@/lib/datetime/center-timezone";
 import { ClaimAccountForm } from "./ClaimAccountForm";
 import { formatPriceOrFree } from "@/lib/domain/money";
+import { ensureEventAttendees } from "@/lib/application/ensure-event-attendees";
+import { entryLinksFor } from "@/lib/email/event-online";
+import { EntryLinksList } from "@/components/events/EntryLinksList";
 
 export const dynamic = "force-dynamic";
 
@@ -49,10 +52,12 @@ export default async function EventConfirmationPage({
   ]);
 
   const isPaid = ticket.status === "PAID";
+  const attendees = isPaid ? await ensureEventAttendees(ticket, event) : [];
+  const links = attendees.length && user ? entryLinksFor(attendees, user.email) : [];
   const showClaim = !!auth && !auth.hasPassword && !auth.emailVerified;
 
   return (
-    <main className="mx-auto flex max-w-xl flex-col items-center px-[var(--space-4)] py-[var(--space-16)] text-center">
+    <main className="mx-auto flex w-full max-w-xl flex-col items-center px-[var(--space-4)] py-[var(--space-16)] text-center">
       {isPaid ? (
         <CheckCircle className="size-14 text-[var(--color-success)]" aria-hidden />
       ) : (
@@ -89,6 +94,12 @@ export default async function EventConfirmationPage({
           </span>
         </div>
       </section>
+
+      {links.length > 0 && (
+        <div className="mt-[var(--space-5)] w-full">
+          <EntryLinksList links={links} />
+        </div>
+      )}
 
       {showClaim && (
         <div className="mt-[var(--space-5)] w-full">

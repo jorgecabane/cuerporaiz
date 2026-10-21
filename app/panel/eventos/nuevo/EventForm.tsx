@@ -1,15 +1,16 @@
 "use client";
 
-import { useTransition, useState } from "react";
+import { useTransition, useState, useRef } from "react";
 import { createEvent, updateEvent, deleteEvent } from "@/app/panel/eventos/actions";
 import type { Event, EventStatus } from "@/lib/domain/event";
 import { EVENT_STATUS_LABELS } from "@/lib/domain/event";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { SanityImagePicker } from "@/components/panel/SanityImagePicker";
+import type { VideoProviders } from "@/lib/application/get-video-providers";
+import { EventOnlineField } from "./EventOnlineField";
+import { eventOnlineSchema } from "@/lib/dto/event-dto";
 
-type Props =
-  | { mode: "create" }
-  | { mode: "edit"; event: Event };
+type Props = ({ mode: "create" } | { mode: "edit"; event: Event }) & { videoProviders: VideoProviders };
 
 const STATUS_OPTIONS: EventStatus[] = ["DRAFT", "PUBLISHED", "CANCELLED"];
 
@@ -42,6 +43,9 @@ export function EventForm(props: Props) {
   const [isDeleting, startDeleteTransition] = useTransition();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(event?.imageUrl ?? null);
+  const formRef = useRef<HTMLFormElement>(null);
+  const [online, setOnline] = useState({ isOnline: event?.isOnline ?? false, meetingUrl: event?.meetingUrl ?? null });
+  const [onlineError, setOnlineError] = useState<string | null>(null);
 
   function handleSubmit(formData: FormData) {
     const title = (formData.get("title") as string)?.trim();
@@ -57,6 +61,9 @@ export function EventForm(props: Props) {
     const status = (formData.get("status") as EventStatus) || "DRAFT";
     const color = (formData.get("color") as string)?.trim() || null;
 
+    const onlineParsed = eventOnlineSchema.safeParse(online);
+    if (!onlineParsed.success) return; // validado en onSubmit
+
     const data = {
       title,
       description,
@@ -68,6 +75,7 @@ export function EventForm(props: Props) {
       maxCapacity,
       status,
       color,
+      ...onlineParsed.data,
     };
 
     if (isEdit && event) {
@@ -75,6 +83,13 @@ export function EventForm(props: Props) {
     } else {
       startTransition(() => createEvent(data));
     }
+  }
+
+  /** Valida el link antes de la action: la action de React resetea los campos del form aunque corte antes. */
+  function validateOnline(e: React.FormEvent<HTMLFormElement>) {
+    const parsed = eventOnlineSchema.safeParse(online);
+    setOnlineError(parsed.success ? null : parsed.error.issues[0].message);
+    if (!parsed.success) e.preventDefault();
   }
 
   function handleDelete() {
@@ -100,7 +115,7 @@ export function EventForm(props: Props) {
         />
       )}
 
-      <form key={formKey} action={handleSubmit} className="space-y-4">
+      <form ref={formRef} key={formKey} action={handleSubmit} onSubmit={validateOnline} className="space-y-4">
         {/* Título */}
         <div>
           <label htmlFor={`${idPrefix}-title`} className={LABEL_CLASS}>
@@ -141,6 +156,16 @@ export function EventForm(props: Props) {
             className={INPUT_CLASS}
           />
         </div>
+
+        <EventOnlineField
+          idPrefix={idPrefix}
+          formRef={formRef}
+          videoProviders={props.videoProviders}
+          initialIsOnline={event?.isOnline ?? false}
+          initialMeetingUrl={event?.meetingUrl ?? null}
+          onChange={setOnline}
+          error={onlineError}
+        />
 
         {/* Fechas */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

@@ -85,7 +85,7 @@ export function ClaimAccountForm({ ticketId, token, email }: Props) {
         type="submit"
         variant="light"
         disabled={loading}
-        className="mt-[var(--space-4)] w-full min-h-[48px] !border-[var(--color-tertiary)] bg-[var(--color-tertiary)] !text-[var(--color-primary)] hover:!bg-white"
+        className="mt-[var(--space-4)] w-full min-h-[48px] !border-[var(--color-tertiary)] !bg-[var(--color-tertiary)] !text-[var(--color-primary)] hover:!bg-white"
       >
         {loading ? "Creando…" : "Crear mi cuenta"}
       </Button>

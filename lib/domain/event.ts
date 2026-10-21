@@ -15,6 +15,9 @@ export interface Event {
   maxCapacity: number | null;
   status: EventStatus;
   color: string | null;
+  isOnline: boolean;
+  /** Link real de la reunión. Sólo panel admin y la redirección del link personal. */
+  meetingUrl: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -48,3 +51,16 @@ export const EVENT_STATUS_LABELS: Record<EventStatus, string> = {
   PUBLISHED: "Publicado",
   CANCELLED: "Cancelado",
 };
+
+/** Un cupo de una entrada a evento online, con su link personal. */
+export interface EventAttendee {
+  id: string;
+  ticketId: string;
+  seat: number;
+  token: string;
+  name: string | null;
+  email: string | null;
+  firstEnteredAt: Date | null;
+  lastEnteredAt: Date | null;
+  revokedAt: Date | null;
+}

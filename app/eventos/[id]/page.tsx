@@ -139,6 +139,7 @@ export default async function PublicEventDetailPage({
               isFull={isFull}
               hasEnded={hasEnded}
               eventTitle={event.title}
+              isOnline={event.isOnline}
             />
             {siteConfig?.whatsappUrl && (
               <p className="mt-[var(--space-4)] text-center text-sm text-[var(--color-text-muted)]">

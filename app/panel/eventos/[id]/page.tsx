@@ -12,6 +12,11 @@ import { getCenterTimezone } from "@/lib/datetime/center-timezone";
 import { EventWaitlistButton } from "./EventWaitlistButton";
 import { AdminEventWaitlist } from "./AdminEventWaitlist";
 import { isActiveWaitlistStatus } from "@/lib/domain/waitlist";
+import { getVideoProviders } from "@/lib/application/get-video-providers";
+import { ensureEventAttendees } from "@/lib/application/ensure-event-attendees";
+import { entryLinksFor } from "@/lib/email/event-online";
+import { EntryLinksList } from "@/components/events/EntryLinksList";
+import { AdminOnlineAttendees, type OnlineAttendeeRow } from "./AdminOnlineAttendees";
 import { formatMoney } from "@/lib/domain/money";
 
 function formatDate(date: Date, tz: string): string {
@@ -108,8 +113,40 @@ export default async function EventDetailPage({
     }));
   }
 
+  /* ── Admin: cupos con link personal (eventos online) ── */
+  let onlineRows: OnlineAttendeeRow[] = [];
+  if (isAdmin && event.isOnline) {
+    const seats = await prisma.eventAttendee.findMany({
+      where: { ticket: { eventId: id, status: "PAID" } },
+      select: {
+        id: true,
+        seat: true,
+        name: true,
+        email: true,
+        firstEnteredAt: true,
+        revokedAt: true,
+        ticket: { select: { user: { select: { name: true, email: true } } } },
+      },
+      orderBy: [{ ticket: { paidAt: "asc" } }, { seat: "asc" }],
+    });
+    onlineRows = seats.map((a) => {
+      const buyer = a.ticket.user.name ?? a.ticket.user.email;
+      return {
+        id: a.id,
+        seat: a.seat,
+        buyer,
+        attendee: a.seat === 1 ? buyer : (a.name ?? a.email),
+        enteredAt: a.firstEnteredAt
+          ? a.firstEnteredAt.toLocaleTimeString("es-CL", { timeZone: tz, hour: "2-digit", minute: "2-digit" })
+          : null,
+        revoked: !!a.revokedAt,
+      };
+    });
+  }
+
   /* ── Admin view ── */
   if (isAdmin) {
+    const videoProviders = await getVideoProviders(centerId);
     return (
       <div className="mx-auto max-w-2xl px-4 py-12">
         <div className="mb-6">
@@ -147,6 +184,7 @@ export default async function EventDetailPage({
                   <p>Inicio: {formatDate(event.startsAt, tz)}</p>
                   <p>Fin: {formatDate(event.endsAt, tz)}</p>
                   {event.location && <p>Lugar: {event.location}</p>}
+                  {event.isOnline && <p className="break-all">Online: {event.meetingUrl}</p>}
                   {!isFree && <p>Precio: {formatMoney(event.amountCents, event.currency)}</p>}
                   <p>
                     Cupos:{" "}
@@ -157,7 +195,7 @@ export default async function EventDetailPage({
                 </div>
               </div>
             }
-            editContent={<EventForm mode="edit" event={event} />}
+            editContent={<EventForm mode="edit" event={event} videoProviders={videoProviders} />}
           />
         </div>
 
@@ -210,6 +248,8 @@ export default async function EventDetailPage({
           )}
         </section>
 
+        {event.isOnline && <AdminOnlineAttendees eventId={id} rows={onlineRows} />}
+
         {/* Lista de espera */}
         <section className="mb-8">
           <AdminEventWaitlist eventId={id} />
@@ -229,6 +269,10 @@ export default async function EventDetailPage({
   }
 
   /* ── Student view ── */
+  const entryLinks =
+    userHasTicket && event.isOnline
+      ? entryLinksFor(await ensureEventAttendees(userTicket!, event), session.user.email ?? "")
+      : [];
   return (
     <div className="mx-auto max-w-2xl px-4 py-12">
       <div className="mb-6">
@@ -314,6 +358,7 @@ export default async function EventDetailPage({
                 ? "Tienes tu entrada"
                 : `Tienes ${userTicket!.quantity} entradas para este evento`}
             </div>
+            {entryLinks.length > 0 && <EntryLinksList links={entryLinks} />}
             {userTicket!.pendingAdditionQuantity > 0 ? (
               <p className="text-sm text-[var(--color-text-muted)]">
                 Pago pendiente de {userTicket!.pendingAdditionQuantity}{" "}

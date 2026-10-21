@@ -60,9 +60,12 @@ test.describe("Eventos — guest checkout público", () => {
     await expect(page.getByText(/entrada está confirmada/i)).toBeVisible({ timeout: 10000 });
     await expect(page.getByText(guestEmail).first()).toBeVisible();
 
-    // Reclamar cuenta: setear contraseña.
+    // Reclamar cuenta: setear contraseña. El botón debe tener fondo propio (no texto oscuro sobre verde).
+    const claim = page.getByRole("button", { name: /Crear mi cuenta/i });
+    const bg = await claim.evaluate((el) => getComputedStyle(el).backgroundColor);
+    expect(bg).not.toBe("rgba(0, 0, 0, 0)");
     await page.getByLabel(/Crea tu contraseña/i).fill("guestpass1234");
-    await page.getByRole("button", { name: /Crear mi cuenta/i }).click();
+    await claim.click();
     await expect(page.getByText(/tu cuenta está lista/i)).toBeVisible({ timeout: 10000 });
   });
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { createEventSchema, updateEventSchema, createEventTicketSchema } from "./event-dto";
+import { createEventSchema, updateEventSchema, createEventTicketSchema, eventOnlineSchema } from "./event-dto";
 
 const BASE_CREATE = {
   title: "Retiro de Invierno",
@@ -128,5 +128,42 @@ describe("createEventTicketSchema", () => {
 
   it("rechaza sin eventId", () => {
     expect(createEventTicketSchema.safeParse({}).success).toBe(false);
+  });
+});
+
+describe("eventOnlineSchema", () => {
+  it("presencial: limpia meetingUrl", () => {
+    expect(eventOnlineSchema.parse({ isOnline: false, meetingUrl: "https://zoom.us/j/1" })).toEqual({
+      isOnline: false,
+      meetingUrl: null,
+    });
+  });
+
+  it("presencial con campo vacío → ok", () => {
+    expect(eventOnlineSchema.parse({ isOnline: false, meetingUrl: "" })).toEqual({ isOnline: false, meetingUrl: null });
+  });
+
+  it("online con link https → ok (recortado)", () => {
+    expect(eventOnlineSchema.parse({ isOnline: true, meetingUrl: " https://zoom.us/j/1 " })).toEqual({
+      isOnline: true,
+      meetingUrl: "https://zoom.us/j/1",
+    });
+  });
+
+  it("online sin link → error con el copy de la agenda", () => {
+    const r = eventOnlineSchema.safeParse({ isOnline: true, meetingUrl: null });
+    expect(r.success).toBe(false);
+    if (!r.success) expect(r.error.issues[0].message).toBe("Genera el link o pega uno manualmente.");
+  });
+
+  it("mensajes en español para link inválido", () => {
+    const http = eventOnlineSchema.safeParse({ isOnline: true, meetingUrl: "http://zoom.us/j/1" });
+    const junk = eventOnlineSchema.safeParse({ isOnline: true, meetingUrl: "no es url" });
+    expect(!http.success && http.error.issues.map((i) => i.message)).toContain("El link debe empezar con https://");
+    expect(!junk.success && junk.error.issues.map((i) => i.message)).toContain("Pega un link válido (https://…)");
+  });
+
+  it.each(["http://zoom.us/j/1", "javascript:alert(1)", "no es url"])("rechaza %s", (meetingUrl) => {
+    expect(eventOnlineSchema.safeParse({ isOnline: true, meetingUrl }).success).toBe(false);
   });
 });

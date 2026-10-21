@@ -17,6 +17,8 @@ function toDomain(r: {
   maxCapacity: number | null;
   status: PrismaEventStatus;
   color: string | null;
+  isOnline: boolean;
+  meetingUrl: string | null;
   createdAt: Date;
   updatedAt: Date;
 }): Event {
@@ -34,6 +36,8 @@ function toDomain(r: {
     maxCapacity: r.maxCapacity,
     status: r.status as unknown as EventStatus,
     color: r.color,
+    isOnline: r.isOnline,
+    meetingUrl: r.meetingUrl,
     createdAt: r.createdAt,
     updatedAt: r.updatedAt,
   };
@@ -80,6 +84,8 @@ export const eventRepository: IEventRepository = {
         maxCapacity: data.maxCapacity ?? null,
         status: (data.status ?? "PUBLISHED") as PrismaEventStatus,
         color: data.color ?? null,
+        isOnline: data.isOnline ?? false,
+        meetingUrl: data.meetingUrl ?? null,
       },
     });
     return toDomain(r);
@@ -102,6 +108,8 @@ export const eventRepository: IEventRepository = {
         ...(data.maxCapacity !== undefined && { maxCapacity: data.maxCapacity }),
         ...(data.status != null && { status: data.status as PrismaEventStatus }),
         ...(data.color !== undefined && { color: data.color }),
+        ...(data.isOnline !== undefined && { isOnline: data.isOnline }),
+        ...(data.meetingUrl !== undefined && { meetingUrl: data.meetingUrl }),
       },
     });
     return toDomain(r);

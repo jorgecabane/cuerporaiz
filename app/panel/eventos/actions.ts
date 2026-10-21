@@ -4,13 +4,23 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { isAdminRole } from "@/lib/domain/role";
 import { revalidatePath } from "next/cache";
-import { eventRepository } from "@/lib/adapters/db";
+import { eventRepository, eventAttendeeRepository } from "@/lib/adapters/db";
 import type { EventStatus } from "@/lib/domain/event";
+import { eventOnlineSchema } from "@/lib/dto/event-dto";
+import { ensureSeatsForEvent } from "@/lib/application/ensure-event-attendees";
 
 async function requireAdminCenterId(): Promise<string> {
   const session = await auth();
   if (!session?.user?.centerId || !isAdminRole(session.user.role)) redirect("/panel");
   return session.user.centerId;
+}
+
+/** Valida isOnline/meetingUrl en el borde (el form también valida). */
+function parseOnline(data: { isOnline?: boolean; meetingUrl?: string | null }) {
+  if (data.isOnline === undefined) return {};
+  const parsed = eventOnlineSchema.safeParse({ isOnline: data.isOnline, meetingUrl: data.meetingUrl ?? null });
+  if (!parsed.success) throw new Error(parsed.error.issues[0].message);
+  return parsed.data;
 }
 
 /** Home (sección de eventos), listado público y detalle. */
@@ -32,9 +42,11 @@ export async function createEvent(data: {
   maxCapacity?: number | null;
   status?: EventStatus;
   color?: string | null;
+  isOnline: boolean;
+  meetingUrl: string | null;
 }): Promise<void> {
   const centerId = await requireAdminCenterId();
-  const event = await eventRepository.create(centerId, data);
+  const event = await eventRepository.create(centerId, { ...data, ...parseOnline(data) });
   revalidatePath("/panel/eventos");
   revalidatePublicEvents();
   redirect(`/panel/eventos/${event.id}`);
@@ -54,10 +66,14 @@ export async function updateEvent(
     maxCapacity?: number | null;
     status?: EventStatus;
     color?: string | null;
+    isOnline?: boolean;
+    meetingUrl?: string | null;
   }
 ): Promise<void> {
   const centerId = await requireAdminCenterId();
-  await eventRepository.update(id, centerId, data);
+  const updated = await eventRepository.update(id, centerId, { ...data, ...parseOnline(data) });
+  // Al pasar a online, las entradas ya vendidas reciben su cupo con link personal.
+  if (updated?.isOnline) await ensureSeatsForEvent(id);
   revalidatePath("/panel/eventos");
   revalidatePath(`/panel/eventos/${id}`);
   revalidatePublicEvents(id);
@@ -69,4 +85,11 @@ export async function deleteEvent(id: string): Promise<void> {
   revalidatePath("/panel/eventos");
   revalidatePublicEvents(id);
   redirect("/panel/eventos");
+}
+
+/** Revoca el link personal de un cupo (sólo cupos de eventos del centro). */
+export async function revokeEventAttendee(attendeeId: string, eventId: string): Promise<void> {
+  const centerId = await requireAdminCenterId();
+  await eventAttendeeRepository.revoke(attendeeId, centerId);
+  revalidatePath(`/panel/eventos/${eventId}`);
 }
