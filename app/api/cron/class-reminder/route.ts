@@ -4,6 +4,7 @@ import { sendEmailSafe } from "@/lib/application/send-email";
 import { buildClassReminderEmail } from "@/lib/email";
 import { shouldSendEmail } from "@/lib/application/check-email-preference";
 import { getEmailBranding } from "@/lib/email/branding";
+import { sendEventOnlineReminders } from "@/lib/application/send-event-online-reminders";
 
 const REMINDER_HOURS_BEFORE = 2;
 
@@ -15,6 +16,9 @@ const REMINDER_HOURS_BEFORE = 2;
  * vercel.json (cada hora desde 06:00 hasta 22:00). Cada disparo cubre una
  * ventana de 2h adelante (1h–3h) y se apoya en `Reservation.reminderSentAt`
  * para evitar duplicados.
+ *
+ * También envía el recordatorio de eventos online con los links personales
+ * (ver send-event-online-reminders).
  *
  * Lógica:
  *  1. Buscamos reservas CONFIRMED con clase en [now+1h, now+3h] y
@@ -102,11 +106,17 @@ export async function GET(request: Request) {
     sent++;
   }
 
+  const eventReminders = await sendEventOnlineReminders(now).catch((err) => {
+    console.error("[class-reminder] event reminders", err instanceof Error ? err.message : err);
+    return { sent: 0 };
+  });
+
   return NextResponse.json({
     ok: true,
     sent,
     skippedByPref,
     raceLost,
     candidates: reservations.length,
+    eventRemindersSent: eventReminders.sent,
   });
 }

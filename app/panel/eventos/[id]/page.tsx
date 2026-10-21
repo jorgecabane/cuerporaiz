@@ -16,6 +16,7 @@ import { getVideoProviders } from "@/lib/application/get-video-providers";
 import { ensureEventAttendees } from "@/lib/application/ensure-event-attendees";
 import { entryLinksFor } from "@/lib/email/event-online";
 import { EntryLinksList } from "@/components/events/EntryLinksList";
+import { AdminOnlineAttendees, type OnlineAttendeeRow } from "./AdminOnlineAttendees";
 import { formatMoney } from "@/lib/domain/money";
 
 function formatDate(date: Date, tz: string): string {
@@ -110,6 +111,37 @@ export default async function EventDetailPage({
       quantity: t.quantity,
       paidAt: t.paidAt,
     }));
+  }
+
+  /* ── Admin: cupos con link personal (eventos online) ── */
+  let onlineRows: OnlineAttendeeRow[] = [];
+  if (isAdmin && event.isOnline) {
+    const seats = await prisma.eventAttendee.findMany({
+      where: { ticket: { eventId: id, status: "PAID" } },
+      select: {
+        id: true,
+        seat: true,
+        name: true,
+        email: true,
+        firstEnteredAt: true,
+        revokedAt: true,
+        ticket: { select: { user: { select: { name: true, email: true } } } },
+      },
+      orderBy: [{ ticket: { paidAt: "asc" } }, { seat: "asc" }],
+    });
+    onlineRows = seats.map((a) => {
+      const buyer = a.ticket.user.name ?? a.ticket.user.email;
+      return {
+        id: a.id,
+        seat: a.seat,
+        buyer,
+        attendee: a.seat === 1 ? buyer : (a.name ?? a.email),
+        enteredAt: a.firstEnteredAt
+          ? a.firstEnteredAt.toLocaleTimeString("es-CL", { timeZone: tz, hour: "2-digit", minute: "2-digit" })
+          : null,
+        revoked: !!a.revokedAt,
+      };
+    });
   }
 
   /* ── Admin view ── */
@@ -215,6 +247,8 @@ export default async function EventDetailPage({
             </ul>
           )}
         </section>
+
+        {event.isOnline && <AdminOnlineAttendees eventId={id} rows={onlineRows} />}
 
         {/* Lista de espera */}
         <section className="mb-8">

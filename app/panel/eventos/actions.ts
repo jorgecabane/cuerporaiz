@@ -4,7 +4,7 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { isAdminRole } from "@/lib/domain/role";
 import { revalidatePath } from "next/cache";
-import { eventRepository } from "@/lib/adapters/db";
+import { eventRepository, eventAttendeeRepository } from "@/lib/adapters/db";
 import type { EventStatus } from "@/lib/domain/event";
 import { eventOnlineSchema } from "@/lib/dto/event-dto";
 
@@ -82,4 +82,11 @@ export async function deleteEvent(id: string): Promise<void> {
   revalidatePath("/panel/eventos");
   revalidatePublicEvents(id);
   redirect("/panel/eventos");
+}
+
+/** Revoca el link personal de un cupo (sólo cupos de eventos del centro). */
+export async function revokeEventAttendee(attendeeId: string, eventId: string): Promise<void> {
+  const centerId = await requireAdminCenterId();
+  await eventAttendeeRepository.revoke(attendeeId, centerId);
+  revalidatePath(`/panel/eventos/${eventId}`);
 }
