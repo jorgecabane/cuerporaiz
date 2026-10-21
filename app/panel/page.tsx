@@ -174,6 +174,7 @@ export default async function PanelPage() {
             </p>
             <Link
               href="/panel/tienda"
+              prefetch={false}
               className="inline-flex items-center gap-1.5 rounded-[var(--radius-md)] bg-[var(--color-primary)] px-3 py-2 text-sm font-medium text-[var(--color-text-inverse)] transition-colors hover:bg-[var(--color-primary-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:ring-offset-2 cursor-pointer"
             >
               Ver planes
@@ -225,7 +226,7 @@ export default async function PanelPage() {
               const { href, label, Icon } = item;
               return (
                 <li key={href}>
-                  <Link href={href} className={baseClass}>
+                  <Link href={href} prefetch={false} className={baseClass}>
                     <Icon className="h-5 w-5 shrink-0 text-[var(--color-primary)]" aria-hidden />
                     <span className="text-sm font-medium text-[var(--color-text)]">{label}</span>
                   </Link>

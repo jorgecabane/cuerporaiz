@@ -6,7 +6,7 @@ import type { CategoryData } from "@/components/biblioteca/types";
 import { buildSiteMetadata } from "@/lib/seo/metadata";
 import { getLibraryPacks } from "@/lib/application/get-library-packs";
 
-export const revalidate = 300;
+export const revalidate = 3600;
 
 export async function generateMetadata(): Promise<Metadata> {
   return buildSiteMetadata({
