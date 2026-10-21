@@ -36,7 +36,7 @@ export default async function NuevaClasePage({ searchParams }: Props) {
         Nueva clase
       </h1>
       <p className="text-[var(--color-text-muted)] mb-6">
-        Cargá una clase suelta o una serie recurrente para tu centro.
+        Carga una clase suelta o una serie recurrente para tu centro.
       </p>
       <div className="rounded-[var(--radius-lg)] bg-[var(--color-surface)] p-6 shadow-[var(--shadow-md)]">
         <CreateClassForm

@@ -152,7 +152,7 @@ function LoginForm() {
               </p>
               {resendStatus === "sent" ? (
                 <p className="text-sm text-amber-800">
-                  Te mandamos un nuevo link. Revisá tu casilla (también spam).
+                  Te mandamos un nuevo link. Revisa tu casilla (también spam).
                 </p>
               ) : (
                 <button
@@ -166,7 +166,7 @@ function LoginForm() {
               )}
               {resendStatus === "error" && (
                 <p className="text-xs text-amber-800">
-                  No pudimos enviar el link. Intentá de nuevo en un rato.
+                  No pudimos enviar el link. Intenta de nuevo en un rato.
                 </p>
               )}
             </div>

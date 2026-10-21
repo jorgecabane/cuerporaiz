@@ -56,7 +56,7 @@ async function refreshGoogleMeetToken(centerId: string): Promise<string> {
 export async function getValidGoogleAccessToken(centerId: string): Promise<string> {
   const config = await googleMeetConfigRepository.findByCenterId(centerId);
   if (!config) {
-    throw new Error("Google Meet no está conectado para este centro. Configuralo en Plugins.");
+    throw new Error("Google Meet no está conectado para este centro. Configúralo en Plugins.");
   }
 
   const now = new Date();

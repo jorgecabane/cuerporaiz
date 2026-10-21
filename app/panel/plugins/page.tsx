@@ -36,7 +36,7 @@ export default async function PanelPluginsPage({
     {
       slug: "mercadopago",
       name: "MercadoPago",
-      description: "Cobrá online con tarjeta, débito y más medios de pago.",
+      description: "Cobra online con tarjeta, débito y más medios de pago.",
       category: "Pagos",
       active: mpStatus?.enabled ?? false,
       iconBg: "bg-[#009ee3]",
@@ -45,7 +45,7 @@ export default async function PanelPluginsPage({
     {
       slug: "transferencia",
       name: "Transferencia bancaria",
-      description: "Recibí pagos por transferencia mostrando tus datos bancarios.",
+      description: "Recibe pagos por transferencia mostrando tus datos bancarios.",
       category: "Pagos",
       active: center?.bankTransferEnabled ?? false,
       iconBg: "bg-[#2D3B2A]",

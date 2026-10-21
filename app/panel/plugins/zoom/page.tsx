@@ -52,7 +52,7 @@ export default async function ZoomPluginPage({
         <div className="mb-6 rounded-[var(--radius-md)] bg-[var(--color-error-bg,#fef2f2)] p-3 text-sm text-[var(--color-error,#dc2626)]">
           {sp.error === "oauth_invalid" && "Autorización inválida o cancelada."}
           {sp.error === "zoom_not_configured" && "Zoom no está configurado en el servidor (ZOOM_CLIENT_ID / ZOOM_CLIENT_SECRET)."}
-          {sp.error === "oauth_exchange_failed" && "No se pudo completar la conexión. Intentá de nuevo."}
+          {sp.error === "oauth_exchange_failed" && "No se pudo completar la conexión. Intenta de nuevo."}
           {sp.error === "no-config" && "Primero conecta tu cuenta de Zoom."}
           {!["oauth_invalid", "zoom_not_configured", "oauth_exchange_failed", "no-config"].includes(sp.error) && `Error: ${sp.error}`}
         </div>

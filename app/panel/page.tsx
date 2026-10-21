@@ -138,6 +138,7 @@ export default async function PanelPage() {
       />
 
       {/* Planes activos / resumen: antes del calendario, con margen superior */}
+      {!isAdminRole(user.role as Role) && (
       <section
         className="mt-[18px] mb-4 shrink-0 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2.5 shadow-[var(--shadow-sm)] sm:p-4"
         aria-labelledby="resumen-heading"
@@ -183,6 +184,7 @@ export default async function PanelPage() {
           </div>
         )}
       </section>
+      )}
 
       {/* Calendario: protagonista */}
       <section

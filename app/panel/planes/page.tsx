@@ -37,7 +37,7 @@ export default async function PanelPlanesPage() {
       <PlanesPageErrorBanner />
       <div className="flex items-center justify-between gap-4 mb-6">
         <h1 className="font-display text-section text-[var(--color-primary)]">
-          Planes (admin)
+          Planes
         </h1>
         <Button href="/panel/planes/nuevo" variant="primary">
           Nuevo plan

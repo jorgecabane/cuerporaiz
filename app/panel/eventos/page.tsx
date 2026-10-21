@@ -204,7 +204,7 @@ export default async function EventosPage() {
         Eventos
       </h1>
       <p className="text-[var(--color-text-muted)] mb-8">
-        Descubre y reserva nuestros próximos eventos.
+        Descubre y reserva los próximos eventos.
       </p>
 
       {events.length === 0 ? (

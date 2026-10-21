@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { MANUAL_PAYMENT_METHODS } from "./payment-methods";
 
 interface UserPlanOption {
   id: string;
@@ -13,11 +14,7 @@ interface Props {
   userPlans: UserPlanOption[];
 }
 
-const METHODS = [
-  { value: "transfer", label: "Transferencia" },
-  { value: "cash", label: "Efectivo" },
-  { value: "other", label: "Otro" },
-];
+const METHODS = MANUAL_PAYMENT_METHODS;
 
 export function RegisterManualPayment({ userId, userPlans }: Props) {
   const [open, setOpen] = useState(false);
