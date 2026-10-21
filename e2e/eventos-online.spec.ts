@@ -73,8 +73,83 @@ test.describe("Eventos online — link personal", () => {
     expect(res.headers()["location"]).toBe(meetingUrl);
   });
 
+  test("admin ve quién entró, revoca un link y el link revocado deja de servir", async ({ browser, page }) => {
+    test.skip(entryPaths.length === 0 || !event, "Sin links de la compra anterior");
+    const admin = await browser.newContext({ storageState: ".auth/admin.json" });
+    const adminPage = await admin.newPage();
+    await adminPage.goto(`/panel/eventos/${event!.id}`);
+    await expect(adminPage.getByRole("heading", { name: "Asistentes online" })).toBeVisible({ timeout: 15000 });
+    await expect(adminPage.getByText(/Entró a las/)).toBeVisible();
+    await expect(adminPage.getByText("No ha entrado")).toBeVisible();
+
+    await adminPage.getByRole("button", { name: "Revocar link" }).first().click();
+    await adminPage.getByRole("button", { name: "Revocar link" }).last().click(); // confirmar en el diálogo
+    await expect(adminPage.getByText("Revocado")).toBeVisible({ timeout: 10000 });
+    await admin.close();
+
+    await page.goto(entryPaths[0]);
+    await expect(page.getByRole("heading", { name: /Este link no es válido/i })).toBeVisible();
+  });
+
+  test("sala de espera con reloj adelantado: redirige sola sin martillar al servidor", async ({ page }) => {
+    test.skip(entryPaths.length === 0 || !event, "Sin links de la compra anterior");
+    const opensInMs = 8_000;
+    const startsAt = new Date(Date.now() + 10 * 60_000 + opensInMs);
+    await setEventTimes(event!.id, startsAt, new Date(startsAt.getTime() + 60 * 60_000));
+
+    await page.route("https://zoom.us/**", (route) => route.fulfill({ body: "<h1>Zoom</h1>", contentType: "text/html" }));
+    let serverHits = 0;
+    page.on("request", (req) => {
+      if (new URL(req.url()).pathname === entryPaths[1]) serverHits++;
+    });
+    // El reloj del navegador va 30 s adelantado: cree que la sala ya abrió.
+    await page.clock.install({ time: new Date(Date.now() + 30_000) });
+
+    await page.goto(entryPaths[1]);
+    await expect(page.getByText(/Sala de espera/i)).toBeVisible();
+    await page.waitForURL(/zoom\.us/, { timeout: 30_000 });
+    expect(serverHits).toBeLessThanOrEqual(5);
+  });
+
   test("token inexistente → no es válido", async ({ page }) => {
     await page.goto("/eventos/entrar/token-que-no-existe");
     await expect(page.getByRole("heading", { name: /Este link no es válido/i })).toBeVisible();
+  });
+});
+
+test.describe("Eventos online — formulario del panel", () => {
+  test.describe.configure({ mode: "serial" });
+  const title = `E2E Online Form ${Date.now().toString(36)}`;
+
+  test.afterAll(async () => {
+    await cleanupEvents(title);
+  });
+
+  test("crea un evento online pegando el link (valida https) y luego puede cambiarlo", async ({ page }) => {
+    await page.goto("/panel/eventos/nuevo");
+    await expect(page.getByRole("heading", { name: /Nuevo evento/i })).toBeVisible({ timeout: 15000 });
+    await page.getByLabel(/Título/i).fill(title);
+    const d = new Date();
+    d.setDate(d.getDate() + 3);
+    const day = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    await page.getByLabel(/Fecha inicio/i).fill(`${day}T19:00`);
+    await page.getByLabel(/Fecha fin/i).fill(`${day}T20:00`);
+
+    await page.getByLabel("Evento online").check();
+    const manual = page.getByLabel(/Pega el link de la reunión/i);
+    await expect(manual).toBeVisible({ timeout: 15000 });
+
+    await manual.fill("http://zoom.us/j/1");
+    await page.getByRole("button", { name: /Crear evento/i }).click();
+    await expect(page.getByRole("alert").filter({ hasText: /https/i })).toBeVisible();
+
+    await manual.fill("https://zoom.us/j/987654321");
+    await page.getByRole("button", { name: /Crear evento/i }).click();
+    await page.waitForURL(/\/panel\/eventos\/(?!nuevo)[^/]+$/, { timeout: 15000 });
+    await expect(page.getByText("Online: https://zoom.us/j/987654321")).toBeVisible();
+
+    await page.getByRole("button", { name: /^Editar$/ }).click();
+    await page.getByRole("button", { name: /Cambiar link/i }).click();
+    await expect(page.getByLabel(/Pega el link de la reunión/i)).toBeVisible();
   });
 });

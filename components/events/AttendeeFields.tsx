@@ -8,13 +8,15 @@ type Props = {
   value: EventAttendeeInput[];
   onChange: (value: EventAttendeeInput[]) => void;
   disabled?: boolean;
+  /** Error por fila (cupos 2…N), p.ej. de attendeeEmailErrors. */
+  errors?: (string | null)[];
 };
 
 const INPUT =
   "min-h-[44px] w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-base text-[var(--color-text)] outline-none transition-colors focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary-light)]";
 
 /** Filas opcionales de nombre/correo para los cupos 2…N de un evento online. */
-export function AttendeeFields({ quantity, value, onChange, disabled }: Props) {
+export function AttendeeFields({ quantity, value, onChange, disabled, errors = [] }: Props) {
   const id = useId();
   if (quantity < 2) return null;
 
@@ -56,8 +58,15 @@ export function AttendeeFields({ quantity, value, onChange, disabled }: Props) {
               disabled={disabled}
               value={r.email ?? ""}
               onChange={(e) => update(i, { email: e.target.value })}
+              aria-invalid={errors[i] ? true : undefined}
+              aria-describedby={errors[i] ? `${id}-email-error-${i}` : undefined}
               className={INPUT}
             />
+            {errors[i] && (
+              <p id={`${id}-email-error-${i}`} role="alert" className="text-sm text-[var(--color-error)]">
+                {errors[i]}
+              </p>
+            )}
           </div>
         </div>
       ))}

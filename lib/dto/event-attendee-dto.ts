@@ -21,3 +21,10 @@ export const eventAttendeesSchema = z
   .optional();
 
 export type EventAttendeesBody = z.infer<typeof eventAttendeesSchema>;
+
+/** Errores por fila (cupos 2…N) para mostrar junto al campo antes de enviar. */
+export function attendeeEmailErrors(rows: { name: string | null; email: string | null }[]): (string | null)[] {
+  return rows.map((r, i) =>
+    optionalEmail.safeParse(r.email).success ? null : `Revisa el correo de la entrada ${i + 2}`
+  );
+}

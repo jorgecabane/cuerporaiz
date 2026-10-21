@@ -9,6 +9,7 @@ import { sendEmailSafe } from "./send-email";
 import { shouldSendEmail } from "./check-email-preference";
 import { getEmailBranding } from "@/lib/email/branding";
 import { buildEventOnlineReminderEmail, entryLinksFor } from "@/lib/email/event-online";
+import { ensureSeatsForEvent } from "./ensure-event-attendees";
 
 type Buyer = { id: string; email: string; name: string | null };
 export type ReminderRow = EventAttendee & { buyer: Buyer; eventId: string };
@@ -45,6 +46,13 @@ export function groupReminderRecipients(rows: ReminderRow[]): ReminderGroup[] {
 export async function sendEventOnlineReminders(now: Date): Promise<{ sent: number }> {
   const from = new Date(now.getTime() + 60 * 60 * 1000);
   const to = new Date(now.getTime() + 3 * 60 * 60 * 1000);
+  // Compras hechas antes de marcar el evento online todavía no tienen cupos.
+  const events = await prisma.event.findMany({
+    where: { isOnline: true, status: "PUBLISHED", startsAt: { gte: from, lte: to } },
+    select: { id: true },
+  });
+  for (const e of events) await ensureSeatsForEvent(e.id);
+
   const candidates = await prisma.eventAttendee.findMany({
     where: {
       reminderSentAt: null,
@@ -65,11 +73,11 @@ export async function sendEventOnlineReminders(now: Date): Promise<{ sent: numbe
   const rows = candidates
     .filter((c) => claimedIds.has(c.id))
     .map((c) => ({ ...c, buyer: c.ticket.user, eventId: c.ticket.eventId }));
-  const events = new Map(candidates.map((c) => [c.ticket.eventId, c.ticket.event]));
+  const eventsById = new Map(candidates.map((c) => [c.ticket.eventId, c.ticket.event]));
 
   let sent = 0;
   for (const group of groupReminderRecipients(rows)) {
-    const event = events.get(group.eventId)!;
+    const event = eventsById.get(group.eventId)!;
     if (group.isBuyer && !(await shouldSendEmail(group.userId, event.centerId, "classReminder"))) continue;
     const branding = await getEmailBranding(event.centerId);
     await sendEmailSafe(

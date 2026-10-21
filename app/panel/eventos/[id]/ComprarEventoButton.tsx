@@ -7,6 +7,7 @@ import { QuantityStepper } from "@/components/ui/QuantityStepper";
 import { toast } from "@/components/ui/Toast";
 import { AttendeeFields } from "@/components/events/AttendeeFields";
 import type { EventAttendeeInput } from "@/lib/ports/event-attendee-repository";
+import { attendeeEmailErrors } from "@/lib/dto/event-attendee-dto";
 import { formatMoney } from "@/lib/domain/money";
 
 type Mode = "purchase" | "addition";
@@ -41,6 +42,7 @@ export function ComprarEventoButton({
   const [quantity, setQuantity] = useState(1);
   const [attendees, setAttendees] = useState<EventAttendeeInput[]>([]);
   const asksAttendees = isOnline && mode === "purchase";
+  const [attendeeErrors, setAttendeeErrors] = useState<(string | null)[]>([]);
 
   const maxQuantity = useMemo(() => {
     // Si el admin no puso maxCapacity dejamos un techo razonable de 200 para
@@ -52,6 +54,11 @@ export function ComprarEventoButton({
   const total = amountCents * quantity;
 
   async function handleClick() {
+    if (asksAttendees) {
+      const errors = attendeeEmailErrors(attendees.slice(0, quantity - 1));
+      setAttendeeErrors(errors);
+      if (errors.some(Boolean)) return;
+    }
     setLoading(true);
     try {
       const res = await fetch(`/api/events/${eventId}/checkout`, {
@@ -143,7 +150,13 @@ export function ComprarEventoButton({
         </Button>
       </div>
       {asksAttendees && (
-        <AttendeeFields quantity={quantity} value={attendees} onChange={setAttendees} disabled={loading} />
+        <AttendeeFields
+          quantity={quantity}
+          value={attendees}
+          onChange={setAttendees}
+          disabled={loading}
+          errors={attendeeErrors}
+        />
       )}
     </div>
   );

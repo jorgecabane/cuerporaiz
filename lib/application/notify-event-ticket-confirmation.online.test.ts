@@ -68,6 +68,23 @@ describe("notifyEventTicketConfirmation — evento online", () => {
     expect(mocks.sendEmailSafe.mock.calls[0][0].text).toContain("Lugar: Online");
   });
 
+  it("compra guest gratis: no manda correos directos a asistentes (anti-spam)", async () => {
+    mocks.eventTicketRepository.findByEventAndUser.mockResolvedValue({ id: "t1", quantity: 2, claimToken: "guest", amountCents: 0 });
+    await notifyEventTicketConfirmation(INPUT);
+    expect(sentTo()).toEqual(["yo@correo.cl"]);
+  });
+
+  it("deduplica correos y manda como máximo 10 directos", async () => {
+    const many = [attendee(1, null), attendee(2, "ana@correo.cl"), attendee(3, "ana@correo.cl")];
+    for (let i = 4; i <= 15; i++) many.push(attendee(i, `p${i}@correo.cl`));
+    mocks.ensureEventAttendees.mockResolvedValue(many);
+    await notifyEventTicketConfirmation(INPUT);
+    const direct = sentTo().slice(1);
+    expect(direct).toHaveLength(10);
+    expect(new Set(direct).size).toBe(10);
+    expect(direct[0]).toBe("ana@correo.cl");
+  });
+
   it("evento presencial: no toca cupos", async () => {
     mocks.eventRepository.findById.mockResolvedValue({
       id: "e1", title: "Retiro", startsAt: new Date(), endsAt: new Date(), location: "Sala",

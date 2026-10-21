@@ -1,4 +1,4 @@
-import { eventAttendeeRepository } from "@/lib/adapters/db";
+import { eventAttendeeRepository, eventTicketRepository } from "@/lib/adapters/db";
 import type { EventAttendee } from "@/lib/domain/event";
 
 /**
@@ -12,4 +12,15 @@ export async function ensureEventAttendees(
   if (!event.isOnline) return [];
   await eventAttendeeRepository.createMissingSeats(ticket.id, ticket.quantity);
   return eventAttendeeRepository.findByTicketId(ticket.id);
+}
+
+/**
+ * Cupos para todas las entradas pagadas de un evento. Cubre compras hechas
+ * antes de marcarlo online (o cuyo cupo falló al confirmar).
+ */
+export async function ensureSeatsForEvent(eventId: string): Promise<void> {
+  const tickets = await eventTicketRepository.findByEventId(eventId);
+  for (const t of tickets) {
+    if (t.status === "PAID") await eventAttendeeRepository.createMissingSeats(t.id, t.quantity);
+  }
 }

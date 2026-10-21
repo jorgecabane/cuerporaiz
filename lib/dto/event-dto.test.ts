@@ -156,6 +156,13 @@ describe("eventOnlineSchema", () => {
     if (!r.success) expect(r.error.issues[0].message).toBe("Genera el link o pega uno manualmente.");
   });
 
+  it("mensajes en español para link inválido", () => {
+    const http = eventOnlineSchema.safeParse({ isOnline: true, meetingUrl: "http://zoom.us/j/1" });
+    const junk = eventOnlineSchema.safeParse({ isOnline: true, meetingUrl: "no es url" });
+    expect(!http.success && http.error.issues.map((i) => i.message)).toContain("El link debe empezar con https://");
+    expect(!junk.success && junk.error.issues.map((i) => i.message)).toContain("Pega un link válido (https://…)");
+  });
+
   it.each(["http://zoom.us/j/1", "javascript:alert(1)", "no es url"])("rechaza %s", (meetingUrl) => {
     expect(eventOnlineSchema.safeParse({ isOnline: true, meetingUrl }).success).toBe(false);
   });

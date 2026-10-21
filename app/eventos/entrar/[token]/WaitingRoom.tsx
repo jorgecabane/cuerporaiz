@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 type Props = {
@@ -12,6 +12,8 @@ type Props = {
 };
 
 const REFRESH_FALLBACK_MS = 60_000;
+/** Con el reloj del dispositivo adelantado, no pedir al servidor más de una vez cada 5 s. */
+const MIN_REFRESH_GAP_MS = 5_000;
 
 function formatCountdown(ms: number): string {
   const total = Math.max(0, Math.ceil(ms / 1000));
@@ -28,6 +30,7 @@ export function WaitingRoom({ eventTitle, attendeeName, startsAtIso, opensAtIso,
   const router = useRouter();
   const opensAt = new Date(opensAtIso).getTime();
   const [now, setNow] = useState(() => Date.now());
+  const lastRefresh = useRef(0);
 
   useEffect(() => {
     const tick = setInterval(() => setNow(Date.now()), 1000);
@@ -39,7 +42,9 @@ export function WaitingRoom({ eventTitle, attendeeName, startsAtIso, opensAtIso,
   }, [router]);
 
   useEffect(() => {
-    if (now >= opensAt) router.refresh();
+    if (now < opensAt || now - lastRefresh.current < MIN_REFRESH_GAP_MS) return;
+    lastRefresh.current = now;
+    router.refresh();
   }, [now, opensAt, router]);
 
   const when = new Date(startsAtIso).toLocaleString("es-CL", {

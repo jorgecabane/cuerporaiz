@@ -8,6 +8,7 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { SanityImagePicker } from "@/components/panel/SanityImagePicker";
 import type { VideoProviders } from "@/lib/application/get-video-providers";
 import { EventOnlineField } from "./EventOnlineField";
+import { eventOnlineSchema } from "@/lib/dto/event-dto";
 
 type Props = ({ mode: "create" } | { mode: "edit"; event: Event }) & { videoProviders: VideoProviders };
 
@@ -60,11 +61,8 @@ export function EventForm(props: Props) {
     const status = (formData.get("status") as EventStatus) || "DRAFT";
     const color = (formData.get("color") as string)?.trim() || null;
 
-    if (online.isOnline && !online.meetingUrl) {
-      setOnlineError("Genera el link o pega uno manualmente.");
-      return;
-    }
-    setOnlineError(null);
+    const onlineParsed = eventOnlineSchema.safeParse(online);
+    if (!onlineParsed.success) return; // validado en onSubmit
 
     const data = {
       title,
@@ -77,8 +75,7 @@ export function EventForm(props: Props) {
       maxCapacity,
       status,
       color,
-      isOnline: online.isOnline,
-      meetingUrl: online.isOnline ? online.meetingUrl : null,
+      ...onlineParsed.data,
     };
 
     if (isEdit && event) {
@@ -86,6 +83,13 @@ export function EventForm(props: Props) {
     } else {
       startTransition(() => createEvent(data));
     }
+  }
+
+  /** Valida el link antes de la action: la action de React resetea los campos del form aunque corte antes. */
+  function validateOnline(e: React.FormEvent<HTMLFormElement>) {
+    const parsed = eventOnlineSchema.safeParse(online);
+    setOnlineError(parsed.success ? null : parsed.error.issues[0].message);
+    if (!parsed.success) e.preventDefault();
   }
 
   function handleDelete() {
@@ -111,7 +115,7 @@ export function EventForm(props: Props) {
         />
       )}
 
-      <form ref={formRef} key={formKey} action={handleSubmit} className="space-y-4">
+      <form ref={formRef} key={formKey} action={handleSubmit} onSubmit={validateOnline} className="space-y-4">
         {/* Título */}
         <div>
           <label htmlFor={`${idPrefix}-title`} className={LABEL_CLASS}>

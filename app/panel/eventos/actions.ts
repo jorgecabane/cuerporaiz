@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache";
 import { eventRepository, eventAttendeeRepository } from "@/lib/adapters/db";
 import type { EventStatus } from "@/lib/domain/event";
 import { eventOnlineSchema } from "@/lib/dto/event-dto";
+import { ensureSeatsForEvent } from "@/lib/application/ensure-event-attendees";
 
 async function requireAdminCenterId(): Promise<string> {
   const session = await auth();
@@ -70,7 +71,9 @@ export async function updateEvent(
   }
 ): Promise<void> {
   const centerId = await requireAdminCenterId();
-  await eventRepository.update(id, centerId, { ...data, ...parseOnline(data) });
+  const updated = await eventRepository.update(id, centerId, { ...data, ...parseOnline(data) });
+  // Al pasar a online, las entradas ya vendidas reciben su cupo con link personal.
+  if (updated?.isOnline) await ensureSeatsForEvent(id);
   revalidatePath("/panel/eventos");
   revalidatePath(`/panel/eventos/${id}`);
   revalidatePublicEvents(id);

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { eventAttendeesSchema } from "./event-attendee-dto";
+import { eventAttendeesSchema, attendeeEmailErrors } from "./event-attendee-dto";
 
 describe("eventAttendeesSchema", () => {
   it("undefined → undefined (compra sin asistentes)", () => {
@@ -33,5 +33,18 @@ describe("eventAttendeesSchema", () => {
 
   it("máximo 199 filas (cupos 2…200)", () => {
     expect(eventAttendeesSchema.safeParse(Array(200).fill({})).success).toBe(false);
+  });
+});
+
+describe("attendeeEmailErrors", () => {
+  it("marca sólo las filas con correo inválido (vacío o null es válido)", () => {
+    expect(
+      attendeeEmailErrors([
+        { name: "Ana", email: "ana@" },
+        { name: null, email: null },
+        { name: null, email: " " },
+        { name: null, email: "ok@correo.cl" },
+      ])
+    ).toEqual(["Revisa el correo de la entrada 2", null, null, null]);
   });
 });

@@ -96,14 +96,18 @@ export function EventOnlineField({
 
   return (
     <fieldset className="space-y-3 rounded-[var(--radius-md)] border border-[var(--color-border)] p-4">
+      <legend className="sr-only">Reunión online</legend>
       <label className="flex items-center gap-2 text-sm font-medium text-[var(--color-text)]">
         <input type="checkbox" checked={isOnline} onChange={(e) => toggle(e.target.checked)} />
         Evento online
       </label>
 
       {isOnline && (
-        <div className="space-y-2" aria-live="polite">
-          {loading && <p className="text-sm text-[var(--color-text-muted)]">Generando link…</p>}
+        <div className="space-y-2">
+          <div aria-live="polite">
+            {loading && <p className="text-sm text-[var(--color-text-muted)]">Generando link…</p>}
+            {genError && <p className="text-sm text-[var(--color-error)]">{genError}</p>}
+          </div>
 
           {generatedUrl && !loading && (
             <div className="flex flex-wrap items-center gap-2">
@@ -111,6 +115,11 @@ export function EventOnlineField({
               {provider && (
                 <button type="button" onClick={generate} className={LINK_BUTTON_CLASS}>
                   Regenerar
+                </button>
+              )}
+              {!showManual && (
+                <button type="button" onClick={() => setShowManual(true)} className={LINK_BUTTON_CLASS}>
+                  Cambiar link
                 </button>
               )}
             </div>
@@ -121,7 +130,6 @@ export function EventOnlineField({
               Conecta Zoom o Meet en Plugins para generar el link automáticamente, o pégalo aquí.
             </p>
           )}
-          {genError && <p className="text-sm text-[var(--color-error)]">{genError}</p>}
 
           {showManual && (
             <div>

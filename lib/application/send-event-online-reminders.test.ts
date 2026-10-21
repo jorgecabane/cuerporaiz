@@ -1,5 +1,18 @@
-import { describe, it, expect } from "vitest";
-import { groupReminderRecipients } from "./send-event-online-reminders";
+import { describe, it, expect, vi } from "vitest";
+import { groupReminderRecipients, sendEventOnlineReminders } from "./send-event-online-reminders";
+
+const mocks = vi.hoisted(() => ({
+  eventFindMany: vi.fn(),
+  attendeeFindMany: vi.fn(),
+  ensureSeatsForEvent: vi.fn(),
+}));
+vi.mock("@/lib/adapters/db/prisma", () => ({
+  prisma: { event: { findMany: mocks.eventFindMany }, eventAttendee: { findMany: mocks.attendeeFindMany } },
+}));
+vi.mock("./ensure-event-attendees", () => ({ ensureSeatsForEvent: mocks.ensureSeatsForEvent }));
+vi.mock("./send-email", () => ({ sendEmailSafe: vi.fn() }));
+vi.mock("./check-email-preference", () => ({ shouldSendEmail: vi.fn() }));
+vi.mock("@/lib/email/branding", () => ({ getEmailBranding: vi.fn() }));
 
 const buyer = { id: "u1", email: "yo@correo.cl", name: "Jorge" };
 const row = (seat: number, email: string | null, eventId = "e1") => ({
@@ -34,5 +47,17 @@ describe("groupReminderRecipients", () => {
 
   it("mismo comprador en dos eventos → un correo por evento", () => {
     expect(groupReminderRecipients([row(1, null, "e1"), row(1, null, "e2")])).toHaveLength(2);
+  });
+});
+
+describe("sendEventOnlineReminders", () => {
+  it("antes de buscar destinatarios, crea cupos de compras previas a pasar a online", async () => {
+    mocks.eventFindMany.mockResolvedValue([{ id: "e1" }, { id: "e2" }]);
+    mocks.attendeeFindMany.mockResolvedValue([]);
+    expect(await sendEventOnlineReminders(new Date("2026-11-01T20:00:00Z"))).toEqual({ sent: 0 });
+    expect(mocks.ensureSeatsForEvent.mock.calls).toEqual([["e1"], ["e2"]]);
+    expect(mocks.ensureSeatsForEvent.mock.invocationCallOrder[1]).toBeLessThan(
+      mocks.attendeeFindMany.mock.invocationCallOrder[0]
+    );
   });
 });

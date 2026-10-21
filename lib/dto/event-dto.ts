@@ -54,7 +54,11 @@ export const createEventTicketSchema = z.object({
 
 export type CreateEventTicketBody = z.infer<typeof createEventTicketSchema>;
 
-const httpsUrl = z.string().trim().url().startsWith("https://");
+const httpsUrl = z
+  .string()
+  .trim()
+  .url("Pega un link válido (https://…)")
+  .startsWith("https://", "El link debe empezar con https://");
 
 /** Evento online: exige link https; presencial: lo limpia. */
 export const eventOnlineSchema = z

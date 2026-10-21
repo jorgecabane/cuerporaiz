@@ -20,7 +20,7 @@ import { getEmailBranding } from "@/lib/email/branding";
 import { getBaseUrl } from "@/lib/utils/base-url";
 import { runInBackground } from "@/lib/utils/run-after-response";
 import { eventRepository, eventTicketRepository, userRepository } from "@/lib/adapters/db";
-import type { Event, EventAttendee } from "@/lib/domain/event";
+import type { Event, EventAttendee, EventTicket } from "@/lib/domain/event";
 import { ensureEventAttendees } from "./ensure-event-attendees";
 import { buildEventAttendeeLinkEmail, entryLinksFor } from "@/lib/email/event-online";
 import { eventEntryUrl } from "@/lib/utils/event-entry-url";
@@ -51,7 +51,7 @@ async function sendConfirmation(input: Parameters<typeof notifyEventTicketConfir
     getEmailBranding(input.centerId),
   ]);
   if (!event || !user) return;
-  const attendees = await loadOnlineAttendees(event, user.id);
+  const { ticket, attendees } = await loadOnlineAttendees(event, user.id);
   const kind = input.kind ?? "purchase";
 
   await sendEmailSafe(
@@ -75,13 +75,12 @@ async function sendConfirmation(input: Parameters<typeof notifyEventTicketConfir
   );
 
   // Compra inicial: cada asistente con correo propio recibe su link directo.
-  if (kind === "purchase") {
+  if (kind === "purchase" && ticket && canEmailAttendees(ticket)) {
     const buyerName = user.name ?? user.email.split("@")[0];
-    for (const a of attendees) {
-      if (!a.email || a.email === user.email) continue;
+    for (const a of directRecipients(attendees, user.email)) {
       await sendEmailSafe(
         buildEventAttendeeLinkEmail({
-          toEmail: a.email,
+          toEmail: a.email!,
           attendeeName: a.name,
           buyerName,
           eventTitle: event.title,
@@ -115,14 +114,37 @@ async function sendConfirmation(input: Parameters<typeof notifyEventTicketConfir
   );
 }
 
+/** Tope de correos directos a asistentes por compra (anti-spam). */
+const MAX_DIRECT_ATTENDEE_EMAILS = 10;
+
+/**
+ * Un guest con entrada gratis podría escribir correos arbitrarios y usar al
+ * centro para mandarlos: en ese caso sólo el comprador recibe los links.
+ */
+function canEmailAttendees(ticket: EventTicket): boolean {
+  return !(ticket.claimToken && ticket.amountCents === 0);
+}
+
+/** Asistentes con correo propio, sin repetidos, hasta el tope. */
+function directRecipients(attendees: EventAttendee[], buyerEmail: string): EventAttendee[] {
+  const seen = new Set<string>([buyerEmail]);
+  return attendees
+    .filter((a) => a.email && !seen.has(a.email) && seen.add(a.email))
+    .slice(0, MAX_DIRECT_ATTENDEE_EMAILS);
+}
+
 /** Cupos con link personal del ticket; si falla, la confirmación sale igual sin links. */
-async function loadOnlineAttendees(event: Event, userId: string): Promise<EventAttendee[]> {
-  if (!event.isOnline) return [];
+async function loadOnlineAttendees(
+  event: Event,
+  userId: string
+): Promise<{ ticket: EventTicket | null; attendees: EventAttendee[] }> {
+  if (!event.isOnline) return { ticket: null, attendees: [] };
+  const ticket = await eventTicketRepository.findByEventAndUser(event.id, userId).catch(() => null);
+  if (!ticket) return { ticket: null, attendees: [] };
   try {
-    const ticket = await eventTicketRepository.findByEventAndUser(event.id, userId);
-    return ticket ? await ensureEventAttendees(ticket, event) : [];
+    return { ticket, attendees: await ensureEventAttendees(ticket, event) };
   } catch (err) {
     console.error("[notify-event-ticket] ensure attendees", err instanceof Error ? err.message : err);
-    return [];
+    return { ticket, attendees: [] };
   }
 }
