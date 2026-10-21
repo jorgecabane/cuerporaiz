@@ -57,7 +57,7 @@ export default async function EventConfirmationPage({
   const showClaim = !!auth && !auth.hasPassword && !auth.emailVerified;
 
   return (
-    <main className="mx-auto flex max-w-xl flex-col items-center px-[var(--space-4)] py-[var(--space-16)] text-center">
+    <main className="mx-auto flex w-full max-w-xl flex-col items-center px-[var(--space-4)] py-[var(--space-16)] text-center">
       {isPaid ? (
         <CheckCircle className="size-14 text-[var(--color-success)]" aria-hidden />
       ) : (

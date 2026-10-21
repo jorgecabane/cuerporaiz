@@ -37,6 +37,7 @@ test.describe("Eventos online — link personal", () => {
     test.skip(!event, "Seed del evento no disponible (sin DB en este worker)");
     if (!event) return;
 
+    await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(`/eventos/${event.id}`);
     await page.getByRole("button", { name: /^Reservar entrada$/i }).click();
     await page.getByRole("button", { name: /Aumentar cantidad de entradas/i }).click();
@@ -50,6 +51,9 @@ test.describe("Eventos online — link personal", () => {
     await expect(page.getByRole("heading", { name: "Tus entradas" })).toBeVisible({ timeout: 10000 });
     await expect(page.getByText("Entrada 1 · tú")).toBeVisible();
     await expect(page.getByText("Entrada 2 · Ana")).toBeVisible();
+    // Los links largos no deben ensanchar la página en el teléfono.
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    expect(overflow).toBeLessThanOrEqual(0);
 
     const urls = await page.getByText(/\/eventos\/entrar\//).allTextContents();
     entryPaths = urls.map((u) => new URL(u.trim()).pathname);
