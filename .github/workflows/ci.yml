@@ -12,7 +12,8 @@ defaults:
 
 jobs:
   quality:
-    runs-on: ubuntu-latest
+    # ponytail: fijado porque Playwright no soporta chromium en ubuntu 26.04 (ubuntu-latest); volver a latest cuando lo soporte.
+    runs-on: ubuntu-24.04
 
     services:
       postgres:
