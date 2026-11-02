@@ -46,6 +46,8 @@ export {
   getPlanDisplayStatus,
   isPlanCurrent,
   pickLapsedPlan,
+  pickShownPlan,
+  noUsablePlanMessage,
 } from "./user-plan";
 export type { Event, EventTicket, EventStatus, EventTicketStatus } from "./event";
 export { EVENT_STATUS_LABELS } from "./event";

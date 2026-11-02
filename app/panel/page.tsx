@@ -25,13 +25,8 @@ import type { ReservationDto } from "@/lib/dto/reservation-dto";
 import type { Role } from "@/lib/domain/role";
 import { isAdminRole, isInstructorRole, isStudentRole } from "@/lib/domain";
 import { formatMinutesAsShortSpanish } from "@/lib/domain/center-policy";
-import { DEFAULT_TIMEZONE } from "@/lib/domain/center";
-import {
-  DEFAULT_PLAN_EXPIRING_NOTICE_DAYS,
-  getPlanDisplayStatus,
-  isPlanCurrent,
-  pickLapsedPlan,
-} from "@/lib/domain/user-plan";
+import { getCenterTimezone } from "@/lib/datetime/center-timezone";
+import { isPlanCurrent, pickShownPlan } from "@/lib/domain/user-plan";
 import type { LucideIcon } from "lucide-react";
 
 type QuickAccessItem =
@@ -104,24 +99,17 @@ export default async function PanelPage() {
       ? getPendingTransfersForCenter(centerId)
       : getPendingTransfersForUser(user.id, centerId),
   ]);
-  // Estado real: un plan guardado como ACTIVE puede estar vencido o sin clases.
-  const now = new Date();
-  const noticeDays = center?.planExpiringNoticeDays ?? DEFAULT_PLAN_EXPIRING_NOTICE_DAYS;
-  const tz = center?.timezone ?? DEFAULT_TIMEZONE;
-  const firstPlan = activePlans.find((p) => isPlanCurrent(getPlanDisplayStatus(p, now, noticeDays)));
-  const lapsedPlan = firstPlan ? null : pickLapsedPlan(activePlans, now);
-  const shownPlan = firstPlan ?? lapsedPlan;
-  const planName = shownPlan
-    ? (await planRepository.findById(shownPlan.planId))?.name ?? null
-    : null;
-  const shownStatus = shownPlan ? getPlanDisplayStatus(shownPlan, now, noticeDays) : null;
+  // Estado real: un plan guardado como ACTIVE puede estar vencido, sin clases o por comenzar.
+  const tz = await getCenterTimezone(centerId);
+  const shown = pickShownPlan(activePlans, new Date(), center?.planExpiringNoticeDays, tz);
+  const planName = shown ? (await planRepository.findById(shown.plan.planId))?.name ?? null : null;
   const shortDate = (d: Date) =>
     d.toLocaleDateString("es-CL", { timeZone: tz, day: "numeric", month: "long" });
   const todayReservations: ReservationDto[] = (reservationsResult.items ?? []).filter(
     (r) => r.status === "CONFIRMED" && r.liveClass?.startsAt && isToday(r.liveClass.startsAt)
   );
 
-  const hasActivePlan = Boolean(firstPlan && planName);
+  const hasActivePlan = Boolean(shown && isPlanCurrent(shown.status) && planName);
 
   const requireVerification = process.env.REQUIRE_EMAIL_VERIFICATION !== "false";
   let needsVerification = false;
@@ -168,9 +156,9 @@ export default async function PanelPage() {
               <Sparkles className="h-4 w-4 text-[var(--color-secondary)] shrink-0" aria-hidden />
               <span className="font-medium text-[var(--color-primary)]">{planName}</span>
             </span>
-            {shownStatus === "EXPIRING_SOON" && firstPlan?.validUntil && (
+            {shown?.status === "EXPIRING_SOON" && shown.plan.validUntil && (
               <span className="font-medium text-[var(--color-secondary-hover)]">
-                Vence el {shortDate(firstPlan.validUntil)}
+                Vence el {shortDate(shown.plan.validUntil)}
               </span>
             )}
             {todayReservations.length > 0 ? (
@@ -192,12 +180,14 @@ export default async function PanelPage() {
         ) : (
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-sm text-[var(--color-text-muted)]">
-              {lapsedPlan && planName ? (
+              {shown && planName ? (
                 <>
                   Tu plan <span className="font-medium text-[var(--color-text)]">{planName}</span>{" "}
-                  {shownStatus === "EXPIRED" && lapsedPlan.validUntil
-                    ? `venció el ${shortDate(lapsedPlan.validUntil)}`
-                    : "se quedó sin clases"}
+                  {shown.status === "UPCOMING"
+                    ? `empieza el ${shortDate(shown.plan.validFrom)}`
+                    : shown.status === "EXPIRED" && shown.plan.validUntil
+                      ? `venció el ${shortDate(shown.plan.validUntil)}`
+                      : "se quedó sin clases"}
                 </>
               ) : (
                 "Sin plan activo"
@@ -208,7 +198,7 @@ export default async function PanelPage() {
               prefetch={false}
               className="inline-flex items-center gap-1.5 rounded-[var(--radius-md)] bg-[var(--color-primary)] px-3 py-2 text-sm font-medium text-[var(--color-text-inverse)] transition-colors hover:bg-[var(--color-primary-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:ring-offset-2 cursor-pointer"
             >
-              {lapsedPlan ? "Comprar otro plan" : "Ver planes"}
+              {shown && shown.status !== "UPCOMING" ? "Comprar otro plan" : "Ver planes"}
               <ArrowRight className="h-4 w-4" aria-hidden />
             </Link>
           </div>

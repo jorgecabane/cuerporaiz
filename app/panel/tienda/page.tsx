@@ -3,11 +3,7 @@ import { Button } from "@/components/ui/Button";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { centerRepository, planRepository, userPlanRepository } from "@/lib/adapters/db";
-import {
-  DEFAULT_PLAN_EXPIRING_NOTICE_DAYS,
-  getPlanDisplayStatus,
-  pickLapsedPlan,
-} from "@/lib/domain/user-plan";
+import { getPlanDisplayStatus, pickLapsedPlan } from "@/lib/domain/user-plan";
 import { prisma } from "@/lib/adapters/db/prisma";
 import { MisPlansTabs } from "@/app/planes/MisPlansTabs";
 import type { MisPlanItem, PendingTransferItem } from "@/app/planes/MisPlansTabs";
@@ -85,13 +81,12 @@ export default async function TiendaPage({ searchParams }: Props) {
   }
 
   const now = new Date();
-  const noticeDays = center?.planExpiringNoticeDays ?? DEFAULT_PLAN_EXPIRING_NOTICE_DAYS;
   const lapsedPlanId = pickLapsedPlan(userPlans, now)?.id ?? null;
   const misPlansItems: MisPlanItem[] = userPlans.map((up) => ({
     id: up.id,
     planId: up.planId,
     planName: planMap.get(up.planId)?.name ?? "Plan",
-    displayStatus: getPlanDisplayStatus(up, now, noticeDays),
+    displayStatus: getPlanDisplayStatus(up, now, center?.planExpiringNoticeDays, center?.timezone),
     isRecurring: !!up.subscriptionId,
     classesTotal: up.classesTotal,
     classesUsed: up.classesUsed,

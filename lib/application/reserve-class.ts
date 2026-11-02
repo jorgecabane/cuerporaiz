@@ -9,13 +9,7 @@ import type {
   LiveClassDto,
 } from "@/lib/dto/reservation-dto";
 import type { LiveClass, Reservation, ReservationStatus } from "@/lib/domain";
-import {
-  getPlanDisplayStatus,
-  isUserPlanUsable,
-  lapsedPlanMessage,
-  pickLapsedPlan,
-} from "@/lib/domain/user-plan";
-import { DEFAULT_TIMEZONE } from "@/lib/domain/center";
+import { isUserPlanUsable, noUsablePlanMessage } from "@/lib/domain/user-plan";
 import { canRebookReservation } from "@/lib/domain/reservation";
 import {
   centerRepository,
@@ -112,26 +106,28 @@ async function firstClassTipsFor(userId: string, centerId: string, isTrial: bool
  * Valida cupos, plan activo del usuario (tipo Live con clases disponibles),
  * y descuenta una clase del plan seleccionado.
  */
-/** Si el último plan LIVE venció o se quedó sin clases, lo explica; si no, el mensaje genérico. */
-async function noUsablePlanMessage(
+/** Explica por qué no hay plan LIVE usable (aún no empieza, venció o sin clases). */
+async function explainNoUsablePlan(
   plans: Awaited<ReturnType<typeof userPlanRepository.findActiveByUserAndCenter>>,
-  timeZone: string | undefined
+  timeZone: string | undefined,
+  onBehalfOfStudent: boolean
 ): Promise<string> {
-  const now = new Date();
-  const lapsed = pickLapsedPlan(plans, now);
-  const plan = lapsed ? await planRepository.findById(lapsed.planId) : null;
-  if (!lapsed || plan?.type !== "LIVE") return "No tienes un plan activo para reservar clases.";
-  return lapsedPlanMessage(
-    { planName: plan.name, status: getPlanDisplayStatus(lapsed, now, 0), validUntil: lapsed.validUntil },
-    timeZone ?? DEFAULT_TIMEZONE
+  const planById = new Map(
+    (await planRepository.findManyByIds(plans.map((p) => p.planId))).map((p) => [p.id, p])
   );
+  const livePlans = plans.flatMap((up) => {
+    const plan = planById.get(up.planId);
+    return plan?.type === "LIVE" ? [{ ...up, planName: plan.name }] : [];
+  });
+  return noUsablePlanMessage(livePlans, new Date(), timeZone, { onBehalfOfStudent });
 }
 
 export async function reserveClassUseCase(
   userId: string,
   centerId: string,
   liveClassId: string,
-  userPlanId?: string
+  userPlanId?: string,
+  { onBehalfOfStudent = false }: { onBehalfOfStudent?: boolean } = {}
 ): Promise<ReserveClassResult> {
   const liveClass = await liveClassRepository.findById(liveClassId);
   if (!liveClass) {
@@ -246,7 +242,7 @@ export async function reserveClassUseCase(
     }
 
     if (livePlans.length === 0) {
-      return { success: false, code: "NO_ACTIVE_PLAN", message: await noUsablePlanMessage(activePlans, center?.timezone) };
+      return { success: false, code: "NO_ACTIVE_PLAN", message: await explainNoUsablePlan(activePlans, center?.timezone, onBehalfOfStudent) };
     }
 
     // Seleccionar plan: si se especificó userPlanId, validar que esté entre los disponibles

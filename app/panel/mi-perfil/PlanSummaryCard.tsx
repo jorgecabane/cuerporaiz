@@ -2,12 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/adapters/db/prisma";
 import { centerRepository } from "@/lib/adapters/db";
 import { getCenterTimezone } from "@/lib/datetime/center-timezone";
-import {
-  DEFAULT_PLAN_EXPIRING_NOTICE_DAYS,
-  getPlanDisplayStatus,
-  isPlanCurrent,
-  pickLapsedPlan,
-} from "@/lib/domain/user-plan";
+import { pickShownPlan } from "@/lib/domain/user-plan";
 import { PlanStatusBadge } from "@/components/plans/PlanStatusBadge";
 
 interface PlanSummaryCardProps {
@@ -25,13 +20,10 @@ export default async function PlanSummaryCard({ userId, centerId }: PlanSummaryC
       orderBy: { createdAt: "desc" },
     }),
   ]);
-  const now = new Date();
-  const noticeDays = center?.planExpiringNoticeDays ?? DEFAULT_PLAN_EXPIRING_NOTICE_DAYS;
-  // Estado real: un plan guardado como ACTIVE puede estar vencido o sin clases.
-  const userPlan =
-    plans.find((p) => isPlanCurrent(getPlanDisplayStatus(p, now, noticeDays))) ?? pickLapsedPlan(plans, now);
+  // Estado real: un plan guardado como ACTIVE puede estar vencido, sin clases o por comenzar.
+  const shown = pickShownPlan(plans, new Date(), center?.planExpiringNoticeDays, tz);
 
-  if (!userPlan) {
+  if (!shown) {
     return (
       <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] p-6 text-center">
         <p className="text-sm text-[var(--color-text-muted)]">No tienes un plan activo</p>
@@ -45,8 +37,8 @@ export default async function PlanSummaryCard({ userId, centerId }: PlanSummaryC
     );
   }
 
-  const status = getPlanDisplayStatus(userPlan, now, noticeDays);
-  const lapsed = !isPlanCurrent(status);
+  const { plan: userPlan, status } = shown;
+  const lapsed = status === "EXPIRED" || status === "EXHAUSTED";
   const classesLabel = userPlan.classesTotal
     ? `${userPlan.classesUsed} / ${userPlan.classesTotal} clases usadas`
     : "Clases ilimitadas";
@@ -65,7 +57,9 @@ export default async function PlanSummaryCard({ userId, centerId }: PlanSummaryC
       <div className="space-y-1 text-sm text-[var(--color-text-muted)]">
         <p>{classesLabel}</p>
         <p>
-          {status === "EXPIRED" ? "Venció el" : "Vigencia hasta:"} {validUntilLabel}
+          {status === "UPCOMING"
+            ? `Empieza el ${userPlan.validFrom.toLocaleDateString("es-CL", { timeZone: tz })}`
+            : `${status === "EXPIRED" ? "Venció el" : "Vigencia hasta:"} ${validUntilLabel}`}
         </p>
         {userPlan.subscription && !lapsed && (
           <p className="text-xs">Suscripción activa</p>

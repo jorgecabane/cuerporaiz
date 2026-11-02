@@ -2,8 +2,9 @@ import { describe, it, expect } from "vitest";
 import {
   getPlanDisplayStatus,
   isPlanCurrent,
-  lapsedPlanMessage,
+  noUsablePlanMessage,
   pickLapsedPlan,
+  pickShownPlan,
   shouldSendExpiringNotice,
 } from "./user-plan";
 
@@ -13,6 +14,7 @@ const now = new Date("2026-11-02T15:00:00Z");
 function plan(overrides: Partial<Parameters<typeof getPlanDisplayStatus>[0]> = {}) {
   return {
     status: "ACTIVE" as const,
+    validFrom: new Date(now.getTime() - 10 * DAY),
     validUntil: new Date(now.getTime() + 20 * DAY),
     classesTotal: 8,
     classesUsed: 2,
@@ -48,6 +50,23 @@ describe("getPlanDisplayStatus", () => {
     const p = plan({ validUntil: new Date(now.getTime() + 5 * DAY) });
     expect(getPlanDisplayStatus(p, now, 7)).toBe("EXPIRING_SOON");
     expect(getPlanDisplayStatus(p, now, 3)).toBe("ACTIVE");
+  });
+
+  it("vence pronto cuenta días calendario en la zona del centro, igual que el correo", () => {
+    // now = 2 nov 12:00 Santiago; vence el 9 nov 23:30 Santiago (7 días calendario, >7×24h).
+    const p = plan({ validUntil: new Date("2026-11-09T23:30:00-03:00") });
+    expect(getPlanDisplayStatus(p, now, 7, "America/Santiago")).toBe("EXPIRING_SOON");
+    expect(getPlanDisplayStatus(p, now, 6, "America/Santiago")).toBe("ACTIVE");
+  });
+
+  it("usa 7 días por defecto", () => {
+    expect(getPlanDisplayStatus(plan({ validUntil: new Date(now.getTime() + 5 * DAY) }), now)).toBe("EXPIRING_SOON");
+  });
+
+  it("todavía no empieza → UPCOMING (no sirve para reservar)", () => {
+    const p = plan({ validFrom: new Date(now.getTime() + 3 * DAY), validUntil: new Date(now.getTime() + 33 * DAY) });
+    expect(getPlanDisplayStatus(p, now, 7)).toBe("UPCOMING");
+    expect(isPlanCurrent("UPCOMING")).toBe(false);
   });
 
   it("recurrente que vence pronto no avisa (se renueva solo)", () => {
@@ -92,21 +111,71 @@ describe("pickLapsedPlan", () => {
   });
 });
 
-describe("lapsedPlanMessage", () => {
+describe("pickShownPlan", () => {
+  const mk = (id: string, o: Partial<Parameters<typeof getPlanDisplayStatus>[0]> = {}) => ({
+    ...plan(o),
+    id,
+    createdAt: now,
+  });
+
+  it("prefiere el plan vigente", () => {
+    const shown = pickShownPlan([mk("old", { validUntil: new Date(now.getTime() - DAY) }), mk("cur")], now);
+    expect(shown?.plan.id).toBe("cur");
+    expect(shown?.status).toBe("ACTIVE");
+  });
+
+  it("sin vigente, muestra el que viene antes que el vencido", () => {
+    const upcoming = mk("next", { validFrom: new Date(now.getTime() + 3 * DAY), validUntil: new Date(now.getTime() + 33 * DAY) });
+    const shown = pickShownPlan([mk("old", { validUntil: new Date(now.getTime() - DAY) }), upcoming], now);
+    expect(shown).toMatchObject({ plan: { id: "next" }, status: "UPCOMING" });
+  });
+
+  it("sin vigente ni próximo, muestra el último vencido; sin nada → null", () => {
+    expect(pickShownPlan([mk("old", { validUntil: new Date(now.getTime() - DAY) })], now)?.status).toBe("EXPIRED");
+    expect(pickShownPlan([], now)).toBeNull();
+  });
+});
+
+describe("noUsablePlanMessage", () => {
+  const TZ = "America/Santiago";
+  const named = (o: Partial<Parameters<typeof getPlanDisplayStatus>[0]>, planName = "8 Clases al Mes") => ({
+    ...plan(o),
+    createdAt: now,
+    planName,
+  });
+  const expired = named({ validUntil: new Date("2026-11-01T18:00:00-03:00"), classesUsed: 6 });
+
   it("vencido → nombra el plan y la fecha en la zona del centro", () => {
-    const msg = lapsedPlanMessage(
-      { planName: "8 Clases al Mes", status: "EXPIRED", validUntil: new Date("2026-11-03T02:00:00Z") },
-      "America/Santiago"
+    expect(noUsablePlanMessage([expired], now, TZ)).toBe(
+      "Tu plan 8 Clases al Mes venció el 1 de noviembre. Compra otro para seguir reservando."
     );
-    expect(msg).toBe("Tu plan 8 Clases al Mes venció el 2 de noviembre. Compra otro para seguir reservando.");
   });
 
   it("sin clases → lo dice y pide comprar otro", () => {
-    const msg = lapsedPlanMessage(
-      { planName: "4 Clases al Mes", status: "EXHAUSTED", validUntil: null },
-      "America/Santiago"
+    expect(noUsablePlanMessage([named({ classesUsed: 8 }, "4 Clases")], now, TZ)).toBe(
+      "Usaste todas las clases de tu plan 4 Clases. Compra otro para seguir reservando."
     );
-    expect(msg).toBe("Usaste todas las clases de tu plan 4 Clases al Mes. Compra otro para seguir reservando.");
+  });
+
+  it("si tiene un plan que aún no empieza, avisa la fecha y no pide comprar", () => {
+    const next = named({ validFrom: new Date("2026-11-10T09:00:00-03:00"), validUntil: new Date("2026-12-10T09:00:00-03:00") }, "Plan Diciembre");
+    expect(noUsablePlanMessage([expired, next], now, TZ)).toBe("Tu plan Plan Diciembre empieza el 10 de noviembre.");
+  });
+
+  it("sin planes → mensaje genérico con punto final", () => {
+    expect(noUsablePlanMessage([], now, TZ)).toBe("No tienes un plan activo para reservar clases.");
+  });
+
+  it("reservando el admin por un alumno → habla del alumno, no le pide comprar", () => {
+    expect(noUsablePlanMessage([expired], now, TZ, { onBehalfOfStudent: true })).toBe(
+      "El plan 8 Clases al Mes del alumno venció el 1 de noviembre."
+    );
+    expect(noUsablePlanMessage([named({ classesUsed: 8 })], now, TZ, { onBehalfOfStudent: true })).toBe(
+      "El alumno usó todas las clases de su plan 8 Clases al Mes."
+    );
+    expect(noUsablePlanMessage([], now, TZ, { onBehalfOfStudent: true })).toBe(
+      "El alumno no tiene un plan activo para reservar clases."
+    );
   });
 });
 

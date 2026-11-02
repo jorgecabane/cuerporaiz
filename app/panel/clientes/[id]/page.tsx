@@ -8,7 +8,6 @@ import {
 } from "@/lib/adapters/db";
 import { isAdminRole } from "@/lib/domain";
 import {
-  DEFAULT_PLAN_EXPIRING_NOTICE_DAYS,
   PAYMENT_STATUS_LABELS,
   classesRemaining,
   getPlanDisplayStatus,
@@ -173,11 +172,7 @@ export default async function ClientDetailPage({
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-medium">{plan?.name ?? "Plan eliminado"}</span>
                       <PlanStatusBadge
-                        status={getPlanDisplayStatus(
-                          up,
-                          now,
-                          center?.planExpiringNoticeDays ?? DEFAULT_PLAN_EXPIRING_NOTICE_DAYS
-                        )}
+                        status={getPlanDisplayStatus(up, now, center?.planExpiringNoticeDays, tz)}
                       />
                       <span
                         className={`text-xs px-2 py-0.5 rounded-full font-medium ${

@@ -55,8 +55,10 @@ export function MisPlansTabs({
   const tz = useTimezone();
   const hasPending = pendingTransfers.length > 0;
   const [tab, setTab] = useState<Tab>(hasPending ? "pending" : "active");
-  const activeItems = items.filter((i) => isPlanCurrent(i.displayStatus));
-  const historyItems = items.filter((i) => !isPlanCurrent(i.displayStatus));
+  // "Activos": los que sirven para reservar y los que ya compró pero aún no empiezan.
+  const isOwnedNow = (s: PlanDisplayStatus) => isPlanCurrent(s) || s === "UPCOMING";
+  const activeItems = items.filter((i) => isOwnedNow(i.displayStatus));
+  const historyItems = items.filter((i) => !isOwnedNow(i.displayStatus));
   const lapsedItem = activeItems.length === 0 ? items.find((i) => i.id === lapsedPlanId) : undefined;
 
   return (
@@ -185,6 +187,7 @@ function PlansList({
 const BORDER_BY_STATUS: Record<PlanDisplayStatus, string> = {
   ACTIVE: "border-l-[var(--color-success)]",
   EXPIRING_SOON: "border-l-[var(--color-secondary)]",
+  UPCOMING: "border-l-[var(--color-primary)]",
   EXPIRED: "border-l-[var(--color-error)]",
   EXHAUSTED: "border-l-[var(--color-error)]",
   FROZEN: "border-l-[var(--color-border)]",
@@ -195,7 +198,9 @@ function validityText(item: MisPlanItem, tz: string): string {
   const until = item.validUntil ? formatDate(item.validUntil, tz) : null;
   switch (item.displayStatus) {
     case "EXPIRED":
-      return `Venció el ${until}`;
+      return until ? `Venció el ${until}` : "Plan vencido";
+    case "UPCOMING":
+      return `Empieza el ${formatDate(item.validFrom, tz)}`;
     case "EXHAUSTED":
       return until ? `Usaste todas tus clases · vigente hasta ${until}` : "Usaste todas tus clases";
     case "EXPIRING_SOON":

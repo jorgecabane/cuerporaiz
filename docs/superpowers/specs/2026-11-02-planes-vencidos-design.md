@@ -136,3 +136,17 @@ Español chileno con tú, masculino genérico. Fechas con `timeZone` del centro.
 - E2E: alumno con plan vencido (seed con `validUntil` pasado y estado `ACTIVE`) ve "Vencido" y
   "Comprar otro plan" en Planes, y al reservar recibe "Tu plan … venció…". Admin cambia los días
   de aviso en Configuración y se guarda.
+
+## Ajustes tras code review (2026-11-02)
+
+- Nuevo estado **UPCOMING** ("Por comenzar"): `validFrom` futuro. Va en la pestaña "Activos" con
+  "Empieza el …"; no sirve para reservar. Al reservar: "Tu plan X empieza el 10 de noviembre."
+  (no pide comprar otro). Reemplaza la nota "`validFrom` futuro se muestra como Activo".
+- "Vence pronto" (badge) cuenta días calendario en la zona del centro, igual que el correo.
+- `pickShownPlan(plans, now, noticeDays, tz)`: vigente → por comenzar → último caducado. Lo usan
+  el inicio y "Mi plan".
+- El mensaje de reserva (`noUsablePlanMessage`) solo considera planes LIVE. Si reserva el admin
+  por el alumno (`/api/admin/reserve-for-student`), habla del alumno ("El plan X del alumno venció
+  el …") y no pide comprar.
+- Valores por defecto (7 días, TZ del centro) viven en el dominio; los llamadores pasan
+  `center?.planExpiringNoticeDays` y la TZ del centro.
