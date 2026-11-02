@@ -3,8 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Hourglass } from "lucide-react";
-import { USER_PLAN_STATUS_LABELS } from "@/lib/domain/user-plan";
-import type { UserPlanStatus } from "@/lib/domain/user-plan";
+import { isPlanCurrent, type PlanDisplayStatus } from "@/lib/domain/user-plan";
+import { PlanStatusBadge } from "@/components/plans/PlanStatusBadge";
 import { useTimezone } from "@/components/providers/TimezoneProvider";
 import { formatMoney } from "@/lib/domain/money";
 
@@ -12,7 +12,8 @@ export interface MisPlanItem {
   id: string;
   planId: string;
   planName: string;
-  status: UserPlanStatus;
+  /** Estado real (calculado en el servidor con fechas y clases). */
+  displayStatus: PlanDisplayStatus;
   /** Si true, este plan fue activado por una suscripción recurrente (MP). */
   isRecurring?: boolean;
   classesTotal: number | null;
@@ -44,15 +45,21 @@ type Tab = "active" | "pending" | "history";
 export function MisPlansTabs({
   items,
   pendingTransfers = [],
+  lapsedPlanId = null,
 }: {
   items: MisPlanItem[];
   pendingTransfers?: PendingTransferItem[];
+  /** Último plan que caducó solo: se destaca en "Activos" cuando no hay plan vigente. */
+  lapsedPlanId?: string | null;
 }) {
   const tz = useTimezone();
   const hasPending = pendingTransfers.length > 0;
   const [tab, setTab] = useState<Tab>(hasPending ? "pending" : "active");
-  const activeItems = items.filter((i) => i.status === "ACTIVE");
-  const historyItems = items.filter((i) => i.status !== "ACTIVE");
+  // "Activos": los que sirven para reservar y los que ya compró pero aún no empiezan.
+  const isOwnedNow = (s: PlanDisplayStatus) => isPlanCurrent(s) || s === "UPCOMING";
+  const activeItems = items.filter((i) => isOwnedNow(i.displayStatus));
+  const historyItems = items.filter((i) => !isOwnedNow(i.displayStatus));
+  const lapsedItem = activeItems.length === 0 ? items.find((i) => i.id === lapsedPlanId) : undefined;
 
   return (
     <section aria-labelledby="mis-planes-heading">
@@ -96,7 +103,12 @@ export function MisPlansTabs({
         role="tabpanel"
         aria-labelledby={`tab-${tab}`}
       >
-        {tab === "active" && <PlansList items={activeItems} kind="active" tz={tz} />}
+        {tab === "active" &&
+          (lapsedItem ? (
+            <PlansList items={[lapsedItem]} kind="active" tz={tz} buyCta />
+          ) : (
+            <PlansList items={activeItems} kind="active" tz={tz} />
+          ))}
         {tab === "pending" && <PendingTransfersList items={pendingTransfers} tz={tz} />}
         {tab === "history" && <PlansList items={historyItems} kind="history" tz={tz} />}
       </div>
@@ -141,7 +153,17 @@ function TabButton({
   );
 }
 
-function PlansList({ items, kind, tz }: { items: MisPlanItem[]; kind: "active" | "history"; tz: string }) {
+function PlansList({
+  items,
+  kind,
+  tz,
+  buyCta = false,
+}: {
+  items: MisPlanItem[];
+  kind: "active" | "history";
+  tz: string;
+  buyCta?: boolean;
+}) {
   if (items.length === 0) {
     return (
       <div className="rounded-[var(--radius-lg)] bg-[var(--color-surface)] p-6 border border-[var(--color-border)]">
@@ -155,71 +177,105 @@ function PlansList({ items, kind, tz }: { items: MisPlanItem[]; kind: "active" |
   }
   return (
     <ul className="space-y-4">
-      {items.map((item) => {
-        const statusLabel = USER_PLAN_STATUS_LABELS[item.status];
-        const borderColor =
-          item.status === "ACTIVE"
-            ? "border-l-[var(--color-success)]"
-            : "border-l-[var(--color-border)]";
-        const remaining =
-          item.classesTotal != null
-            ? Math.max(0, item.classesTotal - item.classesUsed)
-            : null;
-        const validUntilText = item.validUntil
-          ? formatDate(item.validUntil, tz)
-          : "Sin vencimiento";
-        return (
-          <li
-            key={item.id}
-            className={`rounded-[var(--radius-lg)] bg-[var(--color-surface)] p-4 sm:p-6 shadow-[var(--shadow-md)] border border-[var(--color-border)] border-l-4 ${borderColor}`}
-          >
-            <div className="flex flex-wrap items-center gap-2">
-              <h3 className="font-semibold text-[var(--color-text)]">{item.planName}</h3>
-              {item.isRecurring && (
-                <span className="rounded-full bg-[var(--color-primary-light)] px-2 py-0.5 text-xs font-medium text-[var(--color-primary)]">
-                  Recurrente
-                </span>
-              )}
-            </div>
-            <p className="mt-1 text-sm text-[var(--color-text-muted)]">{statusLabel}</p>
-            <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-              Válido desde {formatDate(item.validFrom, tz)} hasta {validUntilText}
-            </p>
-
-            {item.classesTotal != null ? (
-              <div className="mt-3 rounded-[var(--radius-md)] bg-[var(--color-tertiary)] p-3">
-                <p className="text-sm font-medium text-[var(--color-text)]">
-                  Quedan{" "}
-                  <span className="text-[var(--color-primary)]">
-                    {remaining} {remaining === 1 ? "clase" : "clases"}
-                  </span>
-                </p>
-                <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">
-                  {item.classesUsed} de {item.classesTotal} usadas
-                </p>
-                <div
-                  className="mt-2 h-1.5 w-full rounded-full bg-[var(--color-border)] overflow-hidden"
-                  role="progressbar"
-                  aria-valuenow={item.classesUsed}
-                  aria-valuemin={0}
-                  aria-valuemax={item.classesTotal}
-                  aria-label={`${item.classesUsed} de ${item.classesTotal} clases usadas`}
-                >
-                  <div
-                    className="h-full rounded-full bg-[var(--color-primary)] transition-all duration-[var(--duration-normal)]"
-                    style={{
-                      width: `${Math.min(100, (item.classesUsed / item.classesTotal) * 100)}%`,
-                    }}
-                  />
-                </div>
-              </div>
-            ) : (
-              <p className="mt-2 text-sm text-[var(--color-text-muted)]">Clases ilimitadas</p>
-            )}
-          </li>
-        );
-      })}
+      {items.map((item) => (
+        <PlanCard key={item.id} item={item} tz={tz} buyCta={buyCta} />
+      ))}
     </ul>
+  );
+}
+
+const BORDER_BY_STATUS: Record<PlanDisplayStatus, string> = {
+  ACTIVE: "border-l-[var(--color-success)]",
+  EXPIRING_SOON: "border-l-[var(--color-secondary)]",
+  UPCOMING: "border-l-[var(--color-primary)]",
+  EXPIRED: "border-l-[var(--color-error)]",
+  EXHAUSTED: "border-l-[var(--color-error)]",
+  FROZEN: "border-l-[var(--color-border)]",
+  CANCELLED: "border-l-[var(--color-border)]",
+};
+
+function validityText(item: MisPlanItem, tz: string): string {
+  const until = item.validUntil ? formatDate(item.validUntil, tz) : null;
+  switch (item.displayStatus) {
+    case "EXPIRED":
+      return until ? `Venció el ${until}` : "Plan vencido";
+    case "UPCOMING":
+      return `Empieza el ${formatDate(item.validFrom, tz)}`;
+    case "EXHAUSTED":
+      return until ? `Usaste todas tus clases · vigente hasta ${until}` : "Usaste todas tus clases";
+    case "EXPIRING_SOON":
+      return `Vence el ${until}`;
+    default:
+      return `Válido desde ${formatDate(item.validFrom, tz)} hasta ${until ?? "sin vencimiento"}`;
+  }
+}
+
+function PlanCard({ item, tz, buyCta }: { item: MisPlanItem; tz: string; buyCta: boolean }) {
+  const lapsed = item.displayStatus === "EXPIRED" || item.displayStatus === "EXHAUSTED";
+  const remaining = item.classesTotal != null ? Math.max(0, item.classesTotal - item.classesUsed) : null;
+  return (
+    <li
+      className={`rounded-[var(--radius-lg)] bg-[var(--color-surface)] p-4 sm:p-6 shadow-[var(--shadow-md)] border border-[var(--color-border)] border-l-4 ${BORDER_BY_STATUS[item.displayStatus]}`}
+    >
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <h3 className="font-semibold text-[var(--color-text)]">{item.planName}</h3>
+          {item.isRecurring && (
+            <span className="rounded-full bg-[var(--color-primary-light)] px-2 py-0.5 text-xs font-medium text-[var(--color-primary)]">
+              Recurrente
+            </span>
+          )}
+        </div>
+        <PlanStatusBadge status={item.displayStatus} />
+      </div>
+      <p className="mt-1 text-sm text-[var(--color-text-muted)]">{validityText(item, tz)}</p>
+
+      {item.classesTotal != null ? (
+        <div className="mt-3 rounded-[var(--radius-md)] bg-[var(--color-tertiary)] p-3">
+          <p className="text-sm font-medium text-[var(--color-text)]">
+            {lapsed ? (
+              <>Usaste {item.classesUsed} de {item.classesTotal} clases</>
+            ) : (
+              <>
+                Quedan{" "}
+                <span className="text-[var(--color-primary)]">
+                  {remaining} {remaining === 1 ? "clase" : "clases"}
+                </span>
+              </>
+            )}
+          </p>
+          {!lapsed && (
+            <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">
+              {item.classesUsed} de {item.classesTotal} usadas
+            </p>
+          )}
+          <div
+            className="mt-2 h-1.5 w-full rounded-full bg-[var(--color-border)] overflow-hidden"
+            role="progressbar"
+            aria-valuenow={item.classesUsed}
+            aria-valuemin={0}
+            aria-valuemax={item.classesTotal}
+            aria-label={`${item.classesUsed} de ${item.classesTotal} clases usadas`}
+          >
+            <div
+              className="h-full rounded-full bg-[var(--color-primary)] transition-all duration-[var(--duration-normal)]"
+              style={{ width: `${Math.min(100, (item.classesUsed / item.classesTotal) * 100)}%` }}
+            />
+          </div>
+        </div>
+      ) : (
+        <p className="mt-2 text-sm text-[var(--color-text-muted)]">Clases ilimitadas</p>
+      )}
+
+      {buyCta && (
+        <a
+          href="#planes-disponibles"
+          className="mt-4 inline-flex min-h-[44px] items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-primary)] px-5 text-sm font-medium text-[var(--color-text-inverse)] transition-colors hover:bg-[var(--color-primary-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]"
+        >
+          Comprar otro plan
+        </a>
+      )}
+    </li>
   );
 }
 

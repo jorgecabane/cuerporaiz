@@ -2,7 +2,8 @@ import { Suspense } from "react";
 import { Button } from "@/components/ui/Button";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import { planRepository, userPlanRepository } from "@/lib/adapters/db";
+import { centerRepository, planRepository, userPlanRepository } from "@/lib/adapters/db";
+import { getPlanDisplayStatus, pickLapsedPlan } from "@/lib/domain/user-plan";
 import { prisma } from "@/lib/adapters/db/prisma";
 import { MisPlansTabs } from "@/app/planes/MisPlansTabs";
 import type { MisPlanItem, PendingTransferItem } from "@/app/planes/MisPlansTabs";
@@ -23,7 +24,8 @@ export default async function TiendaPage({ searchParams }: Props) {
   const centerId = session.user.centerId;
   const userId = session.user.id;
 
-  const [plans, userPlans, pendingOrders, pendingTickets, libraryPacks] = await Promise.all([
+  const [center, plans, userPlans, pendingOrders, pendingTickets, libraryPacks] = await Promise.all([
+    centerRepository.findById(centerId),
     planRepository.findManyByCenterId(centerId),
     userPlanRepository.findByUserAndCenter(userId, centerId),
     prisma.order.findMany({
@@ -78,11 +80,13 @@ export default async function TiendaPage({ searchParams }: Props) {
     for (const p of missing) planMap.set(p.id, p);
   }
 
+  const now = new Date();
+  const lapsedPlanId = pickLapsedPlan(userPlans, now)?.id ?? null;
   const misPlansItems: MisPlanItem[] = userPlans.map((up) => ({
     id: up.id,
     planId: up.planId,
     planName: planMap.get(up.planId)?.name ?? "Plan",
-    status: up.status,
+    displayStatus: getPlanDisplayStatus(up, now, center?.planExpiringNoticeDays, center?.timezone),
     isRecurring: !!up.subscriptionId,
     classesTotal: up.classesTotal,
     classesUsed: up.classesUsed,
@@ -118,10 +122,10 @@ export default async function TiendaPage({ searchParams }: Props) {
       </p>
 
       <div className="mb-12">
-        <MisPlansTabs items={misPlansItems} pendingTransfers={pendingTransfers} />
+        <MisPlansTabs items={misPlansItems} pendingTransfers={pendingTransfers} lapsedPlanId={lapsedPlanId} />
       </div>
 
-      <section aria-labelledby="planes-disponibles-heading">
+      <section id="planes-disponibles" aria-labelledby="planes-disponibles-heading" className="scroll-mt-[var(--space-8)]">
         <h2
           id="planes-disponibles-heading"
           className="font-display text-xl font-semibold text-[var(--color-primary)] mb-6"

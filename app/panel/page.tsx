@@ -25,6 +25,8 @@ import type { ReservationDto } from "@/lib/dto/reservation-dto";
 import type { Role } from "@/lib/domain/role";
 import { isAdminRole, isInstructorRole, isStudentRole } from "@/lib/domain";
 import { formatMinutesAsShortSpanish } from "@/lib/domain/center-policy";
+import { getCenterTimezone } from "@/lib/datetime/center-timezone";
+import { isPlanCurrent, pickShownPlan } from "@/lib/domain/user-plan";
 import type { LucideIcon } from "lucide-react";
 
 type QuickAccessItem =
@@ -97,15 +99,17 @@ export default async function PanelPage() {
       ? getPendingTransfersForCenter(centerId)
       : getPendingTransfersForUser(user.id, centerId),
   ]);
-  const firstPlan = activePlans[0];
-  const planName = firstPlan
-    ? (await planRepository.findById(firstPlan.planId))?.name ?? null
-    : null;
+  // Estado real: un plan guardado como ACTIVE puede estar vencido, sin clases o por comenzar.
+  const tz = await getCenterTimezone(centerId);
+  const shown = pickShownPlan(activePlans, new Date(), center?.planExpiringNoticeDays, tz);
+  const planName = shown ? (await planRepository.findById(shown.plan.planId))?.name ?? null : null;
+  const shortDate = (d: Date) =>
+    d.toLocaleDateString("es-CL", { timeZone: tz, day: "numeric", month: "long" });
   const todayReservations: ReservationDto[] = (reservationsResult.items ?? []).filter(
     (r) => r.status === "CONFIRMED" && r.liveClass?.startsAt && isToday(r.liveClass.startsAt)
   );
 
-  const hasActivePlan = Boolean(planName);
+  const hasActivePlan = Boolean(shown && isPlanCurrent(shown.status) && planName);
 
   const requireVerification = process.env.REQUIRE_EMAIL_VERIFICATION !== "false";
   let needsVerification = false;
@@ -152,6 +156,11 @@ export default async function PanelPage() {
               <Sparkles className="h-4 w-4 text-[var(--color-secondary)] shrink-0" aria-hidden />
               <span className="font-medium text-[var(--color-primary)]">{planName}</span>
             </span>
+            {shown?.status === "EXPIRING_SOON" && shown.plan.validUntil && (
+              <span className="font-medium text-[var(--color-secondary-hover)]">
+                Vence el {shortDate(shown.plan.validUntil)}
+              </span>
+            )}
             {todayReservations.length > 0 ? (
               <span className="text-[var(--color-text-muted)]">
                 Hoy: {todayReservations.length} {todayReservations.length === 1 ? "reserva" : "reservas"}
@@ -171,14 +180,25 @@ export default async function PanelPage() {
         ) : (
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-sm text-[var(--color-text-muted)]">
-              Sin plan activo
+              {shown && planName ? (
+                <>
+                  Tu plan <span className="font-medium text-[var(--color-text)]">{planName}</span>{" "}
+                  {shown.status === "UPCOMING"
+                    ? `empieza el ${shortDate(shown.plan.validFrom)}`
+                    : shown.status === "EXPIRED" && shown.plan.validUntil
+                      ? `venció el ${shortDate(shown.plan.validUntil)}`
+                      : "se quedó sin clases"}
+                </>
+              ) : (
+                "Sin plan activo"
+              )}
             </p>
             <Link
               href="/panel/tienda"
               prefetch={false}
               className="inline-flex items-center gap-1.5 rounded-[var(--radius-md)] bg-[var(--color-primary)] px-3 py-2 text-sm font-medium text-[var(--color-text-inverse)] transition-colors hover:bg-[var(--color-primary-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:ring-offset-2 cursor-pointer"
             >
-              Ver planes
+              {shown && shown.status !== "UPCOMING" ? "Comprar otro plan" : "Ver planes"}
               <ArrowRight className="h-4 w-4" aria-hidden />
             </Link>
           </div>

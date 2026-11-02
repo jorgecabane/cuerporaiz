@@ -24,6 +24,7 @@ function makeCenter(overrides: Partial<Center> = {}): Center {
     timezone: "America/Santiago",
     cancelBeforeMinutes: 720,
     maxNoShowsPerMonth: 2,
+    planExpiringNoticeDays: 7,
     bookBeforeMinutes: 1440,
     notifyWhenSlotFreed: true,
     instructorCanReserveForStudent: true,

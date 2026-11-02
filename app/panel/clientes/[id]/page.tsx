@@ -1,16 +1,18 @@
 import { auth } from "@/auth";
 import { redirect, notFound } from "next/navigation";
 import {
+  centerRepository,
   orderRepository,
   planRepository,
   userPlanRepository,
 } from "@/lib/adapters/db";
 import { isAdminRole } from "@/lib/domain";
 import {
-  USER_PLAN_STATUS_LABELS,
   PAYMENT_STATUS_LABELS,
   classesRemaining,
+  getPlanDisplayStatus,
 } from "@/lib/domain/user-plan";
+import { PlanStatusBadge } from "@/components/plans/PlanStatusBadge";
 import { prisma } from "@/lib/adapters/db/prisma";
 import { Button } from "@/components/ui/Button";
 import { AssignPlanForm } from "./AssignPlanForm";
@@ -54,7 +56,8 @@ export default async function ClientDetailPage({
   if (!membership || membership.role !== "STUDENT") notFound();
   const client = membership.user;
 
-  const [userPlans, orders, plans, manualPayments] = await Promise.all([
+  const [center, userPlans, orders, plans, manualPayments] = await Promise.all([
+    centerRepository.findById(centerId),
     userPlanRepository.findByUserAndCenter(userId, centerId),
     orderRepository.findManyByUserIdAndCenterId(userId, centerId),
     planRepository.findManyByCenterId(centerId, { includeArchived: true }),
@@ -168,17 +171,9 @@ export default async function ClientDetailPage({
                   <div className="flex items-center justify-between gap-2 flex-wrap">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-medium">{plan?.name ?? "Plan eliminado"}</span>
-                      <span
-                        className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                          up.status === "ACTIVE"
-                            ? "bg-[var(--color-success-bg,#dcfce7)] text-[var(--color-success,#16a34a)]"
-                            : up.status === "FROZEN"
-                              ? "bg-blue-100 text-blue-700"
-                              : "bg-[var(--color-surface-alt,#f3f4f6)] text-[var(--color-text-muted)]"
-                        }`}
-                      >
-                        {USER_PLAN_STATUS_LABELS[up.status]}
-                      </span>
+                      <PlanStatusBadge
+                        status={getPlanDisplayStatus(up, now, center?.planExpiringNoticeDays, tz)}
+                      />
                       <span
                         className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                           up.paymentStatus === "PAID"

@@ -8,7 +8,9 @@
 import { centerRepository } from "@/lib/adapters/db";
 import { getSiteContext } from "@/lib/seo/metadata";
 
-export const DEFAULT_TIMEZONE = "America/Santiago";
+import { DEFAULT_TIMEZONE } from "@/lib/domain/center";
+
+export { DEFAULT_TIMEZONE };
 
 export async function getCenterTimezone(
   centerId: string | null | undefined

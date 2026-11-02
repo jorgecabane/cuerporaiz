@@ -67,7 +67,8 @@ export async function POST(request: Request) {
       userId,
       centerId,
       parsed.data.liveClassId,
-      parsed.data.userPlanId
+      parsed.data.userPlanId,
+      { onBehalfOfStudent: true }
     );
 
     if (!result.success) {

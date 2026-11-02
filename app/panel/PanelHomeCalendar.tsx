@@ -71,7 +71,7 @@ export function PanelHomeCalendar({
   } | null>(null);
   const [attendanceLoadingId, setAttendanceLoadingId] = useState<string | null>(null);
   const [trialConfirmFor, setTrialConfirmFor] = useState<string | null>(null);
-  const [needsPlanModalOpen, setNeedsPlanModalOpen] = useState(false);
+  const [needsPlanMessage, setNeedsPlanMessage] = useState<string | null>(null);
   const [myWaitlist, setMyWaitlist] = useState<WaitlistEntryDto[]>([]);
   const [joinWaitlistLoadingId, setJoinWaitlistLoadingId] = useState<string | null>(null);
   const [leaveWaitlistLoadingId, setLeaveWaitlistLoadingId] = useState<string | null>(null);
@@ -465,7 +465,12 @@ export function PanelHomeCalendar({
           data.code === "TRIAL_NOT_AVAILABLE" ||
           data.code === "TRIAL_ALREADY_USED"
         ) {
-          setNeedsPlanModalOpen(true);
+          // Si el plan venció o se quedó sin clases, el servidor lo explica en el mensaje.
+          setNeedsPlanMessage(
+            data.code === "NO_ACTIVE_PLAN" && data.message
+              ? `${data.message} ¿Vamos a la tienda?`
+              : "Para agendar clases necesitas tener un plan activo. ¿Vamos a la tienda?"
+          );
           return;
         }
         toast.error(data.message ?? "Error al reservar");
@@ -594,17 +599,17 @@ export function PanelHomeCalendar({
         onCancel={() => setTrialConfirmFor(null)}
       />
       <ConfirmDialog
-        open={needsPlanModalOpen}
+        open={needsPlanMessage !== null}
         title="Necesitas un plan para reservar"
-        description="Para agendar clases necesitas tener un plan activo. ¿Vamos a la tienda?"
+        description={needsPlanMessage ?? ""}
         confirmLabel="Ver planes"
         cancelLabel="Cancelar"
         variant="warning"
         onConfirm={() => {
-          setNeedsPlanModalOpen(false);
+          setNeedsPlanMessage(null);
           router.push("/panel/tienda");
         }}
-        onCancel={() => setNeedsPlanModalOpen(false)}
+        onCancel={() => setNeedsPlanMessage(null)}
       />
       <WeekNav
         weekAnchor={weekAnchor}

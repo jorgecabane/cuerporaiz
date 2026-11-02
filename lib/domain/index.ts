@@ -35,8 +35,20 @@ export type {
   ReservationStatus,
   RESERVATION_STATUS_LABELS,
 } from "./reservation";
-export type { UserPlan, UserPlanStatus, PlanPaymentStatus } from "./user-plan";
-export { USER_PLAN_STATUS_LABELS, PAYMENT_STATUS_LABELS, isUserPlanUsable, classesRemaining } from "./user-plan";
+export type { UserPlan, UserPlanStatus, PlanPaymentStatus, PlanDisplayStatus } from "./user-plan";
+export {
+  USER_PLAN_STATUS_LABELS,
+  PAYMENT_STATUS_LABELS,
+  PLAN_DISPLAY_STATUS_LABELS,
+  DEFAULT_PLAN_EXPIRING_NOTICE_DAYS,
+  isUserPlanUsable,
+  classesRemaining,
+  getPlanDisplayStatus,
+  isPlanCurrent,
+  pickLapsedPlan,
+  pickShownPlan,
+  noUsablePlanMessage,
+} from "./user-plan";
 export type { Event, EventTicket, EventStatus, EventTicketStatus } from "./event";
 export { EVENT_STATUS_LABELS } from "./event";
 export type { WaitlistStatus } from "./waitlist";
