@@ -29,7 +29,10 @@ export default async function ReplayPage() {
 
   const planIds = allUserPlans.map((up) => up.planId);
   const plans = planIds.length > 0 ? await planRepository.findManyByIds(planIds) : [];
+  const now = new Date();
   const onDemandUserPlan = allUserPlans.find((up) => {
+    // Igual que /api/on-demand/my-lessons: un plan vencido no da acceso.
+    if (up.validUntil && up.validUntil < now) return false;
     const plan = plans.find((p) => p.id === up.planId);
     return plan?.type === "ON_DEMAND" || plan?.type === "MEMBERSHIP_ON_DEMAND";
   });

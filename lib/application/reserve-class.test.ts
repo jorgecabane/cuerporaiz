@@ -486,6 +486,56 @@ describe("reserveClassUseCase — clase de prueba (trial)", () => {
     expect(mocks.reservationRepository.create).not.toHaveBeenCalled();
   });
 
+  it("NO_ACTIVE_PLAN con plan vencido: el mensaje dice que venció y pide comprar otro", async () => {
+    mocks.centerRepository.findById.mockResolvedValue({
+      id: centerId, bookBeforeMinutes: 0, maxNoShowsPerMonth: 10, allowTrialClassPerPerson: true,
+      timezone: "America/Santiago",
+    });
+    mocks.liveClassRepository.findById.mockResolvedValue(
+      makeLiveClass({ startsAt: new Date("2026-06-10T14:00:00Z"), centerId, acceptsTrialReservations: false })
+    );
+    mocks.userPlanRepository.findActiveByUserAndCenter.mockResolvedValue([
+      {
+        id: "up-old", planId: "p-8", status: "ACTIVE", subscriptionId: null,
+        classesTotal: 8, classesUsed: 6,
+        validFrom: new Date("2026-04-30T12:00:00Z"), validUntil: new Date("2026-05-30T12:00:00Z"),
+        createdAt: new Date("2026-04-30T12:00:00Z"),
+      },
+    ]);
+    mocks.planRepository.findById.mockResolvedValue({ id: "p-8", type: "LIVE", name: "8 Clases al Mes" });
+
+    const result = await reserveClassUseCase(userId, centerId, "lc-1");
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.code).toBe("NO_ACTIVE_PLAN");
+      expect(result.message).toBe("Tu plan 8 Clases al Mes venció el 30 de mayo. Compra otro para seguir reservando.");
+    }
+  });
+
+  it("NO_ACTIVE_PLAN con plan sin clases: el mensaje lo dice", async () => {
+    mocks.liveClassRepository.findById.mockResolvedValue(
+      makeLiveClass({ startsAt: new Date("2026-06-10T14:00:00Z"), centerId, acceptsTrialReservations: false })
+    );
+    mocks.userPlanRepository.findActiveByUserAndCenter.mockResolvedValue([
+      {
+        id: "up-used", planId: "p-4", status: "ACTIVE", subscriptionId: null,
+        classesTotal: 4, classesUsed: 4,
+        validFrom: new Date("2026-05-20T12:00:00Z"), validUntil: new Date("2026-06-20T12:00:00Z"),
+        createdAt: new Date("2026-05-20T12:00:00Z"),
+      },
+    ]);
+    mocks.planRepository.findById.mockResolvedValue({ id: "p-4", type: "LIVE", name: "4 Clases al Mes" });
+
+    const result = await reserveClassUseCase(userId, centerId, "lc-1");
+
+    if (!result.success) {
+      expect(result.message).toBe("Usaste todas las clases de tu plan 4 Clases al Mes. Compra otro para seguir reservando.");
+    } else {
+      throw new Error("debía rechazar");
+    }
+  });
+
   it("rechaza con TRIAL_NOT_AVAILABLE si el cliente está marcado como migrado y no tiene plan", async () => {
     mocks.liveClassRepository.findById.mockResolvedValue(
       makeLiveClass({ startsAt: new Date("2026-06-10T14:00:00Z"), centerId, acceptsTrialReservations: true })

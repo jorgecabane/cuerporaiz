@@ -10,6 +10,8 @@ import {
 import {
   MAX_BOOK_BEFORE_MINUTES,
   MAX_CANCEL_BEFORE_MINUTES,
+  MAX_PLAN_EXPIRING_NOTICE_DAYS,
+  MIN_PLAN_EXPIRING_NOTICE_DAYS,
 } from "@/lib/domain/center-policy";
 
 type Props = { center: Center };
@@ -29,6 +31,7 @@ export function PoliticasForm({ center }: Props) {
         const instructorCanReserveForStudent = formData.get("instructorCanReserveForStudent") === "on";
         const allowTrialClassPerPerson = formData.get("allowTrialClassPerPerson") === "on";
         const showClassRosterToStudents = formData.get("showClassRosterToStudents") === "on";
+        const planExpiringNoticeDays = formData.get("planExpiringNoticeDays");
         const calendarStartHour = formData.get("calendarStartHour");
         const calendarEndHour = formData.get("calendarEndHour");
         const defaultClassDurationMinutes = formData.get("defaultClassDurationMinutes");
@@ -43,6 +46,7 @@ export function PoliticasForm({ center }: Props) {
             instructorCanReserveForStudent,
             allowTrialClassPerPerson,
             showClassRosterToStudents,
+            planExpiringNoticeDays: planExpiringNoticeDays ? Number(planExpiringNoticeDays) : undefined,
             calendarStartHour: calendarStartHour != null ? Number(calendarStartHour) : undefined,
             calendarEndHour: calendarEndHour != null ? Number(calendarEndHour) : undefined,
             defaultClassDurationMinutes: defaultClassDurationMinutes != null ? Number(defaultClassDurationMinutes) : undefined,
@@ -95,6 +99,24 @@ export function PoliticasForm({ center }: Props) {
           <label htmlFor="notifyWhenSlotFreed" className="text-sm text-[var(--color-text)]">
             Avisar cuando se libere un cupo
           </label>
+        </div>
+        <div>
+          <label htmlFor="planExpiringNoticeDays" className="block text-sm font-medium text-[var(--color-text)] mb-1">
+            Avisar que un plan vence pronto (días antes)
+          </label>
+          <input
+            id="planExpiringNoticeDays"
+            name="planExpiringNoticeDays"
+            type="number"
+            min={MIN_PLAN_EXPIRING_NOTICE_DAYS}
+            max={MAX_PLAN_EXPIRING_NOTICE_DAYS}
+            defaultValue={center.planExpiringNoticeDays}
+            aria-describedby="planExpiringNoticeDays-help"
+            className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 text-[var(--color-text)]"
+          />
+          <p id="planExpiringNoticeDays-help" className="mt-1 text-xs text-[var(--color-text-muted)]">
+            El alumno ve &quot;Vence pronto&quot; en su plan y recibe un correo con esta anticipación.
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <input

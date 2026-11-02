@@ -6,6 +6,8 @@ import { shouldSendEmail } from "@/lib/application/check-email-preference";
 import { getEmailBranding } from "@/lib/email/branding";
 import { formatLongDate } from "@/lib/email/format-datetime";
 import { getBaseUrl } from "@/lib/utils/base-url";
+import { shouldSendExpiringNotice } from "@/lib/domain/user-plan";
+import { MAX_PLAN_EXPIRING_NOTICE_DAYS } from "@/lib/domain/center-policy";
 
 export async function GET(request: Request) {
   const authHeader = request.headers.get("authorization");
@@ -14,24 +16,25 @@ export async function GET(request: Request) {
   }
 
   const now = new Date();
-  const sixDays = new Date(now);
-  sixDays.setDate(sixDays.getDate() + 6);
-  const sevenDays = new Date(now);
-  sevenDays.setDate(sevenDays.getDate() + 7);
+  // +1 día de holgura: se compara por fecha civil en la zona del centro.
+  const maxWindow = new Date(now.getTime() + (MAX_PLAN_EXPIRING_NOTICE_DAYS + 1) * 86_400_000);
 
-  // Solo planes sin suscripción (los recurrentes se renuevan solos).
-  const expiringPlans = await prisma.userPlan.findMany({
+  // Candidatos amplios; cada centro define con cuántos días avisar (Center.planExpiringNoticeDays).
+  const candidates = await prisma.userPlan.findMany({
     where: {
       status: "ACTIVE",
-      validUntil: { gte: sixDays, lte: sevenDays },
+      validUntil: { gte: now, lte: maxWindow },
       subscriptionId: null,
     },
     include: {
       user: { select: { id: true, email: true, name: true } },
       plan: { select: { name: true } },
-      center: { select: { id: true, name: true } },
+      center: { select: { id: true, name: true, planExpiringNoticeDays: true, timezone: true } },
     },
   });
+  const expiringPlans = candidates.filter((up) =>
+    shouldSendExpiringNotice(up, now, up.center.planExpiringNoticeDays, up.center.timezone)
+  );
 
   let sent = 0;
   const baseUrl = getBaseUrl();

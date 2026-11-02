@@ -507,6 +507,27 @@ export async function seedEventTicket(opts: {
   return { id: ticket.id };
 }
 
+/** Mueve la vigencia de un UserPlan (p.ej. dejarlo vencido sin cambiar su estado guardado). */
+export async function setUserPlanValidity(userPlanId: string, validFrom: Date, validUntil: Date): Promise<void> {
+  const prisma = await getPrisma();
+  if (!prisma) return;
+  await prisma.userPlan.update({ where: { id: userPlanId }, data: { validFrom, validUntil } });
+}
+
+/** Lee / fija los días de aviso "vence pronto" de un centro (para restaurar tras el test). */
+export async function getCenterPlanExpiringNoticeDays(slug: string): Promise<number | null> {
+  const prisma = await getPrisma();
+  if (!prisma) return null;
+  const c = await prisma.center.findUnique({ where: { slug }, select: { planExpiringNoticeDays: true } });
+  return c?.planExpiringNoticeDays ?? null;
+}
+
+export async function setCenterPlanExpiringNoticeDays(slug: string, days: number): Promise<void> {
+  const prisma = await getPrisma();
+  if (!prisma) return;
+  await prisma.center.update({ where: { slug }, data: { planExpiringNoticeDays: days } });
+}
+
 /** Borra todos los EventTickets de un evento. */
 export async function cleanupEventTickets(eventId: string): Promise<void> {
   const prisma = await getPrisma();

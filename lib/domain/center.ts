@@ -4,6 +4,9 @@
  */
 import type { CenterId } from "./user";
 
+/** TZ por defecto cuando el centro no tiene una configurada. */
+export const DEFAULT_TIMEZONE = "America/Santiago";
+
 export interface Center {
   id: CenterId;
   name: string;
@@ -21,6 +24,8 @@ export interface Center {
   allowTrialClassPerPerson: boolean;
   /** Alumno ve quién más tiene cupo confirmado en la misma clase (opt-in, default false) */
   showClassRosterToStudents: boolean;
+  /** Días antes del vencimiento para avisar "vence pronto" (pantalla y correo) */
+  planExpiringNoticeDays: number;
   calendarStartHour: number;
   calendarEndHour: number;
   calendarWeekStartDay: number;

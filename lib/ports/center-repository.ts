@@ -8,6 +8,7 @@ export interface CenterPoliciesUpdate {
   instructorCanReserveForStudent?: boolean;
   allowTrialClassPerPerson?: boolean;
   showClassRosterToStudents?: boolean;
+  planExpiringNoticeDays?: number;
   calendarStartHour?: number;
   calendarEndHour?: number;
   calendarWeekStartDay?: number;

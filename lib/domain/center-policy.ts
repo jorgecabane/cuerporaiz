@@ -5,6 +5,8 @@
 
 export const MAX_CANCEL_BEFORE_MINUTES = 7 * 24 * 60; // 7 días
 export const MAX_BOOK_BEFORE_MINUTES = 30 * 24 * 60; // 30 días
+export const MIN_PLAN_EXPIRING_NOTICE_DAYS = 1;
+export const MAX_PLAN_EXPIRING_NOTICE_DAYS = 30;
 
 export type PolicyTimeUnit = "minutes" | "hours" | "days";
 
