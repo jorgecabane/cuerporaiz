@@ -80,7 +80,7 @@ export async function processPreapprovalWebhook(
       if (userPlanStatus === "FROZEN") {
         await userPlanRepository.freeze(activeUserPlan.id, `Suscripción ${newStatus.toLowerCase()}`, null);
       } else if (userPlanStatus === "ACTIVE" && activeUserPlan.status === "FROZEN") {
-        await userPlanRepository.unfreeze(activeUserPlan.id);
+        await userPlanRepository.unfreeze(activeUserPlan.id, activeUserPlan.validUntil);
       } else {
         await userPlanRepository.updateStatus(activeUserPlan.id, userPlanStatus);
       }

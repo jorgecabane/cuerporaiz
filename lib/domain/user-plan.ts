@@ -51,6 +51,15 @@ export function isUserPlanUsable(plan: UserPlan, now = new Date()): boolean {
   return true;
 }
 
+/** Al descongelar, el término se corre lo que estuvo congelado. Las suscripciones siguen el ciclo de MP. */
+export function validUntilAfterFreeze(
+  plan: Pick<UserPlan, "validUntil" | "frozenAt" | "subscriptionId">,
+  now: Date
+): Date | null {
+  if (!plan.validUntil || !plan.frozenAt || plan.subscriptionId) return plan.validUntil;
+  return new Date(plan.validUntil.getTime() + (now.getTime() - plan.frozenAt.getTime()));
+}
+
 export function classesRemaining(plan: UserPlan): number | null {
   if (plan.classesTotal === null) return null;
   return Math.max(0, plan.classesTotal - plan.classesUsed);

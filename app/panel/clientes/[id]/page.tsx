@@ -193,9 +193,9 @@ export default async function ClientDetailPage({
                     )}
                   </div>
                   <div className="flex gap-4 mt-1 text-xs text-[var(--color-text-muted)] flex-wrap">
-                    <span>Desde: {formatDateOnlyUtc(up.validFrom)}</span>
+                    <span>Desde: {up.validFrom.toLocaleDateString("es-CL", { timeZone: tz })}</span>
                     {up.validUntil && (
-                      <span>Hasta: {formatDateOnlyUtc(up.validUntil)}</span>
+                      <span>Hasta: {up.validUntil.toLocaleDateString("es-CL", { timeZone: tz })}</span>
                     )}
                     {up.status === "FROZEN" && up.freezeReason && (
                       <span>Motivo: {up.freezeReason}</span>
@@ -209,7 +209,7 @@ export default async function ClientDetailPage({
                       userPlanId={up.id}
                       status={up.status}
                       paymentStatus={up.paymentStatus}
-                      isLive={isLive}
+                      canFreeze={isLive && !up.subscriptionId}
                     />
                   </div>
                 </li>

@@ -146,11 +146,12 @@ export const userPlanRepository: IUserPlanRepository = {
     return toDomain(r);
   },
 
-  async unfreeze(id: string) {
+  async unfreeze(id: string, validUntil: Date | null) {
     const r = await prisma.userPlan.update({
       where: { id },
       data: {
         status: "ACTIVE" as unknown as PrismaUserPlanStatus,
+        validUntil,
         unfrozenAt: new Date(),
         frozenUntil: null,
         freezeReason: null,

@@ -7,10 +7,10 @@ interface Props {
   userPlanId: string;
   status: string;
   paymentStatus: string;
-  isLive: boolean;
+  canFreeze: boolean;
 }
 
-export function PlanActions({ userPlanId, status, paymentStatus, isLive }: Props) {
+export function PlanActions({ userPlanId, status, paymentStatus, canFreeze }: Props) {
   const [loading, setLoading] = useState(false);
   const [showFreeze, setShowFreeze] = useState(false);
   const [reason, setReason] = useState("");
@@ -42,7 +42,7 @@ export function PlanActions({ userPlanId, status, paymentStatus, isLive }: Props
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap gap-2">
-        {status === "ACTIVE" && isLive && (
+        {status === "ACTIVE" && canFreeze && (
           <button
             onClick={() => setShowFreeze(true)}
             disabled={loading}

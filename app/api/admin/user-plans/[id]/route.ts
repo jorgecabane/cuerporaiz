@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { isAdminRole } from "@/lib/domain";
+import { isAdminRole, validUntilAfterFreeze } from "@/lib/domain";
 import { userPlanRepository, planRepository } from "@/lib/adapters/db";
 import type { PlanPaymentStatus } from "@/lib/domain/user-plan";
 
@@ -38,6 +38,13 @@ export async function PATCH(
         { status: 400 }
       );
     }
+    // ponytail: pausar en MP (PUT /preapproval status "paused") pendiente de probar en sandbox.
+    if (userPlan.subscriptionId) {
+      return NextResponse.json(
+        { error: "Este plan es una suscripción; por ahora no se puede congelar" },
+        { status: 400 }
+      );
+    }
     if (!reason) {
       return NextResponse.json({ error: "Motivo requerido" }, { status: 400 });
     }
@@ -47,7 +54,7 @@ export async function PATCH(
   }
 
   if (action === "unfreeze") {
-    const updated = await userPlanRepository.unfreeze(id);
+    const updated = await userPlanRepository.unfreeze(id, validUntilAfterFreeze(userPlan, new Date()));
     return NextResponse.json(updated);
   }
 
