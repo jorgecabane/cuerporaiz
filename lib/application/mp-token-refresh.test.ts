@@ -40,7 +40,10 @@ describe("refreshExpiringMpTokens", () => {
 
     expect(findMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: expect.objectContaining({ tokenExpiresAt: { lte: new Date(now.getTime() + 30 * DAY) } }),
+        where: {
+          refreshToken: { not: null },
+          OR: [{ tokenExpiresAt: null }, { tokenExpiresAt: { lte: new Date(now.getTime() + 30 * DAY) } }],
+        },
       })
     );
   });
@@ -74,5 +77,48 @@ describe("refreshExpiringMpTokens", () => {
       expect.objectContaining({ kind: "mp_token_refresh_failed", metadata: expect.objectContaining({ centerId: "c1", status: 400 }) })
     );
     expect(result).toEqual({ refreshed: 0, failed: 1 });
+  });
+
+  it("si fetch revienta, alerta y sigue con el siguiente centro", async () => {
+    findMany.mockResolvedValue([
+      { centerId: "c1", refreshToken: "rt1" },
+      { centerId: "c2", refreshToken: "rt2" },
+    ] as never);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn()
+        .mockRejectedValueOnce(new Error("ECONNRESET"))
+        .mockResolvedValueOnce(new Response(JSON.stringify({ access_token: "at2", expires_in: 86_400 }), { status: 200 }))
+    );
+
+    const result = await refreshExpiringMpTokens(now);
+
+    expect(sendSecurityAlert).toHaveBeenCalledWith(
+      expect.objectContaining({ metadata: expect.objectContaining({ centerId: "c1", message: "ECONNRESET" }) })
+    );
+    expect(update).toHaveBeenCalledWith(expect.objectContaining({ where: { centerId: "c2" } }));
+    expect(result).toEqual({ refreshed: 1, failed: 1 });
+  });
+
+  it("sin expires_in guarda vencimiento null (no Invalid Date)", async () => {
+    findMany.mockResolvedValue([{ centerId: "c1", refreshToken: "rt" }] as never);
+    mockFetch(200, { access_token: "at", refresh_token: "rt2" });
+
+    await refreshExpiringMpTokens(now);
+
+    expect(update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ tokenExpiresAt: null }) })
+    );
+  });
+
+  it("sin credenciales de la app no llama a MP ni alerta por centro", async () => {
+    delete process.env.MP_APP_ID;
+    findMany.mockResolvedValue([{ centerId: "c1", refreshToken: "rt" }] as never);
+    const fetchMock = mockFetch(200, {});
+
+    await refreshExpiringMpTokens(now);
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(sendSecurityAlert).toHaveBeenCalledTimes(1);
   });
 });
