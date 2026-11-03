@@ -29,5 +29,6 @@ export interface IUserPlanRepository {
   updateStatus(id: string, status: UserPlanStatus): Promise<UserPlan>;
   updatePaymentStatus(id: string, paymentStatus: PlanPaymentStatus): Promise<UserPlan>;
   freeze(id: string, reason: string, frozenUntil: Date | null): Promise<UserPlan>;
-  unfreeze(id: string): Promise<UserPlan>;
+  /** validUntil: el término ya corrido (ver validUntilAfterFreeze). */
+  unfreeze(id: string, validUntil: Date | null): Promise<UserPlan>;
 }

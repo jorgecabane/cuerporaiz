@@ -43,6 +43,7 @@ export {
   DEFAULT_PLAN_EXPIRING_NOTICE_DAYS,
   isUserPlanUsable,
   classesRemaining,
+  validUntilAfterFreeze,
   getPlanDisplayStatus,
   isPlanCurrent,
   pickLapsedPlan,

@@ -120,7 +120,7 @@ La TZ a usar es `Center.timezone` (IANA, default `"America/Santiago"`). No hardc
 
 - **Correos:** `getEmailBranding(centerId).timezone` ya resuelve la TZ del centro. Pasala a `formatLongDateTime / formatLongDate / formatTime` de `lib/email/format-datetime.ts` y a `buildGoogleCalendarUrl({ timeZone })`.
 
-- **Excepciones legítimas (mantener `timeZone: "UTC"`):** campos que se guardan como UTC midnight semánticamente (no son timestamps reales). Ejemplos actuales: `client.birthday`, `Holiday.date`, `UserPlan.validFrom/validUntil/frozenUntil` (ver `formatDateOnlyUtc` en `app/panel/clientes/[id]/page.tsx` y `formatHolidayDateDisplay` en `lib/domain/holiday-date.ts`). Cuando dudes, mirá cómo se guarda el campo: si la app hizo `new Date(Date.UTC(y, m, d))`, es UTC; si fue `new Date()` o `validUntil = now + N días`, es timestamp y va con la TZ del centro.
+- **Excepciones legítimas (mantener `timeZone: "UTC"`):** campos que se guardan como UTC midnight semánticamente (no son timestamps reales). Ejemplos actuales: `client.birthday`, `Holiday.date`, `UserPlan.frozenUntil` (ver `formatDateOnlyUtc` en `app/panel/clientes/[id]/page.tsx` y `formatHolidayDateDisplay` en `lib/domain/holiday-date.ts`). Cuando dudes, mirá cómo se guarda el campo: si la app hizo `new Date(Date.UTC(y, m, d))`, es UTC; si fue `new Date()` o `validUntil = now + N días`, es timestamp y va con la TZ del centro. `UserPlan.validFrom/validUntil` se muestran con la TZ del centro: son timestamps (compra = `now + N días`, y la reserva compara contra el instante).
 
 Checklist al agregar un display de fecha nuevo:
 1. ¿Pasaste `timeZone`?

@@ -2125,3 +2125,27 @@ export async function cleanupHorariosByTitlePrefix(prefix: string): Promise<void
       .catch(() => {});
   }
 }
+
+/** Simula un congelamiento antiguo: mueve frozenAt / frozenUntil. */
+export async function setUserPlanFreezeDates(
+  userPlanId: string,
+  dates: { frozenAt: Date; frozenUntil: Date | null },
+): Promise<void> {
+  const prisma = await getPrisma();
+  if (!prisma) return;
+  await prisma.userPlan.update({ where: { id: userPlanId }, data: dates });
+}
+
+export async function getUserPlanState(
+  userPlanId: string,
+): Promise<{ status: string; validUntil: Date | null } | null> {
+  const prisma = await getPrisma();
+  if (!prisma) return null;
+  return prisma.userPlan.findUnique({ where: { id: userPlanId }, select: { status: true, validUntil: true } });
+}
+
+export async function linkUserPlanToSubscription(userPlanId: string, subscriptionId: string): Promise<void> {
+  const prisma = await getPrisma();
+  if (!prisma) return;
+  await prisma.userPlan.update({ where: { id: userPlanId }, data: { subscriptionId } });
+}
