@@ -9,8 +9,6 @@ export type PracticeWithLessons = OnDemandPractice & { lessons: OnDemandLesson[]
 
 export interface IOnDemandPracticeRepository {
   findByCategoryId(categoryId: string): Promise<OnDemandPractice[]>;
-  findPublishedByCategoryId(categoryId: string): Promise<OnDemandPractice[]>;
-  findPublishedWithLessonsByCategoryId(categoryId: string): Promise<PracticeWithLessons[]>;
   findById(id: string): Promise<OnDemandPractice | null>;
   /** Crea sólo si la categoría pertenece al centro. */
   create(centerId: string, data: CreatePracticeInput): Promise<OnDemandPractice | null>;

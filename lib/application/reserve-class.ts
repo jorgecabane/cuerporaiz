@@ -590,26 +590,6 @@ async function buildReservationDtos(centerId: string, reservations: Reservation[
   );
 }
 
-/**
- * Listar reservas del usuario en el centro (confirmadas por defecto).
- */
-export async function listMyReservationsUseCase(
-  userId: string,
-  centerId: string,
-  options?: { status?: "CONFIRMED" | "CANCELLED" | "LATE_CANCELLED" | "ATTENDED" | "NO_SHOW" }
-): Promise<ReservationDto[]> {
-  const reservations = await reservationRepository.findByUserId(userId, options);
-  return buildReservationDtos(centerId, reservations);
-}
-
-/**
- * Listar clases en vivo del centro (futuras).
- */
-export async function listLiveClassesUseCase(centerId: string): Promise<LiveClassDto[]> {
-  const classes = await liveClassRepository.findByCenterId(centerId, new Date());
-  return buildLiveClassDtos(centerId, classes);
-}
-
 const DEFAULT_PAGE_SIZE = 10;
 
 export interface ListLiveClassesPaginatedResult {
@@ -684,27 +664,6 @@ export async function listMyReservationsPaginated(
     userId,
     { centerId, limit: pageSize, offset, ...(opts.statuses?.length ? { statuses: opts.statuses } : {}) }
   );
-  const items = await buildReservationDtos(centerId, reservations);
-  return { items, total, page, pageSize };
-}
-
-const DEFAULT_CENTER_PAGE_SIZE = 50;
-
-/**
- * Listar reservas del centro (admin). Misma forma que listMyReservationsPaginated pero por centerId.
- */
-export async function listCenterReservationsPaginated(
-  centerId: string,
-  opts: { page?: number; pageSize?: number; statuses?: ReservationStatus[] }
-): Promise<ListReservationsPaginatedResult> {
-  const page = Math.max(1, opts.page ?? 1);
-  const pageSize = Math.min(100, Math.max(1, opts.pageSize ?? DEFAULT_CENTER_PAGE_SIZE));
-  const offset = (page - 1) * pageSize;
-  const { items: reservations, total } = await reservationRepository.findPageByCenterId(centerId, {
-    limit: pageSize,
-    offset,
-    ...(opts.statuses?.length ? { statuses: opts.statuses } : {}),
-  });
   const items = await buildReservationDtos(centerId, reservations);
   return { items, total, page, pageSize };
 }

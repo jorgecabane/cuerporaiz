@@ -10,7 +10,7 @@ export {
   isStaffRole,
   DEFAULT_SIGNUP_ROLE,
 } from "./role";
-export type { User, UserId, CenterId, UserWithMemberships } from "./user";
+export type { User, UserId, CenterId } from "./user";
 export type { Center } from "./center";
 export type { LiveClass, LiveClassId, LiveClassStatus } from "./live-class";
 export type { Discipline, DisciplineId } from "./discipline";

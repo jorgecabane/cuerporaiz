@@ -44,28 +44,6 @@ export interface CreatePreferenceDto {
   itemCategoryId?: string;
 }
 
-export const createPreferenceDtoSchema = z.object({
-  accessToken: z.string().min(1),
-  title: z.string().min(1),
-  quantity: z.number().int().min(1),
-  unitPrice: z.number().min(0),
-  externalReference: z.string().min(1),
-  backUrls: z.object({
-    success: z.string().url(),
-    failure: z.string().url(),
-    pending: z.string().url(),
-  }),
-  notificationUrl: z.string().url(),
-  autoReturn: z.literal("approved").optional(),
-  payerEmail: z.string().email().optional(),
-  payerFirstName: z.string().optional(),
-  payerLastName: z.string().optional(),
-  statementDescriptor: z.string().max(22).optional(),
-  itemId: z.string().optional(),
-  itemDescription: z.string().optional(),
-  itemCategoryId: z.string().optional(),
-});
-
 /** Resultado de crear preferencia: URL de checkout y ID de preferencia */
 export interface CreatePreferenceResultDto {
   success: boolean;

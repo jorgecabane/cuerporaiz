@@ -8,12 +8,3 @@ export const studioUrl = "/studio";
 export function isSanityConfigured(): boolean {
   return Boolean(projectId);
 }
-
-export function assertProjectId(): string {
-  if (!projectId) {
-    throw new Error(
-      "Missing NEXT_PUBLIC_SANITY_PROJECT_ID. Ver docs/sanity-setup.md para configurar Sanity.",
-    );
-  }
-  return projectId;
-}

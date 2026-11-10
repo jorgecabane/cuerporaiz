@@ -36,49 +36,6 @@ export const onDemandPracticeRepository: IOnDemandPracticeRepository = {
     return list.map(toDomain);
   },
 
-  async findPublishedByCategoryId(categoryId: string) {
-    const list = await prisma.onDemandPractice.findMany({
-      where: { categoryId, status: "PUBLISHED" },
-      orderBy: { sortOrder: "asc" },
-    });
-    return list.map(toDomain);
-  },
-
-  async findPublishedWithLessonsByCategoryId(categoryId: string) {
-    const list = await prisma.onDemandPractice.findMany({
-      where: { categoryId, status: "PUBLISHED" },
-      orderBy: { sortOrder: "asc" },
-      include: {
-        lessons: {
-          where: { status: "PUBLISHED" },
-          orderBy: { sortOrder: "asc" },
-        },
-      },
-    });
-    return list.map((p) => ({
-      ...toDomain(p),
-      lessons: p.lessons.map((l) => ({
-        id: l.id,
-        practiceId: l.practiceId,
-        title: l.title,
-        description: l.description,
-        videoUrl: l.videoUrl,
-        promoVideoUrl: l.promoVideoUrl,
-        thumbnailUrl: l.thumbnailUrl,
-        durationMinutes: l.durationMinutes,
-        level: l.level,
-        intensity: l.intensity,
-        targetAudience: l.targetAudience,
-        equipment: l.equipment,
-        tags: l.tags,
-        sortOrder: l.sortOrder,
-        status: l.status as unknown as OnDemandContentStatus,
-        createdAt: l.createdAt,
-        updatedAt: l.updatedAt,
-      })),
-    }));
-  },
-
   async findById(id: string) {
     const r = await prisma.onDemandPractice.findUnique({ where: { id } });
     return r ? toDomain(r) : null;

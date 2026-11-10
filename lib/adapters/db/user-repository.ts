@@ -3,7 +3,7 @@ import type { User } from "@/lib/domain";
 import type { Role } from "@/lib/domain/role";
 import type { CenterId } from "@/lib/domain/user";
 import { prisma } from "./prisma";
-import type { Role as PrismaRole, UserCenterRole } from "@prisma/client";
+import type { Role as PrismaRole } from "@prisma/client";
 
 function toDomainRole(r: PrismaRole): Role {
   return r as unknown as Role;
@@ -119,18 +119,6 @@ export const userRepository: IUserRepository = {
     return list.map(toDomainUser);
   },
 
-  async findByIdWithMemberships(id: string) {
-    const u = await prisma.user.findUnique({
-      where: { id },
-      include: { memberships: true },
-    });
-    if (!u) return null;
-    return {
-      ...toDomainUser(u),
-      memberships: u.memberships.map((m: UserCenterRole) => ({ centerId: m.centerId as CenterId, role: toDomainRole(m.role) })),
-    };
-  },
-
   async findManyByCenterId(centerId: CenterId) {
     const memberships = await prisma.userCenterRole.findMany({
       where: { centerId },
@@ -157,10 +145,4 @@ export const userRepository: IUserRepository = {
     });
   },
 
-  async setLegacyClient(userId: string, centerId: CenterId, isLegacyClient: boolean) {
-    await prisma.userCenterRole.update({
-      where: { userId_centerId: { userId, centerId } },
-      data: { isLegacyClient },
-    });
-  },
 };

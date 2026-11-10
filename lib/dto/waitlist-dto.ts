@@ -13,12 +13,6 @@ export const joinWaitlistBodySchema = z.object({
 
 export type JoinWaitlistBody = z.infer<typeof joinWaitlistBodySchema>;
 
-// ─── Body de POST /api/waitlist/[entryId]/promote ───────────────────────────
-// El entryId viene en la URL; el body queda opcional para futuros parámetros.
-export const promoteWaitlistBodySchema = z.object({}).optional().default({});
-
-export type PromoteWaitlistBody = z.infer<typeof promoteWaitlistBodySchema>;
-
 // ─── Query GET /api/admin/waitlist ──────────────────────────────────────────
 // Exactamente uno de liveClassId o eventId debe estar presente.
 export const adminListWaitlistQuerySchema = z

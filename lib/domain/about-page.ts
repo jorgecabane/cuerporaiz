@@ -37,20 +37,3 @@ export interface AboutImage {
 export interface AboutPageWithImages extends AboutPage {
   images: AboutImage[];
 }
-
-export function groupImagesByCategory(
-  images: AboutImage[],
-): Record<AboutImageCategory, AboutImage[]> {
-  const grouped: Record<AboutImageCategory, AboutImage[]> = {
-    RETIROS: [],
-    CLASES: [],
-    ESPACIO: [],
-  };
-  for (const img of images) {
-    if (img.visible) grouped[img.category].push(img);
-  }
-  for (const key of ABOUT_IMAGE_CATEGORIES) {
-    grouped[key].sort((a, b) => a.sortOrder - b.sortOrder);
-  }
-  return grouped;
-}

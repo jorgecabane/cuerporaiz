@@ -1,7 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
   joinWaitlistBodySchema,
-  promoteWaitlistBodySchema,
   adminListWaitlistQuerySchema,
 } from "./waitlist-dto";
 
@@ -29,18 +28,6 @@ describe("joinWaitlistBodySchema", () => {
   it("rechaza body sin kind", () => {
     const r = joinWaitlistBodySchema.safeParse({ itemId: "lc_1" });
     expect(r.success).toBe(false);
-  });
-});
-
-describe("promoteWaitlistBodySchema", () => {
-  it("body opcional vacío es aceptado (entry id viene en URL)", () => {
-    const r = promoteWaitlistBodySchema.safeParse({});
-    expect(r.success).toBe(true);
-  });
-
-  it("acepta body indefinido", () => {
-    const r = promoteWaitlistBodySchema.safeParse(undefined);
-    expect(r.success).toBe(true);
   });
 });
 

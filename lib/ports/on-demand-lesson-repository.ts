@@ -6,7 +6,6 @@ import type {
 
 export interface IOnDemandLessonRepository {
   findByPracticeId(practiceId: string): Promise<OnDemandLesson[]>;
-  findPublishedByPracticeId(practiceId: string): Promise<OnDemandLesson[]>;
   findById(id: string): Promise<OnDemandLesson | null>;
   /** Crea sólo si la practice → category pertenece al centro. */
   create(centerId: string, data: CreateLessonInput): Promise<OnDemandLesson | null>;

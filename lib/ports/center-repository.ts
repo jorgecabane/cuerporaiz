@@ -20,6 +20,5 @@ export interface ICenterRepository {
   findById(id: string): Promise<Center | null>;
   findBySlug(slug: string): Promise<Center | null>;
   create(data: { name: string; slug: string }): Promise<Center>;
-  findAll(): Promise<Center[]>;
   updatePolicies(centerId: string, data: CenterPoliciesUpdate): Promise<Center | null>;
 }

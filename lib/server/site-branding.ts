@@ -1,4 +1,3 @@
-import { centerRepository, siteConfigRepository } from "@/lib/adapters/db";
 import { SITE_NAME } from "@/lib/constants/copy";
 import { getSiteContext } from "@/lib/seo/metadata";
 
@@ -22,25 +21,4 @@ export async function getPublicSiteBranding(): Promise<SiteBranding> {
     logoUrl: ctx.siteConfig?.logoUrl ?? null,
     centerName: ctx.center.name || SITE_NAME,
   };
-}
-
-/**
- * Devuelve el logo + nombre del centro para el panel admin (sesión activa).
- * Recibe `centerId` directo, sin depender del env del centro por defecto.
- */
-export async function getCenterBranding(centerId: string): Promise<SiteBranding> {
-  const fallback: SiteBranding = { logoUrl: null, centerName: SITE_NAME };
-  try {
-    const [center, config] = await Promise.all([
-      centerRepository.findById(centerId),
-      siteConfigRepository.findByCenterId(centerId),
-    ]);
-    if (!center) return fallback;
-    return {
-      logoUrl: config?.logoUrl ?? null,
-      centerName: center.name || SITE_NAME,
-    };
-  } catch {
-    return fallback;
-  }
 }

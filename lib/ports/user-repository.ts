@@ -1,4 +1,4 @@
-import type { User, UserWithMemberships } from "@/lib/domain";
+import type { User } from "@/lib/domain";
 import type { CenterId } from "@/lib/domain/user";
 import type { Role } from "@/lib/domain/role";
 
@@ -47,9 +47,7 @@ export interface IUserRepository {
   setPasswordAndVerify(userId: string, passwordHash: string): Promise<void>;
   findById(id: string): Promise<User | null>;
   findManyByIds(ids: string[]): Promise<User[]>;
-  findByIdWithMemberships(id: string): Promise<UserWithMemberships | null>;
   findManyByCenterId(centerId: CenterId): Promise<UserWithCenterRole[]>;
   findMembership(userId: string, centerId: CenterId): Promise<UserMembership | null>;
   addRole(userId: string, centerId: CenterId, role: Role): Promise<void>;
-  setLegacyClient(userId: string, centerId: CenterId, isLegacyClient: boolean): Promise<void>;
 }

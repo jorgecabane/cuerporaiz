@@ -18,15 +18,3 @@ export interface Subscription {
   createdAt: Date;
   updatedAt: Date;
 }
-
-export const SUBSCRIPTION_STATUS_LABELS: Record<SubscriptionStatus, string> = {
-  PENDING: "Pendiente",
-  ACTIVE: "Activa",
-  PAUSED: "Pausada",
-  CANCELLED: "Cancelada",
-  PAYMENT_FAILED: "Pago fallido",
-};
-
-export function isSubscriptionActive(status: SubscriptionStatus): boolean {
-  return status === "ACTIVE";
-}

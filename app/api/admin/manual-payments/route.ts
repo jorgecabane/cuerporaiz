@@ -49,26 +49,3 @@ export async function POST(request: Request) {
 
   return NextResponse.json(payment, { status: 201 });
 }
-
-export async function GET(request: Request) {
-  const session = await auth();
-  if (!session?.user?.centerId) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-  }
-  if (!isAdminRole(session.user.role)) {
-    return NextResponse.json({ error: "Solo administración" }, { status: 403 });
-  }
-
-  const { searchParams } = new URL(request.url);
-  const userId = searchParams.get("userId");
-  if (!userId) {
-    return NextResponse.json({ error: "userId requerido" }, { status: 400 });
-  }
-
-  const payments = await prisma.manualPayment.findMany({
-    where: { centerId: session.user.centerId, userId },
-    orderBy: { paidAt: "desc" },
-  });
-
-  return NextResponse.json(payments);
-}

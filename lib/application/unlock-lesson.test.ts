@@ -111,7 +111,6 @@ function makeDeps() {
     lessonRepo: {
       findById: vi.fn(),
       findByPracticeId: vi.fn(),
-      findPublishedByPracticeId: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
       delete: vi.fn(),
@@ -120,8 +119,6 @@ function makeDeps() {
     practiceRepo: {
       findById: vi.fn(),
       findByCategoryId: vi.fn(),
-      findPublishedByCategoryId: vi.fn(),
-      findPublishedWithLessonsByCategoryId: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
       delete: vi.fn(),
@@ -169,7 +166,6 @@ function makeDeps() {
       findByPlanIds: vi.fn(),
       findByPlanAndCategory: vi.fn(),
       upsertMany: vi.fn(),
-      deleteByPlanId: vi.fn(),
     },
   };
 }

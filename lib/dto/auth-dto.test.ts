@@ -1,15 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { loginBodySchema, signupBodySchema } from "./auth-dto";
+import { signupBodySchema } from "./auth-dto";
 
 describe("auth-dto schemas", () => {
-  it("loginBodySchema valida inputs correctos", () => {
-    const parsed = loginBodySchema.parse({
-      email: "a@b.com",
-      password: "x",
-      centerId: "center",
-    });
-    expect(parsed.email).toBe("a@b.com");
-  });
 
   it("signupBodySchema parsea inputs válidos sin campo role", () => {
     const parsed = signupBodySchema.parse({

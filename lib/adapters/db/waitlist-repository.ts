@@ -102,18 +102,6 @@ export const waitlistRepository: IWaitlistRepository = {
     return list.map(toDomain);
   },
 
-  async findByItem(kind, itemId, options) {
-    const where = {
-      ...whereForItem(kind, itemId),
-      ...(options?.includeTerminal ? {} : { status: { in: ACTIVE_STATUSES } }),
-    };
-    const list = await prisma.waitlistEntry.findMany({
-      where,
-      orderBy: { position: "asc" },
-    });
-    return list.map(toDomain);
-  },
-
   async updateStatus(id, status) {
     const updated = await prisma.waitlistEntry.update({
       where: { id },

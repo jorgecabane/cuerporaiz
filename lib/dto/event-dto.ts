@@ -48,12 +48,6 @@ export const updateEventSchema = z
 
 export type UpdateEventBody = z.infer<typeof updateEventSchema>;
 
-export const createEventTicketSchema = z.object({
-  eventId: z.string().min(1),
-});
-
-export type CreateEventTicketBody = z.infer<typeof createEventTicketSchema>;
-
 const httpsUrl = z
   .string()
   .trim()

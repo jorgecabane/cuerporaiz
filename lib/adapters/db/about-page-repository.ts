@@ -84,14 +84,6 @@ export const aboutPageRepository: IAboutPageRepository = {
     return toAboutPage(row);
   },
 
-  async listImages(pageId) {
-    const rows = await prisma.centerAboutPageImage.findMany({
-      where: { pageId },
-      orderBy: [{ category: "asc" }, { sortOrder: "asc" }],
-    });
-    return rows.map(toAboutImage);
-  },
-
   async createImage(pageId, data) {
     const count = await prisma.centerAboutPageImage.count({
       where: { pageId, category: data.category },

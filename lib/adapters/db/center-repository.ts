@@ -83,11 +83,6 @@ export const centerRepository: ICenterRepository = {
     return toDomainCenter(c);
   },
 
-  async findAll() {
-    const list = await prisma.center.findMany({ orderBy: { name: "asc" } });
-    return list.map(toDomainCenter);
-  },
-
   async updatePolicies(centerId: string, data: CenterPoliciesUpdate) {
     const payload: Record<string, unknown> = {};
     if (data.cancelBeforeMinutes !== undefined) payload.cancelBeforeMinutes = data.cancelBeforeMinutes;
