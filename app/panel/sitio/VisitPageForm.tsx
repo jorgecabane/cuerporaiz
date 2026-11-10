@@ -37,12 +37,12 @@ export default function VisitPageForm({ config }: { config: SiteConfig | null })
           onChange={(e) => setVisible(e.target.checked)}
           className="h-4 w-4 accent-[var(--color-primary)]"
         />
-        <span className="text-sm text-[var(--color-text)]">Página visible y en el menú ({NAV_GROUP_LABELS.about} → Conócenos)</span>
+        <span className="text-sm text-[var(--color-text)]">Página visible y en el menú ({NAV_GROUP_LABELS.about} → Conóceme)</span>
       </label>
 
       <div>
         <label htmlFor="visit-title" className={labelCls}>Título</label>
-        <input id="visit-title" name="visitTitle" maxLength={120} defaultValue={config?.visitTitle ?? ""} placeholder="Conócenos" className={inputCls} />
+        <input id="visit-title" name="visitTitle" maxLength={120} defaultValue={config?.visitTitle ?? ""} placeholder="Conóceme" className={inputCls} />
       </div>
       <div>
         <label htmlFor="visit-intro" className={labelCls}>Bajada</label>
@@ -50,7 +50,7 @@ export default function VisitPageForm({ config }: { config: SiteConfig | null })
       </div>
       <div>
         <span className={labelCls}>Foto de portada</span>
-        <SanityImagePicker value={heroImageUrl} onChange={setHeroImageUrl} label="Portada de Conócenos" aspect="wide" imageKind="hero" />
+        <SanityImagePicker value={heroImageUrl} onChange={setHeroImageUrl} label="Portada de Conóceme" aspect="wide" imageKind="hero" />
         <p className={helpCls}>Si la dejas vacía, se usa la primera foto de “La sala”.</p>
       </div>
 

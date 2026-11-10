@@ -6,7 +6,7 @@ import { toFaqItems } from "@/lib/domain/site-config";
 import { isSanityConfigured } from "@/sanity/env";
 
 /**
- * Menú público del centro (ver `buildPublicNav`): grupo "about" (Sobre, Conócenos, FAQ),
+ * Menú público del centro (ver `buildPublicNav`): grupo "about" (Sobre, Conóceme, FAQ),
  * "Practica" (Horarios, Biblioteca, Eventos), Blog y Contacto, según lo que
  * esté habilitado. Server-only. Nunca lanza: ante error cae a DEFAULT_NAV.
  */

@@ -20,7 +20,7 @@ export function flattenNav(items: NavItem[]): NavLink[] {
 export interface PublicNavOptions {
   /** Label del link a /sobre, o null si la página no está visible en el header. */
   aboutLabel: string | null;
-  /** Página "Conócenos" visible. */
+  /** Página "Conóceme" visible. */
   visitEnabled?: boolean;
   faqEnabled: boolean;
   /** Label del blog, o null si está deshabilitado. */
@@ -35,7 +35,7 @@ export const NAV_GROUP_LABELS = { about: "Sobre Cuerpo Raíz", practice: "Practi
 export function buildPublicNav({ aboutLabel, visitEnabled = false, faqEnabled, blogLabel, labels = {} }: PublicNavOptions): NavItem[] {
   const about: NavLink[] = [
     ...(aboutLabel ? [{ href: "/sobre", label: aboutLabel, description: "Mi historia y propuesta" }] : []),
-    ...(visitEnabled ? [{ href: "/conocenos", label: "Conócenos", description: "La sala y cómo llegar" }] : []),
+    ...(visitEnabled ? [{ href: "/conocenos", label: "Conóceme", description: "La sala y cómo llegar" }] : []),
     ...(faqEnabled ? [{ href: "/preguntas-frecuentes", label: "Preguntas frecuentes", description: "Dudas antes de venir" }] : []),
   ];
   const practice: NavLink[] = [

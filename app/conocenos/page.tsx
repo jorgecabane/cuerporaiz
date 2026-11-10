@@ -8,7 +8,7 @@ import { googleMapsEmbedUrl, googleMapsLink, splitLines, videoEmbedUrl } from "@
 
 export const revalidate = 3600;
 
-const DEFAULT_TITLE = "Conócenos";
+const DEFAULT_TITLE = "Conóceme";
 
 async function loadVisitPage() {
   const slug = process.env.NEXT_PUBLIC_DEFAULT_CENTER_SLUG;
@@ -53,7 +53,7 @@ export default async function ConocenosPage() {
       <section className="px-[var(--space-4)] py-[var(--space-16)] md:px-[var(--space-8)]" aria-labelledby="visit-heading">
         <div className="mx-auto grid max-w-6xl items-center gap-[var(--space-10)] md:grid-cols-2">
           <div>
-            <p className={EYEBROW}>Conócenos</p>
+            <p className={EYEBROW}>Conóceme</p>
             <h1 id="visit-heading" className="mt-[var(--space-3)] text-hero font-display font-semibold leading-tight text-[var(--color-primary)]">
               {config.visitTitle ?? DEFAULT_TITLE}
             </h1>

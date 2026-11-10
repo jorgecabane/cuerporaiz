@@ -1,8 +1,8 @@
 import { test, expect } from "@playwright/test";
 import { NAV_GROUP_LABELS } from "../lib/domain/public-nav";
 
-/** Página "Conócenos": se activa desde /panel/sitio, aparece en el submenú "about" y se oculta (404). */
-test.describe("Conócenos", () => {
+/** Página "Conóceme": se activa desde /panel/sitio, aparece en el submenú "about" y se oculta (404). */
+test.describe("Conóceme", () => {
   async function setVisible(page: import("@playwright/test").Page, visible: boolean, title?: string) {
     await page.goto("/panel/sitio?tab=conocenos");
     const toggle = page.getByLabel(/Página visible y en el menú/);
@@ -24,7 +24,7 @@ test.describe("Conócenos", () => {
     const nav = page.getByRole("navigation", { name: "Principal" });
     const group = nav.getByRole("button", { name: NAV_GROUP_LABELS.about });
     if (await group.count()) await group.click();
-    await expect(nav.getByRole("link", { name: /Conócenos/ })).toBeVisible();
+    await expect(nav.getByRole("link", { name: /Conóceme/ })).toBeVisible();
 
     await setVisible(page, false);
     const res = await page.goto("/conocenos");

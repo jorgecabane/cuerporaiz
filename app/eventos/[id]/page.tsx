@@ -150,7 +150,7 @@ export default async function PublicEventDetailPage({
                   rel="noopener noreferrer"
                   className="font-medium text-[var(--color-primary)] underline underline-offset-4"
                 >
-                  Escríbenos por WhatsApp<span className="sr-only"> (se abre en otra pestaña)</span>
+                  Escríbeme por WhatsApp<span className="sr-only"> (se abre en otra pestaña)</span>
                 </a>
               </p>
             )}

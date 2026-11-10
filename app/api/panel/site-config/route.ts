@@ -69,7 +69,7 @@ export async function PATCH(request: Request) {
   }
 
   const config = await siteConfigRepository.upsert(centerId, parsed.data);
-  // Layout: el header/footer dependen de la config (labels, Conócenos visible).
+  // Layout: el header/footer dependen de la config (labels, Conóceme visible).
   revalidatePath("/", "layout");
   return NextResponse.json(config);
 }
