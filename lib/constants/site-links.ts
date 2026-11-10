@@ -21,7 +21,7 @@ export const SITE_LINK_SUGGESTIONS: SiteLinkSuggestion[] = [
   { href: "/membresia", label: "Membresía", group: "page" },
   { href: "/catalogo", label: "Biblioteca virtual (página)", group: "page" },
   { href: "/horarios", label: "Horarios", group: "page" },
-  { href: "/conocenos", label: "Conócenos", group: "page" },
+  { href: "/conocenos", label: "Conóceme", group: "page" },
   { href: "/eventos", label: "Eventos y Experiencias", group: "page" },
   { href: "/preguntas-frecuentes", label: "Preguntas frecuentes", group: "page" },
   { href: "/sobre", label: "Sobre", group: "page" },

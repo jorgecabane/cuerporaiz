@@ -18,7 +18,7 @@ const TABS = [
   { key: "branding", label: "Marca" },
   { key: "secciones", label: "Secciones" },
   { key: "sobre", label: "Sobre mí" },
-  { key: "conocenos", label: "Conócenos" },
+  { key: "conocenos", label: "Conóceme" },
   { key: "primera-clase", label: "Primera clase" },
   { key: "blog", label: "Blog" },
   { key: "newsletter", label: "Newsletter" },

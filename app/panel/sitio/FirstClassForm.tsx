@@ -30,7 +30,7 @@ export default function FirstClassForm({ config }: { config: SiteConfig | null }
           className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)]"
         />
         <p id="first-class-help" className="mt-1 text-xs text-[var(--color-text-muted)]">
-          Una idea por línea. Se muestra en <strong>Horarios</strong>, en <strong>Conócenos</strong> y en el{" "}
+          Una idea por línea. Se muestra en <strong>Horarios</strong>, en <strong>Conóceme</strong> y en el{" "}
           <strong>correo de confirmación</strong> de la clase de prueba y de la primera reserva.
         </p>
       </div>

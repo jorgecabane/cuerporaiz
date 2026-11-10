@@ -12,9 +12,10 @@ describe("buildPublicNav", () => {
     expect(practice.children.map((c) => c.href)).toEqual(["/horarios", "/catalogo", "/eventos"]);
   });
 
-  it("suma Conócenos al grupo about cuando está visible", () => {
+  it("suma Conóceme al grupo about cuando está visible", () => {
     const about = buildPublicNav({ ...full, visitEnabled: true })[0] as NavGroup;
     expect(about.children.map((c) => c.href)).toEqual(["/sobre", "/conocenos", "/preguntas-frecuentes"]);
+    expect(about.children.find((c) => c.href === "/conocenos")?.label).toBe("Conóceme");
   });
 
   it("aplica los nombres personalizados del panel", () => {
