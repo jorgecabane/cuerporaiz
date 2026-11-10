@@ -52,14 +52,6 @@ export const onDemandLessonRepository: IOnDemandLessonRepository = {
     return list.map(toDomain);
   },
 
-  async findPublishedByPracticeId(practiceId: string) {
-    const list = await prisma.onDemandLesson.findMany({
-      where: { practiceId, status: "PUBLISHED" },
-      orderBy: { sortOrder: "asc" },
-    });
-    return list.map(toDomain);
-  },
-
   async findById(id: string) {
     const r = await prisma.onDemandLesson.findUnique({ where: { id } });
     return r ? toDomain(r) : null;

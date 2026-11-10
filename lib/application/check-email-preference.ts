@@ -1,14 +1,5 @@
 import { emailPreferenceRepository } from "@/lib/adapters/db";
-import type { EmailPreference, EmailPreferenceType } from "@/lib/domain/email-preference";
-
-/** Pure function for testing — checks preference without DB */
-export function shouldSendEmailPure(
-  pref: EmailPreference | null,
-  type: EmailPreferenceType
-): boolean {
-  if (!pref) return true;
-  return pref[type];
-}
+import type { EmailPreferenceType } from "@/lib/domain/email-preference";
 
 /** Async version that queries the DB */
 export async function shouldSendEmail(

@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { shouldSendEmailPure, shouldSendEmail } from "./check-email-preference";
-import type { EmailPreference } from "@/lib/domain/email-preference";
+import { shouldSendEmail } from "./check-email-preference";
 
 vi.mock("@/lib/adapters/db", () => ({
   emailPreferenceRepository: {
@@ -9,15 +8,6 @@ vi.mock("@/lib/adapters/db", () => ({
 }));
 
 import { emailPreferenceRepository } from "@/lib/adapters/db";
-
-const basePref: EmailPreference = {
-  id: "1", userId: "u1", centerId: "c1",
-  classReminder: true, spotFreed: true, planExpiring: true,
-  reservationConfirm: true, purchaseConfirm: true,
-  lessonUnlocked: true, quotaExhausted: true, newContent: true,
-  blogPublished: true,
-  createdAt: new Date(), updatedAt: new Date(),
-};
 
 describe("shouldSendEmail (async DB wrapper)", () => {
   beforeEach(() => {
@@ -35,26 +25,5 @@ describe("shouldSendEmail (async DB wrapper)", () => {
     vi.mocked(emailPreferenceRepository.isEnabled).mockResolvedValue(false);
     const result = await shouldSendEmail("u2", "c2", "spotFreed");
     expect(result).toBe(false);
-  });
-});
-
-describe("shouldSendEmailPure", () => {
-  it("returns true when no preference record exists (null)", () => {
-    expect(shouldSendEmailPure(null, "classReminder")).toBe(true);
-  });
-
-  it("returns true when preference is enabled", () => {
-    expect(shouldSendEmailPure(basePref, "classReminder")).toBe(true);
-  });
-
-  it("returns false when preference is disabled", () => {
-    const pref = { ...basePref, classReminder: false };
-    expect(shouldSendEmailPure(pref, "classReminder")).toBe(false);
-  });
-
-  it("checks correct field for each type", () => {
-    const pref = { ...basePref, spotFreed: false, planExpiring: true };
-    expect(shouldSendEmailPure(pref, "spotFreed")).toBe(false);
-    expect(shouldSendEmailPure(pref, "planExpiring")).toBe(true);
   });
 });

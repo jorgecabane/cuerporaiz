@@ -2,7 +2,6 @@ import { describe, it, expect } from "vitest";
 import {
   forgotPasswordSchema,
   resetPasswordSchema,
-  resendVerificationSchema,
 } from "./auth-token-dto";
 
 describe("forgotPasswordSchema", () => {
@@ -34,11 +33,5 @@ describe("resetPasswordSchema", () => {
   });
   it("rechaza sin token", () => {
     expect(resetPasswordSchema.safeParse({ newPassword: "12345678" }).success).toBe(false);
-  });
-});
-
-describe("resendVerificationSchema", () => {
-  it("acepta sin body (usa sesión)", () => {
-    expect(resendVerificationSchema.safeParse({}).success).toBe(true);
   });
 });

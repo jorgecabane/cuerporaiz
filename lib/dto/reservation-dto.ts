@@ -47,12 +47,6 @@ export const reserveClassBodySchema = z.object({
 
 export type ReserveClassBody = z.infer<typeof reserveClassBodySchema>;
 
-export const cancelReservationBodySchema = z.object({
-  reservationId: z.string().min(1, "reservationId requerido"),
-});
-
-export type CancelReservationBody = z.infer<typeof cancelReservationBodySchema>;
-
 // ─── Response ─────────────────────────────────────────────────────────────
 export interface LiveClassDto {
   id: string;

@@ -7,9 +7,6 @@ import { buildPublicNav, type NavItem } from "@/lib/domain/public-nav";
 
 export const SITE_NAME = "Cuerpo Raíz";
 
-export const TAGLINE =
-  "cuerpo, respiración y placer. el camino de regreso a ti.";
-
 /** Menú por defecto (sin centro configurado): solo lo que siempre existe. */
 export const DEFAULT_NAV: NavItem[] = buildPublicNav({ aboutLabel: null, faqEnabled: false, blogLabel: null });
 

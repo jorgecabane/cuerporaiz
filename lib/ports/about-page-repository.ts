@@ -9,7 +9,6 @@ export interface IAboutPageRepository {
   findByCenterId(centerId: string): Promise<AboutPageWithImages | null>;
   upsert(centerId: string, data: UpsertAboutPageInput): Promise<AboutPage>;
 
-  listImages(pageId: string): Promise<AboutImage[]>;
   createImage(pageId: string, data: CreateAboutImageInput): Promise<AboutImage>;
   /** Devuelve null si la imagen no existe o no pertenece al centro. */
   updateImage(imageId: string, centerId: string, data: UpdateAboutImageInput): Promise<AboutImage | null>;

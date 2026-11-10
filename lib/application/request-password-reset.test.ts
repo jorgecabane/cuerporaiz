@@ -45,11 +45,9 @@ function makeDeps() {
       setPasswordAndVerify: vi.fn(),
       findById: vi.fn(),
       findManyByIds: vi.fn(),
-      findByIdWithMemberships: vi.fn(),
       findManyByCenterId: vi.fn(),
       findMembership: vi.fn(),
       addRole: vi.fn(),
-      setLegacyClient: vi.fn(),
     },
   };
 }

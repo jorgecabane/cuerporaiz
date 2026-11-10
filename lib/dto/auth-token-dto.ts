@@ -11,6 +11,3 @@ export const resetPasswordSchema = z.object({
   newPassword: z.string().min(8, "Mínimo 8 caracteres"),
 });
 export type ResetPasswordBody = z.infer<typeof resetPasswordSchema>;
-
-export const resendVerificationSchema = z.object({});
-export type ResendVerificationBody = z.infer<typeof resendVerificationSchema>;

@@ -19,21 +19,6 @@ export function urlForImage(source: SanityImageSource | null | undefined): strin
 }
 
 /**
- * Variante con ancho fijo (útil para <Image> con width/height y srcset).
- */
-export function urlForImageWithWidth(
-  source: SanityImageSource | null | undefined,
-  width: number,
-): string | null {
-  if (!builder || !source) return null;
-  try {
-    return builder.image(source).width(width).auto("format").fit("max").url();
-  } catch {
-    return null;
-  }
-}
-
-/**
  * Agrega query params a una URL del CDN de Sanity (host `cdn.sanity.io`).
  * Para cualquier otro host devuelve la URL original sin tocar.
  * Si la URL no parsea, devuelve el string original.

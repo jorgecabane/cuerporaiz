@@ -5,5 +5,4 @@ export interface IPlanCategoryQuotaRepository {
   findByPlanIds(planIds: string[]): Promise<PlanCategoryQuota[]>;
   findByPlanAndCategory(planId: string, categoryId: string): Promise<PlanCategoryQuota | null>;
   upsertMany(planId: string, quotas: { categoryId: string; maxLessons: number }[]): Promise<void>;
-  deleteByPlanId(planId: string): Promise<void>;
 }

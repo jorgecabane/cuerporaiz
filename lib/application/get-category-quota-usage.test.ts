@@ -10,7 +10,6 @@ function makeQuotaRepo(overrides: Partial<IPlanCategoryQuotaRepository> = {}): I
     findByPlanIds: vi.fn(),
     findByPlanAndCategory: vi.fn(),
     upsertMany: vi.fn(),
-    deleteByPlanId: vi.fn(),
     ...overrides,
   };
 }

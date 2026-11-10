@@ -10,10 +10,6 @@ export function Skeleton({ className = "" }: SkeletonProps) {
   );
 }
 
-export function SkeletonLine({ className = "" }: SkeletonProps) {
-  return <Skeleton className={`h-4 ${className}`} />;
-}
-
 type CalendarSkeletonView = "day" | "week" | "month";
 
 export function CalendarSkeleton({ view = "week" }: { view?: CalendarSkeletonView } = {}) {

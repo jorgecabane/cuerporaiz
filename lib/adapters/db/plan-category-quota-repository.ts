@@ -58,7 +58,4 @@ export const planCategoryQuotaRepository: IPlanCategoryQuotaRepository = {
     ]);
   },
 
-  async deleteByPlanId(planId: string) {
-    await prisma.planCategoryQuota.deleteMany({ where: { planId } });
-  },
 };

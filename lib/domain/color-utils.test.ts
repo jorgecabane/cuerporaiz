@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { sanitizeHexColor, hexToRgb, darkenHex, lightenHex } from "./color-utils";
+import { sanitizeHexColor, hexToRgb, darkenHex } from "./color-utils";
 
 describe("sanitizeHexColor", () => {
   it("accepts valid 6-digit hex", () => {
@@ -43,22 +43,6 @@ describe("darkenHex", () => {
   it("does not go below #000000", () => {
     const result = darkenHex("#010101", 99);
     expect(result).toBe("#000000");
-  });
-});
-
-describe("lightenHex", () => {
-  it("lightens a color by given percentage", () => {
-    const result = lightenHex("#000000", 10);
-    expect(result).toBe("#1a1a1a");
-  });
-  it("does not go above #FFFFFF", () => {
-    const result = lightenHex("#fefefe", 99);
-    expect(result).toBe("#ffffff");
-  });
-  it("handles 3-digit hex shorthand", () => {
-    // #000 expands to #000000, lighten by 10% → same as #000000 test
-    const result = lightenHex("#000", 10);
-    expect(result).toBe("#1a1a1a");
   });
 });
 

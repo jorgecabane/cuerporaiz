@@ -27,11 +27,6 @@ export function darkenHex(hex: string, percent: number): string {
   return adjustBrightness(hex, -percent);
 }
 
-/** Lighten a hex color by a percentage (0-100). */
-export function lightenHex(hex: string, percent: number): string {
-  return adjustBrightness(hex, percent);
-}
-
 function adjustBrightness(hex: string, percent: number): string {
   const h = hex.replace("#", "");
   const num = parseInt(h.length === 3 ? h.split("").map((c) => c + c).join("") : h, 16);

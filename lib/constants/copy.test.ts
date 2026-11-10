@@ -1,15 +1,13 @@
 import { describe, it, expect } from "vitest";
 import {
   SITE_NAME,
-  TAGLINE,
   DEFAULT_NAV,
   CTAS,
 } from "@/lib/constants/copy";
 
 describe("copy", () => {
-  it("expone SITE_NAME y TAGLINE", () => {
+  it("expone SITE_NAME", () => {
     expect(SITE_NAME).toBe("Cuerpo Raíz");
-    expect(TAGLINE).toContain("cuerpo");
   });
 
   it("DEFAULT_NAV agrupa Practica y termina en Contacto", () => {

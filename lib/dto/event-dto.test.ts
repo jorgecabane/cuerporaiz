@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { createEventSchema, updateEventSchema, createEventTicketSchema, eventOnlineSchema } from "./event-dto";
+import { createEventSchema, updateEventSchema, eventOnlineSchema } from "./event-dto";
 
 const BASE_CREATE = {
   title: "Retiro de Invierno",
@@ -114,20 +114,6 @@ describe("updateEventSchema", () => {
 
   it("rechaza amountCents negativo", () => {
     expect(updateEventSchema.safeParse({ amountCents: -100 }).success).toBe(false);
-  });
-});
-
-describe("createEventTicketSchema", () => {
-  it("acepta eventId válido", () => {
-    expect(createEventTicketSchema.safeParse({ eventId: "clx1234567890" }).success).toBe(true);
-  });
-
-  it("rechaza eventId vacío", () => {
-    expect(createEventTicketSchema.safeParse({ eventId: "" }).success).toBe(false);
-  });
-
-  it("rechaza sin eventId", () => {
-    expect(createEventTicketSchema.safeParse({}).success).toBe(false);
   });
 });
 

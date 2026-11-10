@@ -39,12 +39,6 @@ export interface IWaitlistRepository {
   /** Entries activas de un item, ordenadas por position FIFO. Para broadcast. */
   findActiveByItem(kind: WaitlistKind, itemId: string): Promise<WaitlistEntry[]>;
 
-  /** Para admin: lista todas las entries de un item (incluye terminales si se pide). */
-  findByItem(
-    kind: WaitlistKind,
-    itemId: string,
-    options?: { includeTerminal?: boolean }
-  ): Promise<WaitlistEntry[]>;
 
   updateStatus(id: string, status: WaitlistStatus): Promise<WaitlistEntry>;
 

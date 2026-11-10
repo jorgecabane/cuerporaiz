@@ -1,7 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
   reserveClassBodySchema,
-  cancelReservationBodySchema,
   listReservationsQuerySchema,
 } from "@/lib/dto/reservation-dto";
 import { RESERVATION_STATUS_LABELS } from "@/lib/domain/reservation";
@@ -21,19 +20,6 @@ describe("reservation-dto", () => {
 
     it("rechaza sin liveClassId", () => {
       const result = reserveClassBodySchema.safeParse({});
-      expect(result.success).toBe(false);
-    });
-  });
-
-  describe("cancelReservationBodySchema", () => {
-    it("acepta body válido con reservationId", () => {
-      const result = cancelReservationBodySchema.safeParse({ reservationId: "resxxx456" });
-      expect(result.success).toBe(true);
-      if (result.success) expect(result.data.reservationId).toBe("resxxx456");
-    });
-
-    it("rechaza reservationId vacío", () => {
-      const result = cancelReservationBodySchema.safeParse({ reservationId: "" });
       expect(result.success).toBe(false);
     });
   });

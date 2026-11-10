@@ -1,5 +1,5 @@
 import type { IReservationRepository } from "@/lib/ports";
-import type { FindByUserIdPaginatedOptions, FindByUserIdAndCenterPaginatedOptions, FindPageByCenterIdOptions } from "@/lib/ports/reservation-repository";
+import type { FindByUserIdAndCenterPaginatedOptions } from "@/lib/ports/reservation-repository";
 import type { Reservation, ReservationStatus } from "@/lib/domain";
 import { prisma } from "./prisma";
 
@@ -38,28 +38,6 @@ export const reservationRepository: IReservationRepository = {
     return r ? toDomainReservation(r) : null;
   },
 
-  async findByUserId(userId: string, options?: { status?: ReservationStatus }) {
-    const list = await prisma.reservation.findMany({
-      where: { userId, ...(options?.status ? { status: options.status } : {}) },
-      orderBy: { createdAt: "desc" },
-    });
-    return list.map(toDomainReservation);
-  },
-
-  async findByUserIdPaginated(userId: string, options: FindByUserIdPaginatedOptions) {
-    const where = { userId, ...(options.status ? { status: options.status } : {}) };
-    const [items, total] = await Promise.all([
-      prisma.reservation.findMany({
-        where,
-        orderBy: { createdAt: "desc" },
-        take: options.limit,
-        skip: options.offset,
-      }),
-      prisma.reservation.count({ where }),
-    ]);
-    return { items: items.map(toDomainReservation), total };
-  },
-
   async findByUserIdAndCenterPaginated(userId: string, options: FindByUserIdAndCenterPaginatedOptions) {
     const statusFilter =
       options.statuses && options.statuses.length > 0
@@ -71,27 +49,6 @@ export const reservationRepository: IReservationRepository = {
       userId,
       ...statusFilter,
       liveClass: { centerId: options.centerId },
-    };
-    const [items, total] = await Promise.all([
-      prisma.reservation.findMany({
-        where,
-        orderBy: { createdAt: "desc" },
-        take: options.limit,
-        skip: options.offset,
-      }),
-      prisma.reservation.count({ where }),
-    ]);
-    return { items: items.map(toDomainReservation), total };
-  },
-
-  async findPageByCenterId(centerId: string, options: FindPageByCenterIdOptions) {
-    const statusFilter =
-      options.statuses && options.statuses.length > 0
-        ? { status: { in: options.statuses } }
-        : {};
-    const where = {
-      ...statusFilter,
-      liveClass: { centerId },
     };
     const [items, total] = await Promise.all([
       prisma.reservation.findMany({

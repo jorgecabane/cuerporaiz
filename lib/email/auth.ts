@@ -88,47 +88,4 @@ export function buildEmailVerificationEmail(data: EmailVerificationData): SendEm
   };
 }
 
-// ─── Set password (invitación admin → estudiante / profesor) ─────────────────
-export interface SetPasswordEmailData {
-  toEmail: string;
-  userName?: string;
-  setPasswordUrl: string;
-  /** Etiqueta del rol para personalizar el copy ("estudiante" / "profesor/a" / "administración"). */
-  roleLabel?: string;
-  branding: EmailBranding;
-}
-
-export function buildSetPasswordEmail(data: SetPasswordEmailData): SendEmailDto {
-  const { branding } = data;
-  const greeting = data.userName ? `Hola ${escapeHtml(data.userName)}` : "Hola";
-  const cta = emailCtaStyle(branding.colorSecondary);
-  const roleLine = data.roleLabel
-    ? `Fuiste agregado/a como <strong>${escapeHtml(data.roleLabel)}</strong>.`
-    : "El equipo te creó una cuenta.";
-  const body = `
-    <p>${greeting},</p>
-    <p>Te damos la bienvenida a <strong>${escapeHtml(branding.centerName)}</strong>. ${roleLine}</p>
-    <p>Para entrar al panel, define tu contraseña:</p>
-    <p style="text-align:center;margin:28px 0;"><a href="${data.setPasswordUrl}" style="${cta}">Crear mi contraseña</a></p>
-    <p style="font-size:12px;color:#5C5A56;">¿No funciona el botón? Copia y pega este link en tu navegador:</p>
-    <p style="font-size:12px;word-break:break-all;background:#F5F0E9;padding:10px;border-radius:6px;color:#2A2A2A;">${data.setPasswordUrl}</p>
-    <p style="font-size:13px;color:#5C5A56;">Este enlace expira en 7 días.</p>`;
-  const html = emailBaseLayout({ body, branding });
-  const text = [
-    `${greeting},`,
-    `Bienvenida/o a ${branding.centerName}. ${data.roleLabel ? `Fuiste agregado/a como ${data.roleLabel}.` : "El equipo te creó una cuenta."}`,
-    `Crear contraseña: ${data.setPasswordUrl}`,
-    "Este enlace expira en 7 días.",
-    `— ${branding.centerName}`,
-  ].join("\n");
-
-  return {
-    from: fromForBranding(branding),
-    to: [data.toEmail],
-    subject: `Activa tu cuenta — ${branding.centerName}`,
-    html,
-    text,
-  };
-}
-
 export { DEFAULT_FROM };
