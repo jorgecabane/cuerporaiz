@@ -1,11 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import {
-  centerRepository,
-  siteConfigRepository,
-  planRepository,
-  disciplineRepository,
-} from "@/lib/adapters/db";
+import { siteConfigRepository, planRepository, disciplineRepository } from "@/lib/adapters/db";
 import { buildSiteMetadata } from "@/lib/seo/metadata";
 import { getPublicCenterTimezone } from "@/lib/datetime/center-timezone";
 import { AgendaSection } from "@/components/sections/home";
@@ -13,6 +8,7 @@ import { AboutClassesSection } from "@/components/sections/horarios/AboutClasses
 import { FirstClassSection } from "@/components/sections/horarios/FirstClassSection";
 import { loadWeekSchedule, toLivePlans } from "@/lib/server/schedule";
 import { splitLines } from "@/lib/domain/embeds";
+import { getDefaultCenter } from "@/lib/server/default-center";
 
 export const revalidate = 600;
 
@@ -25,8 +21,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function HorariosPage() {
-  const slug = process.env.NEXT_PUBLIC_DEFAULT_CENTER_SLUG;
-  const center = slug ? await centerRepository.findBySlug(slug) : null;
+  const center = await getDefaultCenter();
   if (!center) notFound();
 
   const tz = await getPublicCenterTimezone();

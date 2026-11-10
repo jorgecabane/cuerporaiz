@@ -10,7 +10,6 @@ import {
 } from "@/lib/adapters/db";
 import type { WaitlistEntryWithUserDto } from "@/lib/dto/waitlist-dto";
 import type { WaitlistKind } from "@/lib/ports/waitlist-repository";
-import { releaseExpiredEventHolds } from "./release-expired-event-holds";
 
 export interface AdminListWaitlistInput {
   centerId: string;
@@ -39,7 +38,7 @@ export async function adminListWaitlistUseCase(
       return { success: false, code: "FORBIDDEN", message: "Evento no pertenece a tu centro" };
     }
     // Lazy: liberar holds expirados antes de mostrar
-    await releaseExpiredEventHolds(input.itemId);
+    await waitlistRepository.expireEventHolds(input.itemId, new Date());
   }
 
   const entries = await waitlistRepository.findActiveByItem(input.kind, input.itemId);

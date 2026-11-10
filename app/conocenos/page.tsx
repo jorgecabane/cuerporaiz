@@ -1,18 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { centerRepository, siteConfigRepository, aboutPageRepository } from "@/lib/adapters/db";
+import { siteConfigRepository, aboutPageRepository } from "@/lib/adapters/db";
 import { buildSiteMetadata } from "@/lib/seo/metadata";
 import { FirstClassSection } from "@/components/sections/horarios/FirstClassSection";
 import { googleMapsEmbedUrl, googleMapsLink, splitLines, videoEmbedUrl } from "@/lib/domain/embeds";
+import { getDefaultCenter } from "@/lib/server/default-center";
 
 export const revalidate = 3600;
 
 const DEFAULT_TITLE = "Conóceme";
 
 async function loadVisitPage() {
-  const slug = process.env.NEXT_PUBLIC_DEFAULT_CENTER_SLUG;
-  const center = slug ? await centerRepository.findBySlug(slug) : null;
+  const center = await getDefaultCenter();
   if (!center) return null;
   const [config, aboutPage] = await Promise.all([
     siteConfigRepository.findByCenterId(center.id),

@@ -14,6 +14,7 @@ import { isAdminRole } from "@/lib/domain";
 import { computeDateRangeUtc, parsePaymentsSearchParams } from "@/lib/panel/payments-query";
 import { getCenterTimezone } from "@/lib/datetime/center-timezone";
 import { formatMoney } from "@/lib/domain/money";
+import { pendingTransferOrderWhere, pendingTransferTicketWhere } from "@/lib/application/pending-transfers";
 
 function buildQuery(
   base: Record<string, string | undefined>,
@@ -49,22 +50,12 @@ interface PendingTransferRow {
 async function loadPendingTransfers(centerId: string): Promise<PendingTransferRow[]> {
   const [orders, tickets] = await Promise.all([
     prisma.order.findMany({
-      where: {
-        centerId,
-        status: "PENDING",
-        paymentMethod: "TRANSFER",
-        transferClaimedAt: { not: null },
-      },
+      where: pendingTransferOrderWhere(centerId),
       orderBy: { transferClaimedAt: "asc" },
       take: 100,
     }),
     prisma.eventTicket.findMany({
-      where: {
-        status: "PENDING",
-        paymentMethod: "TRANSFER",
-        transferClaimedAt: { not: null },
-        event: { centerId },
-      },
+      where: pendingTransferTicketWhere(centerId),
       include: { event: { select: { title: true } } },
       orderBy: { transferClaimedAt: "asc" },
       take: 100,

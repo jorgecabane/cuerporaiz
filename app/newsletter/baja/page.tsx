@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { centerRepository } from "@/lib/adapters/db";
 import { verifyNewsletterToken } from "@/lib/application/newsletter-token";
 import { confirmUnsubscribe, resubscribe } from "./actions";
+import { getDefaultCenter } from "@/lib/server/default-center";
 
 export const dynamic = "force-dynamic";
 
@@ -18,8 +18,7 @@ const BUTTON =
 
 export default async function NewsletterUnsubscribePage({ searchParams }: Props) {
   const { e: email = "", t: token = "", estado } = await searchParams;
-  const slug = process.env.NEXT_PUBLIC_DEFAULT_CENTER_SLUG;
-  const center = slug ? await centerRepository.findBySlug(slug) : null;
+  const center = await getDefaultCenter();
   const valid = Boolean(center && email && token && verifyNewsletterToken(center.id, email, token));
 
   return (

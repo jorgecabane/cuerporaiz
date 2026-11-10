@@ -8,10 +8,10 @@ import { formatLongDate } from "@/lib/email/format-datetime";
 import { getBaseUrl } from "@/lib/utils/base-url";
 import { shouldSendExpiringNotice } from "@/lib/domain/user-plan";
 import { MAX_PLAN_EXPIRING_NOTICE_DAYS } from "@/lib/domain/center-policy";
+import { isCronAuthorized } from "@/lib/utils/cron-auth";
 
 export async function GET(request: Request) {
-  const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!isCronAuthorized(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

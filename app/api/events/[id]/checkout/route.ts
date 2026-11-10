@@ -4,21 +4,12 @@ import { z } from "zod";
 import { auth } from "@/auth";
 import { createEventCheckout } from "@/lib/application/event-checkout";
 import { resolveGuestUser } from "@/lib/application/resolve-guest-user";
-import { allowGuestCheckout } from "@/lib/application/guest-checkout-rate-limit";
+import { memoryRateLimit } from "@/lib/application/memory-rate-limit";
 import { guestCheckoutBodySchema } from "@/lib/dto/guest-checkout-dto";
 import { eventAttendeesSchema } from "@/lib/dto/event-attendee-dto";
-import { centerRepository } from "@/lib/adapters/db";
 import { getClientIp } from "@/lib/utils/client-ip";
-
-function getBaseUrl(request: Request): string {
-  const u = new URL(request.url);
-  const xfProto = request.headers.get("x-forwarded-proto");
-  const xfHost = request.headers.get("x-forwarded-host");
-  const host = request.headers.get("host");
-  const proto = (xfProto ?? u.protocol.replace(":", "") ?? "http").split(",")[0].trim();
-  const resolvedHost = (xfHost ?? host ?? u.host).split(",")[0].trim();
-  return `${proto}://${resolvedHost}`;
-}
+import { requestBaseUrl } from "@/lib/utils/request-base-url";
+import { getDefaultCenter } from "@/lib/server/default-center";
 
 const checkoutBodySchema = z
   .object({
@@ -99,7 +90,7 @@ async function handleAuthenticated(
       eventId: id,
       centerId,
       userId,
-      baseUrl: getBaseUrl(request),
+      baseUrl: requestBaseUrl(request.headers, request.url),
       quantity,
       mode,
       payerEmail: user.email ?? undefined,
@@ -113,9 +104,13 @@ async function handleAuthenticated(
   }
 }
 
+/** Best-effort por IP y por instancia: corta la creación masiva de cuentas guest. */
+const GUEST_CHECKOUT_LIMIT = { max: 8, windowMs: 10 * 60 * 1000 };
+
 async function handleGuest(request: Request, id: string) {
   try {
-    if (!allowGuestCheckout(getClientIp(request))) {
+    const ip = getClientIp(request);
+    if (ip && !memoryRateLimit(`guest-checkout:${ip}`, GUEST_CHECKOUT_LIMIT.max, GUEST_CHECKOUT_LIMIT.windowMs).allowed) {
       return NextResponse.json(
         { code: "RATE_LIMITED", message: "Demasiados intentos. Espera unos minutos e intenta de nuevo." },
         { status: 429 }
@@ -139,8 +134,7 @@ async function handleGuest(request: Request, id: string) {
     }
     const { name, email, phone, quantity, attendees } = parsed.data;
 
-    const slug = process.env.NEXT_PUBLIC_DEFAULT_CENTER_SLUG;
-    const center = slug ? await centerRepository.findBySlug(slug) : null;
+    const center = await getDefaultCenter();
     if (!center) {
       return NextResponse.json(
         { code: "SERVER_ERROR", message: "No pudimos identificar el centro." },
@@ -161,7 +155,7 @@ async function handleGuest(request: Request, id: string) {
       eventId: id,
       centerId: center.id,
       userId: guest.userId,
-      baseUrl: getBaseUrl(request),
+      baseUrl: requestBaseUrl(request.headers, request.url),
       quantity,
       mode: "purchase",
       isGuest: true,

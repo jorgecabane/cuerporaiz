@@ -2,6 +2,7 @@
 "use client";
 
 import { Copy, Check, Upload, X, AlertCircle } from "lucide-react";
+import { formatMoney } from "@/lib/domain/money";
 
 export interface BankData {
   bankName: string | null;
@@ -10,12 +11,6 @@ export interface BankData {
   bankAccountHolder: string | null;
   bankAccountRut: string | null;
   bankAccountEmail: string | null;
-}
-
-const PESO_FORMATTER = new Intl.NumberFormat("es-CL");
-
-export function formatAmount(cents: number): string {
-  return `$${PESO_FORMATTER.format(cents)}`;
 }
 
 export function buildBankClipboardText(bank: BankData): string {
@@ -152,7 +147,7 @@ export function AmountStrip({
       <div>
         <div className="text-[11px] uppercase tracking-[.08em] opacity-70">Monto exacto</div>
         <div className="mt-1 font-mono text-[22px] font-semibold leading-tight">
-          {formatAmount(amountCents)}
+          {formatMoney(amountCents)}
         </div>
       </div>
       <button

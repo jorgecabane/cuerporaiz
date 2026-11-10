@@ -1,22 +1,13 @@
 "use server";
 
-import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { instructorBankAccountRepository, instructorRepository, authTokenRepository, prisma } from "@/lib/adapters/db";
-import { isAdminRole } from "@/lib/domain/role";
 import { sendEmailSafe } from "@/lib/application/send-email";
 import { buildWelcomeStaffEmail } from "@/lib/email/transactional";
 import { getEmailBranding } from "@/lib/email/branding";
 import { getBaseUrl } from "@/lib/utils/base-url";
 import { requestInvitationToken } from "@/lib/application/request-password-reset";
-
-async function requireAdminCenterId(): Promise<string> {
-  const session = await auth();
-  if (!session?.user?.centerId || !isAdminRole(session.user.role)) {
-    redirect("/panel");
-  }
-  return session.user.centerId;
-}
+import { requireAdminCenterId } from "@/lib/server/require-admin";
 
 export async function createInstructor(formData: FormData): Promise<void> {
   const centerId = await requireAdminCenterId();

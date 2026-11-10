@@ -5,6 +5,7 @@
  */
 import { sendEmailSafe as defaultSendEmailSafe } from "./send-email";
 import type { SendEmailDto } from "@/lib/dto/email-dto";
+import { escapeHtml } from "@/lib/email/utils";
 
 export type SecuritySeverity = "CRITICAL" | "HIGH" | "WARNING";
 
@@ -16,18 +17,6 @@ export interface SecurityAlertInput {
 
 export interface SecurityAlertDeps {
   sendEmail?: (dto: SendEmailDto) => Promise<void>;
-}
-
-const HTML_ESCAPES: Record<string, string> = {
-  "&": "&amp;",
-  "<": "&lt;",
-  ">": "&gt;",
-  '"': "&quot;",
-  "'": "&#39;",
-};
-
-function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (ch) => HTML_ESCAPES[ch]!);
 }
 
 export async function sendSecurityAlert(

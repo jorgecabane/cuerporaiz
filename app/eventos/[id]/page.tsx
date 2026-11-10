@@ -1,15 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import {
-  centerRepository,
-  eventRepository,
-  eventTicketRepository,
-  siteConfigRepository,
-} from "@/lib/adapters/db";
+import { eventRepository, eventTicketRepository, siteConfigRepository } from "@/lib/adapters/db";
 import { getCenterTimezone } from "@/lib/datetime/center-timezone";
 import { buildSiteMetadata } from "@/lib/seo/metadata";
 import { EventPurchasePanel } from "./EventPurchasePanel";
+import { getDefaultCenter } from "@/lib/server/default-center";
 
 export const revalidate = 60;
 
@@ -22,8 +18,7 @@ const FALLBACK_IMAGE =
   "https://images.unsplash.com/photo-1599901860904-17e6ed7083a0?w=1200&q=80";
 
 async function loadPublicEvent(id: string) {
-  const slug = process.env.NEXT_PUBLIC_DEFAULT_CENTER_SLUG;
-  const center = slug ? await centerRepository.findBySlug(slug) : null;
+  const center = await getDefaultCenter();
   if (!center) return null;
   const event = await eventRepository.findById(id);
   if (!event || event.centerId !== center.id || event.status !== "PUBLISHED") return null;

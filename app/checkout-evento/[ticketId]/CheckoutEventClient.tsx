@@ -5,7 +5,6 @@ import Link from "next/link";
 import { optimizeImage } from "@/lib/client/optimize-image";
 import {
   type BankData,
-  formatAmount,
   buildBankClipboardText,
   ALLOWED_RECEIPT_MIME,
   MAX_RECEIPT_BYTES,
@@ -19,6 +18,7 @@ import {
   ErrorBanner,
 } from "../../checkout/_shared/checkout-ui";
 import { continueWithMercadoPagoEvent, submitTransferClaimForEvent } from "./actions";
+import { formatMoney } from "@/lib/domain/money";
 
 interface Props {
   ticketId: string;
@@ -262,16 +262,16 @@ export function CheckoutEventClient(props: Props) {
                   {props.centerName} · {props.eventMeta}
                 </div>
               </div>
-              <div className="text-[var(--color-text)]">{formatAmount(props.amountCents)}</div>
+              <div className="text-[var(--color-text)]">{formatMoney(props.amountCents)}</div>
             </div>
           </div>
           <div className="flex items-center justify-between py-2 text-sm">
             <span className="text-[var(--color-text-muted)]">Subtotal</span>
-            <span>{formatAmount(props.amountCents)}</span>
+            <span>{formatMoney(props.amountCents)}</span>
           </div>
           <div className="mt-2 flex items-center justify-between border-t border-[var(--color-border)] pt-3 text-lg font-bold">
             <span>Total</span>
-            <span>{formatAmount(props.amountCents)}</span>
+            <span>{formatMoney(props.amountCents)}</span>
           </div>
           <p className="mt-6 text-xs leading-relaxed text-[var(--color-text-muted)]">
             Si pagas por transferencia, tu cupo queda reservado mientras el centro confirma. Si rechazan
