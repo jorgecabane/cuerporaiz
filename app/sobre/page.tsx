@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { centerRepository, aboutPageRepository } from "@/lib/adapters/db";
+import { aboutPageRepository } from "@/lib/adapters/db";
 import { buildSiteMetadata } from "@/lib/seo/metadata";
 import {
   AboutHero,
@@ -8,14 +8,12 @@ import {
   AboutGallery,
   AboutCTA,
 } from "@/components/sections/about";
+import { getDefaultCenter } from "@/lib/server/default-center";
 
 export const revalidate = 3600;
 
 export async function generateMetadata(): Promise<Metadata> {
-  const slug = process.env.NEXT_PUBLIC_DEFAULT_CENTER_SLUG;
-  if (!slug) return buildSiteMetadata({ path: "/sobre", title: "Sobre" });
-
-  const center = await centerRepository.findBySlug(slug);
+  const center = await getDefaultCenter();
   if (!center) return buildSiteMetadata({ path: "/sobre", title: "Sobre" });
 
   const page = await aboutPageRepository.findByCenterId(center.id);
@@ -30,10 +28,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function SobrePage() {
-  const slug = process.env.NEXT_PUBLIC_DEFAULT_CENTER_SLUG;
-  if (!slug) notFound();
-
-  const center = await centerRepository.findBySlug(slug);
+  const center = await getDefaultCenter();
   if (!center) notFound();
 
   const page = await aboutPageRepository.findByCenterId(center.id);

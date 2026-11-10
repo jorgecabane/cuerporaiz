@@ -1,8 +1,6 @@
 "use server";
 
-import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import { isAdminRole } from "@/lib/domain/role";
 import {
   onDemandLessonRepository,
   onDemandPracticeRepository,
@@ -10,12 +8,7 @@ import {
 } from "@/lib/adapters/db";
 import { revalidatePath } from "next/cache";
 import type { CreateLessonInput, UpdateLessonInput } from "@/lib/domain/on-demand";
-
-async function requireAdminCenterId(): Promise<string> {
-  const session = await auth();
-  if (!session?.user?.centerId || !isAdminRole(session.user.role)) redirect("/panel");
-  return session.user.centerId;
-}
+import { requireAdminCenterId } from "@/lib/server/require-admin";
 
 export async function createLesson(data: CreateLessonInput): Promise<void> {
   const centerId = await requireAdminCenterId();

@@ -5,17 +5,8 @@ import type { LiveClass } from "@/lib/domain";
 import { layoutBlocks } from "./calendar-layout";
 import type { CalendarEvent } from "./WeekCalendar";
 import { useTimezone } from "@/components/providers/TimezoneProvider";
-
-function formatTime(d: Date, tz: string): string {
-  return d.toLocaleTimeString("es-CL", { timeZone: tz, hour: "2-digit", minute: "2-digit", hour12: false });
-}
-
-function formatDateParam(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
+import { localYmdFromDate } from "@/lib/datetime/local-ymd";
+import { formatTime } from "@/lib/email/format-datetime";
 
 interface DayCalendarProps {
   classes: LiveClass[];
@@ -42,7 +33,7 @@ export function DayCalendar({
   const totalHours = calendarEndHour - calendarStartHour;
   const HOURS = Array.from({ length: totalHours }, (_, i) => i + calendarStartHour);
   const now = new Date();
-  const isHoliday = holidayDates.has(formatDateParam(currentDate));
+  const isHoliday = holidayDates.has(localYmdFromDate(currentDate));
 
   function isSlotPast(hour: number): boolean {
     const slotDate = new Date(currentDate);

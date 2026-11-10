@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { centerRepository, siteSectionRepository } from "@/lib/adapters/db";
+import { siteSectionRepository } from "@/lib/adapters/db";
 import { buildSiteMetadata } from "@/lib/seo/metadata";
 import { FaqSection } from "@/components/sections/home";
 import { toFaqItems } from "@/lib/domain/site-config";
+import { getDefaultCenter } from "@/lib/server/default-center";
 
 export const revalidate = 3600;
 
@@ -12,9 +13,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 async function loadFaqSection() {
-  const slug = process.env.NEXT_PUBLIC_DEFAULT_CENTER_SLUG;
-  if (!slug) return null;
-  const center = await centerRepository.findBySlug(slug);
+  const center = await getDefaultCenter();
   if (!center) return null;
   const sections = await siteSectionRepository.findByCenterId(center.id);
   const faq = sections.find((s) => s.sectionKey === "faq");

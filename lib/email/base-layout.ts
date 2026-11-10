@@ -1,5 +1,6 @@
 import type { EmailBranding } from "./branding";
 import { defaultBranding } from "./branding";
+import { escapeHtml } from "./utils";
 
 export interface EmailLayoutOptions {
   body: string;
@@ -27,13 +28,13 @@ export function emailBaseLayout({ body, branding, preferencesUrl, unsubscribeUrl
   const logoImg = b.logoUrl
     ? `<img src="${b.logoUrl}" alt="" height="32" style="height:32px;width:auto;display:inline-block;vertical-align:middle;border:0;outline:none;text-decoration:none;margin-right:10px;">`
     : "";
-  const header = `${logoImg}<span style="font-size:20px;font-weight:700;color:${b.colorPrimary};letter-spacing:-0.02em;vertical-align:middle;">${escapeAttr(b.centerName)}</span>`;
+  const header = `${logoImg}<span style="font-size:20px;font-weight:700;color:${b.colorPrimary};letter-spacing:-0.02em;vertical-align:middle;">${escapeHtml(b.centerName)}</span>`;
 
   const contactLines: string[] = [];
-  if (b.contactAddress) contactLines.push(escapeAttr(b.contactAddress));
-  if (b.contactPhone) contactLines.push(escapeAttr(b.contactPhone));
+  if (b.contactAddress) contactLines.push(escapeHtml(b.contactAddress));
+  if (b.contactPhone) contactLines.push(escapeHtml(b.contactPhone));
   if (b.contactEmail) {
-    contactLines.push(`<a href="mailto:${b.contactEmail}" style="color:#5C5A56;text-decoration:none;">${escapeAttr(b.contactEmail)}</a>`);
+    contactLines.push(`<a href="mailto:${b.contactEmail}" style="color:#5C5A56;text-decoration:none;">${escapeHtml(b.contactEmail)}</a>`);
   }
 
   const socials: string[] = [];
@@ -49,7 +50,7 @@ export function emailBaseLayout({ body, branding, preferencesUrl, unsubscribeUrl
 
   const footerLinks: string[] = [];
   if (unsubscribeUrl) {
-    footerLinks.push(`<a href="${escapeAttr(unsubscribeUrl)}" style="color:#8A8782;font-size:11px;text-decoration:underline;">Dejar de recibir novedades del blog</a>`);
+    footerLinks.push(`<a href="${escapeHtml(unsubscribeUrl)}" style="color:#8A8782;font-size:11px;text-decoration:underline;">Dejar de recibir novedades del blog</a>`);
   }
   if (preferencesUrl) {
     footerLinks.push(`<a href="${preferencesUrl}" style="color:#8A8782;font-size:11px;text-decoration:underline;">Preferencias de correo</a>`);
@@ -65,7 +66,7 @@ export function emailBaseLayout({ body, branding, preferencesUrl, unsubscribeUrl
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
   <meta name="color-scheme" content="light only">
   <meta name="supported-color-schemes" content="light only">
-  <title>${escapeAttr(b.centerName)}</title>
+  <title>${escapeHtml(b.centerName)}</title>
 </head>
 <body style="margin:0;padding:0;background-color:#F5F0E9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#2A2A2A;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#F5F0E9;padding:32px 16px;">
@@ -82,7 +83,7 @@ export function emailBaseLayout({ body, branding, preferencesUrl, unsubscribeUrl
           </tr>
           <tr>
             <td style="padding:24px 16px 8px;text-align:center;color:#5C5A56;font-size:13px;">
-              <p style="margin:0;color:${b.colorPrimary};font-weight:600;">${escapeAttr(b.centerName)}</p>
+              <p style="margin:0;color:${b.colorPrimary};font-weight:600;">${escapeHtml(b.centerName)}</p>
               ${contactBlock}
               ${socialBlock}
               ${prefsBlock}
@@ -94,12 +95,4 @@ export function emailBaseLayout({ body, branding, preferencesUrl, unsubscribeUrl
   </table>
 </body>
 </html>`;
-}
-
-function escapeAttr(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
 }

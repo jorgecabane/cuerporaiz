@@ -3,22 +3,7 @@ import { auth } from "@/auth";
 import { createCheckoutUseCase, createPendingOrderForPlan } from "@/lib/application/checkout";
 import { createCheckoutBodySchema } from "@/lib/dto/checkout-dto";
 import { centerRepository } from "@/lib/adapters/db";
-
-function getBaseUrl(request: Request): string {
-  const u = new URL(request.url);
-  const xfProto = request.headers.get("x-forwarded-proto");
-  const xfHost = request.headers.get("x-forwarded-host");
-  const host = request.headers.get("host");
-  const proto = (xfProto ?? u.protocol.replace(":", "") ?? "http").split(",")[0].trim();
-  const resolvedHost = (xfHost ?? host ?? u.host).split(",")[0].trim();
-  return (
-    `${proto}://${resolvedHost}` ||
-    request.headers.get("origin") ||
-    process.env.NEXTAUTH_URL ||
-    process.env.AUTH_URL ||
-    "http://localhost:3000"
-  );
-}
+import { requestBaseUrl } from "@/lib/utils/request-base-url";
 
 export async function POST(request: Request) {
   try {
@@ -50,7 +35,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const baseUrl = getBaseUrl(request);
+    const baseUrl = requestBaseUrl(request.headers, request.url);
 
     // Si el centro acepta transferencia para planes, creamos sólo la Order y
     // mandamos al selector inline. La preferencia MP se crea cuando la alumna

@@ -5,20 +5,14 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createMpPreferenceForTicket } from "@/lib/application/event-checkout";
 import { claimTransferForEventTicket } from "@/lib/application/claim-transfer";
-
-async function getBaseUrl(): Promise<string> {
-  const h = await headers();
-  const proto = (h.get("x-forwarded-proto") ?? "http").split(",")[0].trim();
-  const host = (h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000").split(",")[0].trim();
-  return `${proto}://${host}`;
-}
+import { requestBaseUrl } from "@/lib/utils/request-base-url";
 
 export async function continueWithMercadoPagoEvent(ticketId: string): Promise<{ error?: string }> {
   const session = await auth();
   if (!session?.user?.id) {
     redirect(`/auth/login?callbackUrl=/checkout-evento/${ticketId}`);
   }
-  const baseUrl = await getBaseUrl();
+  const baseUrl = requestBaseUrl(await headers());
   const nameParts = (session.user.name ?? "").trim().split(/\s+/);
   const result = await createMpPreferenceForTicket({
     ticketId,

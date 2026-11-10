@@ -25,7 +25,6 @@ import { getEmailBranding } from "@/lib/email/branding";
 import { getBaseUrl } from "@/lib/utils/base-url";
 import { runInBackground } from "@/lib/utils/run-after-response";
 import { shouldThrottleNotification } from "@/lib/domain/waitlist";
-import { releaseExpiredEventHolds } from "./release-expired-event-holds";
 
 export type SpotFreedKind = "class" | "event";
 
@@ -98,10 +97,6 @@ async function notifyEvent(eventId: string): Promise<void> {
   // Lazy: liberar holds expirados antes de evaluar capacidad
   const now = new Date();
   await waitlistRepository.expireEventHolds(eventId, now);
-  // releaseExpiredEventHolds está re-exportado y normalmente se usa desde otros
-  // call sites; aquí llamamos directo al repo para evitar dependencia circular.
-  // (releaseExpiredEventHolds es la API pública para callers externos.)
-  void releaseExpiredEventHolds; // mantener import (dead-code stripper)
 
   const event = await eventRepository.findById(eventId);
   if (event === null) return;

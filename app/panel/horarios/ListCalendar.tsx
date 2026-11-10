@@ -4,6 +4,8 @@ import Link from "next/link";
 import type { LiveClass } from "@/lib/domain";
 import type { CalendarEvent } from "./WeekCalendar";
 import { useTimezone } from "@/components/providers/TimezoneProvider";
+import { localYmdFromDate } from "@/lib/datetime/local-ymd";
+import { formatTime } from "@/lib/email/format-datetime";
 
 function formatDate(d: Date, tz: string): string {
   return new Date(d).toLocaleDateString("es-CL", {
@@ -12,15 +14,6 @@ function formatDate(d: Date, tz: string): string {
     day: "numeric",
     month: "short",
   });
-}
-
-function formatTime(d: Date, tz: string): string {
-  return new Date(d).toLocaleTimeString("es-CL", { timeZone: tz, hour: "2-digit", minute: "2-digit", hour12: false });
-}
-
-function formatDateKey(d: Date): string {
-  const dt = new Date(d);
-  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
 }
 
 interface ListCalendarProps {
@@ -43,7 +36,7 @@ export function ListCalendar({
   const tz = useTimezone();
   const grouped = new Map<string, LiveClass[]>();
   for (const c of classes) {
-    const key = formatDateKey(c.startsAt);
+    const key = localYmdFromDate(new Date(c.startsAt));
     if (!grouped.has(key)) grouped.set(key, []);
     grouped.get(key)!.push(c);
   }
@@ -51,7 +44,7 @@ export function ListCalendar({
   // Add event start days to grouped map structure (separate pass)
   const groupedEvents = new Map<string, CalendarEvent[]>();
   for (const ev of events) {
-    const key = formatDateKey(new Date(ev.startsAt));
+    const key = localYmdFromDate(new Date(ev.startsAt));
     if (!groupedEvents.has(key)) groupedEvents.set(key, []);
     groupedEvents.get(key)!.push(ev);
   }

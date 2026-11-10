@@ -4,6 +4,8 @@ import Link from "next/link";
 import type { LiveClass } from "@/lib/domain";
 import { layoutBlocks, type LayoutBlock } from "./calendar-layout";
 import { useTimezone } from "@/components/providers/TimezoneProvider";
+import { localYmdFromDate } from "@/lib/datetime/local-ymd";
+import { formatTime } from "@/lib/email/format-datetime";
 
 export interface CalendarEvent {
   id: string;
@@ -27,17 +29,6 @@ function addDays(d: Date, n: number): Date {
   const copy = new Date(d);
   copy.setDate(copy.getDate() + n);
   return copy;
-}
-
-function formatTime(d: Date, tz: string): string {
-  return d.toLocaleTimeString("es-CL", { timeZone: tz, hour: "2-digit", minute: "2-digit", hour12: false });
-}
-
-function formatDateParam(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
 }
 
 function formatShortDate(d: Date, tz: string): string {
@@ -106,7 +97,7 @@ export function WeekCalendar({
   }
 
   function isDayHoliday(dayDate: Date): boolean {
-    return holidayDates.has(formatDateParam(dayDate));
+    return holidayDates.has(localYmdFromDate(dayDate));
   }
 
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
