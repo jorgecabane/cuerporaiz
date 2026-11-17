@@ -11,8 +11,9 @@ import type { PostCategoryRef, PostSummary } from "@/lib/sanity/types";
 import { BlogHero } from "@/components/blog/BlogHero";
 import { CategoryFilter } from "@/components/blog/CategoryFilter";
 import { PostGrid } from "@/components/blog/PostGrid";
-import { centerRepository, siteConfigRepository } from "@/lib/adapters/db";
+import { siteConfigRepository } from "@/lib/adapters/db";
 import { getPublicCenterTimezone } from "@/lib/datetime/center-timezone";
+import { getDefaultCenter } from "@/lib/server/default-center";
 
 export const revalidate = 3600;
 
@@ -28,9 +29,7 @@ export const metadata: Metadata = {
 };
 
 async function loadHeroCopy() {
-  const slug = process.env.NEXT_PUBLIC_DEFAULT_CENTER_SLUG;
-  if (!slug) return null;
-  const center = await centerRepository.findBySlug(slug);
+  const center = await getDefaultCenter();
   if (!center) return null;
   return siteConfigRepository.findByCenterId(center.id);
 }

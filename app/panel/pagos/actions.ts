@@ -1,23 +1,14 @@
 "use server";
 
-import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { orderRepository } from "@/lib/adapters/db";
 import { prisma } from "@/lib/adapters/db/prisma";
-import { isAdminRole } from "@/lib/domain";
 import { activatePlanForOrder } from "@/lib/application/activate-plan";
 import {
   rejectTransferOrder,
   rejectTransferEventTicket,
 } from "@/lib/application/reject-transfer-order";
-
-async function requireAdminCenterId(): Promise<string> {
-  const session = await auth();
-  if (!session?.user?.centerId || !isAdminRole(session.user.role)) {
-    redirect("/panel");
-  }
-  return session.user.centerId;
-}
+import { requireAdminCenterId } from "@/lib/server/require-admin";
 
 const METHODS = ["transfer", "cash", "other"] as const;
 

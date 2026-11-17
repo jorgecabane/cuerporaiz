@@ -6,14 +6,7 @@ import type { CenterHoliday } from "@/lib/domain";
 import { createHoliday, deleteHoliday } from "./actions";
 import { formatHolidayDateDisplay, holidayCalendarKey } from "@/lib/domain/holiday-date";
 import { toast } from "@/components/ui/Toast";
-
-function localTodayKey(): string {
-  const n = new Date();
-  const y = n.getFullYear();
-  const m = String(n.getMonth() + 1).padStart(2, "0");
-  const d = String(n.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
-}
+import { localYmdFromDate } from "@/lib/datetime/local-ymd";
 
 interface Props {
   holidays: CenterHoliday[];
@@ -50,7 +43,7 @@ export function HolidayList({ holidays }: Props) {
     startTransition(() => deleteHoliday(id));
   }
 
-  const todayKey = localTodayKey();
+  const todayKey = localYmdFromDate(new Date());
   const upcomingHolidays = holidays.filter((h) => holidayCalendarKey(h.date) >= todayKey);
   const pastHolidays = holidays.filter((h) => holidayCalendarKey(h.date) < todayKey);
 

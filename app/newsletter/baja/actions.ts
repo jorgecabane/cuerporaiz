@@ -1,13 +1,12 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { centerRepository } from "@/lib/adapters/db";
 import { subscribeToNewsletter, unsubscribeFromNewsletter } from "@/lib/application/newsletter";
 import { verifyNewsletterToken } from "@/lib/application/newsletter-token";
+import { getDefaultCenter } from "@/lib/server/default-center";
 
 async function verifiedCenterId(email: string, token: string): Promise<string | null> {
-  const slug = process.env.NEXT_PUBLIC_DEFAULT_CENTER_SLUG;
-  const center = slug ? await centerRepository.findBySlug(slug) : null;
+  const center = await getDefaultCenter();
   if (!center || !email || !token) return null;
   return verifyNewsletterToken(center.id, email, token) ? center.id : null;
 }

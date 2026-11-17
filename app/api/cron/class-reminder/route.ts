@@ -5,6 +5,7 @@ import { buildClassReminderEmail } from "@/lib/email";
 import { shouldSendEmail } from "@/lib/application/check-email-preference";
 import { getEmailBranding } from "@/lib/email/branding";
 import { sendEventOnlineReminders } from "@/lib/application/send-event-online-reminders";
+import { isCronAuthorized } from "@/lib/utils/cron-auth";
 
 const REMINDER_HOURS_BEFORE = 2;
 
@@ -31,8 +32,7 @@ const REMINDER_HOURS_BEFORE = 2;
  *  3. El que gana el claim manda el correo (si la pref del usuario lo permite).
  */
 export async function GET(request: Request) {
-  const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!isCronAuthorized(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

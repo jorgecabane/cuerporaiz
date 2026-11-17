@@ -1,19 +1,12 @@
 "use server";
 
-import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import { isAdminRole } from "@/lib/domain/role";
 import { revalidatePath } from "next/cache";
 import { eventRepository, eventAttendeeRepository } from "@/lib/adapters/db";
 import type { EventStatus } from "@/lib/domain/event";
 import { eventOnlineSchema } from "@/lib/dto/event-dto";
 import { ensureSeatsForEvent } from "@/lib/application/ensure-event-attendees";
-
-async function requireAdminCenterId(): Promise<string> {
-  const session = await auth();
-  if (!session?.user?.centerId || !isAdminRole(session.user.role)) redirect("/panel");
-  return session.user.centerId;
-}
+import { requireAdminCenterId } from "@/lib/server/require-admin";
 
 /** Valida isOnline/meetingUrl en el borde (el form también valida). */
 function parseOnline(data: { isOnline?: boolean; meetingUrl?: string | null }) {

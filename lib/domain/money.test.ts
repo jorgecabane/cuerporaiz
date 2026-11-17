@@ -17,3 +17,10 @@ describe("formatPriceOrFree", () => {
     expect(formatPriceOrFree(5000, "CLP")).toBe("$5.000");
   });
 });
+
+describe("formatMoney = formato del checkout (Intl es-CL)", () => {
+  const legacyCheckoutAmount = (cents: number) => `$${new Intl.NumberFormat("es-CL").format(cents)}`;
+  it.each([0, 990, 1000, 25000, 1234567])("%i", (cents) => {
+    expect(formatMoney(cents)).toBe(legacyCheckoutAmount(cents));
+  });
+});

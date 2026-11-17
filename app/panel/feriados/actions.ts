@@ -1,22 +1,13 @@
 "use server";
 
-import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import { isAdminRole } from "@/lib/domain/role";
 import { centerHolidayRepository, liveClassRepository } from "@/lib/adapters/db";
 import { parseHolidayDateInput, holidayCalendarKey } from "@/lib/domain/holiday-date";
 import { getCenterTimezone } from "@/lib/datetime/center-timezone";
 import { civilDayKeyInTz } from "@/lib/datetime/civil-day";
+import { requireAdminCenterId } from "@/lib/server/require-admin";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-
-async function requireAdminCenterId(): Promise<string> {
-  const session = await auth();
-  if (!session?.user?.centerId || !isAdminRole(session.user.role)) {
-    redirect("/panel");
-  }
-  return session.user.centerId;
-}
 
 export interface CreateHolidayResult {
   ok: boolean;

@@ -2,29 +2,15 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { isAdminRole } from "@/lib/domain";
 import { prisma } from "@/lib/adapters/db/prisma";
+import { requestBaseUrl } from "@/lib/utils/request-base-url";
 
 /**
  * GET /api/admin/mercadopago/oauth/callback?code=xxx&state=centerId
  * MercadoPago redirige aquí después de que el centro autoriza.
  * Intercambia el code por access_token + refresh_token.
  */
-function getBaseUrl(request: Request): string {
-  const u = new URL(request.url);
-  const xfProto = request.headers.get("x-forwarded-proto");
-  const xfHost = request.headers.get("x-forwarded-host");
-  const host = request.headers.get("host");
-  const proto = (xfProto ?? u.protocol.replace(":", "") ?? "http").split(",")[0].trim();
-  const resolvedHost = (xfHost ?? host ?? u.host).split(",")[0].trim();
-  return (
-    `${proto}://${resolvedHost}` ||
-    process.env.NEXTAUTH_URL ||
-    process.env.NEXT_PUBLIC_BASE_URL ||
-    "http://localhost:3000"
-  );
-}
-
 export async function GET(request: Request) {
-  const baseUrl = getBaseUrl(request);
+  const baseUrl = requestBaseUrl(request.headers, request.url);
 
   const session = await auth();
   if (!session?.user?.centerId) {

@@ -1,6 +1,7 @@
 import { ImageResponse } from "next/og";
-import { centerRepository, siteConfigRepository } from "@/lib/adapters/db";
+import { siteConfigRepository } from "@/lib/adapters/db";
 import { getSiteUrl } from "@/lib/seo/urls";
+import { getDefaultCenter } from "@/lib/server/default-center";
 
 export const alt = "Cuerpo Raíz";
 export const size = { width: 1200, height: 630 };
@@ -8,25 +9,22 @@ export const contentType = "image/png";
 export const revalidate = 3600;
 
 export default async function OpengraphImage() {
-  const slug = process.env.NEXT_PUBLIC_DEFAULT_CENTER_SLUG;
   let name = "Cuerpo Raíz";
   let headline = "el camino de regreso a tu cuerpo";
   let colorPrimary = "#2D3B2A";
   let colorSecondary = "#B85C38";
 
-  if (slug) {
-    try {
-      const center = await centerRepository.findBySlug(slug);
-      if (center) {
-        name = center.name;
-        const cfg = await siteConfigRepository.findByCenterId(center.id);
-        if (cfg?.heroSubtitle?.trim()) headline = cfg.heroSubtitle.trim();
-        if (cfg?.colorPrimary) colorPrimary = cfg.colorPrimary;
-        if (cfg?.colorSecondary) colorSecondary = cfg.colorSecondary;
-      }
-    } catch {
-      // falls back to defaults below
+  try {
+    const center = await getDefaultCenter();
+    if (center) {
+      name = center.name;
+      const cfg = await siteConfigRepository.findByCenterId(center.id);
+      if (cfg?.heroSubtitle?.trim()) headline = cfg.heroSubtitle.trim();
+      if (cfg?.colorPrimary) colorPrimary = cfg.colorPrimary;
+      if (cfg?.colorSecondary) colorSecondary = cfg.colorSecondary;
     }
+  } catch {
+    // falls back to defaults below
   }
 
   const domain = new URL(getSiteUrl()).host;

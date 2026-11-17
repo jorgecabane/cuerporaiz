@@ -1,15 +1,10 @@
 import type { MetadataRoute } from "next";
-import {
-  centerRepository,
-  siteConfigRepository,
-  aboutPageRepository,
-  onDemandCategoryRepository,
-  siteSectionRepository,
-} from "@/lib/adapters/db";
+import { siteConfigRepository, aboutPageRepository, onDemandCategoryRepository, siteSectionRepository } from "@/lib/adapters/db";
 import { toFaqItems } from "@/lib/domain/site-config";
 import { isSanityConfigured, sanityFetch } from "@/lib/sanity/client";
 import { QUERY_POST_SLUGS } from "@/lib/sanity/queries";
 import { absoluteUrl } from "@/lib/seo/urls";
+import { getDefaultCenter } from "@/lib/server/default-center";
 
 // Lo consultan sobre todo bots: con 1 día basta (ISR).
 export const revalidate = 86400;
@@ -20,11 +15,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: absoluteUrl("/"), lastModified: now, changeFrequency: "weekly", priority: 1.0 },
   ];
 
-  const slug = process.env.NEXT_PUBLIC_DEFAULT_CENTER_SLUG;
-  if (!slug) return entries;
-
   try {
-    const center = await centerRepository.findBySlug(slug);
+    const center = await getDefaultCenter();
     if (!center) return entries;
 
     const [aboutPage, siteConfig, categories, sections] = await Promise.all([

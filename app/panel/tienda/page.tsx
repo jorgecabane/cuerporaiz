@@ -11,6 +11,7 @@ import { TiendaPlans } from "./TiendaPlans";
 import type { SerializedPlan } from "./TiendaPlans";
 import { getLibraryPacks } from "@/lib/application/get-library-packs";
 import { describePackContents } from "@/lib/domain/library-pack";
+import { pendingTransferOrderWhere, pendingTransferTicketWhere } from "@/lib/application/pending-transfers";
 
 type Props = { searchParams: Promise<{ plan?: string }> };
 
@@ -29,24 +30,12 @@ export default async function TiendaPage({ searchParams }: Props) {
     planRepository.findManyByCenterId(centerId),
     userPlanRepository.findByUserAndCenter(userId, centerId),
     prisma.order.findMany({
-      where: {
-        userId,
-        centerId,
-        status: "PENDING",
-        paymentMethod: "TRANSFER",
-        transferClaimedAt: { not: null },
-      },
+      where: pendingTransferOrderWhere(centerId, userId),
       include: { plan: { select: { name: true } } },
       orderBy: { transferClaimedAt: "desc" },
     }),
     prisma.eventTicket.findMany({
-      where: {
-        userId,
-        status: "PENDING",
-        paymentMethod: "TRANSFER",
-        transferClaimedAt: { not: null },
-        event: { centerId },
-      },
+      where: pendingTransferTicketWhere(centerId, userId),
       include: { event: { select: { title: true } } },
       orderBy: { transferClaimedAt: "desc" },
     }),

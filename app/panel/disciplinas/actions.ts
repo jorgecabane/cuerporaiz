@@ -1,20 +1,11 @@
 "use server";
 
-import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { disciplineRepository } from "@/lib/adapters/db";
-import { isAdminRole } from "@/lib/domain/role";
+import { requireAdminCenterId } from "@/lib/server/require-admin";
 
 const DESCRIPTION_MAX = 200;
 const LONG_DESCRIPTION_MAX = 800;
-
-async function requireAdminCenterId(): Promise<string> {
-  const session = await auth();
-  if (!session?.user?.centerId || !isAdminRole(session.user.role)) {
-    redirect("/panel");
-  }
-  return session.user.centerId;
-}
 
 function readText(formData: FormData, key: string, max: number): string | null {
   return (formData.get(key) as string)?.trim().slice(0, max) || null;

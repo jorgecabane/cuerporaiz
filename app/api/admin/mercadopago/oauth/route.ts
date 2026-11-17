@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { isAdminRole } from "@/lib/domain";
+import { requestBaseUrl } from "@/lib/utils/request-base-url";
 
 /**
  * GET /api/admin/mercadopago/oauth
@@ -23,18 +24,7 @@ export async function GET(request: Request) {
     );
   }
 
-  const u = new URL(request.url);
-  const xfProto = request.headers.get("x-forwarded-proto");
-  const xfHost = request.headers.get("x-forwarded-host");
-  const host = request.headers.get("host");
-  const proto = (xfProto ?? u.protocol.replace(":", "") ?? "http").split(",")[0].trim();
-  const resolvedHost = (xfHost ?? host ?? u.host).split(",")[0].trim();
-  const requestOrigin = `${proto}://${resolvedHost}`;
-  const baseUrl =
-    requestOrigin
-    ?? process.env.NEXTAUTH_URL
-    ?? process.env.NEXT_PUBLIC_BASE_URL
-    ?? "http://localhost:3000";
+  const baseUrl = requestBaseUrl(request.headers, request.url);
   const redirectUri = `${baseUrl}/api/admin/mercadopago/oauth/callback`;
 
   const mpAuthUrl = new URL("https://auth.mercadopago.com/authorization");

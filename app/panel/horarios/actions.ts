@@ -1,6 +1,5 @@
 "use server";
 
-import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { revalidatePublicSchedule } from "@/lib/utils/revalidate-public-schedule";
@@ -11,7 +10,6 @@ import {
   reservationRepository,
   userRepository,
 } from "@/lib/adapters/db";
-import { isAdminRole } from "@/lib/domain/role";
 import { generateSeriesInstances } from "@/lib/application/generate-series-instances";
 import {
   buildSeriesScheduleFields,
@@ -38,14 +36,7 @@ import { getBaseUrl } from "@/lib/utils/base-url";
 import { getCenterTimezone } from "@/lib/datetime/center-timezone";
 import type { LiveClass, LiveClassSeries, RepeatFrequency } from "@/lib/domain";
 import type { CreateLiveClassInput, UpdateSeriesInput } from "@/lib/ports";
-
-async function requireAdminCenterId(): Promise<string> {
-  const session = await auth();
-  if (!session?.user?.centerId || !isAdminRole(session.user.role)) {
-    redirect("/panel");
-  }
-  return session.user.centerId;
-}
+import { requireAdminCenterId } from "@/lib/server/require-admin";
 
 /**
  * `meetingProvider` es una columna de texto libre. Sólo persistimos valores

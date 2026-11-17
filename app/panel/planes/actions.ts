@@ -1,19 +1,10 @@
 "use server";
 
-import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { centerRepository, planRepository, planCategoryQuotaRepository } from "@/lib/adapters/db";
-import { isAdminRole } from "@/lib/domain/role";
 import type { PlanCreateInput, PlanUpdateInput } from "@/lib/ports";
-
-async function requireAdminCenterId(): Promise<string> {
-  const session = await auth();
-  if (!session?.user?.centerId || !isAdminRole(session.user.role)) {
-    redirect("/panel");
-  }
-  return session.user.centerId;
-}
+import { requireAdminCenterId } from "@/lib/server/require-admin";
 
 export async function createPlan(
   data: PlanCreateInput & { quotas?: { categoryId: string; maxLessons: number }[] }

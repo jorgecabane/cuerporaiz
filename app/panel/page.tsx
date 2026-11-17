@@ -4,10 +4,7 @@ import { redirect } from "next/navigation";
 import { centerRepository, userPlanRepository, planRepository } from "@/lib/adapters/db";
 import { prisma } from "@/lib/adapters/db/prisma";
 import { canShowTrialCta, listMyReservationsPaginated } from "@/lib/application/reserve-class";
-import {
-  getPendingTransfersForUser,
-  getPendingTransfersForCenter,
-} from "@/lib/application/pending-transfers";
+import { getPendingTransfers } from "@/lib/application/pending-transfers";
 import { PendingTransferBanner } from "@/components/panel/PendingTransferBanner";
 import {
   ArrowRight,
@@ -96,8 +93,8 @@ export default async function PanelPage() {
     userPlanRepository.findActiveByUserAndCenter(user.id, centerId),
     listMyReservationsPaginated(user.id, centerId, { page: 1, pageSize: 100 }),
     isAdminRole(user.role as Role)
-      ? getPendingTransfersForCenter(centerId)
-      : getPendingTransfersForUser(user.id, centerId),
+      ? getPendingTransfers(centerId)
+      : getPendingTransfers(centerId, user.id),
   ]);
   // Estado real: un plan guardado como ACTIVE puede estar vencido, sin clases o por comenzar.
   const tz = await getCenterTimezone(centerId);

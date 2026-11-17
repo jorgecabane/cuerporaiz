@@ -4,22 +4,13 @@ import Link from "next/link";
 import type { LiveClass } from "@/lib/domain";
 import type { CalendarEvent } from "./WeekCalendar";
 import { useTimezone } from "@/components/providers/TimezoneProvider";
+import { localYmdFromDate } from "@/lib/datetime/local-ymd";
+import { formatTime } from "@/lib/email/format-datetime";
 
 const ALL_DAY_LABELS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
 
 function orderedDayLabels(weekStartDay: number): string[] {
   return Array.from({ length: 7 }, (_, i) => ALL_DAY_LABELS[(weekStartDay + i) % 7]);
-}
-
-function formatTime(d: Date, tz: string): string {
-  return d.toLocaleTimeString("es-CL", { timeZone: tz, hour: "2-digit", minute: "2-digit", hour12: false });
-}
-
-function formatDateKey(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
 }
 
 function getMonthGrid(year: number, month: number, weekStartDay: number): (Date | null)[][] {
@@ -70,12 +61,12 @@ export function MonthCalendar({
   const month = currentDate.getMonth();
   const weeks = getMonthGrid(year, month, weekStartDay);
   const now = new Date();
-  const todayKey = formatDateKey(now);
+  const todayKey = localYmdFromDate(now);
   const dayLabels = orderedDayLabels(weekStartDay);
 
   const classesByDay = new Map<string, LiveClass[]>();
   for (const c of classes) {
-    const key = formatDateKey(new Date(c.startsAt));
+    const key = localYmdFromDate(new Date(c.startsAt));
     if (!classesByDay.has(key)) classesByDay.set(key, []);
     classesByDay.get(key)!.push(c);
   }
@@ -88,7 +79,7 @@ export function MonthCalendar({
     const cursor = new Date(start);
     cursor.setHours(0, 0, 0, 0);
     while (cursor <= end) {
-      const key = formatDateKey(cursor);
+      const key = localYmdFromDate(cursor);
       if (!eventsByDay.has(key)) eventsByDay.set(key, []);
       eventsByDay.get(key)!.push(ev);
       cursor.setDate(cursor.getDate() + 1);
@@ -114,7 +105,7 @@ export function MonthCalendar({
               if (!day) {
                 return <div key={di} className="min-h-[5rem] border-l first:border-l-0 border-[var(--color-border)] bg-[var(--color-bg)]/30" />;
               }
-              const dateKey = formatDateKey(day);
+              const dateKey = localYmdFromDate(day);
               const isToday = dateKey === todayKey;
               const isHoliday = holidayDates.has(dateKey);
               const isPast = day < new Date(now.getFullYear(), now.getMonth(), now.getDate());

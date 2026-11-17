@@ -1,14 +1,5 @@
 import type { Metadata } from "next";
-import {
-  centerRepository,
-  siteConfigRepository,
-  siteSectionRepository,
-  planRepository,
-  disciplineRepository,
-  onDemandCategoryRepository,
-  aboutPageRepository,
-  prisma,
-} from "@/lib/adapters/db";
+import { siteConfigRepository, siteSectionRepository, planRepository, disciplineRepository, onDemandCategoryRepository, aboutPageRepository, prisma } from "@/lib/adapters/db";
 import { buildSiteMetadata } from "@/lib/seo/metadata";
 import {
   HeroSection,
@@ -32,6 +23,7 @@ import { toFaqItems, type SiteSectionWithItems } from "@/lib/domain/site-config"
 import { getPublicCenterTimezone } from "@/lib/datetime/center-timezone";
 import { loadWeekSchedule, toLivePlans } from "@/lib/server/schedule";
 import { formatMoney, formatPriceOrFree } from "@/lib/domain/money";
+import { getDefaultCenter } from "@/lib/server/default-center";
 
 export const revalidate = 600;
 
@@ -83,10 +75,7 @@ function serializeItems(items: SiteSectionWithItems["items"]) {
 /* ─── Page ──────────────────────────────────────────────────────────────── */
 
 export default async function HomePage() {
-  const slug = process.env.NEXT_PUBLIC_DEFAULT_CENTER_SLUG;
-  if (!slug) return <FallbackHome />;
-
-  const center = await centerRepository.findBySlug(slug);
+  const center = await getDefaultCenter();
   if (!center) return <FallbackHome />;
 
   const tz = await getPublicCenterTimezone();

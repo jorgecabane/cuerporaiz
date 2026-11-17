@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { centerRepository, prisma } from "@/lib/adapters/db";
+import { prisma } from "@/lib/adapters/db";
 import { getPublicCenterTimezone } from "@/lib/datetime/center-timezone";
 import { buildSiteMetadata } from "@/lib/seo/metadata";
 import { formatPriceOrFree } from "@/lib/domain/money";
+import { getDefaultCenter } from "@/lib/server/default-center";
 
 export const revalidate = 300;
 
@@ -28,8 +29,7 @@ function formatDateTime(date: Date, tz: string): string {
 }
 
 export default async function PublicEventsPage() {
-  const slug = process.env.NEXT_PUBLIC_DEFAULT_CENTER_SLUG;
-  const center = slug ? await centerRepository.findBySlug(slug) : null;
+  const center = await getDefaultCenter();
 
   const [events, tz] = await Promise.all([
     center

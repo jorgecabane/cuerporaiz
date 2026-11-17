@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
-import { onDemandCategoryRepository, centerRepository } from "@/lib/adapters/db";
+import { onDemandCategoryRepository } from "@/lib/adapters/db";
 import { prisma } from "@/lib/adapters/db/prisma";
 import { PublicCatalog } from "@/components/biblioteca/PublicCatalog";
 import type { CategoryData } from "@/components/biblioteca/types";
 import { buildSiteMetadata } from "@/lib/seo/metadata";
 import { getLibraryPacks } from "@/lib/application/get-library-packs";
+import { getDefaultCenter } from "@/lib/server/default-center";
 
 export const revalidate = 3600;
 
@@ -18,11 +19,8 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 async function resolveCenter() {
-  const slug = process.env.NEXT_PUBLIC_DEFAULT_CENTER_SLUG;
-  if (slug) {
-    const bySlug = await centerRepository.findBySlug(slug);
-    if (bySlug) return bySlug;
-  }
+  const bySlug = await getDefaultCenter();
+  if (bySlug) return bySlug;
   return prisma.center.findFirst();
 }
 

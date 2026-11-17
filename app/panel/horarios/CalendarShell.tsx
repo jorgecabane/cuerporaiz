@@ -15,6 +15,7 @@ import { MonthCalendar } from "./MonthCalendar";
 import { ListCalendar } from "./ListCalendar";
 import { batchCancelLiveClasses } from "./actions";
 import { useTimezone } from "@/components/providers/TimezoneProvider";
+import { localYmdFromDate } from "@/lib/datetime/local-ymd";
 
 type ViewMode = "day" | "week" | "month" | "list";
 
@@ -224,17 +225,11 @@ export function CalendarShell({
   }
 
   function handleSlotClick(dayDate: Date, hour: number) {
-    const y = dayDate.getFullYear();
-    const m = String(dayDate.getMonth() + 1).padStart(2, "0");
-    const day = String(dayDate.getDate()).padStart(2, "0");
-    router.push(`/panel/horarios/nueva?date=${y}-${m}-${day}&hour=${hour}`);
+    router.push(`/panel/horarios/nueva?date=${localYmdFromDate(dayDate)}&hour=${hour}`);
   }
 
   function handleDayClick(dayDate: Date) {
-    const y = dayDate.getFullYear();
-    const m = String(dayDate.getMonth() + 1).padStart(2, "0");
-    const day = String(dayDate.getDate()).padStart(2, "0");
-    router.push(`/panel/horarios/nueva?date=${y}-${m}-${day}`);
+    router.push(`/panel/horarios/nueva?date=${localYmdFromDate(dayDate)}`);
   }
 
   return (
