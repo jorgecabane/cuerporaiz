@@ -821,6 +821,13 @@ export async function seedTier1Reservation(opts: {
   return { reservationId: reservation.id };
 }
 
+/**
+ * Valores base del centro e2e (= defaults del schema). Los specs restauran a esto y no a
+ * lo que leyeron antes, porque si dos corridas se solapan, la segunda lee el override de
+ * la primera y lo deja pegado (pasó con bookBeforeMinutes=43200).
+ */
+export const E2E_CENTER_POLICY_DEFAULTS = { bookBeforeMinutes: 1440, cancelBeforeMinutes: 720 };
+
 /** Override temporal de `bookBeforeMinutes` y `cancelBeforeMinutes` del centro. */
 export async function setTier1CenterPolicies(
   slug: string,

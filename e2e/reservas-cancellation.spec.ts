@@ -4,6 +4,7 @@ import {
   seedTier1Reservation,
   seedTier1UserPlanForExistingUser,
   setTier1CenterPolicies,
+  E2E_CENTER_POLICY_DEFAULTS,
   cleanupPlans,
   cleanupTier1LiveClasses,
   cleanupTier1Reservations,
@@ -59,7 +60,7 @@ test.describe("Reservas — cancelación con/sin penalización", () => {
     await cleanupTier1LiveClasses(liveClassIds);
     await cleanupPlans(planName);
     if (originalPolicies) {
-      await setTier1CenterPolicies("e2e-test", originalPolicies);
+      await setTier1CenterPolicies("e2e-test", E2E_CENTER_POLICY_DEFAULTS);
     }
   });
 

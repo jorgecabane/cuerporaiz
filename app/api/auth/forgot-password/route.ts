@@ -7,6 +7,7 @@ import { buildForgotPasswordEmail } from "@/lib/email/auth";
 import { sendEmailSafe } from "@/lib/application/send-email";
 import { getEmailBranding, defaultBranding } from "@/lib/email/branding";
 import { getBaseUrl } from "@/lib/utils/base-url";
+import { getClientIp } from "@/lib/utils/client-ip";
 
 export async function POST(request: Request) {
   try {
@@ -19,7 +20,7 @@ export async function POST(request: Request) {
       );
     }
     const { email, centerId } = parsed.data;
-    const ip = request.headers.get("x-forwarded-for") ?? "unknown";
+    const ip = getClientIp(request) ?? "unknown";
 
     const rateLimit = await checkRateLimit({
       key: { email, centerId },

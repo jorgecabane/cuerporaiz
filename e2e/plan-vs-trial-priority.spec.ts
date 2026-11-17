@@ -12,6 +12,7 @@ import {
   seedTier2ExpiredUserPlan,
   cleanupTier2UserPlan,
   setTier1CenterPolicies,
+  E2E_CENTER_POLICY_DEFAULTS,
   ensureTier2DedicatedStudent,
 } from "./helpers/cleanup";
 
@@ -148,7 +149,7 @@ test.describe("Plan-vs-trial priority — matriz completa (6 + 10)", () => {
       });
     }
     if (prevPolicies) {
-      await setTier1CenterPolicies(CENTER_SLUG, prevPolicies);
+      await setTier1CenterPolicies(CENTER_SLUG, E2E_CENTER_POLICY_DEFAULTS);
     }
     // Solo borra los planes que YO creé (no afecta planes de otros specs).
     for (const id of createdPlanIds) {
@@ -494,7 +495,7 @@ test.describe("Plan-vs-trial priority — matriz completa (6 + 10)", () => {
     } finally {
       if (closeClass) await cleanupTier1LiveClasses([closeClass.liveClassId]);
       if (prevPolicies) {
-        await setTier1CenterPolicies(CENTER_SLUG, prevPolicies);
+        await setTier1CenterPolicies(CENTER_SLUG, E2E_CENTER_POLICY_DEFAULTS);
         prevPolicies = null as never;
       }
     }
