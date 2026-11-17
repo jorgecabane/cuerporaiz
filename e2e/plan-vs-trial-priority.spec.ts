@@ -11,7 +11,7 @@ import {
   seedTier2OnDemandUserPlanForExistingUser,
   seedTier2ExpiredUserPlan,
   cleanupTier2UserPlan,
-  setTier1CenterPolicies,
+  seedTier2ClassWithinBookingWindow,
   ensureTier2DedicatedStudent,
 } from "./helpers/cleanup";
 
@@ -53,7 +53,6 @@ test.describe("Plan-vs-trial priority — matriz completa (6 + 10)", () => {
   let trial3: Awaited<ReturnType<typeof seedTier2TrialClass>>;
   let prevLegacy: Awaited<ReturnType<typeof setTier2UserLegacyClient>>;
   let prevAllowTrial: Awaited<ReturnType<typeof setTier2CenterAllowTrial>>;
-  let prevPolicies: Awaited<ReturnType<typeof setTier1CenterPolicies>>;
   // Planes que YO creé en este spec.
   const createdPlanIds: string[] = [];
   let pvtReq: APIRequestContext;
@@ -146,9 +145,6 @@ test.describe("Plan-vs-trial priority — matriz completa (6 + 10)", () => {
         centerSlug: CENTER_SLUG,
         allow: prevAllowTrial.previous,
       });
-    }
-    if (prevPolicies) {
-      await setTier1CenterPolicies(CENTER_SLUG, prevPolicies);
     }
     // Solo borra los planes que YO creé (no afecta planes de otros specs).
     for (const id of createdPlanIds) {
@@ -470,33 +466,24 @@ test.describe("Plan-vs-trial priority — matriz completa (6 + 10)", () => {
     }
   });
 
-  test("[E9] plan vigente + clase fuera de bookBeforeMinutes → 400 BOOKING_WINDOW_CLOSED", async ({
-    request,
-  }) => {
-    // Forzamos bookBeforeMinutes alto y creamos una clase normal cercana.
+  test("[E9] plan vigente + clase dentro de la ventana de reserva → 400 BOOKING_WINDOW_CLOSED", async () => {
+    // Clase a 12 h, dentro del bookBeforeMinutes default (24 h). No tocamos las políticas
+    // del centro: con 2 workers, subirlas rompía las reservas de otros specs en paralelo.
     await resetState({ withPlan: true, legacy: false });
-    prevPolicies = await setTier1CenterPolicies(CENTER_SLUG, {
-      bookBeforeMinutes: 60 * 24 * 30, // 30 días
-    });
-    const closeClass = await seedTier1LiveClass({
+    const closeClass = await seedTier2ClassWithinBookingWindow({
       centerSlug: CENTER_SLUG,
       title: `E2E PvT BookWindow ${runId}`,
-      daysFromNow: 1, // dentro de la ventana de bloqueo
     });
     try {
       test.skip(!closeClass, "Sin DB en este worker");
       const res = await pvtReq.post("/api/reservations", {
-        data: { liveClassId: closeClass!.liveClassId },
+        data: { liveClassId: closeClass!.id },
       });
       expect(res.status()).toBe(400);
       const body = await res.json();
       expect(body.code).toBe("BOOKING_WINDOW_CLOSED");
     } finally {
-      if (closeClass) await cleanupTier1LiveClasses([closeClass.liveClassId]);
-      if (prevPolicies) {
-        await setTier1CenterPolicies(CENTER_SLUG, prevPolicies);
-        prevPolicies = null as never;
-      }
+      if (closeClass) await cleanupTier1LiveClasses([closeClass.id]);
     }
   });
 

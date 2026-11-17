@@ -821,36 +821,6 @@ export async function seedTier1Reservation(opts: {
   return { reservationId: reservation.id };
 }
 
-/** Override temporal de `bookBeforeMinutes` y `cancelBeforeMinutes` del centro. */
-export async function setTier1CenterPolicies(
-  slug: string,
-  overrides: {
-    bookBeforeMinutes?: number;
-    cancelBeforeMinutes?: number;
-  },
-): Promise<{ bookBeforeMinutes: number; cancelBeforeMinutes: number } | null> {
-  const prisma = await getPrisma();
-  if (!prisma) return null;
-  const center = await prisma.center.findUnique({ where: { slug } });
-  if (!center) return null;
-  const previous = {
-    bookBeforeMinutes: center.bookBeforeMinutes,
-    cancelBeforeMinutes: center.cancelBeforeMinutes,
-  };
-  await prisma.center.update({
-    where: { id: center.id },
-    data: {
-      ...(overrides.bookBeforeMinutes !== undefined && {
-        bookBeforeMinutes: overrides.bookBeforeMinutes,
-      }),
-      ...(overrides.cancelBeforeMinutes !== undefined && {
-        cancelBeforeMinutes: overrides.cancelBeforeMinutes,
-      }),
-    },
-  });
-  return previous;
-}
-
 /** Lee el último EmailVerificationToken creado para un user (por email). */
 export async function getTier1LatestEmailVerificationToken(
   userEmail: string,
