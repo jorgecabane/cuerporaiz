@@ -3,8 +3,6 @@ import {
   seedTier1LiveClass,
   seedTier1Reservation,
   seedTier1UserPlanForExistingUser,
-  setTier1CenterPolicies,
-  E2E_CENTER_POLICY_DEFAULTS,
   cleanupPlans,
   cleanupTier1LiveClasses,
   cleanupTier1Reservations,
@@ -35,16 +33,8 @@ test.describe("Reservas — cancelación con/sin penalización", () => {
   const liveClassIds: string[] = [];
   const reservationIds: string[] = [];
   let seededPlan: Awaited<ReturnType<typeof seedTier1UserPlanForExistingUser>>;
-  let originalPolicies: Awaited<ReturnType<typeof setTier1CenterPolicies>>;
 
   test.beforeAll(async () => {
-    originalPolicies = await setTier1CenterPolicies("e2e-test", {
-      cancelBeforeMinutes: 720,
-      // Sin ventana de anticipación: el test de re-reserva vuelve a reservar una
-      // clase a 24 h, y el default del centro (1 día) la rechazaría por borde.
-      bookBeforeMinutes: 0,
-    });
-
     // Plan con 2 clases ya consumidas para que decrementar deje 1.
     seededPlan = await seedTier1UserPlanForExistingUser({
       centerSlug: "e2e-test",
@@ -59,9 +49,6 @@ test.describe("Reservas — cancelación con/sin penalización", () => {
     await cleanupTier1Reservations(reservationIds);
     await cleanupTier1LiveClasses(liveClassIds);
     await cleanupPlans(planName);
-    if (originalPolicies) {
-      await setTier1CenterPolicies("e2e-test", E2E_CENTER_POLICY_DEFAULTS);
-    }
   });
 
   test("cancelar reserva > 12 h antes deja CANCELLED y devuelve la clase", async ({
@@ -176,11 +163,12 @@ test.describe("Reservas — cancelación con/sin penalización", () => {
     test.skip(!seededPlan, "Sin DB o seed en este worker");
     if (!seededPlan) return;
 
-    // Clase mañana: > 12 h → cancelar deja CANCELLED y devuelve la clase.
+    // Clase en 48 h: > 12 h → cancelar deja CANCELLED, y fuera de la ventana default
+    // de 24 h → se puede re-reservar sin tocar las políticas del centro.
     const cls = await seedTier1LiveClass({
       centerSlug: "e2e-test",
       title: `Tier1 Rebook ${Date.now().toString(36)}`,
-      minutesFromNow: 24 * 60,
+      minutesFromNow: 48 * 60,
     });
     test.skip(!cls, "Sin DB para crear clase");
     if (!cls) return;

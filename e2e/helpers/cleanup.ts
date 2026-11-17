@@ -821,43 +821,6 @@ export async function seedTier1Reservation(opts: {
   return { reservationId: reservation.id };
 }
 
-/**
- * Valores base del centro e2e (= defaults del schema). Los specs restauran a esto y no a
- * lo que leyeron antes, porque si dos corridas se solapan, la segunda lee el override de
- * la primera y lo deja pegado (pasó con bookBeforeMinutes=43200).
- */
-export const E2E_CENTER_POLICY_DEFAULTS = { bookBeforeMinutes: 1440, cancelBeforeMinutes: 720 };
-
-/** Override temporal de `bookBeforeMinutes` y `cancelBeforeMinutes` del centro. */
-export async function setTier1CenterPolicies(
-  slug: string,
-  overrides: {
-    bookBeforeMinutes?: number;
-    cancelBeforeMinutes?: number;
-  },
-): Promise<{ bookBeforeMinutes: number; cancelBeforeMinutes: number } | null> {
-  const prisma = await getPrisma();
-  if (!prisma) return null;
-  const center = await prisma.center.findUnique({ where: { slug } });
-  if (!center) return null;
-  const previous = {
-    bookBeforeMinutes: center.bookBeforeMinutes,
-    cancelBeforeMinutes: center.cancelBeforeMinutes,
-  };
-  await prisma.center.update({
-    where: { id: center.id },
-    data: {
-      ...(overrides.bookBeforeMinutes !== undefined && {
-        bookBeforeMinutes: overrides.bookBeforeMinutes,
-      }),
-      ...(overrides.cancelBeforeMinutes !== undefined && {
-        cancelBeforeMinutes: overrides.cancelBeforeMinutes,
-      }),
-    },
-  });
-  return previous;
-}
-
 /** Lee el último EmailVerificationToken creado para un user (por email). */
 export async function getTier1LatestEmailVerificationToken(
   userEmail: string,
